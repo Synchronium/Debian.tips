@@ -3,7 +3,13 @@
 {
 	"name": "Node.js & TypeScript",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/typescript-node:4-24-trixie"
+	"image": "mcr.microsoft.com/devcontainers/typescript-node:4-24-trixie",
+
+	// SYS_PTRACE: Chromium's crash handler (crashpad) ptrace-attaches to itself during startup
+	// as a self-test. Docker's default capability set excludes CAP_SYS_PTRACE, which makes that
+	// self-test fail and crashes the browser with SIGTRAP before it ever loads a page — happens
+	// even fully headless with --no-sandbox, so this capability is required, not optional.
+	"runArgs": ["--cap-add=SYS_PTRACE"],
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
@@ -11,8 +17,23 @@
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "yarn install",
+	// System Chromium provides the shared libraries (libnspr4, libnss3, etc.) that headless
+	// Chrome needs to run at all — pa11y-ci (accessibility checks) depends on this.
+	"postCreateCommand": "sudo apt-get update && sudo apt-get install -y --no-install-recommends chromium",
+
+	// Point Puppeteer-based tools (pa11y-ci) at the system Chromium instead of downloading
+	// their own copy — skips a large, occasionally-flaky download/extraction on npm install.
+	"remoteEnv": {
+		"PUPPETEER_SKIP_DOWNLOAD": "true",
+		"PUPPETEER_EXECUTABLE_PATH": "/usr/bin/chromium"
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"Anthropic.claude-code"
+			]
+		}
+	},
 
 	// Configure tool-specific properties.
 	// "customizations": {},

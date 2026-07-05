@@ -10,6 +10,7 @@ export interface LayoutOptions {
   bodyHtml: Raw;
   jsonLd?: Record<string, unknown>;
   cssHref: string;
+  draft?: boolean;
 }
 
 const THEME_SCRIPT =
@@ -91,6 +92,7 @@ ${opts.jsonLd ? raw(html`<script type="application/ld+json">${raw(JSON.stringify
 </head>
 <body>
 ${raw(headerHtml(opts.activeCategory))}
+${opts.draft ? raw(html`<div class="draft-banner" role="note">Draft — excluded from production builds</div>`) : ""}
 <main id="main" data-pagefind-body>
 ${opts.bodyHtml}
 </main>

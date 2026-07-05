@@ -1,0 +1,18 @@
+{
+  "defaults": {
+    "standard": "WCAG2AA",
+    "timeout": 30000,
+    "chromeLaunchConfig": {
+      "args": ["--no-sandbox"]
+    }
+  },
+  "urls": [
+    "http://localhost:4321/",
+    "http://localhost:4321/commands/",
+    "http://localhost:4321/commands/grep/",
+    "http://localhost:4321/concepts/pipes-and-redirection/",
+    "http://localhost:4321/tags/",
+    "http://localhost:4321/tags/search/",
+    "http://localhost:4321/404.html"
+  ]
+}

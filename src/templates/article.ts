@@ -27,6 +27,7 @@ ${raw(prevNext(page.prev, page.next))}
     activeCategory: page.category,
     bodyHtml: raw(body),
     cssHref,
+    draft: page.draft,
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "TechArticle",

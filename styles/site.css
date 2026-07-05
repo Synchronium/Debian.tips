@@ -1,4 +1,6 @@
-/* M1 baseline styles. Full design system (PLAN-DESIGN.md) lands in M2. */
+/* ==========================================================================
+   1. Tokens
+   ========================================================================== */
 
 :root[data-theme="dark"] {
   --bg: #101318;
@@ -9,6 +11,10 @@
   --text-muted: #9aa4b2;
   --accent: #ff7aa2;
   --accent-hover: #ffa3bf;
+  --ok: #6fd08c;
+  --warn: #f2c14e;
+  --danger: #ff8080;
+  --card-shadow: none;
 }
 :root[data-theme="light"] {
   --bg: #ffffff;
@@ -19,20 +25,99 @@
   --text-muted: #5b6572;
   --accent: #b3134f;
   --accent-hover: #8f0f3f;
+  --ok: #1a7f43;
+  --warn: #8a6100;
+  --danger: #b42318;
+  --card-shadow: 0 1px 3px rgb(0 0 0 / .08);
 }
 
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  --radius-s: 6px;
+  --radius-m: 10px;
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  --fs-xs: 0.75rem;
+  --fs-s: 0.875rem;
+  --fs-m: 1rem;
+  --fs-l: 1.25rem;
+  --fs-xl: 1.5rem;
+  --fs-2xl: 1.9rem;
+  --fs-3xl: 2.4rem;
+
+  color-scheme: dark light;
+}
+
+/* ==========================================================================
+   2. Reset
+   ========================================================================== */
+
 * { box-sizing: border-box; }
-html { color-scheme: dark light; }
+body, h1, h2, h3, h4, p, ul, ol, dl, figure { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+img, svg { max-width: 100%; display: block; }
+
+/* ==========================================================================
+   3. Base
+   ========================================================================== */
+
+html { background: var(--bg); }
 body {
-  margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  font-family: var(--font-sans);
+  font-size: var(--fs-m);
   line-height: 1.65;
 }
+
+code, pre, kbd { font-family: var(--font-mono); }
+
 a { color: var(--accent); }
 a:hover { color: var(--accent-hover); }
-code, pre { font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace; }
+.prose a, .example-desc a, .callout a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+h1, h2, h3, h4 { font-weight: 650; line-height: 1.25; }
+h1 { font-size: var(--fs-2xl); }
+h2 { font-size: var(--fs-xl); margin-top: var(--space-7); }
+h3 { font-size: var(--fs-l); margin-top: var(--space-6); }
+
+.prose { margin-top: var(--space-5); }
+.prose > * + * { margin-top: var(--space-4); }
+.prose h2:first-child, .prose h3:first-child { margin-top: 0; }
+.prose ul, .prose ol { list-style: revert; padding-left: 1.4em; }
+.prose li + li { margin-top: var(--space-2); }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* ==========================================================================
+   4. Utilities
+   ========================================================================== */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
 
 .skip-link {
   position: absolute;
@@ -40,87 +125,410 @@ code, pre { font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo,
   top: 0;
   background: var(--bg-surface);
   color: var(--text);
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
+  border-radius: 0 0 var(--radius-s) 0;
   z-index: 100;
 }
-.skip-link:focus { left: 8px; top: 8px; }
+.skip-link:focus { left: 0; top: 0; }
 
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-.visually-hidden {
-  position: absolute;
-  width: 1px; height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
+/* ==========================================================================
+   5. Global chrome — header & footer
+   ========================================================================== */
 
 .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   border-bottom: 1px solid var(--border);
   background: var(--bg-surface);
 }
 .header-inner {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 12px 24px;
+  padding: var(--space-3) var(--space-5);
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: var(--space-5);
 }
-.logo { font-family: ui-monospace, monospace; font-weight: 600; text-decoration: none; color: var(--text); }
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text);
+  white-space: nowrap;
+}
 .logo .accent { color: var(--accent); }
+.logo-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6em;
+  height: 1.6em;
+  border-radius: var(--radius-s);
+  background: var(--bg-inset);
+  color: var(--accent);
+  font-size: 0.85em;
+}
+
+.nav-disclosure summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: var(--fs-s);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-s);
+}
+.nav-disclosure summary::-webkit-details-marker { display: none; }
+.nav-disclosure summary:hover { background: var(--bg-inset); }
+.nav-disclosure nav ul { display: flex; flex-direction: column; gap: var(--space-1); }
+.nav-disclosure nav a {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+  color: var(--text);
+  text-decoration: none;
+  border-radius: var(--radius-s);
+  font-size: var(--fs-s);
+}
+.nav-disclosure nav a:hover { background: var(--bg-inset); }
+.nav-disclosure nav a[aria-current="page"] { color: var(--accent); font-weight: 650; }
+
+@media (min-width: 720px) {
+  .nav-disclosure { display: contents; }
+  .nav-disclosure summary { display: none; }
+  .nav-disclosure nav { display: block; }
+  .nav-disclosure nav ul { flex-direction: row; gap: var(--space-2); }
+}
+@media (max-width: 719px) {
+  .nav-disclosure { position: relative; }
+  .nav-disclosure nav {
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    left: 0;
+    min-width: 180px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-m);
+    padding: var(--space-2);
+    box-shadow: var(--card-shadow);
+  }
+}
+
+[data-theme-toggle] {
+  margin-inline-start: auto;
+  background: var(--bg-inset);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-s);
+  cursor: pointer;
+}
+[data-theme-toggle]:hover { border-color: var(--accent); }
+
+.draft-banner {
+  background: var(--warn);
+  color: #1c1400;
+  text-align: center;
+  padding: var(--space-2);
+  font-size: var(--fs-s);
+  font-weight: 650;
+}
 
 .site-footer {
   border-top: 1px solid var(--border);
   background: var(--bg-surface);
-  margin-top: 48px;
-  padding: 32px 24px;
+  margin-top: var(--space-8);
+  padding: var(--space-6) var(--space-5) var(--space-5);
 }
 .footer-inner {
   max-width: 1100px;
   margin: 0 auto;
   display: flex;
-  gap: 48px;
   flex-wrap: wrap;
+  gap: var(--space-7);
+}
+.footer-inner nav h2 {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+}
+.footer-inner nav ul { display: flex; flex-direction: column; gap: var(--space-1); }
+.footer-inner nav a { color: var(--text); text-decoration: none; font-size: var(--fs-s); }
+.footer-inner nav a:hover { color: var(--accent); }
+.footer-tagline { color: var(--text-muted); font-size: var(--fs-s); max-width: 32ch; }
+.footer-copyright {
+  max-width: 1100px;
+  margin: var(--space-6) auto 0;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
 }
 
-main { max-width: 72ch; margin: 0 auto; padding: 24px; }
+/* ==========================================================================
+   6. Page container & shells
+   ========================================================================== */
+
+main { max-width: 1100px; margin: 0 auto; padding: var(--space-6) var(--space-5) var(--space-8); }
+
+.article, .command-page { max-width: 72ch; margin: 0 auto; }
+
+.meta, .lede { color: var(--text-muted); }
+.lede { font-size: var(--fs-l); margin-top: var(--space-2); }
+.tagline { color: var(--text-muted); font-size: var(--fs-l); margin-top: var(--space-1); }
+.meta { font-size: var(--fs-s); margin-top: var(--space-2); }
+
+.toc {
+  margin-top: var(--space-5);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--bg-surface);
+}
+.toc-title {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+}
+.toc ul { display: flex; flex-direction: column; gap: var(--space-1); }
+.toc a { color: var(--text); text-decoration: none; font-size: var(--fs-s); }
+.toc a:hover { color: var(--accent); }
+.toc-level-3 { padding-left: var(--space-4); }
+
+@media (min-width: 1200px) {
+  .article, .command-page {
+    max-width: none;
+    display: grid;
+    grid-template-columns: minmax(0, 72ch) 240px;
+    column-gap: var(--space-7);
+    align-items: start;
+  }
+  .article > *, .command-page > * { grid-column: 1; }
+  .article .toc, .command-page .toc {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    position: sticky;
+    top: calc(var(--space-6) + 1px);
+    margin-top: 0;
+    align-self: start;
+  }
+}
+
+.pager {
+  margin-top: var(--space-7);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-5);
+}
+.pager a {
+  color: var(--text);
+  text-decoration: none;
+  font-size: var(--fs-s);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  padding: var(--space-3) var(--space-4);
+}
+.pager a:hover { border-color: var(--accent); color: var(--accent); }
+.pager-next { margin-inline-start: auto; text-align: right; }
+
+.related { margin-top: var(--space-7); }
+.related ul { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+.related a {
+  display: inline-block;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  padding: var(--space-1) var(--space-3);
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: var(--fs-s);
+}
+
+/* ==========================================================================
+   7. Breadcrumbs
+   ========================================================================== */
+
+.breadcrumbs ol { display: flex; flex-wrap: wrap; gap: var(--space-1); font-size: var(--fs-s); color: var(--text-muted); }
+.breadcrumbs li:not(:last-child)::after { content: "/"; margin-inline-start: var(--space-1); color: var(--border); }
+.breadcrumbs a { color: var(--text-muted); text-decoration: none; }
+.breadcrumbs a:hover { color: var(--accent); }
+.breadcrumbs li[aria-current="page"] { color: var(--text); }
+
+/* ==========================================================================
+   8. Tag chips
+   ========================================================================== */
+
+.tags { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-4); }
+.tags a {
+  display: inline-block;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-xs);
+  text-decoration: none;
+  color: var(--text-muted);
+  background: var(--bg-surface);
+}
+.tags a:hover { color: var(--accent); border-color: var(--accent); }
+
+.tag-index { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-6); }
+.tag-count { color: var(--text-muted); font-size: var(--fs-s); }
+
+/* ==========================================================================
+   9. Cards / listing shell
+   ========================================================================== */
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  gap: var(--space-5);
+  margin-top: var(--space-4);
 }
 .card {
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
+  border-radius: var(--radius-m);
+  background: var(--bg-surface);
+  box-shadow: var(--card-shadow);
 }
-.card a { text-decoration: none; color: inherit; display: block; }
+.card a { display: block; padding: var(--space-4); text-decoration: none; color: inherit; height: 100%; }
+.card h3 { font-size: var(--fs-l); color: var(--text); }
+.card p { margin-top: var(--space-2); color: var(--text-muted); font-size: var(--fs-s); }
+.card a:hover h3 { color: var(--accent); }
 
-pre {
-  border-radius: 10px;
-  padding: 12px;
-  overflow-x: auto;
+section + section { margin-top: var(--space-7); }
+
+/* ==========================================================================
+   10. Home page
+   ========================================================================== */
+
+.hero { padding: var(--space-7) 0 var(--space-6); text-align: center; }
+.hero h1 { font-size: var(--fs-3xl); }
+.hero-tagline { color: var(--text-muted); font-size: var(--fs-l); margin-top: var(--space-3); max-width: 48ch; margin-inline: auto; }
+.hero-cta { display: flex; justify-content: center; gap: var(--space-4); margin-top: var(--space-6); flex-wrap: wrap; }
+
+.button {
+  display: inline-block;
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-s);
+  text-decoration: none;
+  font-weight: 650;
+  background: var(--accent);
+  color: var(--bg);
 }
+.button:hover { background: var(--accent-hover); color: var(--bg); }
+.button-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.button-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+.start-here { margin-top: var(--space-7); }
+.home-category h2 { display: flex; align-items: baseline; gap: var(--space-3); }
+.home-category h2 a { color: inherit; text-decoration: none; }
+.home-category h2 a:hover { color: var(--accent); }
+
+/* ==========================================================================
+   11. Callouts
+   ========================================================================== */
 
 .callout {
   border-left: 3px solid var(--accent);
   background: var(--bg-surface);
-  padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 0 var(--radius-m) var(--radius-m) 0;
+  padding: var(--space-4) var(--space-5);
+  margin-top: var(--space-5);
 }
-.callout-label { font-weight: 700; margin: 0 0 4px; text-transform: uppercase; font-size: 0.75rem; }
+.callout > * + * { margin-top: var(--space-2); }
+.callout-label {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+}
+.callout-note { border-color: var(--accent); }
+.callout-tip { border-color: var(--ok); }
+.callout-tip .callout-label { color: var(--ok); }
+.callout-warning { border-color: var(--warn); }
+.callout-warning .callout-label { color: var(--warn); }
+.callout-danger { border-color: var(--danger); }
+.callout-danger .callout-label { color: var(--danger); }
 
-.tags { list-style: none; display: flex; gap: 8px; padding: 0; flex-wrap: wrap; }
-.tags li a {
-  display: inline-block;
+/* ==========================================================================
+   12. Code blocks & Shiki dual-theme activation
+   ========================================================================== */
+
+pre {
+  border-radius: var(--radius-m);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 2px 8px;
-  font-size: 0.75rem;
-  text-decoration: none;
+  padding: var(--space-4);
+  overflow-x: auto;
+  font-size: var(--fs-s);
+  line-height: 1.6;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition: none !important; animation: none !important; }
+/* Shiki bakes the *light* theme as plain color/background-color and stashes
+   the dark variant in --shiki-dark(-bg) custom properties on each token; both
+   need !important to win over the inline styles Shiki itself emits. */
+pre.shiki {
+  background-color: var(--bg-inset) !important;
+}
+:root[data-theme="dark"] pre.shiki,
+:root[data-theme="dark"] pre.shiki span {
+  color: var(--shiki-dark) !important;
+}
+
+pre[data-prompt] .line::before {
+  content: "$ ";
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.example-code { position: relative; margin-top: var(--space-4); }
+.example-code .copy {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+.example-code .copy:hover { color: var(--accent); border-color: var(--accent); }
+:root:not(.js) .example-code .copy { display: none; }
+
+/* ==========================================================================
+   13. Examples
+   ========================================================================== */
+
+.example { margin-top: var(--space-6); }
+.example-title { font-size: var(--fs-l); }
+.example-title a { color: inherit; text-decoration: none; }
+.example-title a:hover { color: var(--accent); }
+.example-desc { margin-top: var(--space-3); color: var(--text-muted); }
+.example-output { margin-top: var(--space-3); }
+.example-output summary { cursor: pointer; font-size: var(--fs-s); color: var(--text-muted); }
+.example-output pre { margin-top: var(--space-2); }
+.example-danger { border-left: 3px solid var(--danger); padding-left: var(--space-4); }
+.section-intro { color: var(--text-muted); margin-top: var(--space-2); }
+
+/* ==========================================================================
+   14. Print
+   ========================================================================== */
+
+@media print {
+  .site-header, .site-footer, .toc, .example-code .copy, .draft-banner { display: none; }
+  body { background: #fff; color: #000; }
+  a { color: #000; text-decoration: underline; }
+  a[href^="/"]::after, a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.8em; }
+  .article, .command-page { max-width: none; display: block; }
 }
