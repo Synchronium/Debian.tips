@@ -25,6 +25,21 @@ const THEMES = { dark: "github-dark-default", light: "github-light" } as const;
 const LANG_ALIASES: Record<string, BundledLanguage | "plaintext"> = { sed: "bash" };
 const LOAD_LANGS: BundledLanguage[] = ["bash", "yaml", "json", "ini", "awk", "diff"];
 
+/** `github-light`'s keyword-red (#D73A49) and comment-gray (#6A737D) both fail
+ * WCAG AA (4.5:1) against this site's light `--bg-inset` (#f0f1f4) — verified
+ * with pa11y-ci, 4.05:1 and 4.26:1 respectively. Swap in darker equivalents
+ * (the comment colour reuses the site's own --text-muted value) after Shiki
+ * renders, rather than forking the whole theme for two tokens. Dark-theme
+ * colours (--shiki-dark) are untouched; they already pass. */
+const LIGHT_CONTRAST_FIXES: [RegExp, string][] = [
+  [/#D73A49/g, "#B31D28"],
+  [/#6A737D/g, "#5B6572"],
+];
+
+function fixLightThemeContrast(html: string): string {
+  return LIGHT_CONTRAST_FIXES.reduce((acc, [pattern, replacement]) => acc.replace(pattern, replacement), html);
+}
+
 let highlighterPromise: Promise<Highlighter> | undefined;
 function getHighlighter(): Promise<Highlighter> {
   highlighterPromise ??= createHighlighter({ themes: [THEMES.dark, THEMES.light], langs: LOAD_LANGS });
@@ -39,7 +54,7 @@ function resolveLang(requested: string | null | undefined): BundledLanguage | "p
 
 export async function highlightCode(code: string, lang: string): Promise<string> {
   const highlighter = await getHighlighter();
-  return highlighter.codeToHtml(code, { lang: resolveLang(lang), themes: THEMES });
+  return fixLightThemeContrast(highlighter.codeToHtml(code, { lang: resolveLang(lang), themes: THEMES }));
 }
 
 function walk(node: any, visit: (n: any) => void): void {
@@ -67,7 +82,7 @@ function remarkShiki() {
     for (const node of codeNodes) {
       const lang = resolveLang(node.lang);
       const isOutput = lang === "plaintext";
-      const rendered = highlighter.codeToHtml(node.value, { lang, themes: THEMES });
+      const rendered = fixLightThemeContrast(highlighter.codeToHtml(node.value, { lang, themes: THEMES }));
       const withA11y = rendered.replace(
         /^<pre /,
         `<pre aria-label="${isOutput ? "output" : "command"}" `,

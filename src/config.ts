@@ -56,6 +56,6 @@ export const FEATURED_PATHS: string[] = [
   "/commands/grep/",
   "/concepts/pipes-and-redirection/",
   "/scripting/variables-and-quoting/",
-  "/recipes/find-large-files/",
+  "/recipes/find-the-largest-files/",
   "/debian/apt-essentials/",
 ];

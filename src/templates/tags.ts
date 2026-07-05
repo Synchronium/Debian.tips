@@ -31,7 +31,7 @@ export function tagPage(tag: TagInfo, pages: Page[], cssHref: string): string {
 <nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><a href="/tags/">Tags</a></li><li aria-current="page">${tag.name}</li></ol></nav>
 <h1>${tag.name}</h1>
 <p class="lede">${tag.description}</p>
-<div class="card-grid">${pages.map((p) => raw(pageCard(p)))}</div>`;
+<div class="card-grid">${pages.map((p) => raw(pageCard(p, "h2")))}</div>`;
 
   return layout({
     title: tag.name,

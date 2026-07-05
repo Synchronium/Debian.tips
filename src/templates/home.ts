@@ -28,7 +28,7 @@ export function homePage(pages: Page[], cssHref: string): string {
 </section>
 ${
   featured.length > 0
-    ? html`<section class="start-here"><h2>Start here</h2><div class="card-grid">${featured.map((p) => raw(pageCard(p)))}</div></section>`
+    ? raw(html`<section class="start-here"><h2>Start here</h2><div class="card-grid">${featured.map((p) => raw(pageCard(p)))}</div></section>`)
     : ""
 }
 ${sections.map((s) => raw(s))}

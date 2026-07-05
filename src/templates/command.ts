@@ -35,7 +35,7 @@ export async function commandPage(page: Page, cssHref: string): Promise<string> 
       const cards = await Promise.all(section.examples.map((ex, i) => exampleCard(sectionSlug, i + 1, ex)));
       return html`<section class="example-section">
 <h2 id="${sectionSlug}">${section.title}</h2>
-${section.intro ? html`<p class="section-intro">${section.intro}</p>` : ""}
+${section.intro ? raw(html`<p class="section-intro">${section.intro}</p>`) : ""}
 ${cards.map((c) => raw(c))}
 </section>`;
     }),

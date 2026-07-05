@@ -17,16 +17,25 @@ const THEME_SCRIPT =
   "(function(){try{var t=localStorage.getItem('theme');if(!t){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}" +
   "document.documentElement.setAttribute('data-theme',t);document.documentElement.classList.add('js');}catch(e){}})();";
 
+/** Always-loaded glue: theme toggle, copy buttons, and the search trigger. The
+ * search dialog's own wiring (and Pagefind itself) live in /assets/search.js,
+ * fetched via dynamic import() only when the dialog is first opened — see
+ * PLAN-BUILD.md §6, "Pagefind assets load only when the user opens search." */
 const INTERACTION_SCRIPT =
   "(function(){" +
   "function setTheme(t){document.documentElement.setAttribute('data-theme',t);try{localStorage.setItem('theme',t);}catch(e){}}" +
+  "function openSearch(){import('/assets/search.js').then(function(m){m.openSearch();});}" +
   "document.addEventListener('click',function(ev){" +
-  "var toggle=ev.target.closest('[data-theme-toggle]');" +
-  "if(toggle){var cur=document.documentElement.getAttribute('data-theme');setTheme(cur==='dark'?'light':'dark');return;}" +
+  "if(ev.target.closest('[data-theme-toggle]')){var cur=document.documentElement.getAttribute('data-theme');setTheme(cur==='dark'?'light':'dark');return;}" +
+  "if(ev.target.closest('[data-search-open]')){ev.preventDefault();openSearch();return;}" +
   "var copy=ev.target.closest('[data-copy]');" +
   "if(copy){navigator.clipboard.writeText(copy.getAttribute('data-copy'));" +
   "var original=copy.textContent;copy.textContent='Copied';" +
+  "var live=document.getElementById('live-region');if(live)live.textContent='Copied to clipboard';" +
   "setTimeout(function(){copy.textContent=original;},1500);}" +
+  "});" +
+  "document.addEventListener('keydown',function(ev){" +
+  "if((ev.metaKey||ev.ctrlKey)&&ev.key==='k'){ev.preventDefault();openSearch();}" +
   "});" +
   "})();";
 
@@ -43,7 +52,14 @@ function headerHtml(activeCategory: Category | undefined): string {
 <summary>Menu</summary>
 <nav aria-label="Primary"><ul>${navItems}</ul></nav>
 </details>
-<button type="button" data-theme-toggle aria-label="Toggle color theme">Theme</button>
+<div class="header-actions">
+<button type="button" class="search-trigger" data-search-open aria-haspopup="dialog" aria-controls="search-dialog" aria-label="Search">
+<span aria-hidden="true" class="search-trigger-icon">⌕</span>
+<span class="search-trigger-label">Search</span>
+<kbd class="search-trigger-kbd" aria-hidden="true">⌘K</kbd>
+</button>
+<button type="button" data-theme-toggle aria-label="Toggle color theme"><span aria-hidden="true" class="theme-toggle-icon">&#9680;</span><span class="theme-toggle-label">Theme</span></button>
+</div>
 </div>
 </header>`;
 }
@@ -65,9 +81,37 @@ function footerHtml(): string {
 </footer>`;
 }
 
+/** Static markup only — no results are pre-rendered, so this ships fine to every
+ * page without needing Pagefind at build time. All behaviour is wired by
+ * assets/search.js on first open. */
+function searchDialogHtml(): string {
+  return html`<dialog id="search-dialog" aria-label="Search debian.tips">
+<div class="search-dialog-inner">
+<div class="search-input-row">
+<span aria-hidden="true" class="search-trigger-icon">⌕</span>
+<input type="search" id="search-input" placeholder="Search commands, concepts, recipes…" aria-label="Search debian.tips" autocomplete="off" spellcheck="false" />
+<button type="button" data-search-close aria-label="Close search">Close</button>
+</div>
+<ul id="search-results" aria-live="polite"></ul>
+</div>
+</dialog>`;
+}
+
 export function layout(opts: LayoutOptions): string {
   const canonical = `${SITE.url}${opts.path}`;
   const pageTitle = opts.path === "/" ? `${SITE.title} — ${SITE.tagline}` : `${opts.title} — ${SITE.title}`;
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE.title,
+    url: SITE.url,
+    description: SITE.description,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: { "@type": "EntryPoint", urlTemplate: `${SITE.url}/?q={search_term_string}` },
+      "query-input": "required name=search_term_string",
+    },
+  };
 
   return html`<!doctype html>
 <html lang="en" data-theme="dark">
@@ -88,6 +132,7 @@ export function layout(opts: LayoutOptions): string {
 <meta name="twitter:card" content="summary_large_image" />
 <script>${raw(THEME_SCRIPT)}</script>
 <link rel="stylesheet" href="${opts.cssHref}" />
+<script type="application/ld+json">${raw(JSON.stringify(websiteJsonLd))}</script>
 ${opts.jsonLd ? raw(html`<script type="application/ld+json">${raw(JSON.stringify(opts.jsonLd))}</script>`) : ""}
 </head>
 <body>
@@ -97,6 +142,7 @@ ${opts.draft ? raw(html`<div class="draft-banner" role="note">Draft — excluded
 ${opts.bodyHtml}
 </main>
 ${raw(footerHtml())}
+${raw(searchDialogHtml())}
 <div aria-live="polite" class="visually-hidden" id="live-region"></div>
 <script>${raw(INTERACTION_SCRIPT)}</script>
 </body>

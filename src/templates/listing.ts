@@ -28,7 +28,7 @@ export function listingPage(category: Category, pages: Page[], cssHref: string):
       )
       .join("");
   } else {
-    contentHtml = html`<div class="card-grid">${pages.map((p) => raw(pageCard(p)))}</div>`;
+    contentHtml = html`<div class="card-grid">${pages.map((p) => raw(pageCard(p, "h2")))}</div>`;
   }
 
   const body = html`

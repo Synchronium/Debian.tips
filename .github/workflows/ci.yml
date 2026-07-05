@@ -17,3 +17,8 @@ jobs:
       - run: npm run check
         env:
           NODE_ENV: production
+      - name: Serve dist/ for pa11y-ci
+        run: npx serve -l 4321 dist &
+      - name: Wait for local server
+        run: npx wait-on http://localhost:4321
+      - run: npx pa11y-ci

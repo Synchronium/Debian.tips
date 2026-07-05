@@ -1,6 +1,7 @@
 command: greet
 sections:
   - title: "Basics"
+    intro: "A quick warm-up before the real examples."
     examples:
       - title: "Say hello"
         code: echo "hello"

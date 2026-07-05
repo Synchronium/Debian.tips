@@ -41,6 +41,12 @@ describe("build (fixture pipeline)", () => {
     expect(html).toContain("callout-note");
   });
 
+  it("renders a section's intro as real markup, not escaped HTML text", () => {
+    const html = read("commands", "greet", "index.html");
+    expect(html).toContain('<p class="section-intro">A quick warm-up before the real examples.</p>');
+    expect(html).not.toContain("&lt;p class");
+  });
+
   it("copies public/ assets and writes a hashed stylesheet", () => {
     expect(read("CNAME")).toContain("debian.tips");
     expect(() => read(".nojekyll")).not.toThrow();
