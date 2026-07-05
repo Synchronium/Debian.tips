@@ -1,48 +1,83 @@
-import { cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { html, raw } from "./html.js";
+import { copyPublic, writeHashedCss } from "./assets.js";
+import { CATEGORY_META, NAV_ORDER } from "./config.js";
+import { loadContent, type Page } from "./content/loader.js";
+import { feedXml, sitemapXml } from "./feeds.js";
+import { articlePage } from "./templates/article.js";
+import { commandPage } from "./templates/command.js";
+import { homePage } from "./templates/home.js";
+import { listingPage } from "./templates/listing.js";
+import { notFoundPage } from "./templates/notFound.js";
+import { tagPage, tagsIndexPage } from "./templates/tags.js";
 
 const ROOT = new URL("..", import.meta.url).pathname;
-const DIST = join(ROOT, "dist");
-const PUBLIC = join(ROOT, "public");
 
-function clean(): void {
-  rmSync(DIST, { recursive: true, force: true });
-  mkdirSync(DIST, { recursive: true });
+function defaultContentDir(): string {
+  return join(ROOT, "content");
 }
 
-function copyPublic(): void {
-  cpSync(PUBLIC, DIST, { recursive: true });
+function defaultDistDir(): string {
+  return join(ROOT, "dist");
 }
 
-function placeholderPage(): string {
-  return html`<!doctype html>
-<html lang="en" data-theme="dark">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>debian.tips — Linux tips &amp; tricks</title>
-  <meta name="description" content="Practical Linux and Debian tips, tricks, and command references." />
-</head>
-<body>
-  <main id="main" data-pagefind-body>
-    <h1>debian.tips</h1>
-    <p>The generator core (content loader, templates, styling) lands in M1. This page exists so the build pipeline has real output to validate end-to-end.</p>
-  </main>
-</body>
-</html>
-`;
+function writePage(distDir: string, urlPath: string, htmlContent: string): void {
+  const dir = urlPath === "/" ? distDir : join(distDir, urlPath.replace(/^\//, "").replace(/\/$/, ""));
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "index.html"), htmlContent, "utf-8");
 }
 
-function writeHome(): void {
-  writeFileSync(join(DIST, "index.html"), raw(placeholderPage()).value, "utf-8");
+export interface BuildResult {
+  pageCount: number;
+  tagCount: number;
 }
 
-function main(): void {
-  clean();
-  copyPublic();
-  writeHome();
-  console.log("Built placeholder site to dist/ (M0 scaffold — see PLAN-ROADMAP.md M1)");
+export async function build(
+  contentDir: string = defaultContentDir(),
+  distDir: string = defaultDistDir(),
+): Promise<BuildResult> {
+  rmSync(distDir, { recursive: true, force: true });
+  mkdirSync(distDir, { recursive: true });
+
+  copyPublic(distDir);
+  const cssHref = writeHashedCss(distDir);
+
+  const { pages, tags } = await loadContent(contentDir);
+
+  writePage(distDir, "/", homePage(pages, cssHref));
+
+  for (const category of NAV_ORDER) {
+    const categoryPages = pages.filter((p) => p.category === category);
+    writePage(distDir, CATEGORY_META[category].path, listingPage(category, categoryPages, cssHref));
+  }
+
+  for (const page of pages) {
+    const rendered: string =
+      page.category === "commands" ? await commandPage(page, cssHref) : articlePage(page, cssHref);
+    writePage(distDir, page.url, rendered);
+  }
+
+  writePage(distDir, "/tags/", tagsIndexPage(tags, pages, cssHref));
+  for (const tag of tags) {
+    const taggedPages: Page[] = pages.filter((p) => p.tags.includes(tag.name));
+    writePage(distDir, `/tags/${tag.name}/`, tagPage(tag, taggedPages, cssHref));
+  }
+
+  writeFileSync(join(distDir, "404.html"), notFoundPage(cssHref), "utf-8");
+  writeFileSync(join(distDir, "sitemap.xml"), sitemapXml(pages), "utf-8");
+  writeFileSync(join(distDir, "feed.xml"), feedXml(pages), "utf-8");
+
+  return { pageCount: pages.length, tagCount: tags.length };
 }
 
-main();
+async function main(): Promise<void> {
+  const result = await build();
+  console.log(`Built ${result.pageCount} page(s) to dist/`);
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((err) => {
+    console.error(err instanceof Error ? err.message : err);
+    process.exit(1);
+  });
+}

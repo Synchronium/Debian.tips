@@ -1,0 +1,8 @@
+command: greet
+sections:
+  - title: "Basics"
+    examples:
+      - title: "Say hello"
+        code: echo "hello"
+        description: Prints hello to stdout.
+        level: basic

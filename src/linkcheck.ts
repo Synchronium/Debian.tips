@@ -37,6 +37,8 @@ function resolveDistPath(urlPath: string): string | null {
   if (existsSync(asDir)) return asDir;
   const asFile = join(DIST, withoutTrailingSlash);
   if (existsSync(asFile) && statSync(asFile).isFile()) return asFile;
+  const asHtmlFile = join(DIST, `${withoutTrailingSlash}.html`);
+  if (existsSync(asHtmlFile) && statSync(asHtmlFile).isFile()) return asHtmlFile;
   return null;
 }
 

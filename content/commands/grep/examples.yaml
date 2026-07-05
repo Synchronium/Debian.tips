@@ -1,0 +1,72 @@
+command: grep
+sections:
+  - title: "Basic matching"
+    intro: "Plain-text searches, the bread and butter."
+    examples:
+      - title: "Search a file for a string"
+        code: grep "error" /var/log/syslog
+        description: >-
+          Prints every line containing "error". Quoting the pattern avoids
+          surprises with shell metacharacters.
+        output: |
+          Jul  5 09:14:22 deb1 app[312]: error: connection refused
+        level: basic
+        tags: [beginner]
+      - title: "Search case-insensitively"
+        code: grep -i "warning" app.log
+        description: >-
+          `-i` (`--ignore-case`) matches "Warning", "WARNING", and "warning" alike.
+        level: basic
+      - title: "Invert the match"
+        code: grep -v "^#" config.conf
+        description: >-
+          Prints lines that do NOT match the pattern — here, everything except
+          comment lines.
+        level: basic
+      - title: "Count matches instead of printing them"
+        code: grep -c "error" /var/log/syslog
+        description: "`-c` prints a single number: how many lines matched."
+        output: |
+          42
+        level: basic
+  - title: "Searching directories"
+    intro: "Point grep at a whole tree instead of a single file."
+    examples:
+      - title: "Search recursively through a directory"
+        code: grep -r "TODO" ~/projects
+        description: >-
+          Walks every file under the directory, printing matching lines
+          prefixed with the file path.
+        level: intermediate
+      - title: "Search only specific file types"
+        code: grep -r --include="*.ts" "TODO" .
+        description: >-
+          Restricts a recursive search to files matching a glob, so you don't
+          wade through generated files or binaries.
+        level: intermediate
+      - title: "Show the file and line number of each match"
+        code: grep -rn "TODO" .
+        description: "`-n` prefixes each match with its line number, `-r` makes it recursive."
+        level: intermediate
+  - title: "Regex and context"
+    intro: "Extended patterns and surrounding lines."
+    examples:
+      - title: "Use extended regular expressions"
+        code: grep -E "error|warning" /var/log/syslog
+        description: >-
+          `-E` enables extended regex syntax, so `|` means alternation without
+          backslash-escaping it.
+        level: intermediate
+        tags: [regex]
+      - title: "Show lines of context around a match"
+        code: grep -A 3 -B 1 "Traceback" app.log
+        description: >-
+          `-A 3` prints 3 lines after each match, `-B 1` prints 1 line before —
+          useful for reading a stack trace in context.
+        level: advanced
+      - title: "Match whole words only"
+        code: grep -w "log" notes.txt
+        description: >-
+          Without `-w`, "log" would also match inside "login" or "catalog".
+          `-w` requires a word boundary on both sides.
+        level: intermediate
