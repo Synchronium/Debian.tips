@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .bg { fill: #0b0e12; }
+    .glyph { fill: #ff7aa2; }
+    @media (prefers-color-scheme: light) {
+      .bg { fill: #f0f1f4; }
+      .glyph { fill: #b3134f; }
+    }
+  </style>
+  <rect class="bg" x="0" y="0" width="32" height="32" rx="7" />
+  <text class="glyph" x="16" y="22" text-anchor="middle"
+        font-family="ui-monospace, Menlo, Consolas, monospace"
+        font-size="16" font-weight="700">&gt;_</text>
+</svg>

@@ -1,0 +1,49 @@
+# Curated tag registry. A tag used in any page's frontmatter or example
+# must exist here, or the build fails. See PLAN-CONTENT.md §1.2.
+tags:
+  - name: text-processing
+    description: Filtering, transforming, and reshaping text streams
+  - name: regex
+    description: Regular expressions and pattern matching
+  - name: files
+    description: Working with files and directories
+  - name: search
+    description: Finding files or content
+  - name: archives
+    description: Compressing and packaging files
+  - name: networking
+    description: Networking, transfer, and connectivity
+  - name: ssh
+    description: Remote access and secure shell
+  - name: security
+    description: Security-relevant commands and practices
+  - name: permissions
+    description: File and user permissions
+  - name: processes
+    description: Process management and control
+  - name: monitoring
+    description: Observing system state over time
+  - name: disk
+    description: Disk usage and storage
+  - name: performance
+    description: Performance measurement and tuning
+  - name: scripting
+    description: Shell scripting techniques
+  - name: one-liners
+    description: Short, self-contained shell one-liners
+  - name: beginner
+    description: Good starting points for newcomers
+  - name: sysadmin
+    description: System administration tasks
+  - name: apt
+    description: Debian/APT package management
+  - name: debian
+    description: Debian-specific material
+  - name: cron
+    description: Scheduling and periodic tasks
+  - name: systemd
+    description: systemd services and units
+  - name: environment
+    description: Shell and environment configuration
+  - name: terminal
+    description: Terminal and TTY behaviour
