@@ -50,14 +50,16 @@ ${page.relatedLinks.map((r) => raw(html`<li><a href="${r.url}">${r.title}</a></l
   const body = html`
 ${raw(breadcrumbs(page.category, page.title))}
 <article class="command-page">
+<div class="content">
 <h1>${page.title}</h1>
 <p class="tagline">${page.tagline}</p>
 <p class="meta">Updated ${dateStr}</p>
 ${raw(tagChips(page.tags))}
-${raw(toc([...page.toc, ...sectionTocEntries]))}
 <div class="prose">${raw(page.html)}</div>
 ${sectionsHtml.map((s) => raw(s))}
 ${raw(relatedHtml)}
+</div>
+${raw(toc([...page.toc, ...sectionTocEntries]))}
 </article>`;
 
   return layout({

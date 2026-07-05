@@ -5,28 +5,23 @@
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 	"image": "mcr.microsoft.com/devcontainers/typescript-node:4-24-trixie",
 
-	// SYS_PTRACE: Chromium's crash handler (crashpad) ptrace-attaches to itself during startup
-	// as a self-test. Docker's default capability set excludes CAP_SYS_PTRACE, which makes that
-	// self-test fail and crashes the browser with SIGTRAP before it ever loads a page — happens
-	// even fully headless with --no-sandbox, so this capability is required, not optional.
-	"runArgs": ["--cap-add=SYS_PTRACE"],
-
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
-	// System Chromium provides the shared libraries (libnspr4, libnss3, etc.) that headless
-	// Chrome needs to run at all — pa11y-ci (accessibility checks) depends on this.
-	"postCreateCommand": "sudo apt-get update && sudo apt-get install -y --no-install-recommends chromium",
+	// Installs the OS-level shared libraries (libnss3, libatk-bridge2.0-0, libgtk-3-0, etc.)
+	// headless Chrome needs to run at all — pa11y-ci and any local Lighthouse run (accessibility/
+	// perf checks) depend on this. Deliberately does NOT install the `chromium` apt package
+	// itself: in some sandboxed environments its crashpad self-test crashes with SIGTRAP on
+	// launch (a ptrace restriction — --cap-add=SYS_PTRACE was tried and did not help). Puppeteer's
+	// own downloaded "Chrome for Testing" build (already a transitive dependency via pa11y-ci)
+	// works fine given just these libraries, so leave PUPPETEER_SKIP_DOWNLOAD /
+	// PUPPETEER_EXECUTABLE_PATH unset and let `npm install`'s postinstall step fetch one
+	// normally. See PLAN-BUILD.md §7.1 for the full story.
+	"postCreateCommand": "sudo apt-get update && npx --yes playwright install-deps chromium",
 
-	// Point Puppeteer-based tools (pa11y-ci) at the system Chromium instead of downloading
-	// their own copy — skips a large, occasionally-flaky download/extraction on npm install.
-	"remoteEnv": {
-		"PUPPETEER_SKIP_DOWNLOAD": "true",
-		"PUPPETEER_EXECUTABLE_PATH": "/usr/bin/chromium"
-	},
 	"customizations": {
 		"vscode": {
 			"extensions": [

@@ -44,6 +44,10 @@
   --radius-s: 6px;
   --radius-m: 10px;
 
+  /* Measured sticky header height, used to keep anchor-jumped headings and
+     the sticky TOC clear of the header instead of hidden behind it. */
+  --header-height: 61px;
+
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
   --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
 
@@ -90,6 +94,10 @@ a:hover { color: var(--accent-hover); }
 }
 
 h1, h2, h3, h4 { font-weight: 650; line-height: 1.25; }
+/* Anchor-jump targets (TOC links, example permalinks) must clear the sticky
+   header instead of landing underneath it. .example is included because its
+   id lives on the <article> wrapper, not the heading inside it. */
+h1, h2, h3, h4, .example { scroll-margin-top: calc(var(--header-height) + var(--space-4)); }
 h1 { font-size: var(--fs-2xl); }
 h2 { font-size: var(--fs-xl); margin-top: var(--space-7); }
 h3 { font-size: var(--fs-l); margin-top: var(--space-6); }
@@ -345,16 +353,18 @@ main { max-width: 1100px; margin: 0 auto; padding: var(--space-6) var(--space-5)
   .article, .command-page {
     max-width: none;
     display: grid;
+    /* .content and .toc are the only two direct children, one row, one
+       column each — a spanning sticky sidebar (grid-row: 1 / -1 across many
+       auto-placed rows) forces browsers to inflate those rows to fit it,
+       shoving the rest of the content down the page. Two items in a single
+       row sidesteps that entirely. */
     grid-template-columns: minmax(0, 72ch) 240px;
     column-gap: var(--space-7);
     align-items: start;
   }
-  .article > *, .command-page > * { grid-column: 1; }
   .article .toc, .command-page .toc {
-    grid-column: 2;
-    grid-row: 1 / -1;
     position: sticky;
-    top: calc(var(--space-6) + 1px);
+    top: calc(var(--header-height) + var(--space-4));
     margin-top: 0;
     align-self: start;
   }
