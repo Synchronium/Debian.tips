@@ -41,9 +41,9 @@ ${cards.map((c) => raw(c))}
     }),
   );
 
-  const relatedHtml = page.related.length
-    ? html`<nav class="related" aria-label="Related commands"><h2>Related</h2><ul>
-${page.related.map((r) => raw(html`<li><a href="/commands/${r}/">${r}</a></li>`))}
+  const relatedHtml = page.relatedLinks.length
+    ? html`<nav class="related" aria-label="Related pages"><h2>Related</h2><ul>
+${page.relatedLinks.map((r) => raw(html`<li><a href="${r.url}">${r.title}</a></li>`))}
 </ul></nav>`
     : "";
 

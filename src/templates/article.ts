@@ -9,6 +9,12 @@ import type { Page } from "../content/loader.js";
 export function articlePage(page: Page, cssHref: string): string {
   const dateStr = page.updated.toISOString().slice(0, 10);
 
+  const relatedHtml = page.relatedLinks.length
+    ? html`<nav class="related" aria-label="Related pages"><h2>Related</h2><ul>
+${page.relatedLinks.map((r) => raw(html`<li><a href="${r.url}">${r.title}</a></li>`))}
+</ul></nav>`
+    : "";
+
   const body = html`
 ${raw(breadcrumbs(page.category, page.title))}
 <article class="article">
@@ -17,6 +23,7 @@ ${raw(breadcrumbs(page.category, page.title))}
 ${raw(tagChips(page.tags))}
 ${raw(toc(page.toc))}
 <div class="prose">${raw(page.html)}</div>
+${raw(relatedHtml)}
 ${raw(prevNext(page.prev, page.next))}
 </article>`;
 

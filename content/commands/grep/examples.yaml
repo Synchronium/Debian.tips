@@ -4,69 +4,488 @@ sections:
     intro: "Plain-text searches, the bread and butter."
     examples:
       - title: "Search a file for a string"
-        code: grep "error" /var/log/syslog
+        code: grep "error" app.log
         description: >-
           Prints every line containing "error". Quoting the pattern avoids
           surprises with shell metacharacters.
         output: |
           Jul  5 09:14:22 deb1 app[312]: error: connection refused
+          Jul  5 09:14:28 deb1 app[312]: error: connection refused
         level: basic
         tags: [beginner]
       - title: "Search case-insensitively"
         code: grep -i "warning" app.log
         description: >-
           `-i` (`--ignore-case`) matches "Warning", "WARNING", and "warning" alike.
+        output: |
+          Jul  5 09:14:23 deb1 app[312]: warning: retrying in 5s
         level: basic
       - title: "Invert the match"
         code: grep -v "^#" config.conf
         description: >-
-          Prints lines that do NOT match the pattern — here, everything except
-          comment lines.
-        level: basic
-      - title: "Count matches instead of printing them"
-        code: grep -c "error" /var/log/syslog
-        description: "`-c` prints a single number: how many lines matched."
+          `-v` (`--invert-match`) prints lines that do NOT match the pattern:
+          here, everything except comment lines.
         output: |
-          42
+          listen 8080
+          workers 4
+          timeout 30
         level: basic
+      - title: "Search from standard input"
+        code: cat config.conf | grep "listen"
+        description: >-
+          `grep` reads stdin when no file is given, so it slots into any pipeline,
+          though here `cat config.conf | grep listen` could just as well be
+          `grep listen config.conf`. Keep `cat` when the input already came from
+          an earlier pipe stage.
+        output: |
+          listen 8080
+        level: basic
+  - title: "Counting and yes/no checks"
+    intro: "Sometimes you don't want the lines, just a number or an exit code."
+    examples:
+      - title: "Count matches instead of printing them"
+        code: grep -c "error" app.log
+        description: "`-c` (`--count`) prints a single number: how many lines matched."
+        output: |
+          2
+        level: basic
+      - title: "Count non-blank lines"
+        code: grep -c "^$" config.conf
+        description: >-
+          An empty-pattern-for-blank-lines trick: `^$` matches only lines with
+          nothing between start and end. Here it's `0`, since the file has no blank lines.
+        output: |
+          0
+        level: intermediate
+      - title: "Check for a match without printing anything"
+        code: |-
+          if grep -q "error" app.log; then
+            echo "errors found"
+          fi
+        description: >-
+          `-q` (`--quiet`) suppresses all output and just sets the exit status.
+          This is `grep`'s most common use inside `if` conditions in scripts.
+        output: |
+          errors found
+        level: intermediate
+        tags: [scripting]
+      - title: "Use grep's exit code directly"
+        code: |-
+          grep -q "error" app.log; echo $?
+          grep -q "nonexistent" app.log; echo $?
+        description: >-
+          `grep` exits `0` when it finds at least one match and `1` when it finds
+          none. That's the exit code `if grep -q ...` is actually testing.
+        output: |
+          0
+          1
+        level: intermediate
+        tags: [scripting]
+      - title: "Tell a real error apart from a plain no-match"
+        code: |-
+          grep "error" no-such-file.log
+          echo "exit=$?"
+        description: >-
+          Exit status `2` means something actually went wrong (missing file, bad
+          option), different from the `1` a clean no-match returns. A script
+          that only checks `$? -ne 0` treats both the same; check for `2`
+          specifically if you need to tell them apart.
+        output: |
+          grep: no-such-file.log: No such file or directory
+          exit=2
+        level: advanced
+        tags: [scripting]
   - title: "Searching directories"
     intro: "Point grep at a whole tree instead of a single file."
     examples:
       - title: "Search recursively through a directory"
         code: grep -r "TODO" ~/projects
         description: >-
-          Walks every file under the directory, printing matching lines
-          prefixed with the file path.
+          `-r` (`--recursive`) walks every file under the directory, printing
+          matching lines prefixed with the file path.
+        output: |
+          projects/app/src/main.ts:// TODO: refactor this
+          projects/app/README.md:TODO: write docs
         level: intermediate
       - title: "Search only specific file types"
-        code: grep -r --include="*.ts" "TODO" .
+        code: grep -r --include="*.ts" "TODO" ~/projects
         description: >-
           Restricts a recursive search to files matching a glob, so you don't
-          wade through generated files or binaries.
+          wade through generated files or docs.
+        output: |
+          projects/app/src/main.ts:// TODO: refactor this
         level: intermediate
       - title: "Show the file and line number of each match"
-        code: grep -rn "TODO" .
-        description: "`-n` prefixes each match with its line number, `-r` makes it recursive."
+        code: grep -rn "TODO" ~/projects
+        description: "`-n` (`--line-number`) prefixes each match with its line number, `-r` makes it recursive."
+        output: |
+          projects/app/README.md:2:TODO: write docs
+          projects/app/src/main.ts:1:// TODO: refactor this
         level: intermediate
-  - title: "Regex and context"
-    intro: "Extended patterns and surrounding lines."
+      - title: "Exclude a subdirectory from a recursive search"
+        code: grep --exclude-dir=src -r "TODO" ~/projects
+        description: >-
+          `--exclude-dir` skips whole directories by name, useful for `node_modules`,
+          `.git`, or in this case a `src/` tree you've already checked separately.
+        output: |
+          projects/app/README.md:TODO: write docs
+        level: intermediate
+      - title: "Exclude files by glob"
+        code: grep --exclude="*.md" -r "TODO" ~/projects
+        description: "The file-level counterpart to `--exclude-dir`: skip anything matching the glob."
+        output: |
+          projects/app/src/main.ts:// TODO: refactor this
+        level: intermediate
+      - title: "Count matches per file across a whole tree"
+        code: grep -rc "TODO" ~/projects
+        description: >-
+          Combine `-r` with `-c` to get a per-file tally, including `0` for
+          files that don't match. Useful for spotting which files in a batch
+          still need attention.
+        output: |
+          projects/app/src/main.ts:1
+          projects/app/src/util.ts:0
+          projects/app/README.md:1
+        level: intermediate
+  - title: "Regex: extended patterns and character classes"
+    intro: "Extended regex syntax, anchors, and character classes."
     examples:
       - title: "Use extended regular expressions"
-        code: grep -E "error|warning" /var/log/syslog
+        code: grep -E "error|warning" app.log
         description: >-
-          `-E` enables extended regex syntax, so `|` means alternation without
-          backslash-escaping it.
+          `-E` (`--extended-regexp`) enables extended regex syntax, so `|` means
+          alternation without backslash-escaping it.
+        output: |
+          Jul  5 09:14:22 deb1 app[312]: error: connection refused
+          Jul  5 09:14:23 deb1 app[312]: warning: retrying in 5s
+          Jul  5 09:14:28 deb1 app[312]: error: connection refused
         level: intermediate
         tags: [regex]
+      - title: "Alternation in basic regex needs escaping"
+        code: grep "error\|warning" app.log
+        description: >-
+          Without `-E`, `|` is a literal pipe character in GNU grep's BRE mode
+          unless you escape it as `\|`. This line is equivalent to the `-E`
+          version above, just harder to read.
+        output: |
+          Jul  5 09:14:22 deb1 app[312]: error: connection refused
+          Jul  5 09:14:23 deb1 app[312]: warning: retrying in 5s
+          Jul  5 09:14:28 deb1 app[312]: error: connection refused
+        level: intermediate
+        tags: [regex]
+      - title: "Anchor a match to the start of the line"
+        code: grep "^listen" config.conf
+        description: "`^` anchors the pattern to the beginning of the line, so this won't match `# listen` (commented out)."
+        output: |
+          listen 8080
+        level: intermediate
+        tags: [regex]
+      - title: "Anchor a match to the end of the line"
+        code: grep "30$" config.conf
+        description: "`$` anchors to the end of the line, so a value elsewhere in a longer line wouldn't match."
+        output: |
+          timeout 30
+        level: intermediate
+        tags: [regex]
+      - title: "Match one of several alternatives at the start of a line"
+        code: grep -E "^(listen|timeout)" config.conf
+        description: "Grouping with `()` plus alternation. A common pattern for allowlisting a handful of config keys."
+        output: |
+          listen 8080
+          timeout 30
+        level: intermediate
+        tags: [regex]
+      - title: "Match a range of digits with a quantifier"
+        code: grep -E "4[0-9]{2}" access.log
+        description: >-
+          `{2}` repeats the preceding character class exactly twice. Here it
+          matches any 4xx HTTP status code.
+        output: |
+          198.51.100.7 - - [05/Jul/2026:09:14:10 +0000] "POST /login HTTP/1.1" 401 128
+          198.51.100.7 - - [05/Jul/2026:09:14:12 +0000] "POST /login HTTP/1.1" 401 128
+        level: advanced
+        tags: [regex]
+      - title: "Use POSIX character classes"
+        code: grep -oE "[[:alpha:]]+@[[:alpha:]]+" <<< "contact user@example not a real addr"
+        description: >-
+          `[[:alpha:]]` is a locale-aware POSIX character class (letters only),
+          more portable than `[a-zA-Z]` when the input might not be plain ASCII.
+        output: |
+          user@example
+        level: advanced
+        tags: [regex]
+      - title: "Make a character optional"
+        code: grep -E "colou?r" <<< "color and colour"
+        description: "`?` makes the preceding character optional, matching both American and British spelling in one pattern."
+        output: |
+          color and colour
+        level: intermediate
+        tags: [regex]
+      - title: "The same optional-character match in basic regex"
+        code: grep "colou\?r" <<< "color and colour"
+        description: >-
+          In BRE, `?` is literal unless escaped as `\?`. This is the same
+          pattern as the `-E` version above, spelled the BRE way.
+        output: |
+          color and colour
+        level: advanced
+        tags: [regex]
+      - title: "Extract IP addresses from a log"
+        code: grep -oE "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}" access.log | sort -u
+        description: >-
+          `-o` prints only the matched text, not the whole line; piping through
+          `sort -u` gives a unique list of client IPs that hit the server.
+        output: |
+          198.51.100.7
+          203.0.113.5
+          203.0.113.9
+        level: advanced
+        tags: [regex, networking]
+  - title: "Context lines"
+    intro: "Show the lines around a match, not just the match itself."
+    examples:
       - title: "Show lines of context around a match"
         code: grep -A 3 -B 1 "Traceback" app.log
         description: >-
-          `-A 3` prints 3 lines after each match, `-B 1` prints 1 line before —
-          useful for reading a stack trace in context.
+          `-A 3` (`--after-context`) prints 3 lines after each match, `-B 1`
+          (`--before-context`) prints 1 line before. Useful for reading a stack
+          trace in context.
+        output: |
+          Jul  5 09:14:33 deb1 app[312]: info: connected
+          Jul  5 09:15:01 deb1 app[313]: Traceback (most recent call last):
+          Jul  5 09:15:01 deb1 app[313]:   File "worker.py", line 42, in run
+          Jul  5 09:15:01 deb1 app[313]:     result = process(item)
+          Jul  5 09:15:01 deb1 app[313]: ValueError: invalid item
         level: advanced
+      - title: "Show the same number of lines before and after"
+        code: grep -C 2 "Traceback" app.log
+        description: "`-C` (`--context`) is shorthand for equal `-A`/`-B` values."
+        output: |
+          Jul  5 09:14:28 deb1 app[312]: error: connection refused
+          Jul  5 09:14:33 deb1 app[312]: info: connected
+          Jul  5 09:15:01 deb1 app[313]: Traceback (most recent call last):
+          Jul  5 09:15:01 deb1 app[313]:   File "worker.py", line 42, in run
+          Jul  5 09:15:01 deb1 app[313]:     result = process(item)
+        level: advanced
+  - title: "Whole-word and whole-line matching"
+    intro: "Avoid matching a pattern as a substring of a longer word."
+    examples:
       - title: "Match whole words only"
         code: grep -w "log" notes.txt
         description: >-
-          Without `-w`, "log" would also match inside "login" or "catalog".
-          `-w` requires a word boundary on both sides.
+          `-w` (`--word-regexp`) requires a word boundary on both sides, so it
+          matches standalone "log" but skips "login", "logged", and "catalogue".
+        output: |
+          See the log for details.
         level: intermediate
+      - title: "Match a whole line exactly"
+        code: grep -x "workers 4" config.conf
+        description: "`-x` (`--line-regexp`) requires the pattern to match the entire line, not just part of it."
+        output: |
+          workers 4
+        level: advanced
+      - title: "Drop blank lines from output"
+        code: grep -v "^$" notes.txt
+        description: "A common cleanup step before piping text into something that doesn't expect blank lines."
+        output: |
+          Meeting notes
+          The login system needs work.
+          Login attempts are logged separately.
+          catalogue entries pending review
+          See the log for details.
+        level: intermediate
+  - title: "Output control"
+    intro: "Controlling exactly what grep prints, beyond the matching line."
+    examples:
+      - title: "Print only the first N matches"
+        code: grep -m 1 "error" app.log
+        description: "`-m` (`--max-count`) stops after N matches. Useful for a quick peek at a huge file."
+        output: |
+          Jul  5 09:14:22 deb1 app[312]: error: connection refused
+        level: intermediate
+      - title: "List filenames that contain a match"
+        code: grep -l "error" *.log
+        description: "`-l` (`--files-with-matches`) prints filenames only, once each, instead of matching lines. Handy for `grep -l ... | xargs`."
+        output: |
+          app.log
+        level: intermediate
+      - title: "List filenames that do NOT contain a match"
+        code: grep -L "error" *.log
+        description: "`-L` (`--files-without-match`) is the inverse of `-l`."
+        output: |
+          access.log
+        level: intermediate
+      - title: "Suppress filenames when searching multiple files"
+        code: grep -h "error" app.log app.log
+        description: "`-h` (`--no-filename`) drops the `filename:` prefix grep normally adds once you pass it more than one file."
+        output: |
+          Jul  5 09:14:22 deb1 app[312]: error: connection refused
+          Jul  5 09:14:28 deb1 app[312]: error: connection refused
+          Jul  5 09:14:22 deb1 app[312]: error: connection refused
+          Jul  5 09:14:28 deb1 app[312]: error: connection refused
+        level: advanced
+      - title: "Force filenames even for a single file"
+        code: grep -H "workers" config.conf
+        description: "`-H` (`--with-filename`) is the inverse of `-h`, forcing the prefix even when there's only one file. Useful in scripts that always expect it."
+        output: |
+          config.conf:# workers = number of worker processes
+          config.conf:workers 4
+        level: advanced
+      - title: "Count matches per file"
+        code: grep -c "error" app.log access.log
+        description: "With multiple files, `-c` prints one count per file, prefixed with the filename, including `0` for files with no match."
+        output: |
+          app.log:2
+          access.log:0
+        level: intermediate
+  - title: "Multiple patterns at once"
+    intro: "Search for several patterns in a single pass."
+    examples:
+      - title: "Match either of two patterns"
+        code: grep -e "error" -e "warning" app.log
+        description: "Repeat `-e` (`--regexp`) once per pattern. Equivalent to `-E \"error|warning\"` but handy when patterns are built up programmatically."
+        output: |
+          Jul  5 09:14:22 deb1 app[312]: error: connection refused
+          Jul  5 09:14:23 deb1 app[312]: warning: retrying in 5s
+          Jul  5 09:14:28 deb1 app[312]: error: connection refused
+        level: intermediate
+      - title: "Read patterns from a file"
+        code: |-
+          printf 'error\nwarning\n' > patterns.txt
+          grep -f patterns.txt app.log
+        description: "`-f` (`--file`) reads one pattern per line from a file. Useful for a long or frequently-updated pattern list."
+        output: |
+          Jul  5 09:14:22 deb1 app[312]: error: connection refused
+          Jul  5 09:14:23 deb1 app[312]: warning: retrying in 5s
+          Jul  5 09:14:28 deb1 app[312]: error: connection refused
+        level: advanced
+  - title: "Fixed strings vs regex"
+    intro: "When you want a literal search, not a pattern match."
+    examples:
+      - title: "Search for a fixed string"
+        code: grep -F "203.0.113.5" access.log
+        description: >-
+          `-F` (`--fixed-strings`) treats the pattern as literal text. No regex
+          engine is involved, so a `.` in an IP address matches only a literal dot.
+        output: |
+          203.0.113.5 - - [05/Jul/2026:09:12:01 +0000] "GET /index.html HTTP/1.1" 200 1024
+          203.0.113.5 - - [05/Jul/2026:09:12:03 +0000] "GET /style.css HTTP/1.1" 200 512
+        level: intermediate
+      - title: "Search for a string that isn't there"
+        code: |-
+          grep -F "192.168.1.1" access.log; echo "exit=$?"
+        description: >-
+          No match means no output and exit status `1`. This is what a script's
+          `if grep -q ...` check is actually branching on.
+        output: |
+          exit=1
+        level: intermediate
+        tags: [scripting]
+  - title: "Binary and compressed files"
+    intro: "grep's behaviour on data that isn't plain text."
+    examples:
+      - title: "Search inside a file grep thinks is binary"
+        code: grep -a "binary" binary.bin
+        description: >-
+          By default `grep` prints just "binary file matches" for files it
+          detects as binary. `-a` (`--text`) forces it to treat the file as text
+          and print the actual matching line.
+        output: |
+           binarydata
+        level: advanced
+      - title: "Search a gzip-compressed file directly"
+        code: zgrep "error" app.log.gz
+        description: "`zgrep` is a wrapper that decompresses on the fly and runs `grep`, no need to `gunzip` first. `zcat file | grep ...` is the same idea spelled out."
+        output: |
+          Jul  5 09:14:22 deb1 app[312]: error: connection refused
+          Jul  5 09:14:28 deb1 app[312]: error: connection refused
+        level: intermediate
+        tags: [archives]
+  - title: "Using grep in scripts and pipelines"
+    intro: "Patterns that come up once grep is one step in something bigger."
+    examples:
+      - title: "Feed a stream of found files into grep"
+        code: find . -name "*.ts" -print0 | xargs -0 grep -l "TODO"
+        description: >-
+          `find -print0` and `xargs -0` use NUL-separated names instead of
+          newlines, so this survives filenames with spaces. See
+          [find](/commands/find/) for more on `-print0`.
+        output: |
+          ./projects/app/src/main.ts
+        level: advanced
+        tags: [scripting]
+      - title: "Tally the most frequent value in a field"
+        code: awk '{print $1}' access.log | sort | uniq -c | sort -rn | head -3
+        description: >-
+          `grep` alone can't group and count. Chain it with `awk` (or `cut`) to
+          pull a field, then `sort | uniq -c` to tally, then `sort -rn` to rank.
+        output: |
+                3 198.51.100.7
+                2 203.0.113.9
+                2 203.0.113.5
+        level: advanced
+        tags: [one-liners]
+      - title: "Grep a live, growing log file"
+        code: tail -f app.log | grep --line-buffered "error"
+        description: >-
+          Without `--line-buffered`, grep's output can lag behind `tail -f`
+          because it buffers output in blocks when it isn't writing straight to
+          a terminal (e.g. into another pipe). `--line-buffered` flushes after
+          every line.
+        level: advanced
+        tags: [monitoring]
+      - title: "Find lines in one file that are missing from another"
+        code: grep -vFf allowed-users.txt current-users.txt
+        description: >-
+          `-v` plus `-F -f` turns grep into a quick diff-by-line tool: print every
+          line of `current-users.txt` that does NOT appear anywhere in
+          `allowed-users.txt`. Handy for spotting drift between two lists without
+          reaching for `diff`, which cares about line order.
+        output: |
+          alice
+          carol
+        level: advanced
+        tags: [one-liners]
+      - title: "Speed up a large literal search"
+        code: LC_ALL=C grep -F "error" app.log
+        description: >-
+          Setting `LC_ALL=C` switches to a byte-oriented locale, which can
+          measurably speed up `grep` on large ASCII files by skipping
+          multi-byte character handling.
+        output: |
+          Jul  5 09:14:22 deb1 app[312]: error: connection refused
+          Jul  5 09:14:28 deb1 app[312]: error: connection refused
+        level: advanced
+        tags: [performance]
+  - title: "Perl-compatible regex (GNU extension)"
+    intro: "-P unlocks lookahead and lookbehind, at the cost of portability."
+    examples:
+      - title: "Extract a number using lookbehind/lookahead"
+        code: grep -oP "(?<=\[)\d+(?=\])" app.log
+        description: >-
+          `-P` (`--perl-regexp`) enables PCRE syntax. `(?<=\[)` and `(?=\])`
+          are zero-width lookbehind/lookahead: they require the brackets to be
+          there without including them in the match. Not portable to BSD/busybox
+          grep.
+        output: |
+          312
+          312
+          312
+          312
+          312
+          313
+          313
+          313
+          313
+        level: advanced
+        tags: [regex]
+      - title: "Match only if a pattern does NOT appear on the line"
+        code: grep -P "^(?!.*error).*warning" app.log
+        description: >-
+          Negative lookahead (`(?!...)`) has no equivalent in BRE/ERE. This is
+          the main reason to reach for `-P` at all. Here it matches lines with
+          "warning" but not "error".
+        output: |
+          Jul  5 09:14:23 deb1 app[312]: warning: retrying in 5s
+        level: advanced
+        tags: [regex]

@@ -1,0 +1,278 @@
+command: curl
+sections:
+  - title: "Basic requests"
+    intro: "GET is the default. This section covers what curl shows you by default and how to see more."
+    examples:
+      - title: "Fetch a URL and print the body"
+        code: curl https://example.com
+        description: "With no flags, curl sends a GET request and prints the response body to stdout."
+        output: |
+          <!doctype html><html><head><title>Example Domain</title>...
+        level: basic
+        tags: [beginner]
+      - title: "Fetch only the response headers"
+        code: curl -I https://example.com
+        description: "`-I` (`--head`) sends a HEAD request, same as GET but the server doesn't send a body, so you get headers only, fast."
+        output: |
+          HTTP/2 200
+          date: Sun, 05 Jul 2026 15:43:10 GMT
+          content-type: text/html
+          server: cloudflare
+          last-modified: Wed, 01 Jul 2026 17:52:37 GMT
+          allow: GET, HEAD
+        level: basic
+      - title: "Print response headers AND body"
+        code: curl -i https://httpbin.org/get
+        description: "`-i` (`--include`) keeps the GET request but includes the response headers above the body in the output."
+        output: |
+          HTTP/2 200
+          content-type: application/json
+          content-length: 255
+
+          {
+            "args": {},
+        level: basic
+      - title: "Silence the progress meter"
+        code: curl -s https://example.com -o page.html
+        description: "`-s` (`--silent`) suppresses the progress bar, useful in scripts where you don't want that noise in logs."
+        level: basic
+      - title: "Show both a response and any error, quietly"
+        code: curl -sS https://example.com -o page.html
+        description: "`-sS` keeps `-s`'s quiet progress but restores error messages `-s` alone would also hide. The combination you want in almost every script."
+        level: intermediate
+        tags: [scripting]
+  - title: "Saving output"
+    intro: "Choosing a filename, or letting curl pick one."
+    examples:
+      - title: "Save the response body to a named file"
+        code: curl -o page.html https://example.com
+        description: "`-o` (`--output`) writes the body to the filename you give it, instead of stdout."
+        level: basic
+      - title: "Save using the remote file's own name"
+        code: curl -O https://httpbin.org/robots.txt
+        description: "`-O` (`--remote-name`) names the local file after the last path segment of the URL: here, `robots.txt`."
+        output: |
+          User-agent: *
+          Disallow: /deny
+        level: intermediate
+      - title: "Resume an interrupted download"
+        code: curl -C - -o robots.txt https://httpbin.org/robots.txt
+        description: "`-C -` asks curl to figure out how much of the local file already exists and resume from there, if the server supports range requests. Avoids re-downloading a large file from scratch after a dropped connection."
+        level: advanced
+  - title: "Status codes and scripting"
+    intro: "Making curl's exit code and output actually reflect success or failure."
+    examples:
+      - title: "Print only the HTTP status code"
+        code: curl -s -o /dev/null -w "%{http_code}\n" https://example.com
+        description: "Discard the body (`-o /dev/null`), silence the progress meter (`-s`), print just the status code (`-w`): the standard one-liner for a health check."
+        output: |
+          200
+        level: intermediate
+        tags: [monitoring]
+      - title: "Get a 404 for a page that doesn't exist"
+        code: curl -s -o /dev/null -w "%{http_code}\n" https://example.com/nonexistent
+        description: "Without `--fail`, curl treats a 404 as a successfully completed transfer. It just happens to contain an error page."
+        output: |
+          404
+        level: intermediate
+      - title: "Make curl itself fail on an HTTP error status"
+        code: |-
+          curl --fail -s https://example.com/nonexistent
+          echo "exit=$?"
+        description: "`--fail` (`-f`) turns a 4xx/5xx response into a non-zero exit code (`22`) instead of curl reporting success. This is the flag a script's error handling almost always needs."
+        output: |
+          exit=22
+        level: intermediate
+        tags: [scripting]
+      - title: "Print several facts about a transfer at once"
+        code: curl -sS -w "time_total=%{time_total}s\n" -o /dev/null https://example.com
+        description: "`-w` accepts any combination of `%{...}` variables in one template string: status code, timing, sizes, effective URL, and more."
+        output: |
+          time_total=0.230857s
+        level: advanced
+        tags: [performance, monitoring]
+  - title: "Redirects"
+    intro: "curl doesn't follow redirects unless you tell it to."
+    examples:
+      - title: "See a redirect without following it"
+        code: curl -s https://httpbin.org/redirect/1 -o /dev/null -w "%{http_code}\n"
+        description: "Without `-L`, curl reports the redirect's own status code (`302`) and doesn't request the new location."
+        output: |
+          302
+        level: intermediate
+      - title: "Follow redirects to the final destination"
+        code: curl -Ls https://httpbin.org/redirect/1 -o /dev/null -w "%{http_code} %{url_effective}\n"
+        description: "`-L` (`--location`) follows the `Location` header automatically; `%{url_effective}` shows where curl actually ended up."
+        output: |
+          200 https://httpbin.org/get
+        level: intermediate
+  - title: "Sending data: POST, PUT, DELETE"
+    intro: "GET is implicit; a request body usually switches curl to POST automatically."
+    examples:
+      - title: "Send form data with POST"
+        code: curl -X POST https://httpbin.org/post -d "name=deb1"
+        description: "`-d` sends `application/x-www-form-urlencoded` data; `-X POST` is technically redundant here since `-d` already implies POST, but it's clearer to read."
+        output: |
+          {
+            "form": {
+              "name": "deb1"
+            }
+          }
+        level: basic
+        tags: [beginner]
+      - title: "POST without spelling out -X"
+        code: curl https://httpbin.org/post -d "name=deb1"
+        description: "Confirms the point above: `-d` alone is enough to make curl send POST instead of GET."
+        output: |
+          {'name': 'deb1'}
+        level: intermediate
+      - title: "Send a JSON body"
+        code: |-
+          curl -X POST -H "Content-Type: application/json" -d '{"a":1}' https://httpbin.org/post
+        description: "Set `Content-Type` yourself and pass raw JSON to `-d`. curl doesn't validate or reformat it, so make sure it's well-formed."
+        output: |
+          {'a': 1}
+        level: intermediate
+      - title: "Send a query string alongside a GET request"
+        code: curl -G --data-urlencode "q=hello world" https://httpbin.org/get
+        description: "`-G` forces curl back to GET while still using `--data-urlencode` to build and properly escape the query string. Otherwise `-d`'s data would go in the request body instead of the URL."
+        output: |
+          {'q': 'hello world'}
+        level: advanced
+      - title: "Update a resource with PUT"
+        code: curl -X PUT https://httpbin.org/put -d "status=updated"
+        description: "Unlike POST, curl never infers PUT. `-X PUT` is required."
+        output: |
+          {'status': 'updated'}
+        level: intermediate
+      - title: "Remove a resource with DELETE"
+        code: curl -X DELETE https://httpbin.org/delete
+        description: "Same story as PUT: DELETE has to be spelled out with `-X`."
+        level: intermediate
+      - title: "Upload a file as multipart form data"
+        code: curl -F "file=@robots.txt" https://httpbin.org/post
+        description: "`-F` (`--form`) sends `multipart/form-data`, the format needed to actually upload a file. `-d` can't do this. The `@` prefix tells curl to read the named file's contents rather than sending the literal string."
+        level: intermediate
+        tags: [files]
+  - title: "Headers and identity"
+    intro: "Adding request headers, and reading back what the server received."
+    examples:
+      - title: "Add a custom request header"
+        code: |-
+          curl -H "X-Test: yes" https://httpbin.org/headers
+        description: "`-H` adds one header per flag; repeat it for multiple headers."
+        output: |
+          {
+            "headers": {
+              "X-Test": "yes"
+            }
+          }
+        level: intermediate
+      - title: "Set a custom User-Agent"
+        code: curl -A "MyScript/1.0" https://httpbin.org/user-agent
+        description: "`-A` (`--user-agent`) is shorthand for `-H \"User-Agent: ...\"`. Some APIs reject requests with curl's default user agent, so this comes up more often than you'd expect."
+        output: |
+          {
+            "user-agent": "MyScript/1.0"
+          }
+        level: intermediate
+  - title: "Authentication and cookies"
+    intro: "Basic auth and session cookies."
+    examples:
+      - title: "Authenticate with HTTP Basic auth"
+        code: curl -u user:pass https://httpbin.org/basic-auth/user/pass
+        description: "`-u user:pass` sends the `Authorization: Basic ...` header curl builds from the credentials. Never hardcode real credentials in a script; read them from an environment variable or a credentials file instead."
+        output: |
+          {
+            "authenticated": true,
+            "user": "user"
+          }
+        level: intermediate
+        tags: [security]
+      - title: "See what an unauthenticated request gets"
+        code: curl -s -o /dev/null -w "%{http_code}\n" https://httpbin.org/basic-auth/user/pass
+        description: "Without `-u`, the same endpoint returns `401 Unauthorized`."
+        output: |
+          401
+        level: intermediate
+      - title: "Save cookies from a response"
+        code: curl -c cookies.txt https://httpbin.org/cookies/set/session/abc123
+        description: "`-c` (`--cookie-jar`) writes any `Set-Cookie` headers to a file in Netscape cookie-file format."
+        output: |
+          # Netscape HTTP Cookie File
+          httpbin.org	FALSE	/	FALSE	0	session	abc123
+        level: advanced
+      - title: "Send cookies from a saved file"
+        code: curl -b cookies.txt https://httpbin.org/cookies
+        description: "`-b` (`--cookie`) reads a cookie jar and sends its cookies with the request. Pair with `-c` to persist a session across multiple curl calls, the way a browser would."
+        output: |
+          {
+            "cookies": {
+              "session": "abc123"
+            }
+          }
+        level: advanced
+  - title: "Timeouts, retries, and TLS"
+    intro: "Making curl behave well against a slow, flaky, or self-signed endpoint."
+    examples:
+      - title: "Give up after a fixed time"
+        code: |-
+          curl -m 2 https://httpbin.org/delay/5 -o /dev/null
+          echo "exit=$?"
+        description: "`-m` (`--max-time`) bounds the entire request; curl exits `28` on timeout. A script should treat that distinctly from a clean HTTP error."
+        output: |
+          exit=28
+        level: advanced
+        tags: [scripting]
+      - title: "Retry a failing request automatically"
+        code: curl --retry 2 --retry-delay 1 -o /dev/null -s -w "%{http_code}\n" https://httpbin.org/status/500
+        description: "`--retry` retries on transient failures and select 5xx responses, waiting `--retry-delay` seconds between attempts. Useful against flaky upstreams, not a substitute for `--fail` in the exit-code check."
+        output: |
+          500
+        level: advanced
+        tags: [scripting]
+      - title: "Skip TLS certificate verification"
+        code: curl -sk https://example.com -o /dev/null -w "%{http_code}\n"
+        description: "`-k` (`--insecure`) disables certificate checks. Fine for a self-signed cert on a box you control during setup, never for anything handling real traffic or credentials."
+        output: |
+          200
+        level: advanced
+        danger: true
+        tags: [security]
+      - title: "Watch the full TLS handshake and request"
+        code: curl -v https://example.com -o /dev/null
+        description: "`-v` (`--verbose`) prints the connection, TLS handshake, and every header sent and received. The first thing to reach for when a request behaves unexpectedly."
+        output: |
+          * Host example.com:443 was resolved.
+          * IPv4: 104.20.23.154, 172.66.147.243
+          *   Trying 104.20.23.154:443...
+          * TLSv1.3 (OUT), TLS handshake, Client hello (1):
+          *  CAfile: /etc/ssl/certs/ca-certificates.crt
+        level: intermediate
+  - title: "Practical scripting patterns"
+    intro: "curl calls that show up inside larger scripts."
+    examples:
+      - title: "Check whether a site is up before proceeding"
+        code: |-
+          if curl --fail -s -o /dev/null https://example.com; then
+            echo "site is up"
+          fi
+        description: "`--fail` plus `-s -o /dev/null` reduces the whole request to a plain yes/no exit code, ready for an `if`."
+        output: |
+          site is up
+        level: intermediate
+        tags: [scripting, monitoring]
+      - title: "Extract one field from a JSON response"
+        code: curl -s https://httpbin.org/get | python3 -c "import json,sys; print(json.load(sys.stdin)['url'])"
+        description: "curl doesn't parse JSON itself. Pipe into `python3 -c` (or `jq` if it's installed) to pull out a specific field."
+        output: |
+          https://httpbin.org/get
+        level: advanced
+        tags: [one-liners]
+      - title: "See the public IP a request would come from"
+        code: curl -s https://icanhazip.com
+        description: "A quick way to confirm which outbound IP a script, container, or VPN is actually using. Hostnames/IPs shown here are sanitised."
+        output: |
+          203.0.113.42
+        level: basic
+        tags: [networking]

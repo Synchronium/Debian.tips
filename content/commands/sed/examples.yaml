@@ -1,0 +1,285 @@
+command: sed
+sections:
+  - title: "Basic substitution"
+    intro: "The s/// command, first match vs every match."
+    examples:
+      - title: "Replace the first match on each line"
+        code: sed "s/ERROR/CRITICAL/" app.log
+        description: "Without the `g` flag, only the first match per line is replaced. Here there's only one per line anyway."
+        output: |
+          INFO: service starting
+          DEBUG: loading config from /etc/app.conf
+          INFO: listening on port 8080
+          WARN: deprecated option 'foo' used
+          CRITICAL: connection refused
+          INFO: retrying connection
+          CRITICAL: connection refused
+          INFO: connected successfully
+        level: basic
+        tags: [beginner]
+      - title: "Replace every match on each line"
+        code: sed "s/connection refused/conn refused/g" app.log
+        description: "`g` (global) replaces every match on a line, not just the first."
+        output: |
+          INFO: service starting
+          DEBUG: loading config from /etc/app.conf
+          INFO: listening on port 8080
+          WARN: deprecated option 'foo' used
+          ERROR: conn refused
+          INFO: retrying connection
+          ERROR: conn refused
+          INFO: connected successfully
+        level: basic
+      - title: "Replace only the Nth match on a line"
+        code: echo "foo bar foo baz foo qux" | sed "s/foo/FOO/2"
+        description: "A number instead of (or before) `g` replaces just that occurrence, here the 2nd."
+        output: |
+          foo bar FOO baz foo qux
+        level: intermediate
+      - title: "Replace the Nth match and every one after it"
+        code: echo "foo bar foo baz foo qux" | sed "s/foo/FOO/2g"
+        description: "Combining a number with `g` replaces that occurrence and all later ones on the line, leaving earlier ones untouched."
+        output: |
+          foo bar FOO baz FOO qux
+        level: advanced
+      - title: "Use a different delimiter to avoid escaping slashes"
+        code: sed "s#/etc/app#/opt/app#" config.conf
+        description: "Any character can be the delimiter, not just `/`. Pick one that doesn't appear in your pattern or replacement to skip a wall of backslashes."
+        level: intermediate
+      - title: "Add text to the start of every line"
+        code: sed "s/^/  /" config.conf
+        description: "An empty match at `^` (start of line) still counts as a match. This is the standard indent-every-line idiom."
+        output: |
+          # Server configuration
+            host=localhost
+            port=8080
+            debug=false
+            timeout=30
+        level: intermediate
+      - title: "Transliterate characters one-for-one"
+        code: echo hello | sed "y/el/ip/"
+        description: "`y/set1/set2/` maps each character in set1 to the character in the same position in set2. Unlike `s///`, it's not regex, just direct character substitution."
+        output: |
+          hippo
+        level: advanced
+  - title: "Selecting lines to print"
+    intro: "sed -n plus p, the read-only counterpart to grep."
+    examples:
+      - title: "Print a specific line number"
+        code: sed -n "2p" app.log
+        description: "`-n` suppresses sed's normal auto-print of every line; `2p` then explicitly prints just line 2."
+        output: |
+          DEBUG: loading config from /etc/app.conf
+        level: basic
+        tags: [beginner]
+      - title: "Print a range of line numbers"
+        code: sed -n "2,4p" app.log
+        description: "A comma joins two addresses into an inclusive range."
+        output: |
+          DEBUG: loading config from /etc/app.conf
+          INFO: listening on port 8080
+          WARN: deprecated option 'foo' used
+        level: basic
+      - title: "Print lines matching a pattern"
+        code: sed -n "/ERROR/p" app.log
+        description: "A `/regex/` address selects lines the same way grep would. sed just happens to be able to do more to them afterward."
+        output: |
+          ERROR: connection refused
+          ERROR: connection refused
+        level: basic
+      - title: "Print everything except a specific line"
+        code: sed -n "1!p" config.conf
+        description: "`!` negates the address. This prints every line except line 1."
+        output: |
+          host=localhost
+          port=8080
+          debug=false
+          timeout=30
+        level: intermediate
+      - title: "Print the last line"
+        code: sed -n '$p' config.conf
+        description: "`$` addresses the last line, whatever its number. Useful when you don't know a file's length in advance."
+        output: |
+          timeout=30
+        level: intermediate
+      - title: "Print every other line"
+        code: printf "a\nb\nc\nd\ne\n" | sed -n "1~2p"
+        description: "`first~step` is a GNU extension: starting at line 1, print every 2nd line. Not available in POSIX/BSD sed."
+        output: |
+          a
+          c
+          e
+        level: advanced
+      - title: "Print a range between two patterns"
+        code: sed -n "/WARN/,/ERROR/p" app.log
+        description: "A range doesn't need line numbers on either end. Here it prints from the first WARN line through the next ERROR line."
+        output: |
+          WARN: deprecated option 'foo' used
+          ERROR: connection refused
+        level: advanced
+  - title: "Deleting lines"
+    intro: "The d command, and its addressing in common with p."
+    examples:
+      - title: "Delete lines matching a pattern"
+        code: sed "/DEBUG/d" app.log
+        description: "`d` deletes the addressed lines from the output instead of printing them. No `-n` needed since deleted lines simply don't reach the auto-print step."
+        output: |
+          INFO: service starting
+          INFO: listening on port 8080
+          WARN: deprecated option 'foo' used
+          ERROR: connection refused
+          INFO: retrying connection
+          ERROR: connection refused
+          INFO: connected successfully
+        level: basic
+        tags: [beginner]
+      - title: "Delete the first line"
+        code: sed "1d" app.log
+        description: "A bare line number address, same as with `p`."
+        level: basic
+      - title: "Delete the last line"
+        code: sed '$d' app.log
+        description: "A common use: stripping a trailing blank line or footer that's always at the end."
+        level: intermediate
+      - title: "Delete comment lines"
+        code: sed "/^#/d" config.conf
+        description: "Strip lines starting with `#`, the sed equivalent of `grep -v '^#'`, useful when you're already editing the file with sed for other reasons."
+        output: |
+          host=localhost
+          port=8080
+          debug=false
+          timeout=30
+        level: intermediate
+  - title: "Editing files in place"
+    intro: "-i rewrites the file directly, optionally keeping a backup."
+    examples:
+      - title: "Edit a file in place, keeping a backup"
+        code: sed -i.bak "s/8080/9090/" config.conf
+        description: "`-i.bak` writes the change directly to `config.conf` and saves the pre-edit version as `config.conf.bak`. Always do this before `-i` with no suffix, until you fully trust the script."
+        output: |
+          # Server configuration
+          host=localhost
+          port=9090
+          debug=false
+          timeout=30
+        level: intermediate
+        tags: [beginner]
+      - title: "Edit a file in place with no backup"
+        code: sed -i "s/8080/9090/" config.conf
+        description: "Same edit, no safety net. Reach for this only once you've verified the script's behaviour, ideally on a copy first."
+        level: intermediate
+        danger: true
+  - title: "Inserting, appending, and changing lines"
+    intro: "a, i, and c add or replace whole lines instead of editing text within one."
+    examples:
+      - title: "Insert a new line after a match"
+        code: sed '2a\newline_after' config.conf
+        description: "`a\\text` (append) adds a new line containing `text` immediately after the addressed line."
+        output: |
+          # Server configuration
+          host=localhost
+          newline_after
+          port=8080
+          debug=false
+          timeout=30
+        level: advanced
+      - title: "Insert a new line before a match"
+        code: sed '2i\newline_before' config.conf
+        description: "`i\\text` (insert) is `a`'s mirror image. The new line goes before the addressed line instead of after."
+        output: |
+          # Server configuration
+          newline_before
+          host=localhost
+          port=8080
+          debug=false
+          timeout=30
+        level: advanced
+      - title: "Replace a whole line"
+        code: sed '2c\replaced_line' config.conf
+        description: "`c\\text` (change) replaces the entire addressed line with `text`, rather than editing part of it like `s///` would."
+        output: |
+          # Server configuration
+          replaced_line
+          port=8080
+          debug=false
+          timeout=30
+        level: advanced
+  - title: "Regex groups and extended syntax"
+    intro: "Capturing parts of a match and reusing them in the replacement."
+    examples:
+      - title: "Reference the whole match in the replacement"
+        code: sed "s/[0-9]\+/NUM/g" names.csv
+        description: "No capture groups needed here, just a straight replacement of every run of digits."
+        output: |
+          alice,NUM,engineer
+          bob,NUM,designer
+          carol,NUM,manager
+        level: intermediate
+        tags: [regex]
+      - title: "Reorder fields using capture groups"
+        code: sed -E "s/([a-z]+),([0-9]+)/\2:\1/" names.csv
+        description: "`-E` enables ERE so `()` groups without escaping; `\\1`/`\\2` in the replacement refer back to what each group matched."
+        output: |
+          30:alice,engineer
+          25:bob,designer
+          35:carol,manager
+        level: advanced
+        tags: [regex]
+      - title: "Replace every delimiter in a line"
+        code: sed "s/,/ | /g" names.csv
+        description: "A simple literal substitution used as a quick CSV-to-readable-table converter."
+        output: |
+          alice | 30 | engineer
+          bob | 25 | designer
+          carol | 35 | manager
+        level: basic
+  - title: "Multiple commands in one script"
+    intro: "Three equivalent ways to chain commands."
+    examples:
+      - title: "Chain commands with a semicolon"
+        code: sed "s/localhost/127.0.0.1/;s/8080/9090/" config.conf
+        description: "Semicolons separate commands within a single `-e`/script argument, run in order against each line."
+        output: |
+          # Server configuration
+          host=127.0.0.1
+          port=9090
+          debug=false
+          timeout=30
+        level: intermediate
+      - title: "Chain commands with multiple -e flags"
+        code: sed -e "s/localhost/127.0.0.1/" -e "s/8080/9090/" config.conf
+        description: "Equivalent to the semicolon version. Clearer when a command itself contains a semicolon your shell would otherwise need escaped."
+        output: |
+          # Server configuration
+          host=127.0.0.1
+          port=9090
+          debug=false
+          timeout=30
+        level: intermediate
+      - title: "Load a script from a file"
+        code: |-
+          printf 's/localhost/127.0.0.1/\ns/8080/9090/\n' > script.sed
+          sed -f script.sed config.conf
+        description: "`-f` reads one command per line from a file. Worth it once a script grows past a couple of commands or gets reused across files."
+        output: |
+          # Server configuration
+          host=127.0.0.1
+          port=9090
+          debug=false
+          timeout=30
+        level: advanced
+        tags: [scripting]
+  - title: "Practical patterns"
+    intro: "Common tasks that combine the commands above."
+    examples:
+      - title: "Stop processing after a given line"
+        code: sed "5q" app.log
+        description: "`q` quits immediately once the addressed line is reached, like `head`, but as part of a larger sed script instead of a separate command."
+        output: |
+          INFO: service starting
+          DEBUG: loading config from /etc/app.conf
+          INFO: listening on port 8080
+          WARN: deprecated option 'foo' used
+          ERROR: connection refused
+        level: intermediate
+        tags: [one-liners]

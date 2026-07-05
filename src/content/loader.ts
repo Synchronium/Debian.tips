@@ -36,6 +36,7 @@ export interface Page {
   tags: string[];
   updated: Date;
   related: string[];
+  relatedLinks: PageLink[];
   draft: boolean;
   html: string;
   toc: TocEntry[];
@@ -202,6 +203,7 @@ export async function loadContent(contentDir: string = defaultContentDir()): Pro
       tags: entry.data.tags,
       updated: entry.data.updated,
       related: entry.data.related ?? [],
+      relatedLinks: [],
       draft: entry.data.draft ?? false,
       html,
       toc,
@@ -216,6 +218,14 @@ export async function loadContent(contentDir: string = defaultContentDir()): Pro
     }
     return page;
   });
+
+  const pageBySlug = new Map(pages.map((p) => [p.slug, p]));
+  for (const page of pages) {
+    page.relatedLinks = page.related.map((slug) => {
+      const target = pageBySlug.get(slug)!;
+      return { url: target.url, title: target.title };
+    });
+  }
 
   const scripting = pages.filter((p) => p.category === "scripting").sort((a, b) => a.order! - b.order!);
   scripting.forEach((p, i) => {

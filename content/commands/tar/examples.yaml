@@ -1,0 +1,261 @@
+command: tar
+sections:
+  - title: "Creating archives"
+    intro: "The -c mode, with a compression flag and a filename."
+    examples:
+      - title: "Create a gzip-compressed archive of a directory"
+        code: tar -czvf site-backup.tar.gz site/
+        description: >-
+          `-c` create, `-z` gzip, `-v` verbose (print each file as it's added),
+          `-f` the archive filename. This is the combination you'll type most.
+        output: |
+          site/
+          site/img/
+          site/img/logo.png
+          site/index.html
+          site/css/
+          site/css/style.css
+        level: basic
+        tags: [beginner]
+      - title: "Create an archive without compression"
+        code: tar -cvf site-backup.tar site/
+        description: "Drop `-z` for a plain, uncompressed `.tar`: faster to create, larger on disk. Useful as an intermediate step before compressing separately."
+        level: basic
+      - title: "Create an archive of specific files, not a whole directory"
+        code: tar -czvf site-single.tar.gz site/index.html
+        description: "Pass individual paths instead of a directory to archive just those files."
+        output: |
+          site/index.html
+        level: basic
+      - title: "Create an archive whose paths don't include the parent directory"
+        code: tar -czf site.tar.gz -C site .
+        description: >-
+          `-C site` changes into `site/` before archiving, so paths inside the
+          archive start from `.` instead of `site/`. Useful when you want the
+          archive's contents to land directly in whatever directory it's
+          extracted into, with no wrapper folder.
+        level: intermediate
+      - title: "Exclude files matching a pattern"
+        code: tar --exclude="*.png" -czvf site-noimg.tar.gz site/
+        description: "`--exclude` takes a glob and skips any matching path. Repeat the flag for multiple patterns."
+        output: |
+          site/
+          site/img/
+          site/index.html
+          site/css/
+          site/css/style.css
+        level: intermediate
+      - title: "Exclude version control metadata"
+        code: tar --exclude-vcs -czf snapshot.tar.gz site/
+        description: "`--exclude-vcs` skips `.git`, `.svn`, and other VCS directories automatically, without listing them by hand."
+        level: intermediate
+      - title: "Exclude a list of patterns from a file"
+        code: |-
+          echo "*.png" > excludes.txt
+          tar --exclude-from=excludes.txt -czvf site-ex.tar.gz site/
+        description: >-
+          `--exclude-from` reads one glob per line from a file, easier to
+          maintain than a long list of repeated `--exclude` flags once you have
+          more than a couple of patterns.
+        output: |
+          site/
+          site/img/
+          site/index.html
+          site/css/
+          site/css/style.css
+        level: advanced
+  - title: "Choosing a compression format"
+    intro: "gzip, bzip2, and xz trade speed for ratio."
+    examples:
+      - title: "Compress with bzip2 instead of gzip"
+        code: tar -cjvf site-backup.tar.bz2 site/
+        description: "`-j` selects bzip2, slower than gzip but usually a bit smaller."
+        level: intermediate
+      - title: "Compress with xz for the smallest archive"
+        code: tar -cJvf site-backup.tar.xz site/
+        description: "`-J` selects xz, slowest to compress, but noticeably smaller output, especially on text-heavy content."
+        level: intermediate
+      - title: "Compare compressed sizes on the same content"
+        code: |-
+          tar -czf app.tar.gz access.log
+          tar -cjf app.tar.bz2 access.log
+          tar -cJf app.tar.xz access.log
+          ls -lh app.tar.*
+        description: >-
+          On a large, repetitive text log, the difference is dramatic: xz and
+          bzip2 both find redundancy gzip misses. On already-compressed content
+          (images, video), expect all three to end up roughly the same size as
+          the input.
+        output: |
+          -rw-r--r-- 1 user user 2.7K app.tar.bz2
+          -rw-r--r-- 1 user user  31K app.tar.gz
+          -rw-r--r-- 1 user user 1.9K app.tar.xz
+        level: advanced
+        tags: [performance]
+  - title: "Listing archive contents"
+    intro: "Check what's inside before you extract it."
+    examples:
+      - title: "List an archive's contents"
+        code: tar -tzvf site-backup.tar.gz
+        description: "`-t` lists without extracting; `-v` here shows permissions, owner, size, and date, like `ls -l`."
+        output: |
+          drwxr-xr-x user/user         0 2026-07-05 15:35 site/
+          drwxr-xr-x user/user         0 2026-07-05 15:35 site/img/
+          -rw-r--r-- user/user     20480 2026-07-05 15:35 site/img/logo.png
+          -rw-r--r-- user/user        16 2026-07-05 15:35 site/index.html
+          drwxr-xr-x user/user         0 2026-07-05 15:35 site/css/
+          -rw-r--r-- user/user        16 2026-07-05 15:35 site/css/style.css
+        level: basic
+      - title: "List contents without the long format"
+        code: tar -tf site-backup.tar.gz
+        description: "Just the paths, one per line, good for piping into `grep` or `wc -l`."
+        output: |
+          site/
+          site/img/
+          site/img/logo.png
+          site/index.html
+          site/css/
+          site/css/style.css
+        level: basic
+      - title: "Search an archive's contents for a pattern"
+        code: tar --list --wildcards "*.html" -f site-backup.tar.gz
+        description: "`--wildcards` filters the listing itself, without extracting anything first."
+        output: |
+          site/index.html
+        level: intermediate
+  - title: "Extracting archives"
+    intro: "The -x mode, and where things land."
+    examples:
+      - title: "Extract an archive into the current directory"
+        code: tar -xzvf site-backup.tar.gz
+        description: "Recreates whatever directory structure was stored, relative to where you run the command."
+        output: |
+          site/
+          site/img/
+          site/img/logo.png
+          site/index.html
+          site/css/
+          site/css/style.css
+        level: basic
+        tags: [beginner]
+      - title: "Extract into a specific directory"
+        code: tar -xzvf site-backup.tar.gz -C restore/
+        description: "`-C` changes to the target directory first. The destination must already exist; `tar` won't create it."
+        level: basic
+      - title: "Extract just one file from an archive"
+        code: tar -xzf site-backup.tar.gz -C restore/ site/index.html
+        description: "Add the specific in-archive path after the archive name to extract only that file, keeping its stored directory structure."
+        level: intermediate
+      - title: "Extract without recreating the archive's top-level directory"
+        code: tar -xzvf site-backup.tar.gz --strip-components=1 -C restore/
+        description: >-
+          `--strip-components=1` drops the first path segment of every entry
+          during extraction, turning `site/index.html` into just `index.html`
+          in the destination. Increase the number to drop more levels.
+        output: |
+          site/img/
+          site/img/logo.png
+          site/index.html
+          site/css/
+          site/css/style.css
+        level: advanced
+      - title: "Extract without overwriting files that already exist"
+        code: tar -xkvf plain.tar -C restore/
+        description: >-
+          `-k` (`--keep-old-files`) refuses to overwrite existing files instead
+          of silently replacing them, safer when restoring into a directory
+          that might already have newer versions of some files.
+        output: |
+          site/css/style.css
+          tar: site/css/style.css: Cannot open: File exists
+          site/index.html
+          tar: site/index.html: Cannot open: File exists
+          tar: Exiting with failure status due to previous errors
+        level: advanced
+  - title: "Updating and appending"
+    intro: "Adding to an archive that already exists."
+    examples:
+      - title: "Append a file to an existing uncompressed archive"
+        code: tar -rvf plain.tar site/index.html
+        description: >-
+          `-r` (`--append`) adds files to the end of an existing `.tar`. This
+          only works on uncompressed archives; you can't append to a `.tar.gz`
+          directly.
+        output: |
+          site/index.html
+        level: intermediate
+      - title: "Update only files that are newer than what's in the archive"
+        code: tar -uvf plain.tar site/index.html
+        description: >-
+          `-u` (`--update`) is like `-r` but skips files whose in-archive
+          copy is already up to date. No output here means nothing needed
+          updating.
+        level: advanced
+  - title: "Verifying and troubleshooting"
+    intro: "Trust, but check, before you delete the original."
+    examples:
+      - title: "Verify an archive is readable without extracting it"
+        code: |-
+          tar -tzf site-backup.tar.gz > /dev/null && echo "OK: archive is valid"
+        description: >-
+          Reads through the entire archive and checks the compressed stream and
+          headers, without writing anything to disk. Cheap insurance before
+          deleting whatever the archive backs up.
+        output: |
+          OK: archive is valid
+        level: intermediate
+        tags: [sysadmin]
+      - title: "Detect a corrupted or truncated archive"
+        code: |-
+          head -c 100 site-backup.tar.gz > corrupt.tar.gz
+          tar -tzf corrupt.tar.gz; echo "exit=$?"
+        description: >-
+          A truncated file fails partway through with a clear error instead of
+          silently reporting an empty archive. `tar` exits non-zero, which a
+          backup script should check.
+        output: |
+          gzip: stdin: unexpected end of file
+          tar: Child returned status 1
+          tar: Error is not recoverable: exiting now
+          exit=2
+        level: advanced
+        tags: [sysadmin]
+      - title: "See progress on a large archive without keeping the output"
+        code: tar -czvf /dev/null site/
+        description: >-
+          Sending the archive itself to `/dev/null` while keeping `-v` gives
+          you a pure progress listing, a quick way to sanity-check which files
+          *would* be included before committing to a real destination.
+        output: |
+          site/
+          site/css/
+          site/css/style.css
+        level: advanced
+  - title: "Comparing to the source directory"
+    intro: "How much did compression actually buy you?"
+    examples:
+      - title: "Stream an archive to stdout instead of a file"
+        code: tar -czf - site/ | wc -c
+        description: >-
+          A single `-` as the filename means stdout (for `-c`) or stdin (for
+          `-x`), the basis for streaming an archive straight over the network,
+          e.g. `tar -czf - site/ | ssh deb1 'tar -xzf - -C /srv/backups'`,
+          without ever writing the archive to disk on either end.
+        output: |
+          20861
+        level: advanced
+        tags: [networking]
+      - title: "Compare a directory's size to its compressed archive"
+        code: |-
+          du -sh site/
+          tar -czf site-current.tar.gz site/
+          ls -lh site-current.tar.gz
+        description: >-
+          `du -sh` sums the directory's real disk usage; compare it to the
+          resulting archive size to judge whether the compression flag you
+          chose is pulling its weight on this particular content.
+        output: |
+          40K	site
+          -rw-r--r-- 1 user user 21K site-current.tar.gz
+        level: intermediate
+        tags: [disk]

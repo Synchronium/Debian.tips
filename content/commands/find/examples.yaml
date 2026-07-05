@@ -1,0 +1,389 @@
+command: find
+sections:
+  - title: "Matching by name"
+    intro: "The most common find, by a mile."
+    examples:
+      - title: "Find files by extension"
+        code: find ~/projects -name "*.js"
+        description: >-
+          `-name` matches against the filename only (not the full path), and is
+          case-sensitive.
+        output: |
+          ./logs/main-link.js
+          ./src/util.js
+          ./src/vendor/lib.js
+          ./src/main.js
+        level: basic
+        tags: [beginner]
+      - title: "Match a name case-insensitively"
+        code: find ~/projects -iname "*.LOG"
+        description: "`-iname` is the case-insensitive version of `-name`, matching `app.log`, `App.Log`, `APP.LOG`."
+        output: |
+          ./logs/big.log
+          ./logs/app.log
+        level: basic
+      - title: "Match hidden (dotfiles) files"
+        code: find ~/projects -name ".*" -type f
+        description: >-
+          A leading `.` isn't special to `find` the way it is to the shell's
+          globbing. `-name ".*"` matches dotfiles like a normal pattern.
+        output: |
+          ./.hidden/.env
+        level: intermediate
+      - title: "Match against the full path, not just the filename"
+        code: find ~/projects -path "*/vendor/*"
+        description: "`-path` matches the whole path so far, useful for excluding or targeting a specific subdirectory by name anywhere in the tree."
+        output: |
+          ./src/vendor
+          ./src/vendor/lib.js
+        level: intermediate
+      - title: "Match a name using extended regex"
+        code: find ~/projects -regex ".*\.\(js\|log\)$"
+        description: >-
+          `-regex` matches the entire path against a regex (BRE by default; add
+          `-regextype posix-extended` for ERE syntax). More powerful than
+          `-name` when you need alternation or anchors.
+        output: |
+          ./logs/main-link.js
+          ./logs/big.log
+          ./logs/app.log
+          ./src/util.js
+          ./src/vendor/lib.js
+          ./src/main.js
+        level: advanced
+        tags: [regex]
+  - title: "Filtering by type"
+    intro: "Files, directories, symlinks: find sees them all differently."
+    examples:
+      - title: "Find only regular files"
+        code: find ~/projects -type f
+        description: "`-type f` excludes directories, symlinks, and other special files, usually what you want before acting on results."
+        output: |
+          ./backups/site-2026-06-01.tar.gz
+          ./backups/site-2026-01-01.tar.gz
+          ./logs/big.log
+          ./logs/app.log
+          ./src/util.js
+          ./src/vendor/lib.js
+          ./src/main.js
+          ./.hidden/.env
+        level: basic
+      - title: "Find only directories"
+        code: find ~/projects -type d
+        description: "Includes the starting directory itself (`.`) unless you filter it out."
+        output: |
+          .
+          ./backups
+          ./logs
+          ./src
+          ./src/vendor
+          ./.hidden
+          ./empty-dir
+        level: basic
+      - title: "Find symlinks"
+        code: find ~/projects -type l
+        description: "`-type l` matches the symlink itself, not whatever it points to."
+        output: |
+          ./logs/main-link.js
+        level: intermediate
+      - title: "Find symlinks that point to a regular file"
+        code: find ~/projects -type l -xtype f
+        description: >-
+          `-xtype` follows the link before testing type. This finds symlinks
+          whose *target* is a regular file, as opposed to a broken link or a
+          link to a directory.
+        output: |
+          ./logs/main-link.js
+        level: advanced
+      - title: "Find broken symlinks"
+        code: find ~/projects -xtype l
+        description: >-
+          When a symlink's target has been moved or deleted, resolving its type
+          fails and falls back to reporting `l`. This is the standard "find
+          broken links" idiom.
+        output: |
+          ./logs/main-link.js
+        level: advanced
+  - title: "Filtering by size"
+    intro: "Track down what's actually using disk space."
+    examples:
+      - title: "Find files larger than a given size"
+        code: find ~/projects -size +1M
+        description: "`+1M` means strictly greater than 1 megabyte. Suffixes: `c` bytes, `k` kilobytes, `M` megabytes, `G` gigabytes."
+        output: |
+          ./logs/big.log
+        level: basic
+        tags: [disk]
+      - title: "Find files smaller than a given size"
+        code: find ~/projects -size -1k
+        description: "`-1k` means strictly less than 1 kilobyte, useful for finding suspiciously empty-looking files."
+        level: basic
+        tags: [disk]
+      - title: "Find files within a size range"
+        code: find ~/projects -size +1M -size -10M
+        description: "Two `-size` tests combine with the implicit AND, giving you a range."
+        output: |
+          ./logs/big.log
+        level: intermediate
+        tags: [disk]
+      - title: "Find and list the biggest files, largest first"
+        code: find ~/projects -type f -printf "%s %p\n" | sort -rn | head -3
+        description: >-
+          `-printf "%s %p\n"` prints size in bytes then path; piping through
+          `sort -rn` ranks by size numerically, largest first.
+        output: |
+          6291456 ./logs/big.log
+          10240 ./logs/app.log
+          5120 ./backups/site-2026-06-01.tar.gz
+        level: advanced
+        tags: [disk, one-liners]
+  - title: "Filtering by age"
+    intro: "mtime, mmin, and finding what changed recently (or didn't)."
+    examples:
+      - title: "Find files modified in the last 24 hours"
+        code: find ~/projects -mtime -1
+        description: "`-mtime -1` means modified less than 1 day ago. The sign convention is the same as `-size`: `-N` is less than, `+N` is more than, `N` is exactly."
+        level: basic
+        tags: [beginner]
+      - title: "Find files modified in the last 90 minutes"
+        code: find ~/projects -mmin -90
+        description: "`-mmin` is the minutes version of `-mtime`, for finer-grained recency than a full day."
+        level: intermediate
+      - title: "Find files accessed recently, not just modified"
+        code: find ~/projects -type f -amin -120
+        description: >-
+          `-amin`/`-atime` test access time instead of modification time,
+          useful for finding files nothing has *read* in a while, as opposed to
+          files nobody has *written* to. Many systems mount filesystems with
+          `noatime` for performance, which makes this test a no-op there.
+        level: advanced
+      - title: "Find files modified today, by the calendar, not the last 24 hours"
+        code: find ~/projects -daystart -mtime 0
+        description: >-
+          `-mtime 0` alone means "less than 24 hours ago," which drifts with
+          what time you run the command. `-daystart` measures from the start
+          of today instead, so "0 days" means "today's calendar date."
+        level: advanced
+      - title: "Find files not modified in over a year"
+        code: find ~/projects -type f -mtime +365
+        description: "A common first step before archiving or deleting old backups. See the danger note below before adding `-delete`."
+        output: |
+          ./backups/site-2026-01-01.tar.gz
+        level: intermediate
+        tags: [disk]
+      - title: "Find files newer than a reference file"
+        code: find ~/projects -newer src/util.js -type f
+        description: >-
+          `-newer` compares modification times against another file instead of
+          the current time, useful for "what changed since the last deploy",
+          using a marker file's timestamp as the cutoff.
+        output: |
+          ./backups/site-2026-06-01.tar.gz
+          ./logs/big.log
+          ./logs/app.log
+          ./src/vendor/lib.js
+          ./src/main.js
+          ./.hidden/.env
+        level: advanced
+  - title: "Depth and pruning"
+    intro: "Controlling how far find descends, and skipping subtrees entirely."
+    examples:
+      - title: "Limit the search to the top level only"
+        code: find ~/projects -maxdepth 1 -type d
+        description: "`-maxdepth 1` stops find from descending past the starting directory's immediate children."
+        output: |
+          .
+          ./backups
+          ./logs
+          ./src
+          ./.hidden
+          ./empty-dir
+        level: basic
+      - title: "Skip the top levels and only match deeper files"
+        code: find ~/projects -mindepth 2 -type f
+        description: "`-mindepth` is the inverse of `-maxdepth`, excluding files that are too shallow instead of too deep."
+        output: |
+          ./backups/site-2026-06-01.tar.gz
+          ./backups/site-2026-01-01.tar.gz
+          ./logs/big.log
+          ./logs/app.log
+          ./src/util.js
+          ./src/vendor/lib.js
+          ./src/main.js
+          ./.hidden/.env
+        level: intermediate
+      - title: "Skip an entire subdirectory"
+        code: find ~/projects -type d -name vendor -prune -o -type f -print
+        description: >-
+          `-prune` has to come before the `-o` so it applies to the vendor
+          match specifically; without it, `find` would still descend into
+          `vendor/` looking for files. This idiom (`-name X -prune -o ... -print`)
+          is the standard way to exclude a directory like `node_modules` or `.git`.
+        output: |
+          ./backups/site-2026-06-01.tar.gz
+          ./backups/site-2026-01-01.tar.gz
+          ./logs/big.log
+          ./logs/app.log
+          ./src/util.js
+          ./src/main.js
+          ./.hidden/.env
+        level: advanced
+      - title: "Stay on one filesystem"
+        code: find / -xdev -maxdepth 1 -type d
+        description: >-
+          `-xdev` (a.k.a. `-mount`) prevents find from crossing into mounted
+          filesystems (network shares, other drives, `/proc`) when searching
+          from a high-level directory like `/`.
+        output: |
+          /
+          /tmp
+          /boot
+        level: advanced
+  - title: "Permissions and ownership"
+    intro: "Exact-match vs at-least-these-bits: see the note in the intro."
+    examples:
+      - title: "Find files with an exact permission mode"
+        code: find ~/projects -perm 777
+        description: >-
+          `-perm 777` (no prefix) matches only files whose mode is *exactly*
+          `777`. Note this also matches symlinks, whose own permissions are
+          always shown as `777` regardless of the target's real permissions.
+        output: |
+          ./logs/main-link.js
+          ./src/main.js
+        level: intermediate
+        tags: [permissions]
+      - title: "Find files where the owner can execute, regardless of other bits"
+        code: find ~/projects -perm -u+x
+        description: >-
+          The `-` prefix switches to "at least these bits set" matching.
+          This finds every directory (always executable/traversable) plus any
+          file the owner can run.
+        level: intermediate
+        tags: [permissions]
+      - title: "Find files owned by the current user"
+        code: find ~/projects -user "$(whoami)"
+        description: "`-user` filters by owner name (or numeric UID)."
+        level: intermediate
+        tags: [permissions]
+  - title: "Acting on matches"
+    intro: "-exec, -delete, and piping to other commands."
+    examples:
+      - title: "Run a command on each match"
+        code: find ~/projects -name "*.tar.gz" -exec ls -lh {} \;
+        description: >-
+          `{}` is replaced with the matched path, and `\;` (escaped so the shell
+          doesn't eat the semicolon) ends the `-exec` expression. Runs `ls -lh`
+          once per file.
+        output: |
+          -rw-r--r-- 1 user user 5.0K Jun 15 15:30 ./backups/site-2026-06-01.tar.gz
+          -rw------- 1 user user 5.0K May 31  2025 ./backups/site-2026-01-01.tar.gz
+        level: intermediate
+      - title: "Batch multiple matches into fewer command invocations"
+        code: find ~/projects -type f -exec md5sum {} +
+        description: >-
+          Ending with `+` instead of `\;` passes as many matched files as fit
+          on one command line to a single `md5sum` invocation, instead of
+          spawning one process per file. Much faster over large result sets.
+        output: |
+          ./backups/site-2026-06-01.tar.gz
+          ./backups/site-2026-01-01.tar.gz
+          ./logs/big.log
+          ./logs/app.log
+          ./src/util.js
+          ./src/vendor/lib.js
+          ./src/main.js
+          ./.hidden/.env
+        level: advanced
+      - title: "Delete matches directly"
+        code: find ~/projects -type f -name "*.tar.gz" -mtime +365 -delete
+        description: >-
+          `-delete` removes matches with no subprocess and no confirmation.
+          Always run the identical command with `-print` (or no action) first
+          and read the list before adding `-delete`.
+        level: advanced
+        danger: true
+        tags: [beginner]
+      - title: "Remove empty directories"
+        code: find ~/projects -type d -empty -delete
+        description: "Combine `-type d` and `-empty` to target only directories with nothing in them."
+        level: advanced
+        danger: true
+      - title: "Feed matches to xargs for parallel processing"
+        code: find ~/projects -type f -name "*.log" -print0 | xargs -0 -P 4 gzip
+        description: >-
+          `-print0` / `xargs -0` handles filenames with spaces safely (see the
+          note in the intro); `xargs -P 4` runs up to 4 `gzip` processes in
+          parallel.
+        level: advanced
+        tags: [performance]
+  - title: "Combining tests with logic"
+    intro: "AND is implicit; OR and NOT need to be spelled out."
+    examples:
+      - title: "Negate a test"
+        code: find ~/projects -not -name "*.js"
+        description: "`-not` (or `!`, escaped as `\\!` in most shells) inverts the following test."
+        level: intermediate
+      - title: "Exclude an entire path pattern without -prune"
+        code: find ~/projects -not -path "*/vendor/*" -type f
+        description: >-
+          For a single exclusion, `-not -path` is shorter than the
+          `-prune` idiom. Reach for `-prune` instead when you also need find
+          to skip *descending into* a large excluded directory for performance.
+        output: |
+          ./backups/site-2026-06-01.tar.gz
+          ./backups/site-2026-01-01.tar.gz
+          ./logs/big.log
+          ./logs/app.log
+          ./src/util.js
+          ./.hidden/.env
+        level: advanced
+      - title: "Match either of two patterns"
+        code: find ~/projects \( -name "*.js" -o -name "*.log" \)
+        description: >-
+          `-o` is OR; the parentheses are required here because `find`'s
+          default AND would otherwise bind more tightly than you want. Escape
+          them (`\(` `\)`) so the shell passes them through literally.
+        output: |
+          ./logs/main-link.js
+          ./logs/big.log
+          ./logs/app.log
+          ./src/util.js
+          ./src/vendor/lib.js
+          ./src/main.js
+        level: intermediate
+      - title: "Combine a name filter with an age filter"
+        code: find ~/projects -type f -name "*.tar.gz" -mtime +365
+        description: "Multiple tests chained with no explicit operator are ANDed together. This narrows straight to old, matching backups."
+        output: |
+          ./backups/site-2026-01-01.tar.gz
+        level: intermediate
+  - title: "Practical one-liners"
+    intro: "Common real-world tasks that combine several of the tests above."
+    examples:
+      - title: "Count files by type"
+        code: find ~/projects -type f | wc -l
+        description: "A quick sanity check before a bulk operation: how many files am I actually about to touch?"
+        output: |
+          8
+        level: basic
+        tags: [one-liners]
+      - title: "Find and grep in one pipeline"
+        code: find ~/projects -name "*.js" -print0 | xargs -0 grep -l "TODO"
+        description: "Narrow the file set with `find` first, then hand it to `grep`. Faster than `grep -r` when you need find's richer filtering (age, size, permissions) as well as a pattern match. See [grep](/commands/grep/)."
+        level: advanced
+        tags: [one-liners]
+      - title: "Find the single largest file under a path"
+        code: find ~/projects -type f -printf "%s %p\n" | sort -rn | head -1
+        description: "The one-result version of the size-ranking example above, handy inline in a script."
+        output: |
+          6291456 ./logs/big.log
+        level: intermediate
+        tags: [disk, one-liners]
+      - title: "Count matches across two patterns"
+        code: find ~/projects \( -name "*.log" -o -name "*.tar.gz" \) | wc -l
+        description: "Group an OR expression, then pipe the whole result through `wc -l` for a total count instead of a list."
+        output: |
+          4
+        level: intermediate
+        tags: [one-liners]
