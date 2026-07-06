@@ -1,4 +1,4 @@
-import { SITE } from "./config.js";
+import { CATEGORY_META, NAV_ORDER, SITE } from "./config.js";
 import type { Page } from "./content/loader.js";
 
 const XML_ESC: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" };
@@ -7,7 +7,8 @@ function escapeXml(s: string): string {
 }
 
 export function sitemapXml(pages: Page[]): string {
-  const urls = ["/", ...pages.map((p) => p.url)];
+  const categoryPaths = NAV_ORDER.map((c) => CATEGORY_META[c].path);
+  const urls = ["/", ...categoryPaths, "/tags/", ...pages.map((p) => p.url)];
   const entries = urls.map((u) => `<url><loc>${SITE.url}${u}</loc></url>`).join("");
   return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${entries}</urlset>\n`;
 }
@@ -35,6 +36,7 @@ export function feedXml(pages: Page[]): string {
 <link href="${SITE.url}/" />
 <id>${SITE.url}/</id>
 <updated>${updated}</updated>
+<author><name>${escapeXml(SITE.title)}</name></author>
 ${entries}
 </feed>
 `;

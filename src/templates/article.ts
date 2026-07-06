@@ -37,6 +37,7 @@ ${raw(toc(page.toc))}
     bodyHtml: raw(body),
     cssHref,
     draft: page.draft,
+    indexable: true,
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "TechArticle",

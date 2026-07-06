@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto";
 import { cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = new URL("..", import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
 
 export function copyPublic(distDir: string): void {
   cpSync(join(ROOT, "public"), distDir, { recursive: true });

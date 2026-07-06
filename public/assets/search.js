@@ -4,6 +4,11 @@
 
 let dialog, input, results, pagefind;
 
+const ESCAPE_HTML = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, (c) => ESCAPE_HTML[c]);
+}
+
 export function openSearch() {
   if (!dialog) {
     dialog = document.getElementById("search-dialog");
@@ -15,6 +20,8 @@ export function openSearch() {
     const closeBtn = dialog.querySelector("[data-search-close]");
     closeBtn.addEventListener("click", () => dialog.close());
     input.addEventListener("input", runSearch);
+  } else if (dialog.open) {
+    return;
   }
 
   dialog.showModal();
@@ -44,7 +51,7 @@ async function runSearch() {
     ? entries
         .map(
           (e) =>
-            `<li><a href="${e.url}"><span class="search-result-title">${e.meta.title}</span><span class="search-result-excerpt">${e.excerpt}</span></a></li>`,
+            `<li><a href="${e.url}"><span class="search-result-title">${escapeHtml(e.meta.title)}</span><span class="search-result-excerpt">${e.excerpt}</span></a></li>`,
         )
         .join("")
     : '<li class="search-empty">No results found.</li>';

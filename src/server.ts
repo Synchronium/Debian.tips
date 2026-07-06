@@ -1,10 +1,11 @@
 import { createServer } from "node:http";
 import { existsSync, readFileSync, statSync } from "node:fs";
-import { extname, join } from "node:path";
+import { extname, join, sep } from "node:path";
 import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import chokidar from "chokidar";
 
-const ROOT = new URL("..", import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const DIST = join(ROOT, "dist");
 const PORT = 4321;
 
@@ -53,6 +54,9 @@ function resolveFile(urlPath: string): string | null {
       : [join(DIST, withoutTrailingSlash), join(DIST, withoutTrailingSlash, "index.html")];
 
   for (const candidate of candidates) {
+    // path.join collapses ".." segments, so a URL like /../package.json can
+    // resolve outside DIST — reject anything that lands outside it.
+    if (candidate !== DIST && !candidate.startsWith(DIST + sep)) continue;
     if (existsSync(candidate) && statSync(candidate).isFile()) return candidate;
   }
   return null;

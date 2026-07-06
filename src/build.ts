@@ -1,5 +1,6 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { copyPublic, writeHashedCss } from "./assets.js";
 import { CATEGORY_META, NAV_ORDER } from "./config.js";
 import { loadContent, type Page } from "./content/loader.js";
@@ -11,7 +12,7 @@ import { listingPage } from "./templates/listing.js";
 import { notFoundPage } from "./templates/notFound.js";
 import { tagPage, tagsIndexPage } from "./templates/tags.js";
 
-const ROOT = new URL("..", import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
 
 function defaultContentDir(): string {
   return join(ROOT, "content");

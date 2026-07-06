@@ -11,6 +11,10 @@ export interface LayoutOptions {
   jsonLd?: Record<string, unknown>;
   cssHref: string;
   draft?: boolean;
+  /** Only command/article pages set this — Pagefind indexes solely inside elements
+   * carrying this attribute once it's present anywhere on the site, so leaving it
+   * off listing/tag/home/404 pages keeps search results to actual content pages. */
+  indexable?: boolean;
 }
 
 const THEME_SCRIPT =
@@ -29,10 +33,14 @@ const INTERACTION_SCRIPT =
   "if(ev.target.closest('[data-theme-toggle]')){var cur=document.documentElement.getAttribute('data-theme');setTheme(cur==='dark'?'light':'dark');return;}" +
   "if(ev.target.closest('[data-search-open]')){ev.preventDefault();openSearch();return;}" +
   "var copy=ev.target.closest('[data-copy]');" +
-  "if(copy){navigator.clipboard.writeText(copy.getAttribute('data-copy'));" +
-  "var original=copy.textContent;copy.textContent='Copied';" +
+  "if(copy){" +
+  "var original=copy.dataset.label||(copy.dataset.label=copy.textContent);" +
+  "navigator.clipboard.writeText(copy.getAttribute('data-copy')).then(function(){" +
+  "copy.textContent='Copied';" +
   "var live=document.getElementById('live-region');if(live)live.textContent='Copied to clipboard';" +
-  "setTimeout(function(){copy.textContent=original;},1500);}" +
+  "clearTimeout(copy._copyTimeout);" +
+  "copy._copyTimeout=setTimeout(function(){copy.textContent=original;delete copy.dataset.label;},1500);" +
+  "});}" +
   "});" +
   "document.addEventListener('keydown',function(ev){" +
   "if((ev.metaKey||ev.ctrlKey)&&ev.key==='k'){ev.preventDefault();openSearch();}" +
@@ -97,6 +105,12 @@ function searchDialogHtml(): string {
 </dialog>`;
 }
 
+/** JSON.stringify never escapes "<", so a title/description containing "</script>"
+ * would otherwise break out of the element. Escaping is invisible to JSON parsers. */
+function safeJsonLd(data: Record<string, unknown>): string {
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}
+
 export function layout(opts: LayoutOptions): string {
   const canonical = `${SITE.url}${opts.path}`;
   const pageTitle = opts.path === "/" ? `${SITE.title} — ${SITE.tagline}` : `${opts.title} — ${SITE.title}`;
@@ -132,13 +146,13 @@ export function layout(opts: LayoutOptions): string {
 <meta name="twitter:card" content="summary_large_image" />
 <script>${raw(THEME_SCRIPT)}</script>
 <link rel="stylesheet" href="${opts.cssHref}" />
-<script type="application/ld+json">${raw(JSON.stringify(websiteJsonLd))}</script>
-${opts.jsonLd ? raw(html`<script type="application/ld+json">${raw(JSON.stringify(opts.jsonLd))}</script>`) : ""}
+<script type="application/ld+json">${raw(safeJsonLd(websiteJsonLd))}</script>
+${opts.jsonLd ? raw(html`<script type="application/ld+json">${raw(safeJsonLd(opts.jsonLd))}</script>`) : ""}
 </head>
 <body>
 ${raw(headerHtml(opts.activeCategory))}
 ${opts.draft ? raw(html`<div class="draft-banner" role="note">Draft — excluded from production builds</div>`) : ""}
-<main id="main" data-pagefind-body>
+<main id="main"${opts.indexable ? raw(" data-pagefind-body") : ""}>
 ${opts.bodyHtml}
 </main>
 ${raw(footerHtml())}

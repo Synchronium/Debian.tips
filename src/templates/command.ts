@@ -29,9 +29,16 @@ export async function commandPage(page: Page, cssHref: string): Promise<string> 
     text: s.title,
   }));
 
+  const seenSectionSlugs = new Set<string>();
   const sectionsHtml = await Promise.all(
     examplesFile.sections.map(async (section) => {
       const sectionSlug = slugify(section.title);
+      if (seenSectionSlugs.has(sectionSlug)) {
+        throw new Error(
+          `${page.slug}: two sections produce the same heading id "${sectionSlug}" (from title "${section.title}") — rename one`,
+        );
+      }
+      seenSectionSlugs.add(sectionSlug);
       const cards = await Promise.all(section.examples.map((ex, i) => exampleCard(sectionSlug, i + 1, ex)));
       return html`<section class="example-section">
 <h2 id="${sectionSlug}">${section.title}</h2>
@@ -70,6 +77,7 @@ ${raw(toc([...page.toc, ...sectionTocEntries]))}
     bodyHtml: raw(body),
     cssHref,
     draft: page.draft,
+    indexable: true,
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "TechArticle",

@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import matter from "gray-matter";
 import { parse as parseYaml } from "yaml";
 import {
@@ -63,7 +64,7 @@ interface RawEntry {
 }
 
 function defaultContentDir(): string {
-  return join(new URL("../..", import.meta.url).pathname, "content");
+  return join(fileURLToPath(new URL("../..", import.meta.url)), "content");
 }
 
 function isProduction(): boolean {
@@ -146,15 +147,41 @@ function loadCommands(contentDir: string): RawEntry[] {
   return out;
 }
 
+/** `readdirSync` order isn't guaranteed alphabetical or otherwise stable, so every
+ * category needs an explicit sort: scripting lessons must read in course order
+ * (`order`), everything else sorts by slug for a deterministic, filesystem-independent
+ * listing order. */
+function sortEntries(category: Category, entries: RawEntry[]): RawEntry[] {
+  if (category === "scripting") {
+    return [...entries].sort(
+      (a, b) => (a.data as ScriptingFrontmatter).order - (b.data as ScriptingFrontmatter).order,
+    );
+  }
+  return [...entries].sort((a, b) => a.slug.localeCompare(b.slug));
+}
+
 export async function loadContent(contentDir: string = defaultContentDir()): Promise<ContentModel> {
   const tagRegistry = loadTagRegistry(contentDir);
 
   const raw: RawEntry[] = [];
   for (const category of CATEGORIES) {
-    raw.push(...(category === "commands" ? loadCommands(contentDir) : loadFlatCategory(category, contentDir)));
+    const entries = category === "commands" ? loadCommands(contentDir) : loadFlatCategory(category, contentDir);
+    raw.push(...sortEntries(category, entries));
   }
 
   const visible = isProduction() ? raw.filter((e) => !e.data.draft) : raw;
+
+  const slugFiles = new Map<string, string[]>();
+  for (const entry of visible) {
+    slugFiles.set(entry.slug, [...(slugFiles.get(entry.slug) ?? []), entry.file]);
+  }
+  for (const [slug, files] of slugFiles) {
+    if (files.length > 1) {
+      throw new ContentError(
+        `slug "${slug}" is used by more than one page (${files.join(", ")}) — slugs must be unique across categories since related: links and tag pages address pages by slug alone`,
+      );
+    }
+  }
 
   for (const entry of visible) {
     for (const tag of entry.data.tags) {
