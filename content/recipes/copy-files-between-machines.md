@@ -4,7 +4,7 @@ description: "Transfer a file or directory tree between two machines with scp or
 category: recipes
 tags: [ssh, networking, files]
 updated: 2026-07-05
-related: [tar, find]
+related: [ssh, tar, find]
 ---
 
 **Problem:** You need to copy a file or directory from one machine to another, and both machines
@@ -19,7 +19,9 @@ scp report.pdf deb1:/home/user/backups/
 **How it works:**
 
 - `scp` copies over the same SSH connection you'd use to log in, so it needs no separate server
-  or setup beyond working SSH access.
+  or setup beyond working SSH access. `deb1` here is a host alias from `~/.ssh/config`, not a
+  raw hostname — see [ssh](/commands/ssh/) for setting one up along with key-based auth so
+  neither `scp` nor `rsync` prompts for a password.
 - `deb1:/home/user/backups/` is `host:path`; the trailing slash means "into this directory,"
   keeping the original filename.
 - Reverse the arguments to copy in the other direction: `scp deb1:/path/to/file.txt .` pulls a

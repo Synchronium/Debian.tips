@@ -1,12 +1,12 @@
 ---
 title: "tar"
 tagline: "Archive and compress files and directories"
-description: "Tested tar examples: create, list, and extract archives, choose a compression format, and verify integrity."
+description: "50+ tested tar examples: create, list, and extract archives, back up incrementally, stream over ssh, and verify integrity."
 category: commands
 tags: [archives, files]
-updated: 2026-07-05
+updated: 2026-08-12
 tier: standard
-related: [find, curl]
+related: [find, curl, ssh]
 ---
 
 `tar` bundles a directory tree into a single **archive** file, preserving permissions,
@@ -47,6 +47,12 @@ the cost of more CPU time; `bzip2` (`-j`) sits between them and is less common t
 you have a specific reason otherwise, `.tar.gz` is the safe default for sharing archives, and
 `.tar.xz` is worth the extra CPU when archive size matters more (release downloads, long-term
 backups).
+
+## Backing up incrementally
+
+`-g snapshot-file` (`--listed-incremental`) turns a series of backups into a chain: the first
+run against a snapshot file is a full backup, and every later run against the same file stores
+only what's changed since, at the cost of needing every layer, in order, to restore.
 
 ## Always verify before you trust an archive
 
