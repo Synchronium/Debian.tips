@@ -17,6 +17,14 @@ export interface LayoutOptions {
   indexable?: boolean;
 }
 
+/** Only fires in production builds so local dev doesn't pollute analytics. */
+function analyticsHtml(): string {
+  if (process.env["NODE_ENV"] !== "production") return "";
+  const id = SITE.gaMeasurementId;
+  return html`<script async src="https://www.googletagmanager.com/gtag/js?id=${id}"></script>
+<script>${raw(`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${id}');`)}</script>`;
+}
+
 const THEME_SCRIPT =
   "(function(){try{var t=localStorage.getItem('theme');if(!t){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}" +
   "document.documentElement.setAttribute('data-theme',t);document.documentElement.classList.add('js');}catch(e){}})();";
@@ -132,6 +140,7 @@ export function layout(opts: LayoutOptions): string {
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+${raw(analyticsHtml())}
 <title>${pageTitle}</title>
 <meta name="description" content="${opts.description}" />
 <link rel="canonical" href="${canonical}" />

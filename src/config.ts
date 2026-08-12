@@ -5,6 +5,7 @@ export const SITE = {
   title: "debian.tips",
   tagline: "Linux tips & tricks",
   description: "Practical Linux and Debian tips, tricks, and command references.",
+  gaMeasurementId: "G-CFE8GTL7E4",
 } as const;
 
 export const NAV_ORDER: Category[] = ["commands", "concepts", "scripting", "recipes", "debian"];
