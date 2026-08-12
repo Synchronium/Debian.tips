@@ -1,0 +1,449 @@
+command: ssh
+sections:
+  - title: "Connecting and running commands"
+    intro: "The two shapes every ssh invocation takes: an interactive shell, or one command with its output streamed back."
+    examples:
+      - title: "Log into a remote machine"
+        code: ssh user@deb1.example.com
+        description: "Opens an interactive shell on the remote machine. Requires a real, reachable host; the address here is a placeholder."
+        level: basic
+        tags: [beginner]
+      - title: "Log in as the current local user"
+        code: ssh deb1.example.com
+        description: "With no `user@` prefix, ssh uses your local username as the remote username."
+        level: basic
+      - title: "Run a single command and exit"
+        code: ssh user@deb1.example.com uptime
+        description: "Anything after the host is executed remotely instead of starting a shell; ssh prints its output and exits with the remote command's exit status."
+        level: basic
+        tags: [beginner]
+      - title: "Connect on a non-default port"
+        code: ssh -p 2222 user@deb1.example.com
+        description: "`-p` overrides the default port 22. Common on boxes that move sshd off the default port to cut down on automated scan noise."
+        level: basic
+      - title: "Check the installed ssh version"
+        code: ssh -V
+        description: "Prints the OpenSSH and OpenSSL versions in use, useful when a flag doesn't behave as documented and you suspect an older build."
+        output: |
+          OpenSSH_10.0p2 Debian-7+deb13u4, OpenSSL 3.5.6 7 Apr 2026
+        level: basic
+      - title: "Run a command that needs a real shell (quoting)"
+        code: ssh user@deb1.example.com "cd /var/log && ls -la"
+        description: "Quote multi-part commands as one string; otherwise ssh only sends the first word remotely and the rest gets interpreted locally as ssh's own arguments."
+        level: intermediate
+      - title: "Pipe local input into a remote command"
+        code: cat report.csv | ssh user@deb1.example.com "cat >> /var/log/reports.log"
+        description: "Stdin is forwarded over the same connection, so a local pipeline can feed a remote command directly without an intermediate file."
+        level: intermediate
+        tags: [scripting]
+      - title: "Force a pseudo-terminal for a command that expects one"
+        code: ssh -t user@deb1.example.com "sudo systemctl status ssh"
+        description: "ssh only allocates a pseudo-terminal automatically for an interactive login. Commands that need one, `sudo` prompting for a password, an interactive `top`, need `-t` explicitly when run as a one-off command."
+        level: intermediate
+  - title: "Key-based authentication"
+    intro: "Generating a key pair, installing the public half on a server, and letting an agent hold the unlocked key for the session."
+    examples:
+      - title: "Generate an Ed25519 key pair"
+        code: ssh-keygen -t ed25519 -C "user@deb1"
+        description: "`-t ed25519` picks the current recommended key type (smaller and faster to verify than RSA). `-C` sets a comment, conventionally an identifying label, stored alongside the public key. Accepts the default file location and an empty passphrase when run non-interactively; interactively it prompts for both."
+        output: |
+          Generating public/private ed25519 key pair.
+          Your identification has been saved in ./id_ed25519_test
+          Your public key has been saved in ./id_ed25519_test.pub
+          The key fingerprint is:
+          SHA256:EpmQiJDQS3h8FvlWEXRLoxPebOnp/F5nMGf59V9hYEs user@deb1
+        level: basic
+        tags: [beginner, security]
+      - title: "View the public key"
+        code: cat ~/.ssh/id_ed25519.pub
+        description: "The public key is the line you share: it's safe to post anywhere, paste into a server's authorized_keys, or hand to a Git hosting provider."
+        output: |
+          ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE/UVquqwrnITn1udSbK8/Vp2jejSDOUnYfQPsPIcM/T user@deb1
+        level: basic
+      - title: "Show a key's fingerprint"
+        code: ssh-keygen -lf ~/.ssh/id_ed25519.pub
+        description: "Prints a short hash of the key instead of the full public key text, handy for visually comparing two keys without pasting the whole thing."
+        output: |
+          256 SHA256:EpmQiJDQS3h8FvlWEXRLoxPebOnp/F5nMGf59V9hYEs user@deb1 (ED25519)
+        level: intermediate
+      - title: "Generate an RSA key at a specific size"
+        code: ssh-keygen -t rsa -b 4096 -C "user@deb1"
+        description: "RSA is still widely supported by older servers and appliances that don't understand Ed25519. `-b 4096` sets the bit length; RSA's default of 3072 is acceptable, but 4096 is the common convention for a long-lived key."
+        level: intermediate
+      - title: "Copy a public key to a server's authorized_keys"
+        code: ssh-copy-id user@deb1.example.com
+        description: "Appends your default public key to the remote account's `~/.ssh/authorized_keys`, creating the file and directory with correct permissions if they don't exist. Needs a working login (password or an already-trusted key) to install the new one. Requires a real reachable host to verify."
+        level: basic
+        tags: [beginner]
+      - title: "Copy a specific, non-default key"
+        code: ssh-copy-id -i ~/.ssh/id_ed25519_work.pub user@deb1.example.com
+        description: "`-i` points at a `.pub` file explicitly, for accounts where you keep separate keys per server or per role rather than one default key for everything."
+        level: intermediate
+      - title: "Start ssh-agent and add a key"
+        code: |-
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/id_ed25519
+        description: "`ssh-agent -s` starts the agent and prints shell variables that later ssh calls in the same session use to find it; `eval` applies them. `ssh-add` unlocks the key (prompting for its passphrase once) and hands it to the agent."
+        output: |
+          Agent pid 2961
+          Identity added: id_ed25519 (user@deb1)
+        level: intermediate
+        tags: [security]
+      - title: "List keys currently held by the agent"
+        code: ssh-add -l
+        description: "Confirms which keys the agent will offer, without exposing the private key material itself."
+        output: |
+          256 SHA256:EpmQiJDQS3h8FvlWEXRLoxPebOnp/F5nMGf59V9hYEs user@deb1 (ED25519)
+        level: intermediate
+      - title: "See the error when no agent is running"
+        code: ssh-add -l
+        description: "Without `SSH_AUTH_SOCK` set (no agent started, or the variable lost in a new shell), ssh-add can't reach an agent at all."
+        output: |
+          Could not open a connection to your authentication agent.
+        level: intermediate
+      - title: "Remove all keys from the agent"
+        code: ssh-add -D
+        description: "Clears every identity the agent is holding, without stopping the agent process itself. Useful before switching to a different set of keys mid-session."
+        output: |
+          All identities removed.
+        level: intermediate
+      - title: "Change a key's passphrase"
+        code: ssh-keygen -p -f ~/.ssh/id_ed25519
+        description: "`-p` re-encrypts an existing private key with a new passphrase in place, without generating a new key pair or touching the public key or any `authorized_keys` entry that already references it."
+        level: intermediate
+      - title: "Refuse a private key with overly open permissions"
+        code: ssh-keygen -y -f ./id_ed25519_test
+        description: "A private key readable by group or other (here deliberately set to `644`) is rejected outright rather than used. `chmod 600` on the key file is the fix."
+        output: |
+          @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+          @         WARNING: UNPROTECTED PRIVATE KEY FILE!          @
+          @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+          Permissions 0644 for './id_ed25519_test' are too open.
+          It is required that your private key files are NOT accessible by others.
+          This private key will be ignored.
+          Load key "./id_ed25519_test": bad permissions
+        level: intermediate
+        tags: [permissions, security]
+      - title: "Fix a private key's permissions"
+        code: chmod 600 ~/.ssh/id_ed25519
+        description: "Owner read/write only, nobody else. Restores a key ssh had refused for being too open. See [File permissions explained](/concepts/file-permissions-explained/) for what the digits mean."
+        level: basic
+        tags: [permissions]
+  - title: "The ~/.ssh/config file"
+    intro: "Aliasing a host, its port, user, and key so a full connection collapses to a short name."
+    examples:
+      - title: "Write a basic host alias"
+        code: |-
+          Host deb1
+              HostName deb1.example.com
+              User user
+              Port 2222
+              IdentityFile ~/.ssh/id_ed25519
+        description: "Saved in `~/.ssh/config`. After this, `ssh deb1` expands to the full connection details; `scp` and `rsync -e ssh` honour the same file."
+        level: basic
+        tags: [beginner]
+      - title: "Set defaults that apply to every host"
+        code: |-
+          Host *
+              ServerAliveInterval 60
+              ServerAliveCountMax 3
+        description: "A catch-all `Host *` block sets fallback values. Order matters: the *first* matching value for a setting wins, so host-specific blocks must come above a catch-all, not below it."
+        level: intermediate
+      - title: "Show the fully resolved config for a host"
+        code: ssh -G deb1
+        description: "Prints every setting ssh would actually use for `deb1` after merging all matching `Host` blocks, without opening a connection. The fastest way to check why ssh is using a particular port, key, or jump host."
+        output: |
+          host deb1
+          user user
+          hostname deb1.example.com
+          port 2222
+          addressfamily any
+          batchmode no
+          canonicalizefallbacklocal yes
+        level: intermediate
+        tags: [scripting]
+      - title: "Use an alternate config file"
+        code: ssh -F ~/.ssh/config-work deb1
+        description: "`-F` points ssh at a different config file entirely, for keeping personal and work host lists separate."
+        level: advanced
+      - title: "Route through a jump host"
+        code: |-
+          Host internal
+              HostName 10.0.0.5
+              User user
+              ProxyJump deb1.example.com
+        description: "`ProxyJump` (or `ssh -J deb1.example.com internal`) connects through an intermediate host first, useful for machines only reachable from inside a private network. Confirmed by resolving with `ssh -G internal`, which reports `proxyjump deb1.example.com`."
+        level: advanced
+        tags: [networking]
+      - title: "Disable host key checking for one throwaway host"
+        code: |-
+          Host scratch-vm
+              HostName 192.0.2.50
+              StrictHostKeyChecking no
+              UserKnownHostsFile /dev/null
+        description: "Skips host key verification and avoids polluting your real `known_hosts`, appropriate for a disposable VM you rebuild constantly. Never do this for a host that holds anything real: it removes ssh's protection against a spoofed or swapped server."
+        level: advanced
+        danger: true
+        tags: [security]
+      - title: "Set a default identity file for every host"
+        code: |-
+          Host *
+              IdentityFile ~/.ssh/id_ed25519
+              IdentitiesOnly yes
+        description: "`IdentitiesOnly yes` restricts ssh to the keys explicitly listed instead of also offering every key an agent happens to be holding, avoiding a host locking you out after too many rejected keys."
+        level: advanced
+      - title: "Send environment variables to the remote session"
+        code: |-
+          Host deb1
+              SendEnv LANG LC_*
+        description: "Forwards local environment variables matching the pattern, if the server's `sshd_config` has a matching `AcceptEnv` entry; most servers don't accept arbitrary variables by default."
+        level: advanced
+        tags: [environment]
+  - title: "Host keys and known_hosts"
+    intro: "How ssh verifies the server is who it claims to be, and what to do when that check legitimately fails."
+    examples:
+      - title: "See the confirmation prompt for a first-time host"
+        code: ssh -o StrictHostKeyChecking=ask user@newhost.example.com
+        description: "The default behaviour: on a host ssh has never seen, it prints the key's fingerprint and asks for confirmation before continuing. Requires a real, unrecognised host to trigger; this is the default even without the explicit flag."
+        level: basic
+      - title: "Accept a new host key automatically"
+        code: ssh -o StrictHostKeyChecking=no user@deb1.example.com
+        description: "Skips the confirmation prompt and accepts whatever key the server presents, adding it straight to `known_hosts`. Convenient for scripted, one-off connections to freshly provisioned hosts; never use it for a host whose identity actually matters, since it also silently accepts a key that's changed for the wrong reasons."
+        level: intermediate
+        danger: true
+        tags: [security]
+      - title: "Query known_hosts for a saved entry"
+        code: ssh-keygen -F github.com
+        description: "Looks up a host's saved key without connecting anywhere. `known_hosts` entries are hashed by default (`HashKnownHosts yes` on Debian), so the file itself doesn't reveal which hosts you've connected to at a glance; `-F` decodes the lookup."
+        output: |
+          # Host github.com found: line 1
+          |1|54lfM/zb+rQclYh4kZPZwbDAJXY=|0nF4Tq2N1xiwJDS540Be7ylsvKU= ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+        level: intermediate
+      - title: "Remove a stale host key"
+        code: ssh-keygen -R deb1.example.com
+        description: "Deletes a host's entry from `known_hosts` after you've confirmed a key change is legitimate (server rebuilt, hosting provider recycled the IP), so the next connection re-prompts instead of refusing outright. Keeps a `.old` backup of the file it edited."
+        output: |
+          # Host github.com found: line 1
+          /home/user/.ssh/known_hosts updated.
+          Original contents retained as /home/user/.ssh/known_hosts.old
+        level: intermediate
+        tags: [security]
+      - title: "Pre-populate known_hosts without logging in"
+        code: ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts
+        description: "Fetches a host's public key directly, the same way provisioning scripts avoid an interactive first-connection prompt. Only trustworthy over a connection you already trust (a private network, a host you just built yourself): it has no way to verify the key it receives, so it's exactly as blind as `StrictHostKeyChecking=no` for that one lookup."
+        output: |
+          # github.com:22 SSH-2.0-dad0df6
+          github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+        level: advanced
+        tags: [security, scripting]
+      - title: "See what a changed host key looks like"
+        code: ssh user@deb1.example.com
+        description: "When a saved key no longer matches, ssh refuses the connection outright with a loud warning and exits without prompting, unlike the first-connection case. Genuine output from a real mismatch depends on the specific host; treat the warning as a stop sign, not something to route around with `-o StrictHostKeyChecking=no` out of habit."
+        level: intermediate
+        tags: [security]
+  - title: "Copying files over ssh"
+    intro: "scp and rsync both reuse an ssh connection rather than needing a separate file-transfer server. See the full recipe for more: [Copy files between two machines over SSH](/recipes/copy-files-between-machines/)."
+    examples:
+      - title: "Copy a file to a remote host"
+        code: scp report.pdf user@deb1.example.com:/home/user/backups/
+        description: "Uses the same authentication and host key checking as `ssh`. The trailing slash means \"into this directory,\" keeping the original filename."
+        level: basic
+        tags: [beginner, files]
+      - title: "Copy a file from a remote host"
+        code: scp user@deb1.example.com:/var/log/syslog ./syslog-backup
+        description: "Reversing the source and destination pulls a file down instead of pushing one up."
+        level: basic
+      - title: "Copy recursively, preserving an ssh config alias"
+        code: scp -r project/ deb1:/home/user/
+        description: "`-r` copies a whole directory tree. Using the `deb1` alias from `~/.ssh/config` instead of the full `user@host` form works for `scp` exactly as it does for `ssh`."
+        level: intermediate
+      - title: "Sync a tree with rsync over ssh"
+        code: rsync -avz -e ssh project/ deb1:/home/user/project/
+        description: "`-e ssh` is usually redundant (ssh is rsync's default remote shell) but useful for pinning a specific port or key: `-e \"ssh -p 2222\"`. rsync only transfers what actually changed, unlike scp's full re-copy."
+        level: intermediate
+        tags: [files]
+      - title: "Copy directly between two remote hosts"
+        code: scp user@deb1.example.com:/data/export.csv user@deb2.example.com:/data/
+        description: "By default the data still routes through your local machine unless the server supports `-3` mode; without a real pair of reachable hosts this can't be verified here, but the syntax is standard scp usage."
+        level: advanced
+  - title: "Port forwarding"
+    intro: "Using the encrypted connection to carry traffic other than a shell."
+    examples:
+      - title: "Forward a local port to a service reachable from the remote side"
+        code: ssh -L 8080:localhost:80 user@deb1.example.com
+        description: "`-L local_port:target_host:target_port` opens `localhost:8080` on your machine and tunnels connections to it through to `target_host:target_port` as seen *from the remote server*, useful for reaching a database or admin panel that only listens on the server's own loopback interface. Needs a real reachable target to demonstrate; the tunnel itself carries no output of its own."
+        level: intermediate
+        tags: [networking]
+      - title: "Forward a local port without opening a shell"
+        code: ssh -N -L 8080:localhost:80 user@deb1.example.com
+        description: "`-N` tells ssh not to run any remote command at all, just hold the tunnel open. Combine with `-f` to background it after the connection is established."
+        level: intermediate
+        tags: [networking]
+      - title: "Expose a local service on the remote host"
+        code: ssh -R 9000:localhost:3000 user@deb1.example.com
+        description: "The reverse of `-L`: a connection to port 9000 on the remote host tunnels back to port 3000 on your machine. Useful for letting a colleague, or a remote webhook, reach something only running on your laptop. The remote sshd needs `GatewayPorts` configured to expose this beyond the server's own loopback."
+        level: advanced
+        tags: [networking]
+      - title: "Run ssh as a SOCKS proxy"
+        code: ssh -D 1080 user@deb1.example.com
+        description: "`-D port` turns ssh into a dynamic SOCKS proxy on that local port; pointing a browser or another tool's proxy setting at `localhost:1080` routes its traffic through the remote host, without picking a single destination port up front the way `-L` requires."
+        level: advanced
+        tags: [networking, security]
+      - title: "Background a forwarding-only connection"
+        code: ssh -fN -L 5432:localhost:5432 user@deb1.example.com
+        description: "`-f` backgrounds ssh right after authentication instead of holding the foreground, combined with `-N` for a tunnel with no shell attached. The classic incantation for \"forward this one database port and get out of the way.\""
+        level: advanced
+        tags: [networking, scripting]
+      - title: "Check a forwarded port is actually listening locally"
+        code: ss -tlnp | grep 8080
+        description: "Confirms the local end of an `-L` tunnel bound successfully before you spend time debugging the application on the other end of it."
+        level: intermediate
+        tags: [networking]
+  - title: "Multiplexing and performance"
+    intro: "Reusing one authenticated connection instead of repeating the handshake for every ssh, scp, or rsync call to the same host."
+    examples:
+      - title: "Enable connection sharing for a host"
+        code: |-
+          Host deb1
+              ControlMaster auto
+              ControlPath ~/.ssh/sockets/%r@%h-%p
+              ControlPersist 600
+        description: "The first connection to `deb1` becomes the \"master\" and opens a control socket at `ControlPath`; later connections to the same host reuse it instead of renegotiating. `ControlPersist 600` keeps the master alive for 10 minutes after the last session closes, ready for the next one. Confirmed the paths resolve correctly with `ssh -G deb1`, which reports the expanded `controlpath`."
+        output: |
+          controlmaster auto
+          controlpath /home/user/.ssh/sockets/user@deb1.example.com-22
+          controlpersist 600
+        level: advanced
+        tags: [performance]
+      - title: "Create the socket directory multiplexing needs"
+        code: mkdir -p ~/.ssh/sockets
+        description: "`ControlPath` doesn't create its parent directory automatically; the first connection attempt fails with a cryptic error if `~/.ssh/sockets` doesn't already exist."
+        level: intermediate
+      - title: "Check whether a master connection is active"
+        code: ssh -O check deb1
+        description: "`-O check` asks an existing control socket whether it's alive without opening a new connection. Needs a real multiplexed session already running to return anything meaningful."
+        level: advanced
+        tags: [performance]
+      - title: "Close a multiplexed master connection"
+        code: ssh -O exit deb1
+        description: "`-O exit` tells the control master to shut down, closing every session still riding on it. Useful after changing a key or config value that a live multiplexed connection would otherwise keep using stale."
+        level: advanced
+        tags: [performance]
+  - title: "Agent and X11 forwarding"
+    intro: "Extending the local session's identity or display to the remote end."
+    examples:
+      - title: "Forward the local agent to a remote host"
+        code: ssh -A user@deb1.example.com
+        description: "Lets commands run *on the remote host* authenticate onward using keys held by your *local* agent, without copying any private key to the server, useful for hopping from one server to a second one behind it. Only forward an agent to hosts you trust: anyone with root on the remote machine while the forwarding is active can request signatures from your agent."
+        level: advanced
+        danger: true
+        tags: [security]
+      - title: "Forward agent for one command only"
+        code: ssh -A user@deb1.example.com "git pull"
+        description: "Limits the exposure window from the previous example to the lifetime of a single remote command instead of an open-ended interactive session."
+        level: advanced
+        tags: [security, scripting]
+      - title: "Forward a graphical application's display"
+        code: ssh -X user@deb1.example.com
+        description: "`-X` forwards X11 so a GUI application started remotely displays on your local screen. Requires a local X server and an X11-enabled sshd on the remote end to actually show anything; the connection itself is the only part verifiable without both."
+        level: advanced
+      - title: "Trust the forwarded display fully"
+        code: ssh -Y user@deb1.example.com
+        description: "`-Y` is `-X` without the extra security restrictions X11SecurityExtension normally applies. Only worth the trade-off for a specific application that breaks under the restricted mode."
+        level: advanced
+        danger: true
+        tags: [security]
+  - title: "Debugging a connection"
+    intro: "Working out why ssh isn't behaving the way the config file suggests it should."
+    examples:
+      - title: "Get a step-by-step trace of the connection"
+        code: ssh -v user@deb1.example.com
+        description: "`-v` prints each stage as it happens: config file lines read, key exchange, which keys were offered and in what order, and where the process actually stopped. The first thing to reach for when a connection fails for a reason that isn't obvious."
+        output: |
+          debug1: OpenSSH_10.0p2 Debian-7+deb13u4, OpenSSL 3.5.6 7 Apr 2026
+          debug1: Reading configuration data /etc/ssh/ssh_config
+          debug1: /etc/ssh/ssh_config line 19: include /etc/ssh/ssh_config.d/*.conf matched no files
+          debug1: /etc/ssh/ssh_config line 21: Applying options for *
+          debug1: Connecting to deb1.example.com port 22.
+        level: intermediate
+        tags: [scripting]
+      - title: "Increase verbosity further"
+        code: ssh -vvv user@deb1.example.com
+        description: "Each extra `v` (up to three) adds more detail, down to individual protocol messages. `-vvv` is usually more than you need; start with `-v` and escalate only if that doesn't show the problem."
+        level: advanced
+      - title: "See why a host is unreachable at all"
+        code: ssh -o BatchMode=yes -o ConnectTimeout=3 nonexistent.invalid echo hi
+        description: "`BatchMode=yes` stops ssh from ever prompting (for a password or a host key confirmation), so a script gets a clean failure instead of hanging. This is a real, unresolvable hostname, so the error and exit code below are genuine."
+        output: |
+          ssh: Could not resolve hostname nonexistent.invalid: Name or service not known
+        level: intermediate
+        tags: [scripting]
+      - title: "Check the exit code after a batch-mode failure"
+        code: |-
+          ssh -o BatchMode=yes -o ConnectTimeout=3 nonexistent.invalid echo hi
+          echo "exit=$?"
+        description: "255 specifically means ssh itself failed to connect or authenticate, distinct from any exit code the remote command might have returned had it actually run."
+        output: |
+          ssh: Could not resolve hostname nonexistent.invalid: Name or service not known
+          exit=255
+        level: intermediate
+        tags: [scripting]
+      - title: "Test key-based auth against a known real host"
+        code: ssh -o BatchMode=yes -o StrictHostKeyChecking=no -T git@github.com
+        description: "GitHub's ssh endpoint replies with an identity check even without a matching key, so it's a genuinely useful way to confirm ssh can reach *some* real server and negotiate a protocol, isolating whether a problem is network-level or specific to your own target host. `-T` disables the pseudo-terminal since no shell is expected."
+        output: |
+          git@github.com: Permission denied (publickey).
+        level: intermediate
+        tags: [scripting, security]
+  - title: "Scripting and hardening patterns"
+    intro: "ssh calls that show up inside larger scripts, and config choices that reduce risk on a shared or internet-facing key."
+    examples:
+      - title: "Run a remote command and capture its output"
+        code: result=$(ssh user@deb1.example.com "df -h /")
+        description: "Standard command substitution works over ssh exactly as it does locally, since the remote command's stdout is just ssh's own stdout."
+        level: intermediate
+        tags: [scripting]
+      - title: "Check whether a host is reachable before proceeding"
+        code: |-
+          if ssh -o BatchMode=yes -o ConnectTimeout=3 user@deb1.example.com true; then
+            echo "reachable"
+          fi
+        description: "`true` as the remote command does nothing but succeed, so the whole check reduces to \"did ssh manage to connect and authenticate,\" reported as a plain exit code ready for an `if`."
+        level: intermediate
+        tags: [scripting]
+      - title: "Run the same command across several hosts"
+        code: |-
+          for host in deb1 deb2 deb3; do
+            echo "== $host =="
+            ssh -o BatchMode=yes "$host" 'uptime'
+          done
+        description: "A simple fan-out loop. Each iteration is a fresh connection unless multiplexing is configured for these hosts; for more than a handful of hosts, a proper tool (Ansible, `pssh`) tracks failures per host far better than a bare loop."
+        level: intermediate
+        tags: [scripting]
+      - title: "List the key exchange and cipher algorithms this build supports"
+        code: ssh -Q cipher
+        description: "`-Q` queries ssh's own compiled-in capabilities, here symmetric ciphers offered during negotiation. Also accepts `key`, `mac`, `kex`, and others."
+        output: |
+          3des-cbc
+          aes128-cbc
+          aes192-cbc
+          aes256-cbc
+          aes128-ctr
+          aes192-ctr
+          aes256-ctr
+          aes128-gcm@openssh.com
+        level: advanced
+      - title: "Restrict a shared account key to one command"
+        code: |-
+          command="/usr/local/bin/backup.sh",no-port-forwarding,no-X11-forwarding ssh-ed25519 AAAA... user@deb1
+        description: "A `command=` prefix in `authorized_keys` forces that key to run only the named command, ignoring whatever the connecting client actually asked for, and the trailing options strip out forwarding capabilities the key doesn't need. Standard practice for a key handed to a backup script or CI system instead of a person."
+        level: advanced
+        tags: [security, sysadmin]
+      - title: "Turn off password authentication server-side"
+        code: |-
+          # /etc/ssh/sshd_config
+          PasswordAuthentication no
+        description: "Forces every login through a key, closing off online password-guessing entirely. Requires root on the server and a restart of sshd (`systemctl reload ssh`) to take effect; confirm at least one working key-based login *first*, or a mistake here locks out password access with no way back in except console access."
+        level: advanced
+        danger: true
+        tags: [security, sysadmin]

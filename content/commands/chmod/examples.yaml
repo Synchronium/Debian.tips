@@ -1,0 +1,431 @@
+command: chmod
+sections:
+  - title: "Reading and setting basic permissions"
+    intro: "Numeric mode for the common case, symbolic mode for a single-bit tweak."
+    examples:
+      - title: "Set a file to the standard rw-r--r-- mode"
+        code: chmod 644 notes.txt
+        description: "The most common numeric mode: the owner can read and write, everyone else can only read."
+        output: |
+          -rw-r--r-- 1 user user 0 Aug 12 21:45 notes.txt
+        level: basic
+        tags: [beginner]
+      - title: "Add execute permission for the owner only"
+        code: chmod u+x deploy.sh
+        description: "`u` targets the owner, `+x` adds execute without touching read, write, or the group/other bits."
+        output: |
+          -rwxr--r-- 1 user user 20 Aug 12 21:45 deploy.sh
+        level: basic
+        tags: [beginner]
+      - title: "Remove write permission from group and other"
+        code: chmod go-w notes.txt
+        description: "Combine two classes (`g` and `o`) in one operator. Owner permissions are untouched."
+        output: |
+          -rw-r--r-- 1 user user 0 Aug 12 21:45 notes.txt
+        level: basic
+      - title: "Add read permission for everyone"
+        code: chmod a+r notes.txt
+        description: "`a` means all three classes at once: owner, group, and other."
+        output: |
+          -rw-r--r-- 1 user user 0 Aug 12 21:45 notes.txt
+        level: basic
+      - title: "Set an exact permission set with symbolic mode"
+        code: chmod u=rwx,g=rx,o=r deploy.sh
+        description: >-
+          `=` assigns exactly the listed permissions to a class, clearing any others it had.
+          Comma-separate multiple class assignments in a single command.
+        output: |
+          -rwxr-xr-- 1 user user 20 Aug 12 21:45 deploy.sh
+        level: intermediate
+      - title: "Check a file's current mode as a number"
+        code: stat --format '%a %n' deploy.sh
+        description: "`stat` prints the numeric mode directly, handy for scripts that need to compare or restore permissions rather than parse `ls -l`."
+        output: |
+          754 deploy.sh
+        level: intermediate
+        tags: [scripting]
+
+  - title: "Common permission recipes"
+    intro: "The handful of numeric modes that cover most real files."
+    examples:
+      - title: "Make a script executable"
+        code: chmod 755 deploy.sh
+        description: "`rwxr-xr-x`: the owner can edit and run it, everyone else can only run it. The standard mode for scripts and compiled binaries."
+        output: |
+          -rwxr-xr-x 1 user user 20 Aug 12 21:45 deploy.sh
+        level: basic
+        tags: [beginner]
+      - title: "Set a plain data file to the standard mode"
+        code: chmod 644 report.csv
+        description: "`rw-r--r--`: the owner can edit it, everyone else can read it. What most new files should end up at."
+        output: |
+          -rw-r--r-- 1 user user 0 Aug 12 21:45 report.csv
+        level: basic
+      - title: "Lock a private key down to owner-only"
+        code: chmod 600 id_rsa
+        description: >-
+          `rw-------`: only the owner can read or write it, nobody else can even list its
+          contents. SSH refuses to use a private key with looser permissions than this.
+        output: |
+          -rw------- 1 user user 0 Aug 12 21:45 id_rsa
+        level: basic
+        tags: [ssh, security]
+      - title: "Lock a directory down to owner-only"
+        code: chmod 700 data/
+        description: "`rwx------`: only the owner can list, enter, or modify this directory at all."
+        output: |
+          drwx------ 2 user user 4096 Aug 12 21:45 data
+        level: basic
+      - title: "Make a file group-writable for shared editing"
+        code: chmod 664 notes.txt
+        description: "`rw-rw-r--`: owner and group can both edit it, other can only read. Useful in a shared project directory with a common group."
+        output: |
+          -rw-rw-r-- 1 user user 0 Aug 12 21:45 notes.txt
+        level: basic
+      - title: "Restrict a config file to owner and group, no others"
+        code: chmod 640 notes.txt
+        description: "`rw-r-----`: owner can edit, group can read, other has no access at all."
+        output: |
+          -rw-r----- 1 user user 0 Aug 12 21:45 notes.txt
+        level: basic
+      - title: "Restrict a directory to owner-write, group-browse"
+        code: chmod 750 data/
+        description: "`rwxr-x---`: owner has full control, group can look inside and read files, other has nothing. A common mode for a team's working directory."
+        output: |
+          drwxr-x--- 2 user user 4096 Aug 12 21:45 data
+        level: basic
+      - title: "A leading zero is the same as no leading zero"
+        code: chmod 0644 notes.txt
+        description: "The fourth (special-bits) digit defaults to 0, so `0644` and `644` do the same thing. You'll see the four-digit form in scripts that also set setuid/setgid/sticky."
+        output: |
+          -rw-r--r-- 1 user user 0 Aug 12 21:45 notes.txt
+        level: intermediate
+
+  - title: "Symbolic operators: +, -, and ="
+    intro: "Add, remove, or set exactly, per class, without recomputing the whole number."
+    examples:
+      - title: "Add execute for all classes with the +x shorthand"
+        code: chmod +x deploy.sh
+        description: "With no class letter given, `chmod` acts on all three classes, the same as `a+x`, but honours the current umask on new bits."
+        output: |
+          -rwxr-xr-x 1 user user 20 Aug 12 21:45 deploy.sh
+        level: basic
+        tags: [beginner]
+      - title: "Add a permission to more than one class at once"
+        code: chmod u+x,g+x deploy.sh
+        description: "Comma-separate multiple class-operator pairs to change several classes differently in one command."
+        output: |
+          -rwxr-xr-- 1 user user 20 Aug 12 21:45 deploy.sh
+        level: intermediate
+      - title: "Strip every permission from other"
+        code: chmod o-rwx notes.txt
+        description: "`o-rwx` removes read, write, and execute for other in one go, without needing to know what other currently had."
+        output: |
+          -rwxrwx--- 1 user user 0 Aug 12 21:45 notes.txt
+        level: intermediate
+      - title: "Copy the owner's permissions onto the group"
+        code: chmod g=u notes.txt
+        description: "`g=u` sets the group's bits to match whatever the owner currently has, instead of listing them out by hand."
+        output: |
+          -rwxrwx--- 1 user user 0 Aug 12 21:45 notes.txt
+        level: intermediate
+      - title: "Remove execute from every class"
+        code: chmod a-x deploy.sh
+        description: "Turns an executable back into a plain file without affecting its read or write bits."
+        output: |
+          -rw-r--r-- 1 user user 20 Aug 12 21:45 deploy.sh
+        level: basic
+      - title: "Add read, write, and conditional execute in one operator"
+        code: chmod u+rwX notes.txt
+        description: >-
+          Capital `X` (unlike lowercase `x`) only adds execute if the file already has execute
+          set for someone, or if it's a directory. On a plain non-executable file like this one,
+          the `X` has no effect; only `rw` gets added.
+        output: |
+          -rw------- 1 user user 0 Aug 12 21:45 notes.txt
+        level: advanced
+      - title: "= without a class still respects the umask"
+        code: chmod =rwx notes.txt
+        description: >-
+          `=rwx` with no class letter defaults to all classes, like `a=rwx`, but unlike an
+          explicit `a=rwx` it's filtered through the current umask (`0022` here), so group and
+          other lose the write bit that a bare `777` would have kept.
+        output: |
+          -rwxr-xr-x 1 user user 0 Aug 12 21:45 notes.txt
+        level: advanced
+        tags: [scripting]
+
+  - title: "Changing several files at once"
+    intro: "One command, several targets."
+    examples:
+      - title: "Set the same mode on a list of files"
+        code: chmod 600 a.txt b.txt c.txt
+        description: "`chmod` accepts any number of targets after the mode; each gets the same change."
+        output: |
+          -rw------- 1 user user 0 Aug 12 21:47 a.txt
+          -rw------- 1 user user 0 Aug 12 21:47 b.txt
+          -rw------- 1 user user 0 Aug 12 21:47 c.txt
+        level: basic
+      - title: "Set the same mode on every file matching a glob"
+        code: chmod 644 *.txt
+        description: "The shell expands `*.txt` before `chmod` ever runs, so this touches every matching file in the current directory, not just the ones you're thinking of. Check with `ls *.txt` first if you're unsure what will match."
+        output: |
+          -rw-r--r-- 1 user user 0 Aug 12 21:47 a.txt
+          -rw-r--r-- 1 user user 0 Aug 12 21:47 b.txt
+          -rw-r--r-- 1 user user 0 Aug 12 21:47 c.txt
+          -rw-r--r-- 1 user user 0 Aug 12 21:45 notes.txt
+        level: basic
+
+  - title: "Changing permissions recursively"
+    intro: >-
+      -R walks a whole directory tree in one pass. Prefer a type-aware approach, since files and
+      directories usually need different modes and a blanket -R can't tell the difference.
+    examples:
+      - title: "Set directories to 755 without touching files"
+        code: find project -type d -exec chmod 755 {} \;
+        description: "Restricting the `-exec` to `-type d` means files inside are left alone entirely, whatever their current mode."
+        level: intermediate
+        tags: [scripting]
+      - title: "Set files to 644 without touching directories"
+        code: find project -type f -exec chmod 644 {} \;
+        description: "The companion to the directory pass above. Run both to normalise a tree to the standard 755/644 split."
+        level: intermediate
+        tags: [scripting]
+      - title: "Make only scripts executable, by name pattern"
+        code: find project -type f -name "*.sh" -exec chmod +x {} \;
+        description: "Restrict the `-exec` further with `-name` so only matching files get the execute bit, leaving other file types at their existing mode."
+        output: |
+          -rwxr-xr-x 1 user user 20 Aug 12 21:45 project/scripts/deploy.sh
+        level: intermediate
+        tags: [scripting]
+      - title: "Pipe find into xargs for the same effect"
+        code: find project -type f -name "*.txt" -print0 | xargs -0 chmod 644
+        description: >-
+          `-print0` and `xargs -0` handle filenames with spaces or newlines safely, and batch
+          many files into fewer `chmod` invocations than repeated `-exec ... {} \;` calls.
+        level: advanced
+        tags: [scripting]
+      - title: "Add a permission recursively without resetting anything else"
+        code: chmod -R u+w project/
+        description: >-
+          Because `+w` only adds a bit, it can't remove permissions that were already tighter
+          elsewhere in the tree, unlike a numeric `-R` reset. Safer when the goal is "make sure I
+          can write to all of this" rather than "set an exact mode everywhere."
+        level: intermediate
+      - title: "Add execute recursively, but only where it already makes sense"
+        code: chmod -R a+X project/
+        description: >-
+          Capital `X` adds execute to directories (so they stay traversable) and to files that
+          are already executable for someone, but leaves plain data files alone. Safer than `a+x`
+          for a mixed tree, since it won't make every text file "executable."
+        level: advanced
+      - title: "Refuse to recurse over / by accident"
+        code: chmod -R --preserve-root 755 /
+        description: >-
+          `--preserve-root` is the default in current GNU coreutils, but making it explicit
+          documents intent in a script. It fails fast, before touching anything, if the target
+          resolves to `/`.
+        output: |
+          chmod: it is dangerous to operate recursively on '/'
+          chmod: use --no-preserve-root to override this failsafe
+        level: advanced
+        tags: [sysadmin]
+      - title: "Reset an entire tree to one mode (the blunt, risky version)"
+        code: chmod -R 755 project/
+        description: >-
+          Danger: a numeric -R sets every matching file and directory to exactly this mode,
+          overwriting anything tighter that was there on purpose. Run this on a tree containing a
+          600 private key or a 700 secrets directory and it silently makes them world-readable
+          and world-executable, with no prompt and no way back except restoring from a backup or
+          re-applying the original permissions by hand. Prefer the type-aware find commands above.
+        output: |
+          -rwxr-xr-x 5 user user 4096 Aug 12 21:46 project
+          -rwxr-xr-x 2 user user 4096 Aug 12 21:45 project/data
+          -rwxr-xr-x 1 user user    0 Aug 12 21:45 project/data/report.csv
+          -rwxr-xr-x 1 user user    0 Aug 12 21:46 project/secrets/id_rsa
+        level: advanced
+        tags: [sysadmin]
+        danger: true
+
+  - title: "Special permission bits: setuid, setgid, sticky"
+    intro: "Three extra bits, above the normal nine, with their own numeric digit (4000/2000/1000)."
+    examples:
+      - title: "Make new files in a directory inherit its group"
+        code: chmod g+s shared/
+        description: >-
+          Setgid on a directory makes files created inside it take the directory's group,
+          instead of the creating user's primary group. Shows as an `s` in the group execute
+          slot.
+        output: |
+          drwxr-sr-x 2 user user 4096 Aug 12 21:45 shared
+        level: advanced
+        tags: [sysadmin]
+      - title: "Set setgid and full group access in one numeric mode"
+        code: chmod 2775 shared/
+        description: "The leading `2` sets setgid; `775` gives owner and group full access and other read/execute. A common mode for a shared team directory."
+        output: |
+          drwxrwsr-x 2 user user 4096 Aug 12 21:49 shared
+        level: advanced
+        tags: [sysadmin]
+      - title: "Set setuid on an executable"
+        code: chmod 4755 tool
+        description: >-
+          The leading `4` sets setuid, shown as `s` in the owner execute slot: the program runs
+          with the file owner's privileges rather than the caller's. Note this only takes effect
+          on compiled binaries: the Linux kernel deliberately ignores the setuid bit on
+          `#!`-scripts for security reasons, even though `chmod` still applies it to the file.
+        output: |
+          -rwsr-xr-x 1 user user 20 Aug 12 21:45 tool
+        level: advanced
+        tags: [security]
+      - title: "Remove setuid and setgid"
+        code: chmod u-s,g-s tool
+        description: "Clears both special bits with symbolic mode, without needing to know or recompute the rest of the numeric mode."
+        level: advanced
+        tags: [security]
+      - title: "Set the sticky bit on a shared directory"
+        code: chmod +t shared/
+        description: >-
+          Sticky, shown as `t` in the other execute slot, restricts deleting or renaming a file
+          inside the directory to that file's own owner (or root), even when others have write
+          access to the directory itself. This is how `/tmp` stays shared but not a
+          free-for-all.
+        output: |
+          drwxrwxrwt 2 user user 4096 Aug 12 21:46 shared
+        level: advanced
+        tags: [sysadmin]
+      - title: "Set sticky plus full permissions in one numeric mode, like /tmp"
+        code: chmod 1777 shared/
+        description: "The leading `1` sets sticky; `777` gives everyone full access. Matches the mode `/tmp` uses on a standard Debian install."
+        output: |
+          drwxrwxrwt 2 user user 4096 Aug 12 21:46 shared
+        level: advanced
+        tags: [sysadmin]
+
+  - title: "chmod and symlinks"
+    intro: "Symlinks themselves have no meaningful permissions on Linux; chmod follows them by default."
+    examples:
+      - title: "chmod on a symlink changes its target, not the link"
+        code: chmod 600 notes-link
+        description: "By default `chmod` dereferences a symlink and changes whatever it points to. The link itself always shows `rwxrwxrwx` and that never changes."
+        output: |
+          lrwxrwxrwx 1 user user 9 Aug 12 21:47 notes-link -> notes.txt
+          -rw------- 1 user user 0 Aug 12 21:45 notes.txt
+        level: intermediate
+      - title: "Try to change the symlink itself instead of its target"
+        code: chmod -hv 644 notes-link
+        description: >-
+          `-h` asks `chmod` to affect the symlink rather than its target. On Linux this is a
+          no-op: the kernel has no `lchmod` syscall, so symlink permissions can't actually be
+          set. `-v` shows the command noticing and skipping it rather than pretending to
+          succeed.
+        output: |
+          neither symbolic link 'notes-link' nor referent has been changed
+        level: advanced
+
+  - title: "Copying and reporting permission changes"
+    intro: "Reuse a known-good mode, or see exactly what changed."
+    examples:
+      - title: "Copy one file's permissions onto another"
+        code: chmod --reference=deploy.sh notes.txt
+        description: "Sets notes.txt to whatever mode deploy.sh currently has, instead of spelling the mode out. Useful in scripts that need to match an existing file's permissions exactly."
+        output: |
+          -rwxr-x--- 1 user user 0 Aug 12 21:45 notes.txt
+        level: intermediate
+        tags: [scripting]
+      - title: "Only print a line when the mode actually changes"
+        code: chmod -c 644 notes.txt
+        description: "`-c` (`--changes`) stays silent if the file was already at the target mode, and reports it like `-v` only when something was actually different."
+        output: |
+          mode of 'notes.txt' changed from 0644 (rw-r--r--) to 0644 (rw-r--r--)
+        level: intermediate
+        tags: [scripting]
+      - title: "Always report the mode, changed or not"
+        code: chmod -v 644 notes.txt
+        description: "`-v` (`--verbose`) prints a line for every target, even ones already at the requested mode, useful when auditing a batch change ran over everything you expected."
+        output: |
+          mode of 'notes.txt' retained as 0644 (rw-r--r--)
+        level: intermediate
+
+  - title: "Auditing permissions across a tree"
+    intro: "find's -perm test locates files by mode, a natural pairing with chmod."
+    examples:
+      - title: "Find world-writable files, a common security smell"
+        code: find project -type f -perm -002
+        description: "`-perm -002` matches files where the other-write bit is set, regardless of the rest of the mode. Worth running before trusting a tree pulled from somewhere else."
+        output: |
+          project/oops.txt
+        level: advanced
+        tags: [security]
+      - title: "Find setuid binaries on the system"
+        code: find /usr/bin -maxdepth 1 -perm -4000
+        description: >-
+          `-perm -4000` matches the setuid bit specifically. A short, expected list on a stock
+          Debian install (`su`, `passwd`, and a handful of others); an unfamiliar entry here is
+          worth investigating.
+        output: |
+          /usr/bin/gpasswd
+          /usr/bin/chsh
+          /usr/bin/chfn
+          /usr/bin/newgrp
+          /usr/bin/su
+        level: advanced
+        tags: [security, sysadmin]
+
+  - title: "Troubleshooting permission errors"
+    intro: "What chmod itself reports, and what looks like a chmod problem but isn't."
+    examples:
+      - title: "chmod on a file that doesn't exist"
+        code: chmod 644 does-not-exist.txt
+        description: "A plain, specific error rather than a silent no-op. Check the path and spelling before assuming permissions are the problem."
+        output: |
+          chmod: cannot access 'does-not-exist.txt': No such file or directory
+        level: basic
+      - title: "chmod on a file you don't own"
+        code: chmod 600 /etc/shadow
+        description: "Only the file's owner (or root) can change its mode. Everyone else gets Operation not permitted, no matter what permissions the file currently has."
+        output: |
+          chmod: changing permissions of '/etc/shadow': Operation not permitted
+        level: basic
+      - title: "Running a script without the execute bit"
+        code: ./deploy.sh
+        description: "Read permission is enough to view a script's contents, but execute permission is required to run it directly. `chmod +x` is the fix, not a syntax problem in the script."
+        output: |
+          bash: ./deploy.sh: Permission denied
+        level: basic
+        tags: [beginner]
+      - title: "A directory missing its execute bit blocks access to files inside, even with read"
+        code: ls -l locked/
+        description: >-
+          Read on a directory lets you list filenames; execute is what lets you actually reach
+          the files by name to open or stat them. Without it, even the owner sees every entry as
+          inaccessible.
+        output: |
+          ls: cannot access 'locked/secret.txt': Permission denied
+          total 0
+          -????????? ? ? ? ?            ? secret.txt
+        level: intermediate
+      - title: "Deleting a file depends on the directory's permissions, not the file's"
+        code: |-
+          chmod 000 data/locked.txt
+          rm -f data/locked.txt
+        description: >-
+          A file with no permissions at all can still be deleted, because removing a directory
+          entry is controlled by the directory's write bit, not the target file's mode. Locking a
+          file down to 000 does not protect it from deletion by anyone who can write to its
+          parent directory.
+        level: intermediate
+        tags: [sysadmin]
+      - title: "chmod changes existing files; umask governs new ones"
+        code: |-
+          umask
+          touch fresh.txt
+          ls -l fresh.txt
+        description: >-
+          `chmod` never runs automatically. Every new file lands at a mode set by `umask`
+          subtracted from a default, which is why plain files consistently appear at 644 without
+          anyone typing `chmod`. See File permissions explained for how the subtraction works.
+        output: |
+          0022
+          -rw-r--r-- 1 user user 0 Aug 12 21:48 fresh.txt
+        level: intermediate

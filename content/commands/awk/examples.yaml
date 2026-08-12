@@ -1,0 +1,753 @@
+command: awk
+sections:
+  - title: "Fields and records"
+    intro: "Every line is a record, split automatically into numbered fields."
+    examples:
+      - title: "Print the whole record"
+        code: awk '{ print }' config.conf
+        description: "With no pattern, the action runs on every record. `print` with no arguments is shorthand for `print $0`, the whole line."
+        output: |
+          # Server configuration
+          host=localhost
+          port=8080
+          debug=false
+          timeout=30
+        level: basic
+        tags: [beginner]
+      - title: "Print a single field"
+        code: awk '{ print $1 }' access.log
+        description: "`$1` is the first whitespace-separated field. Here it's the client IP at the start of each access log line."
+        output: |
+          198.51.100.7
+          203.0.113.5
+          203.0.113.5
+          198.51.100.7
+          203.0.113.9
+          198.51.100.7
+          203.0.113.9
+          198.51.100.7
+        level: basic
+        tags: [beginner]
+      - title: "Print two fields together"
+        code: awk '{ print $1, $9 }' access.log
+        description: "A comma between arguments to `print` joins them with a single space (the default `OFS`). Field 9 here is the HTTP status code, since the quoted request string splits into three of its own fields."
+        output: |
+          198.51.100.7 200
+          203.0.113.5 200
+          203.0.113.5 200
+          198.51.100.7 401
+          203.0.113.9 200
+          198.51.100.7 401
+          203.0.113.9 404
+          198.51.100.7 200
+        level: basic
+      - title: "Print the last field with $NF"
+        code: awk '{ print $NF }' access.log
+        description: "`NF` is always the number of fields on the current line, so `$NF` is the last field regardless of how many fields a line has. Here it's the request duration in seconds."
+        output: |
+          0.021
+          0.008
+          0.014
+          0.045
+          0.019
+          0.052
+          0.003
+          0.081
+        level: basic
+      - title: "Count the fields on each line"
+        code: awk '{ print NF }' access.log
+        description: "Every access log line here has 11 whitespace-separated fields, because the quoted request (`\"GET /path HTTP/1.1\"`) counts as three of them."
+        output: |
+          11
+          11
+          11
+          11
+          11
+          11
+          11
+          11
+        level: basic
+      - title: "Watch the field count change with the data"
+        code: awk '{ print NF, $0 }' config.conf
+        description: "`config.conf` has no spaces in most lines, so `NF` is 1 there, but the comment line has spaces and splits into 3 fields. Field splitting depends entirely on what's in the line, not what you expect."
+        output: |
+          3 # Server configuration
+          1 host=localhost
+          1 port=8080
+          1 debug=false
+          1 timeout=30
+        level: intermediate
+  - title: "Line numbers and counting records"
+    intro: "NR tracks how many records have been read so far."
+    examples:
+      - title: "Number every line"
+        code: awk '{ print NR, $0 }' config.conf
+        description: "`NR` (number of records) increments before every action runs, giving a `cat -n`-style line number for free."
+        output: |
+          1 # Server configuration
+          2 host=localhost
+          3 port=8080
+          4 debug=false
+          5 timeout=30
+        level: basic
+        tags: [beginner]
+      - title: "Count records total"
+        code: awk 'END { print NR }' app.log
+        description: "`NR` still holds its final value inside `END`, so printing it there is a one-line `wc -l`."
+        output: |
+          8
+        level: basic
+      - title: "Print a specific line"
+        code: awk 'NR==2' app.log
+        description: "A bare expression is a pattern: true for line 2 only, so with no action the default `{ print }` fires just once."
+        output: |
+          Jul  5 09:14:21 deb1 app[312]: info: listening on port 8080
+        level: intermediate
+      - title: "Print a range of lines"
+        code: awk 'NR==2,NR==4' app.log
+        description: "A comma between two patterns makes a range: every record from the first match through the second, inclusive."
+        output: |
+          Jul  5 09:14:21 deb1 app[312]: info: listening on port 8080
+          Jul  5 09:14:22 deb1 app[312]: error: connection refused
+          Jul  5 09:14:23 deb1 app[312]: warning: retrying in 5s
+        level: intermediate
+      - title: "Print the last line"
+        code: awk 'END { print }' app.log
+        description: "`$0` still holds the most recent record once the main loop finishes, so `print` inside `END` prints the last line without knowing the file's length in advance."
+        output: |
+          Jul  5 09:15:05 deb1 app[313]: info: connected
+        level: intermediate
+  - title: "Selecting records with patterns"
+    intro: "A pattern with no action is a complete program: it prints whatever matches."
+    examples:
+      - title: "Filter lines like grep, with a bare pattern"
+        code: awk '/error/' app.log
+        description: "No action means the default `{ print }`, so this is a full working program: print every record matching `/error/`, the same job `grep error app.log` does."
+        output: |
+          Jul  5 09:14:22 deb1 app[312]: error: connection refused
+          Jul  5 09:14:28 deb1 app[312]: error: connection refused
+          Jul  5 09:15:01 deb1 app[313]: error: connection refused
+        level: basic
+        tags: [beginner]
+      - title: "Invert a match"
+        code: awk '!/error/' app.log
+        description: "`!` negates the pattern, printing every record that does NOT match, the `awk` equivalent of `grep -v`."
+        output: |
+          Jul  5 09:14:20 deb1 app[312]: info: service starting
+          Jul  5 09:14:21 deb1 app[312]: info: listening on port 8080
+          Jul  5 09:14:23 deb1 app[312]: warning: retrying in 5s
+          Jul  5 09:14:33 deb1 app[312]: info: connected
+          Jul  5 09:15:05 deb1 app[313]: info: connected
+        level: basic
+      - title: "Combine a pattern with an action"
+        code: awk '/error|warning/ { print NR, $0 }' app.log
+        description: "Once a pattern matches, the action can do more than the default print, here adding the line number in front."
+        output: |
+          3 Jul  5 09:14:22 deb1 app[312]: error: connection refused
+          4 Jul  5 09:14:23 deb1 app[312]: warning: retrying in 5s
+          5 Jul  5 09:14:28 deb1 app[312]: error: connection refused
+          7 Jul  5 09:15:01 deb1 app[313]: error: connection refused
+        level: intermediate
+      - title: "Match a regex against a specific field"
+        code: awk -F, '$1 ~ /^[ab]/' employees.csv
+        description: "`~` tests a field against a regex instead of the whole line. `!~` is the negated form. This matches names starting with `a` or `b`."
+        output: |
+          alice,engineering,95000
+          bob,design,72000
+        level: intermediate
+        tags: [regex]
+      - title: "Filter on a numeric field"
+        code: awk -F, 'NR>1 && $3 > 90000' employees.csv
+        description: "`NR>1` skips the header row before the numeric comparison runs. Without it, the header sneaks through, see the next example for why."
+        output: |
+          alice,engineering,95000
+          carol,engineering,110000
+        level: intermediate
+      - title: "Watch a header row sneak past a numeric filter"
+        code: awk -F, '$3 > 90000' employees.csv
+        description: "Without the `NR>1` guard, `$3` on the header line is the string \"salary\", which isn't numeric-looking, so `awk` falls back to a string comparison. \"salary\" sorts after \"90000\" lexically, and the header line matches."
+        output: |
+          name,department,salary
+          alice,engineering,95000
+          carol,engineering,110000
+        level: advanced
+      - title: "Combine two conditions with &&"
+        code: awk -F, '$2=="engineering" && $3 > 90000 { print $1 }' employees.csv
+        description: "Both conditions must hold. String comparison with `==` and numeric comparison with `>` combine freely."
+        output: |
+          alice
+          carol
+        level: intermediate
+      - title: "Combine two conditions with ||"
+        code: awk -F, '$2=="design" || $2=="sales" { print $1 }' employees.csv
+        description: "Either condition is enough to match, the `awk` equivalent of `grep -E \"design|sales\"` scoped to one field."
+        output: |
+          bob
+          dave
+          erin
+        level: intermediate
+      - title: "Match an exact field value"
+        code: awk -F, '$1=="alice"' employees.csv
+        description: "`==` on a field requires an exact match, unlike `~` which tests a regex. Faster and clearer when you're not actually matching a pattern."
+        output: |
+          alice,engineering,95000
+        level: basic
+  - title: "Changing the field separator"
+    intro: "FS controls how a line splits into fields; -F sets it from the command line."
+    examples:
+      - title: "Split fields on commas"
+        code: awk -F, 'NR>1 { print $1, $3 }' employees.csv
+        description: "`-F,` sets the field separator to a comma instead of whitespace, so `$1`/`$2`/`$3` line up with the CSV's own columns."
+        output: |
+          alice 95000
+          bob 72000
+          carol 110000
+          dave 68000
+          erin 81000
+          frank 88000
+        level: basic
+        tags: [beginner]
+      - title: "Split fields on colons, /etc/passwd-style"
+        code: "awk -F: '{ print $1, $NF }' passwd.txt"
+        description: "Colon-separated files are common on Debian: `/etc/passwd`, `/etc/group`, and similar. `$1` is the username, `$NF` the login shell."
+        output: |
+          root /bin/bash
+          daemon /usr/sbin/nologin
+          user /bin/bash
+          www-data /usr/sbin/nologin
+        level: intermediate
+      - title: "Filter a colon-separated file on a numeric field"
+        code: "awk -F: '$3 >= 1000 { print $1 }' passwd.txt"
+        description: "A classic Debian sysadmin one-liner: field 3 is the UID, and real (non-system) accounts start at 1000."
+        output: |
+          user
+        level: intermediate
+        tags: [sysadmin]
+      - title: "Set FS in a BEGIN block instead of -F"
+        code: awk 'BEGIN{FS=","} NR>1{print $1}' employees.csv
+        description: "`-F` and setting `FS` in `BEGIN` do the same thing. Prefer `BEGIN` when the separator is part of a longer script rather than a quick one-liner."
+        output: |
+          alice
+          bob
+          carol
+          dave
+          erin
+          frank
+        level: intermediate
+      - title: "Split on a character that isn't a comma"
+        code: awk -F= 'NR>1{print $1}' config.conf
+        description: "Any single character works as `FS`, here `=` for `key=value` lines."
+        output: |
+          host
+          port
+          debug
+          timeout
+        level: intermediate
+      - title: "Split on a regex separator"
+        code: printf "a1b2c33d\n" | awk -F'[0-9]+' '{ print $1, $2, $3, $4 }'
+        description: "When `FS` is more than one character, `awk` treats it as a regex. Here any run of digits, of any length, is a separator."
+        output: |
+          a b c d
+        level: advanced
+        tags: [regex]
+      - title: "Control the output separator with OFS"
+        code: awk -F, 'BEGIN{OFS="|"} NR>1 { $1=$1; print }' employees.csv
+        description: "Reassigning any field (even to itself) makes `awk` rebuild `$0` from the fields, joined with `OFS`. Without that reassignment, `$0` stays untouched and still has the original commas."
+        output: |
+          alice|engineering|95000
+          bob|design|72000
+          carol|engineering|110000
+          dave|sales|68000
+          erin|design|81000
+          frank|engineering|88000
+        level: advanced
+  - title: "BEGIN and END blocks"
+    intro: "Code that runs once before the first record, or once after the last."
+    examples:
+      - title: "Run a program with no input file at all"
+        code: awk 'BEGIN{print "starting report"}'
+        description: "`BEGIN` runs before `awk` tries to read any input, so a `BEGIN`-only program never touches stdin or a file."
+        output: |
+          starting report
+        level: basic
+        tags: [beginner]
+      - title: "Print a header before the data"
+        code: awk -F, 'BEGIN{print "name\tsalary"} NR>1{print $1"\t"$3}' employees.csv
+        description: "The header line comes from `BEGIN`, which runs once, before record processing starts."
+        output: |
+          name	salary
+          alice	95000
+          bob	72000
+          carol	110000
+          dave	68000
+          erin	81000
+          frank	88000
+        level: intermediate
+      - title: "Accumulate a running total, print it in END"
+        code: awk -F, 'NR>1{sum+=$3} END{print sum}' employees.csv
+        description: "`sum` starts at 0 automatically (an unset variable is both `0` and `\"\"` until assigned), so no separate initialisation line is needed."
+        output: |
+          514000
+        level: basic
+      - title: "Compute an average in END"
+        code: awk -F, 'NR>1{sum+=$3; n++} END{printf "%.2f\n", sum/n}' employees.csv
+        description: "Two accumulators, a sum and a count, combined once at the end. `printf` controls the decimal places; `print sum/n` would show far more digits."
+        output: |
+          85666.67
+        level: intermediate
+      - title: "END still runs when nothing matched"
+        code: awk '/nonexistent/{c++} END{print c+0}' app.log
+        description: "`c` is never touched if the pattern never matches, so `print c` alone would print an empty string, not `0`. Adding `0` forces numeric context, printing the `0` you actually want."
+        output: |
+          0
+        level: advanced
+  - title: "Associative arrays: counting and grouping"
+    intro: "awk arrays are keyed by string, which makes them a natural fit for tallying and grouping in one pass."
+    examples:
+      - title: "Count occurrences of a field value"
+        code: awk -F, 'NR>1{count[$2]++} END{for (d in count) print d, count[d]}' employees.csv
+        description: "`count[$2]++` builds a frequency table keyed by department, all in a single pass, no external `sort | uniq -c` needed."
+        output: |
+          design 2
+          engineering 3
+          sales 1
+        level: intermediate
+        tags: [one-liners]
+      - title: "Sum a field, grouped by another field"
+        code: awk -F, 'NR>1{sum[$2]+=$3} END{for (d in sum) print d, sum[d]}' employees.csv
+        description: "Same idea as counting, but accumulating a value instead of a count: total salary per department."
+        output: |
+          design 153000
+          engineering 293000
+          sales 68000
+        level: advanced
+      - title: "Group and sum values from a log file"
+        code: awk '{bytes[$1]+=$(NF-1)} END{for (ip in bytes) print ip, bytes[ip]}' access.log | sort
+        description: "Bytes transferred (second-to-last field) totalled per client IP (first field). `sort` afterwards just orders the output, `awk` doesn't guarantee array iteration order."
+        output: |
+          198.51.100.7 5376
+          203.0.113.5 2560
+          203.0.113.9 1024
+        level: advanced
+        tags: [networking]
+      - title: "Tally values in a different field"
+        code: awk '{count[$9]++} END{for (c in count) print c, count[c]}' access.log | sort
+        description: "The same counting pattern applied to HTTP status codes instead of IPs. Field 9 lines up with the status code because the quoted request eats three fields first."
+        output: |
+          200 5
+          401 2
+          404 1
+        level: intermediate
+      - title: "Test array membership with in"
+        code: "awk -F, 'NR>1{seen[$2]=1} END{print (\"engineering\" in seen) ? \"found\" : \"missing\"}' employees.csv"
+        description: "`key in array` tests for a key without creating it as a side effect, unlike referencing `array[key]` directly, which would."
+        output: |
+          found
+        level: advanced
+      - title: "Count distinct keys with length()"
+        code: awk -F, 'NR>1{d[$2]=1} END{print length(d)}' employees.csv
+        description: "`length()` on an array returns its element count, here the number of distinct departments."
+        output: |
+          3
+        level: advanced
+      - title: "Build a word-frequency table"
+        code: printf "the quick fox the lazy fox the dog\n" | awk '{for(i=1;i<=NF;i++) count[$i]++} END{for (w in count) print count[w], w}' | sort -rn
+        description: "A `for` loop over every field on the line, counting each word seen. Piping through `sort -rn` ranks the results afterwards."
+        output: |
+          3 the
+          2 fox
+          1 quick
+          1 lazy
+          1 dog
+        level: advanced
+        tags: [one-liners]
+  - title: "printf and output formatting"
+    intro: "printf trades print's convenient defaults for exact control over layout."
+    examples:
+      - title: "Left- and right-align columns"
+        code: awk -F, 'NR>1{printf "%-8s %-12s %8s\n", $1, $2, $3}' employees.csv
+        description: "`%-8s` left-aligns a string in an 8-character field, `%8s` right-aligns. This is how `awk` builds aligned tabular output without an external formatter."
+        output: |
+          alice    engineering     95000
+          bob      design          72000
+          carol    engineering    110000
+          dave     sales           68000
+          erin     design          81000
+          frank    engineering     88000
+        level: intermediate
+      - title: "Zero-pad a number"
+        code: awk -F, 'NR>1{printf "%03d %s\n", NR-1, $1}' employees.csv
+        description: "`%03d` pads a number to at least 3 digits with leading zeroes, useful for generating sortable sequence numbers."
+        output: |
+          001 alice
+          002 bob
+          003 carol
+          004 dave
+          005 erin
+          006 frank
+        level: intermediate
+      - title: "printf doesn't add a newline for you"
+        code: awk '{printf "%s", $0}' config.conf
+        description: "Unlike `print`, `printf` never appends anything automatically. Every line here runs into the next, with no `\\n` between them."
+        output: |
+          # Server configurationhost=localhostport=8080debug=falsetimeout=30
+        level: intermediate
+      - title: "Add the newline back explicitly"
+        code: awk '{printf "%s\n", $0}' config.conf
+        description: "The fix for the previous example: write `\\n` into the format string yourself."
+        output: |
+          # Server configuration
+          host=localhost
+          port=8080
+          debug=false
+          timeout=30
+        level: basic
+        tags: [beginner]
+  - title: "String functions"
+    intro: "Text-manipulation functions available in every action, not just BEGIN/END."
+    examples:
+      - title: "Get a field's length"
+        code: awk -F, 'NR>1{print $1, length($1)}' employees.csv
+        description: "`length()` with no argument returns the length of `$0`; with an argument, the length of that string."
+        output: |
+          alice 5
+          bob 3
+          carol 5
+          dave 4
+          erin 4
+          frank 5
+        level: basic
+      - title: "Extract a substring by position"
+        code: echo "order-4821-confirmed" | awk '{print substr($0, 7, 4)}'
+        description: "`substr(string, start, length)` pulls out a fixed-position chunk, here the 4-digit order number starting at character 7."
+        output: |
+          4821
+        level: intermediate
+      - title: "Find a substring's position with index"
+        code: awk -F, 'NR>1{print $1, index($1,"a")}' employees.csv
+        description: "`index(string, target)` returns the 1-based position of the first match, or `0` if it isn't found at all."
+        output: |
+          alice 1
+          bob 0
+          carol 2
+          dave 2
+          erin 0
+          frank 3
+        level: intermediate
+      - title: "Change case with toupper and tolower"
+        code: |-
+          echo "Hello World" | awk '{print toupper($0)}'
+          echo "Hello World" | awk '{print tolower($0)}'
+        description: "Both take a string and return a new one; neither modifies its argument in place."
+        output: |
+          HELLO WORLD
+          hello world
+        level: basic
+      - title: "Replace the first match with sub()"
+        code: echo "foo bar foo" | awk '{sub(/foo/,"FOO"); print}'
+        description: "`sub(regex, replacement)` edits `$0` in place (or a named field, if given a third argument), replacing only the first match. It's `awk`'s equivalent of a single-shot `sed` substitution."
+        output: |
+          FOO bar foo
+        level: intermediate
+        tags: [regex]
+      - title: "Replace every match and count them with gsub()"
+        code: echo "foo bar foo baz foo" | awk '{n=gsub(/foo/,"FOO"); print n, $0}'
+        description: "`gsub()` is `sub()`'s global counterpart, matching `sed`'s `g` flag, and it returns the number of replacements made."
+        output: |
+          3 FOO bar FOO baz FOO
+        level: advanced
+        tags: [regex]
+      - title: "Split a string into an array"
+        code: awk 'BEGIN{n=split("a:b:c",parts,":"); print n, parts[1], parts[3]}'
+        description: "`split(string, array, separator)` is the manual version of field splitting, useful when the string to split isn't `$0` itself. It returns the number of pieces produced."
+        output: |
+          3 a c
+        level: advanced
+      - title: "Build a formatted string with sprintf"
+        code: awk -F, 'NR>1{line=sprintf("%-8s $%d",$1,$3); print line}' employees.csv
+        description: "`sprintf` formats like `printf` but returns the string instead of printing it, so it can be stored in a variable and used later."
+        output: |
+          alice    $95000
+          bob      $72000
+          carol    $110000
+          dave     $68000
+          erin     $81000
+          frank    $88000
+        level: intermediate
+      - title: "Extract matched text with match(), RSTART, and RLENGTH"
+        code: echo "order-4821-confirmed" | awk '{if (match($0,/[0-9]+/)) print substr($0,RSTART,RLENGTH)}'
+        description: "`match()` sets `RSTART` and `RLENGTH` to where the regex matched, which `substr()` can then use, useful when the interesting text isn't at a fixed position."
+        output: |
+          4821
+        level: advanced
+        tags: [regex]
+      - title: "Concatenate strings and fields"
+        code: awk -F, 'NR>1{print $1 " works in " $2}' employees.csv
+        description: "Placing values next to each other with nothing between them concatenates. No `+` or explicit operator needed."
+        output: |
+          alice works in engineering
+          bob works in design
+          carol works in engineering
+          dave works in sales
+          erin works in design
+          frank works in engineering
+        level: basic
+  - title: "Control flow: conditionals and loops"
+    intro: "if/else, a ternary, for, and while, for logic that doesn't fit a single expression."
+    examples:
+      - title: "Branch per record with if/else"
+        code: awk -F, 'NR>1{if ($3>90000) print $1,"senior"; else print $1,"standard"}' employees.csv
+        description: "Standard `if`/`else`, useful once the logic is more than a single pattern can express cleanly."
+        output: |
+          alice senior
+          bob standard
+          carol senior
+          dave standard
+          erin standard
+          frank standard
+        level: intermediate
+      - title: "Use a ternary for a short branch"
+        code: awk -F, 'NR>1{print $1, ($3>90000?"high":"normal")}' employees.csv
+        description: "`condition ? a : b` is a compact alternative to `if`/`else` when the branch is a single value."
+        output: |
+          alice high
+          bob normal
+          carol high
+          dave normal
+          erin normal
+          frank normal
+        level: intermediate
+      - title: "Loop over every field with for"
+        code: echo "a b c d" | awk '{for(i=1;i<=NF;i++) print i, $i}'
+        description: "A C-style `for` loop indexing `$i` from 1 to `NF` visits every field on the line, regardless of how many there are."
+        output: |
+          1 a
+          2 b
+          3 c
+          4 d
+        level: intermediate
+      - title: "Loop with while"
+        code: awk 'BEGIN{i=1; while(i<=5){printf "%d ", i; i++}; print ""}'
+        description: "`while` is the other loop form, useful when the exit condition doesn't fit `for`'s init/test/increment shape naturally."
+        output: |
+          1 2 3 4 5
+        level: advanced
+      - title: "Build a repeated-character string in a loop"
+        code: awk 'BEGIN{for(i=0;i<20;i++) s=s "="; print s}'
+        description: "Concatenating onto `s` inside a loop is `awk`'s equivalent of Python's `\"=\" * 20`, no repeat operator exists, so a loop does the job."
+        output: |
+          ====================
+        level: advanced
+        tags: [one-liners]
+      - title: "Trim a record down to N fields"
+        code: echo "a b c d e" | awk '{NF=3; print}'
+        description: "Assigning to `NF` truncates (or, if larger, extends) the record. Because `NF` changed, `awk` rebuilds `$0` from the remaining fields, the same rebuild that reassigning any single field triggers."
+        output: |
+          a b c
+        level: advanced
+      - title: "Blank out a field but keep its place"
+        code: awk -F, -v OFS=, 'NR>1{$2=""; print}' employees.csv
+        description: "Setting a field to an empty string keeps its position (and delimiter) instead of removing it entirely, unlike deleting an array element."
+        output: |
+          alice,,95000
+          bob,,72000
+          carol,,110000
+          dave,,68000
+          erin,,81000
+          frank,,88000
+        level: advanced
+  - title: "Working with multiple files"
+    intro: "NR counts across every file; FNR resets for each one."
+    examples:
+      - title: "Tell files apart with FNR and FILENAME"
+        code: awk 'FNR==1{print FILENAME, "FNR="FNR, "NR="NR}' app.log access.log
+        description: "`FNR` (file NR) restarts at 1 for every new input file, while `NR` keeps counting across all of them. `FILENAME` names whichever file is currently open."
+        output: |
+          app.log FNR=1 NR=1
+          access.log FNR=1 NR=9
+        level: intermediate
+      - title: "Count records across every file"
+        code: awk 'END{print NR}' app.log access.log
+        description: "With two files given, `NR` in `END` is the combined total, 8 lines from `app.log` plus 8 from `access.log`."
+        output: |
+          16
+        level: intermediate
+      - title: "Stop reading a file early with nextfile"
+        code: awk 'FNR==1{print FILENAME; nextfile}' app.log access.log employees.csv
+        description: "`nextfile` skips straight to the next input file, useful for peeking at just the first line (or first match) of each file in a batch without reading the rest."
+        output: |
+          app.log
+          access.log
+          employees.csv
+        level: advanced
+      - title: "Cross-reference two files"
+        code: awk -F, 'NR==FNR{allowed[$1]=1; next} FNR>1 && !($1 in allowed){print $1}' allowed.txt employees.csv
+        description: "`NR==FNR` is only true while reading the first file, so that block builds a lookup table from it; `next` skips straight to the following record. The second block then reports names from the second file that aren't in that table."
+        output: |
+          dave
+          erin
+          frank
+        level: advanced
+        tags: [one-liners]
+  - title: "CSV and tabular data"
+    intro: "Field splitting makes awk a natural fit for CSV-shaped files, provided fields don't contain embedded commas."
+    examples:
+      - title: "Skip a header row"
+        code: awk -F, 'NR>1' employees.csv
+        description: "`NR>1` alone, as a pattern with no action, prints every record after the first. The single most common guard in CSV-processing `awk` scripts."
+        output: |
+          alice,engineering,95000
+          bob,design,72000
+          carol,engineering,110000
+          dave,sales,68000
+          erin,design,81000
+          frank,engineering,88000
+        level: basic
+        tags: [beginner]
+      - title: "Reorder columns"
+        code: awk -F, -v OFS=, 'NR>1{print $1,$3,$2}' employees.csv
+        description: "Printing fields in a different order, with `OFS` set to match the input delimiter, rewrites the CSV's column order."
+        output: |
+          alice,95000,engineering
+          bob,72000,design
+          carol,110000,engineering
+          dave,68000,sales
+          erin,81000,design
+          frank,88000,engineering
+        level: intermediate
+      - title: "Turn a CSV into an aligned table"
+        code: awk -F, 'NR==1{next} {printf "%-6s %-12s %s\n",$1,$2,$3}' employees.csv
+        description: "`next` skips straight to the next record without running the rest of the script, a tidy way to drop the header before a `printf`-formatted body."
+        output: |
+          alice  engineering  95000
+          bob    design       72000
+          carol  engineering  110000
+          dave   sales        68000
+          erin   design       81000
+          frank  engineering  88000
+        level: intermediate
+      - title: "Apply a calculation to a column"
+        code: awk -F, -v OFS=, 'NR>1{$3=sprintf("%.0f",$3*1.10); print}' employees.csv
+        description: "Reassigning `$3` to a computed value, then letting the field reassignment trigger a rebuild of `$0`, applies a 10% raise across every row."
+        output: |
+          alice,engineering,104500
+          bob,design,79200
+          carol,engineering,121000
+          dave,sales,74800
+          erin,design,89100
+          frank,engineering,96800
+        level: advanced
+  - title: "Analysing an access log"
+    intro: "Log lines are field-rich by nature; awk is usually the fastest way to turn them into numbers."
+    examples:
+      - title: "Extract the timestamp from bracketed text"
+        code: awk -F'[][]' '{print $2}' access.log
+        description: "Using `[` and `]` themselves as the field separator (inside a character class, so they're literal, not a range) splits the line around the bracketed date, landing it in `$2`."
+        output: |
+          05/Jul/2026:09:12:01 +0000
+          05/Jul/2026:09:12:03 +0000
+          05/Jul/2026:09:12:07 +0000
+          05/Jul/2026:09:12:15 +0000
+          05/Jul/2026:09:12:22 +0000
+          05/Jul/2026:09:12:40 +0000
+          05/Jul/2026:09:13:02 +0000
+          05/Jul/2026:09:13:10 +0000
+        level: advanced
+        tags: [regex]
+      - title: "Strip the leading quote from the HTTP method"
+        code: awk '{gsub(/"/,"",$6); print $6}' access.log
+        description: "The quoted request splits across three default fields; `$6` is the method with a leading `\"` still attached. `gsub` on a specific field, not `$0`, cleans up just that one."
+        output: |
+          GET
+          GET
+          GET
+          POST
+          GET
+          POST
+          GET
+          GET
+        level: advanced
+      - title: "Filter to 4xx responses"
+        code: awk '$9 ~ /^4/{print $1, $9}' access.log
+        description: "Field 9 is the status code once the quoted request has consumed fields 6-8. Matching `^4` catches both 401s and 404s in one pattern."
+        output: |
+          198.51.100.7 401
+          198.51.100.7 401
+          203.0.113.9 404
+        level: advanced
+        tags: [regex, networking]
+      - title: "Average response size and duration"
+        code: awk '{bytes+=$(NF-1); time+=$NF} END{printf "avg_bytes=%.0f avg_time=%.3f\n", bytes/NR, time/NR}' access.log
+        description: "Using `$(NF-1)` and `$NF` for bytes and duration is more robust than a fixed field number, since it doesn't depend on how many words the quoted request happens to contain."
+        output: |
+          avg_bytes=1120 avg_time=0.030
+        level: advanced
+      - title: "Rank status codes by frequency"
+        code: awk '{count[$9]++} END{for (c in count) print count[c], c}' access.log | sort -rn
+        description: "The same counting pattern as before, piped through `sort -rn` to put the most frequent status code first."
+        output: |
+          5 200
+          2 401
+          1 404
+        level: advanced
+        tags: [one-liners]
+  - title: "Practical one-liners and pipelines"
+    intro: "awk rarely works alone; it's usually one stage in a chain with grep, sed, and sort."
+    examples:
+      - title: "Deduplicate a field while keeping first-seen order"
+        code: awk '!seen[$1]++' access.log
+        description: "`seen[$1]++` is 0 (falsy) the first time a value appears and truthy after, so `!seen[$1]++` matches only the first occurrence of each value, preserving original order, unlike `sort -u` which reorders."
+        output: |
+          198.51.100.7 - - [05/Jul/2026:09:12:01 +0000] "GET /index.html HTTP/1.1" 200 1024 0.021
+          203.0.113.5 - - [05/Jul/2026:09:12:03 +0000] "GET /style.css HTTP/1.1" 200 512 0.008
+          203.0.113.9 - - [05/Jul/2026:09:12:22 +0000] "GET /index.html HTTP/1.1" 200 1024 0.019
+        level: advanced
+        tags: [one-liners]
+      - title: "Narrow with grep, then extract fields with awk"
+        code: grep error app.log | awk '{print $1, $2, $3}'
+        description: "A common division of labour: `grep` filters the lines worth looking at, `awk` pulls out just the timestamp fields from what's left."
+        output: |
+          Jul 5 09:14:22
+          Jul 5 09:14:28
+          Jul 5 09:15:01
+        level: intermediate
+        tags: [scripting]
+      - title: "Reshape with sed, then filter and extract with awk"
+        code: sed 's/refused/denied/' app.log | awk '/error/{print $3, $6, $7}'
+        description: "`sed` rewrites text in place in the stream; `awk` downstream still matches and extracts fields from the edited text, not the original."
+        output: |
+          09:14:22 error: connection
+          09:14:28 error: connection
+          09:15:01 error: connection
+        level: advanced
+        tags: [scripting]
+      - title: "Extract a field, then rank it with sort and uniq"
+        code: awk '{print $9}' access.log | sort | uniq -c | sort -rn
+        description: "The alternative to counting inside `awk` with an array: hand the extracted field to the standard `sort | uniq -c | sort -rn` tallying pipeline instead."
+        output: |
+                5 200
+                2 401
+                1 404
+        level: intermediate
+        tags: [one-liners]
+      - title: "Read an environment variable"
+        code: REPORT_TITLE="Weekly Summary" awk 'BEGIN{print ENVIRON["REPORT_TITLE"]}'
+        description: "`ENVIRON` is an array of the process's environment variables, keyed by name, handy for parameterising a script without `-v`."
+        output: |
+          Weekly Summary
+        level: advanced
+      - title: "Load a script from a file"
+        code: |-
+          printf 'BEGIN { FS = ","; OFS = "\t"; print "name", "dept" }\nNR > 1 { print $1, $2 }\n' > report.awk
+          awk -f report.awk employees.csv
+        description: "`-f` reads the program from a file instead of the command line. Worth it once a script has more than a line or two, or gets reused across files, the same trade-off as `sed -f`."
+        output: |
+          name	dept
+          alice	engineering
+          bob	design
+          carol	engineering
+          dave	sales
+          erin	design
+          frank	engineering
+        level: advanced
+        tags: [scripting]
