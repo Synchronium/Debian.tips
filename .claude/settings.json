@@ -2,6 +2,7 @@
   "permissions": {
     "allow": [
       "Bash(npm run check*)",
+      "Bash(scripts/sandbox.sh *)",
       "Edit(content/**)",
       "Write(content/**)"
     ]

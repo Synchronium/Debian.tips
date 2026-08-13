@@ -31,6 +31,7 @@ npm run check    # typecheck + tests + build + linkcheck — run before committi
 content/            Markdown + YAML content (commands, concepts, scripting, recipes, debian)
 src/                Generator: content pipeline, templates, dev server, build/linkcheck scripts
 src/templates/      Page templates and shared partials
+scripts/sandbox.sh  Disposable Docker sandbox for testing content examples (see below)
 styles/site.css     Full design system (single stylesheet, hashed on build)
 public/             Static assets copied as-is into dist/ (favicon, robots.txt, CNAME, search.js)
 test/               Vitest unit + build-pipeline tests, with fixture content
@@ -43,6 +44,23 @@ get an `examples.yaml`). Frontmatter is validated against `src/content/schema.ts
 an invalid or incomplete page fails the build with a specific error rather than shipping broken.
 See `.claude/skills/write-content-page/SKILL.md` for the full authoring checklist (structure,
 length, tone, and verification steps).
+
+### Verifying examples
+
+Every example on this site is run for real, not written from memory or invention. Verification
+happens inside a disposable `debian:trixie` container rather than on your own machine:
+
+```sh
+name=$(scripts/sandbox.sh start)          # boots a throwaway container, prints its name
+scripts/sandbox.sh exec "$name" "<command to verify>"
+scripts/sandbox.sh stop "$name"           # discards it — nothing persists
+```
+
+This matters because "test the example" sometimes means installing a package, using `sudo`, or
+standing up a real service (an example for `ssh` needs an actual `sshd` to connect to; one for
+`crontab` needs the `cron` daemon actually running) — none of which you want accumulating on a
+machine you keep using. The container is thrown away afterwards regardless of what the example
+did to it. Requires Docker; the project's devcontainer has it out of the box via Docker-in-Docker.
 
 ## Deployment
 

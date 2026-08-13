@@ -54,14 +54,20 @@ because a page reads better with it.
 
 ## 4. Test every example for real — don't fabricate output
 
-This devcontainer runs Debian trixie (`mcr.microsoft.com/devcontainers/typescript-node:...-trixie`),
-so treat it as "current Debian stable":
+Run every example inside the disposable sandbox (`scripts/sandbox.sh`), not directly on the
+devcontainer — it's a throwaway `debian:trixie` container (same "current Debian stable" target),
+so installing packages, using `sudo`, or standing up a service (e.g. `sshd`) for a test leaves
+nothing behind on the host:
 
-- Actually run each command with the Bash tool before writing its `output:` block. Copy real
-  output, then sanitize hostnames/users to `deb1`/`user`.
-- If a command can't be safely or meaningfully run here (needs root, touches real hardware, is
-  destructive, needs a package that isn't installed), say so explicitly in your reply instead of
-  inventing plausible-looking output — flag it for the user to verify on a real box.
+- Start one sandbox per page: `scripts/sandbox.sh start` (prints a container name). Reuse that
+  name for every `exec` call for this page so scratch fixtures and installed packages persist
+  across steps, then `scripts/sandbox.sh stop <name>` once done.
+- Run each command with `scripts/sandbox.sh exec <name> "<command>"` (add `-u user` for a
+  non-root prompt) before writing its `output:` block. Copy real output, then sanitize
+  hostnames/users to `deb1`/`user`.
+- If a command genuinely can't be run even in the sandbox (touches real hardware, needs
+  privileges Docker itself can't grant), say so explicitly in your reply instead of inventing
+  plausible-looking output — flag it for the user to verify on a real box.
 - Destructive examples (`rm`, `dd`, `mkfs`, `chmod -R`, `curl | sh`, etc.) get `danger: true` and
   the description must state the failure mode. Prefer teaching the safe variant first.
 

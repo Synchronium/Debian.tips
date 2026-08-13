@@ -6,7 +6,25 @@
 	"image": "mcr.microsoft.com/devcontainers/typescript-node:4-24-trixie",
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
-	// "features": {},
+	"features": {
+		// Lets Claude run content-example testing batches inside throwaway `docker run --rm`
+		// containers instead of directly in this persistent devcontainer, so installs/service
+		// state from testing (e.g. openssh-server, a spun-up sshd) don't accumulate here.
+		// Needs "privileged": true below — nested Docker won't start without it.
+		// moby:false because the default moby-cli/moby-engine packages aren't published
+		// for Debian trixie yet; this makes the feature install real docker-ce instead.
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {
+			"moby": false
+		}
+	},
+	"privileged": true,
+
+	// Persists Claude Code session transcripts, memory, and config across container rebuilds.
+	// Without this, ~/.claude lives on the container's own writable layer and is discarded on
+	// every rebuild along with everything in it.
+	"mounts": [
+		"source=debiantips-claude-home,target=/home/node/.claude,type=volume"
+	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
@@ -20,7 +38,10 @@
 	// works fine given just these libraries, so leave PUPPETEER_SKIP_DOWNLOAD /
 	// PUPPETEER_EXECUTABLE_PATH unset and let `npm install`'s postinstall step fetch one
 	// normally. See PLAN-BUILD.md §7.1 for the full story.
-	"postCreateCommand": "sudo apt-get update && npx --yes playwright install-deps chromium",
+	// The debiantips-claude-home volume above is created and owned by root on first mount, which
+	// blocks the node user (and thus the Claude Code extension / CLI) from writing to
+	// ~/.claude — chown it back to node before anything else touches it.
+	"postCreateCommand": "sudo mkdir -p /home/node/.claude && sudo chown -R node:node /home/node/.claude && sudo apt-get update && npx --yes playwright install-deps chromium",
 
 	"customizations": {
 		"vscode": {
