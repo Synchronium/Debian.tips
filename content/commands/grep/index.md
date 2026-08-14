@@ -6,7 +6,7 @@ category: commands
 tags: [search, regex, text-processing]
 updated: 2026-07-05
 tier: flagship
-related: [find, sed, pipes-and-redirection, exit-codes-and-error-handling]
+related: [find, sed, pipes-and-redirection, exit-codes-and-error-handling, cut, sort]
 ---
 
 `grep` searches its input, one or more files, or whatever's piped to it, for lines that match
@@ -70,8 +70,9 @@ All three read text line by line, but they answer different questions. `grep` an
 lines match?" and prints lines verbatim. [`sed`](/commands/sed/) answers "how do I *transform*
 matching lines?" `awk` answers "how do I pull *fields* out of matching lines and compute
 something?" A common pattern is chaining them: `grep` to find the relevant lines, then `awk` or
-`cut` to pull out a field, then `sort | uniq -c` to tally it. See
-[Pipes and redirection](/concepts/pipes-and-redirection/) for why that composition works.
+[`cut`](/commands/cut/) to pull out a field, then [`sort | uniq -c`](/commands/sort/) to tally
+it. See [Pipes and redirection](/concepts/pipes-and-redirection/) for why that composition
+works.
 
 ## A note on performance
 

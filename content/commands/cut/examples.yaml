@@ -1,0 +1,238 @@
+command: cut
+sections:
+  - title: "Selecting fields with -f"
+    intro: "-d sets the delimiter; -f picks which field or fields to keep."
+    examples:
+      - title: "Extract one column from CSV"
+        code: cut -d, -f1 users.csv
+        description: "-d, treats a comma as the delimiter; -f1 keeps only the first field."
+        output: |
+          name
+          Alice
+          Bob
+          Carol
+          Dave
+          Erin
+          Frank
+        level: basic
+        tags: [beginner]
+      - title: "Extract multiple specific columns"
+        code: cut -d, -f1,3 users.csv
+        description: "A comma-separated list in -f keeps just those fields, each still separated by the original delimiter."
+        output: |
+          name,department
+          Alice,Engineering
+          Bob,Sales
+          Carol,Engineering
+          Dave,Marketing
+          Erin,Sales
+          Frank,Engineering
+        level: basic
+        tags: [beginner]
+      - title: "Extract a range of columns"
+        code: cut -d, -f1-2 users.csv
+        description: "N-M selects an inclusive range of fields."
+        output: |
+          name,age
+          Alice,34
+          Bob,29
+          Carol,41
+          Dave,25
+          Erin,38
+          Frank,31
+        level: basic
+      - title: "Extract from a column to the end of the line"
+        code: cut -d, -f2- users.csv
+        description: "A trailing dash with no end number means 'to the last field,' how ever many there are."
+        output: |
+          age,department
+          34,Engineering
+          29,Sales
+          41,Engineering
+          25,Marketing
+          38,Sales
+          31,Engineering
+        level: basic
+        tags: [beginner]
+      - title: "Fields print in original order, not selection order"
+        code: cut -d, -f3,1 users.csv
+        description: "Listing field 3 before field 1 doesn't reorder the output — cut always preserves the source column order regardless of how -f lists them. Reach for awk if you actually need columns rearranged."
+        output: |
+          name,department
+          Alice,Engineering
+          Bob,Sales
+          Carol,Engineering
+          Dave,Marketing
+          Erin,Sales
+          Frank,Engineering
+        level: intermediate
+        tags: [beginner]
+
+  - title: "Selecting characters with -c"
+    intro: "A fixed position range, independent of any delimiter."
+    examples:
+      - title: "Extract a fixed character range"
+        code: echo 'Hello, World!' | cut -c1-5
+        description: "-c1-5 keeps characters 1 through 5, however they're separated (or not) — no delimiter involved at all."
+        output: |
+          Hello
+        level: basic
+        tags: [beginner]
+      - title: "From a character to the end of the line"
+        code: echo 'Hello, World!' | cut -c8-
+        description: "Same open-range syntax as -f: a trailing dash means through the end."
+        output: |
+          World!
+        level: basic
+      - title: "From the start to a character, shorthand"
+        code: echo 'Hello, World!' | cut -c-5
+        description: "A leading dash with no start number means 'from the first character' — equivalent to -c1-5, just shorter to type."
+        level: basic
+      - title: "A single character position"
+        code: echo 'Hello, World!' | cut -c1
+        description: "A bare number with no range takes just that one character."
+        output: |
+          H
+        level: basic
+      - title: "Multiple character ranges at once"
+        code: echo 'Hello, World!' | cut -c1-3,8-12
+        description: "Comma-separated ranges work the same way as with -f — pull several disjoint slices in one pass."
+        output: |
+          HelWorld
+        level: intermediate
+      - title: "Byte positions instead of character positions"
+        code: echo 'Hello, World!' | cut -b1-5
+        description: "-b counts bytes rather than characters — identical to -c for plain ASCII text like this, but they diverge on multi-byte UTF-8 characters, where one character can span several bytes."
+        output: |
+          Hello
+        level: advanced
+
+  - title: "Inverting and reformatting the selection"
+    examples:
+      - title: "Keep everything except a field"
+        code: cut -d, -f2 --complement users.csv
+        description: "--complement inverts the selection: every field except the ones named. Here, drop the age column and keep the rest."
+        output: |
+          name,department
+          Alice,Engineering
+          Bob,Sales
+          Carol,Engineering
+          Dave,Marketing
+          Erin,Sales
+          Frank,Engineering
+        level: intermediate
+      - title: "Keep everything except several fields"
+        code: cut -d, -f1,3 --complement users.csv
+        description: "--complement works the same with a list or range as with a single field."
+        output: |
+          age
+          34
+          29
+          41
+          25
+          38
+          31
+        level: intermediate
+      - title: "Invert a character range instead of a field"
+        code: echo 'Hello, World!' | cut -c1-5 --complement
+        description: "--complement applies to -c selections too, not just -f ones."
+        output: |
+          , World!
+        level: intermediate
+      - title: "Change the delimiter used in the output"
+        code: cut -d, -f1,3 --output-delimiter=' | ' users.csv
+        description: "--output-delimiter replaces the separator in the printed result without needing the input to use it — handy for turning CSV into a more readable aligned-looking list."
+        output: |
+          name | department
+          Alice | Engineering
+          Bob | Sales
+          Carol | Engineering
+          Dave | Marketing
+          Erin | Sales
+          Frank | Engineering
+        level: intermediate
+
+  - title: "Input shapes: delimiters, missing fields, multiple files"
+    examples:
+      - title: "The default delimiter is tab, not space"
+        code: printf 'a\tb\tc\n' | cut -f2
+        description: "With no -d given, cut splits on tabs. Running cut -f2 on space-separated text with no -d ' ' just returns the whole line unchanged, since there's no tab to split on."
+        output: |
+          b
+        level: basic
+        tags: [beginner]
+      - title: "Lines without the delimiter pass through unchanged by default"
+        code: printf 'a,b,c\nno-delimiter-here\nd,e,f\n' | cut -d, -f2
+        description: "A line with no comma at all has nothing to cut, so cut prints it as-is rather than dropping it or erroring."
+        output: |
+          b
+          no-delimiter-here
+          e
+        level: intermediate
+      - title: "Suppress lines that don't contain the delimiter"
+        code: printf 'a,b,c\nno-delimiter-here\nd,e,f\n' | cut -d, -f2 -s
+        description: "-s (--only-delimited) drops non-matching lines entirely instead of passing them through — useful when a stray line without the expected structure should be treated as noise, not data."
+        output: |
+          b
+          e
+        level: intermediate
+      - title: "Requesting a field that doesn't exist returns an empty line"
+        code: printf 'a,b\n' | cut -d, -f5
+        description: "No error, no warning — just a blank line, since there's nothing at field 5. Worth checking for explicitly in a script rather than assuming a non-empty result."
+        level: intermediate
+        tags: [beginner]
+      - title: "The one-character delimiter limit, made visible"
+        code: "printf 'a::b::c\\n' | cut -d: -f2"
+        description: >-
+          cut's delimiter is exactly one character. \"::\" isn't treated as a single two-character
+          separator — it's two single-colon splits, so field 2 is the empty string between them,
+          not \"b\". Field 3 is \"b\"; \"c\" is field 5.
+        danger: true
+        level: advanced
+        tags: [beginner]
+      - title: "Same limitation with padded whitespace columns"
+        code: printf 'a   b     c\n' | cut -d' ' -f2
+        description: "Multiple consecutive spaces — exactly what ps or ls -l use to align columns — create the same empty-field problem. Field 2 here is empty; the real 'b' has shifted to a much later field number."
+        level: advanced
+        tags: [beginner]
+      - title: "Work around it by squeezing repeated delimiters first"
+        code: printf 'a   b     c\n' | tr -s ' ' | cut -d' ' -f2
+        description: "tr -s ' ' collapses runs of spaces down to one before cut ever sees the line, fixing the field numbering. See the tr page for -s and its other options."
+        output: |
+          b
+        level: advanced
+      - title: "Read from stdin via redirection instead of a filename argument"
+        code: cut -d, -f1 < users.csv
+        description: "Same result as passing the filename directly — cut treats redirected stdin identically to a file argument."
+        output: |
+          name
+          Alice
+          Bob
+          Carol
+          Dave
+          Erin
+          Frank
+        level: basic
+      - title: "Cut from several files as one combined stream"
+        code: cut -d, -f1 users.csv users2.csv
+        description: "Multiple filename arguments are processed in sequence, each line cut the same way — the output doesn't distinguish which file a line came from."
+        level: intermediate
+
+  - title: "Pulling a column out of real data"
+    examples:
+      - title: "Extract just the IP addresses from an access log"
+        code: cut -d' ' -f1 access.log
+        description: "Space-delimited, field 1: the standard combined log format puts the client IP first. Feed this into sort | uniq -c for a visitor frequency count — see the uniq page."
+        output: |
+          203.0.113.5
+          203.0.113.5
+          198.51.100.7
+          198.51.100.7
+          203.0.113.5
+          192.0.2.44
+          192.0.2.44
+          198.51.100.7
+          203.0.113.5
+          192.0.2.44
+        level: intermediate
+        tags: [monitoring, beginner]

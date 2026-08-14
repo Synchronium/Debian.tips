@@ -6,7 +6,7 @@ category: commands
 tags: [search, files]
 updated: 2026-07-05
 tier: flagship
-related: [grep, file-permissions-explained]
+related: [grep, file-permissions-explained, sort, wc]
 ---
 
 `find` walks a directory tree and prints, or acts on, every file that matches a set of tests

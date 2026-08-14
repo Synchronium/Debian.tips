@@ -6,7 +6,7 @@ category: commands
 tags: [text-processing, regex]
 updated: 2026-08-12
 tier: flagship
-related: [grep, sed, pipes-and-redirection]
+related: [grep, sed, pipes-and-redirection, sort, uniq]
 ---
 
 `awk` reads its input one record at a time (a line, by default), splits each record into
@@ -68,7 +68,7 @@ without a `sum = 0` line first.
 same variable as the other, and `awk` converts as needed. Arrays are **associative** (keyed by
 string, not just integer index), which makes them the natural structure for counting and
 grouping: `count[$1]++` builds a frequency table of field 1 across every record in a single pass,
-no external `sort | uniq -c` needed. `awk` also has the `if`/`else`, `for`, and `while` you'd
+no external [`sort | uniq -c`](/commands/uniq/) needed. `awk` also has the `if`/`else`, `for`, and `while` you'd
 expect from a general-purpose language, plus a ternary `?:`, so logic that would need a `sed`
 hold-space trick or a shell loop around `grep` often fits in one `awk` line instead.
 
@@ -92,6 +92,7 @@ almost certainly a `gawk`-only extension running under `mawk`.
 ## Combining awk with grep and sed
 
 The three tools compose naturally in a pipeline: `grep` narrows the lines, `sed` reshapes text
-within a line, and `awk` extracts and computes over fields, often with `sort`/`uniq -c` closing
-the loop. See [Pipes and redirection](/concepts/pipes-and-redirection/) for why chaining small,
+within a line, and `awk` extracts and computes over fields, often with
+[`sort`/`uniq -c`](/commands/sort/) closing the loop. See
+[Pipes and redirection](/concepts/pipes-and-redirection/) for why chaining small,
 single-purpose tools like this works as well as it does.

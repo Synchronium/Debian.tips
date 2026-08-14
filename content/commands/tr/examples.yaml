@@ -1,0 +1,289 @@
+command: tr
+sections:
+  - title: "Translating characters"
+    intro: "SET1 and SET2 map position-for-position: the Nth character of SET1 becomes the Nth character of SET2."
+    examples:
+      - title: "Convert to uppercase"
+        code: echo 'Hello, World!' | tr 'a-z' 'A-Z'
+        description: "Every character in the a-z range maps to the matching position in A-Z. Characters not in SET1 (the comma, the space, the !) pass through untouched."
+        output: |
+          HELLO, WORLD!
+        level: basic
+        tags: [beginner]
+      - title: "Convert to uppercase using a character class"
+        code: echo 'Hello, World!' | tr '[:lower:]' '[:upper:]'
+        description: "[:lower:] and [:upper:] are clearer than spelling out a-z/A-Z by hand, and behave the same for plain ASCII text."
+        output: |
+          HELLO, WORLD!
+        level: basic
+      - title: "Convert to lowercase"
+        code: echo 'Hello, World!' | tr 'A-Z' 'a-z'
+        description: "Same idea, reversed direction."
+        output: |
+          hello, world!
+        level: basic
+        tags: [beginner]
+      - title: "Swap case in a single pass"
+        code: echo 'Hello World' | tr 'a-zA-Z' 'A-Za-z'
+        description: "Two ranges concatenated in each SET: lowercase maps to uppercase and uppercase maps to lowercase, simultaneously, in one command."
+        output: |
+          hELLO wORLD
+        level: intermediate
+      - title: "ROT13-encode text"
+        code: echo 'Attack at dawn' | tr 'A-Za-z' 'N-ZA-Mn-za-m'
+        description: "Each letter maps to the one 13 places later in the alphabet, wrapping around. Running the exact same command on the output decodes it back — ROT13 is its own inverse."
+        output: |
+          Nggnpx ng qnja
+        level: advanced
+
+  - title: "Deleting characters with -d"
+    intro: "-d removes every character listed in SET1. No SET2 is given — there's nothing to translate them to."
+    examples:
+      - title: "Delete specific characters"
+        code: echo 'Hello, World!' | tr -d ','
+        description: "Every comma is removed outright, not replaced with anything."
+        output: |
+          Hello World!
+        level: basic
+        tags: [beginner]
+      - title: "Delete an entire character class"
+        code: echo 'Room 42, Floor 7' | tr -d '[:digit:]'
+        description: "Removes every digit anywhere in the input, regardless of how many or where."
+        output: |
+          Room , Floor
+        level: basic
+      - title: "Strip all punctuation"
+        code: echo 'Hello, World! Nice.' | tr -d '[:punct:]'
+        description: "[:punct:] covers the standard ASCII punctuation set in one class, instead of listing each symbol by hand."
+        output: |
+          Hello World Nice
+        level: intermediate
+        tags: [beginner]
+      - title: "The mistake: trying [^...] for 'not this'"
+        code: echo 'Hello123' | tr -d '[^0-9]'
+        description: >-
+          Brackets have no special meaning in tr's SET syntax — this is parsed as the literal
+          characters [, ^, ] plus the range 0-9, not "everything except a digit." Verified: this
+          deletes the digits and keeps the letters, the exact opposite of what a regex habit
+          would predict.
+        danger: true
+        level: advanced
+        tags: [beginner]
+      - title: "The correct way to delete everything except a set"
+        code: echo 'Hello123' | tr -cd '0-9'
+        description: "-c complements the set first, then -d deletes what's left after complementing — so this keeps only digits. This is the actual tr equivalent of grep's [^...]."
+        output: |
+          123
+        level: intermediate
+        tags: [beginner]
+
+  - title: "Squeezing repeats with -s"
+    intro: "-s collapses any run of the same character, however long, down to a single instance."
+    examples:
+      - title: "Collapse repeated spaces into one"
+        code: printf 'a   b     c\n' | tr -s ' '
+        description: "Whatever the run length — 3 spaces or 30 — -s reduces it to exactly one."
+        output: |
+          a b c
+        level: basic
+        tags: [beginner]
+      - title: "Fix column extraction on padded text"
+        code: printf 'a   b     c\n' | tr -s ' ' | cut -d' ' -f2
+        description: "Squeeze first, then cut works correctly — this is the standard fix for cut's one-character-delimiter limitation on space-padded output like ps or ls -l. See the cut page."
+        output: |
+          b
+        level: intermediate
+      - title: "Squeeze repeated letters generically"
+        code: echo 'aabbccdd' | tr -s 'a-z'
+        description: "Applies to any character in the given set, not just spaces — every run of the same letter collapses to one."
+        output: |
+          abcd
+        level: intermediate
+      - title: "Squeezing newlines removes blank lines entirely, not just extras"
+        code: printf 'a\n\nb\n\n\n\nc\n' | tr -s '\n'
+        description: >-
+          Worth being precise about: a blank line is just two adjacent newlines, and -s squeezes
+          any run of them down to one — which eliminates the blank line completely rather than
+          leaving a single blank line the way cat -s does. Verified: three paragraphs separated
+          by blank lines come out with no blank lines at all, just adjacent text lines.
+        output: |
+          a
+          b
+          c
+        level: advanced
+        tags: [beginner]
+
+  - title: "Deleting and squeezing together"
+    examples:
+      - title: "Delete one set, then squeeze what's left"
+        code: printf 'aabbccdd11\n' | tr -ds '0-9' 'a-z'
+        description: "-ds takes two sets: SET1 is deleted first, then runs of characters in SET2 are squeezed in what remains. Here, digits are removed, then the repeated letters collapse."
+        output: |
+          abcd
+        level: advanced
+
+  - title: "When SET1 and SET2 are different lengths"
+    examples:
+      - title: "A shorter SET2 repeats its last character"
+        code: echo 'abcdef' | tr 'a-f' 'XY'
+        description: "By default, if SET2 is shorter than SET1, its final character is repeated to fill out the mapping — a maps to X, but b through f all map to Y."
+        output: |
+          XYYYYY
+        level: intermediate
+      - title: "Truncate SET1 to match SET2's length instead"
+        code: echo 'abcdef' | tr -t 'a-f' 'XY'
+        description: "-t changes that behaviour: SET1 is truncated to SET2's length instead of SET2 being extended, so only a and b are translated (to X and Y) and c through f pass through untouched."
+        output: |
+          XYcdef
+        level: advanced
+
+  - title: "Complementing a set with -c"
+    intro: "-c operates on every character NOT in SET1 — the actual way to express 'everything except.'"
+    examples:
+      - title: "Keep only digits"
+        code: echo 'Hello123World' | tr -cd '[:digit:]'
+        description: "Complement of digits is every letter; -d deletes that complement, leaving only the digits."
+        output: |
+          123
+        level: intermediate
+        tags: [beginner]
+      - title: "Keep only letters and digits"
+        code: echo 'Hello, World! 123' | tr -cd '[:alnum:]'
+        description: "[:alnum:] covers both letters and digits in one class — strips spaces and punctuation, keeps everything else."
+        output: |
+          HelloWorld123
+        level: intermediate
+      - title: "Strip non-printable characters — but watch what counts as printable"
+        code: printf 'Hello\aWorld\n' | tr -cd '[:print:]'
+        description: >-
+          [:print:] doesn't include the newline character. Verified: this strips the bell
+          character as intended, but also strips every line break in the input, joining
+          everything onto one line with no separators.
+        danger: true
+        level: advanced
+      - title: "Strip non-printable characters correctly, keeping line breaks"
+        code: printf 'Hello\aWorld\n' | tr -cd '[:print:]\n'
+        description: "Add \\n explicitly to the keep-set alongside [:print:] so line structure survives the cleanup."
+        output: |
+          HelloWorld
+        level: advanced
+        tags: [beginner]
+      - title: "Complementing a set includes the trailing newline"
+        code: echo 'ABC' | tr --complement 'A' '_'
+        description: >-
+          echo appends a trailing newline, and that newline is not 'A' either — so it's part of
+          the complement too. Verified: the output is A___ (four characters), not A__ (three) —
+          the line's own newline got translated along with B and C.
+        output: |
+          A___
+        level: advanced
+
+  - title: "Practical text cleanup"
+    examples:
+      - title: "Convert Windows line endings to Unix"
+        code: tr -d '\r' < crlf.txt
+        description: "CRLF line endings are a trailing carriage-return byte before each newline — deleting \\r converts the file to plain Unix LF endings without touching anything else."
+        level: intermediate
+        tags: [beginner]
+      - title: "Convert tabs to spaces"
+        code: printf 'a\tb\tc\n' | tr '\t' ' '
+        description: "A direct one-to-one substitution, no class needed for a single character."
+        output: |
+          a b c
+        level: basic
+      - title: "Replace spaces with underscores for safer filenames"
+        code: echo 'my file name.txt' | tr ' ' '_'
+        description: "A common preprocessing step before using a filename in a context that handles spaces awkwardly (some scripts, some URLs)."
+        output: |
+          my_file_name.txt
+        level: basic
+        tags: [beginner]
+      - title: "Mask digits for a redacted display"
+        code: echo 'Card 4111 2222 3333' | tr '[:digit:]' '#'
+        description: "Every digit becomes #, preserving the original grouping and spacing — useful for showing structure without showing the real numbers."
+        output: |
+          Card #### #### ####
+        level: intermediate
+      - title: "Convert a European decimal comma to a dot"
+        code: echo '3,14' | tr ',' '.'
+        description: "A one-character fix for numeric data that uses a comma as the decimal separator, before feeding it to a tool that expects a dot."
+        output: |
+          3.14
+        level: basic
+      - title: "Translate using an octal character code"
+        code: printf 'ABA\n' | tr '\101' 'X'
+        description: "\\101 is the octal escape for 'A' — useful for a character that's awkward to type literally or paste cleanly into a script."
+        output: |
+          XBX
+        level: advanced
+      - title: "Convert a CSV file to tab-separated"
+        code: tr ',' '\t' < users.csv
+        description: "Works fine for simple CSV with no quoted fields or embedded commas — for anything with quoting rules, use a real CSV-aware tool instead."
+        output: |
+          name	age	department
+          Alice	34	Engineering
+          Bob	29	Sales
+        level: intermediate
+        tags: [beginner]
+
+  - title: "Long-form flags"
+    examples:
+      - title: "Squeeze, spelled out"
+        code: echo 'aabbcc' | tr --squeeze-repeats 'a-z'
+        description: "--squeeze-repeats is the long-form spelling of -s."
+        output: |
+          abc
+        level: intermediate
+      - title: "Delete, spelled out"
+        code: echo 'a,b,c' | tr --delete ','
+        description: "--delete is the long-form spelling of -d."
+        output: |
+          abc
+        level: intermediate
+      - title: "Complement, spelled out"
+        code: echo 'Hello123World' | tr --complement --delete '[:digit:]'
+        description: "--complement is the long-form spelling of -c, and combines with --delete exactly like -cd does."
+        output: |
+          123
+        level: intermediate
+
+  - title: "Building real pipelines"
+    examples:
+      - title: "One word per line"
+        code: printf 'the quick brown fox\n' | tr -cs '[:alpha:]' '\n'
+        description: "-c takes the complement of letters (everything that isn't a letter — spaces, in this case), -s squeezes runs of it, giving one word per output line. The starting point for the classic word-frequency pipeline below."
+        output: |
+          the
+          quick
+          brown
+          fox
+        level: intermediate
+        tags: [beginner]
+      - title: "Count word frequency in a block of text"
+        code: printf 'the quick brown fox jumps over the lazy dog the fox runs\n' | tr -cs '[:alpha:]' '\n' | tr '[:upper:]' '[:lower:]' | sort | uniq -c | sort -rn
+        description: "A classic Unix pipeline: split into one word per line, lowercase everything so case doesn't fragment the count, then the standard sort | uniq -c | sort -rn frequency count from the sort and uniq pages."
+        output: |
+                3 the
+                2 fox
+                1 runs
+                1 quick
+                1 over
+                1 lazy
+                1 jumps
+                1 dog
+                1 brown
+        level: advanced
+        tags: [one-liners]
+      - title: "Join multiple lines into one"
+        code: printf 'one\ntwo\nthree\n' | tr '\n' ' '
+        description: "Translating every newline to a space collapses a whole file onto a single line — the opposite of the one-word-per-line trick above."
+        output: |
+          one two three
+        level: basic
+        tags: [beginner]
+      - title: "Confirm an explicit character list and a range behave identically"
+        code: echo 'abc' | tr 'abc' 'xyz'
+        description: "For three specific characters, spelling them out and using the range a-c produce the exact same mapping — ranges are just shorthand for the equivalent list."
+        output: |
+          xyz
+        level: basic

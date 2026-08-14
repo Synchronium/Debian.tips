@@ -1,0 +1,192 @@
+command: wc
+sections:
+  - title: "Counting lines, words, bytes, and characters"
+    intro: "The four counting modes, each narrowed with a single flag."
+    examples:
+      - title: "Count lines"
+        code: wc -l report.txt
+        description: "-l counts newline characters — see the gotcha section below for what that means for a file with no trailing newline."
+        output: |
+          40 report.txt
+        level: basic
+        tags: [beginner]
+      - title: "Count words"
+        code: wc -w report.txt
+        description: "A 'word' is a maximal run of non-whitespace characters — the same definition most editors use for their own word count."
+        output: |
+          200 report.txt
+        level: basic
+        tags: [beginner]
+      - title: "Count bytes"
+        code: wc -c report.txt
+        description: "Raw byte count, regardless of content or encoding."
+        output: |
+          871 report.txt
+        level: basic
+      - title: "Count characters"
+        code: wc -m report.txt
+        description: "Character count rather than byte count — identical to -c here because this file is plain ASCII, where every character is exactly one byte. They diverge on multi-byte UTF-8 text."
+        output: |
+          871 report.txt
+        level: basic
+      - title: "Find the longest line"
+        code: wc -L report.txt
+        description: "-L reports the length of the longest line in the file, not a count at all — useful for deciding whether a file needs wrapping to fit a fixed-width display."
+        output: |
+          21 report.txt
+        level: intermediate
+      - title: "Default output: lines, words, and bytes together"
+        code: wc report.txt
+        description: "With no flags, wc prints all three counts in a fixed order — lines, words, bytes — followed by the filename."
+        output: |
+           40 200 871 report.txt
+        level: basic
+        tags: [beginner]
+
+  - title: "Multiple files and totals"
+    examples:
+      - title: "Count several files at once"
+        code: wc -l users.csv wordlist.txt access.log
+        description: "Each file gets its own line, plus an automatic total line summing them all."
+        output: |
+          7 users.csv
+          9 wordlist.txt
+          10 access.log
+          26 total
+        level: basic
+        tags: [beginner]
+      - title: "Force a total line even for a single file"
+        code: wc -l --total=always report.txt
+        description: "By default a lone file gets no total line since it would just repeat the count — --total=always prints one anyway, useful for consistent output in a script that sometimes gets one file and sometimes several."
+        output: |
+          40 report.txt
+          40 total
+        level: advanced
+      - title: "Suppress the total line for multiple files"
+        code: wc -l --total=never users.csv wordlist.txt
+        description: "The opposite override — keep the per-file counts, drop the automatic total."
+        output: |
+            7 users.csv
+            9 wordlist.txt
+        level: advanced
+      - title: "Combine short flags"
+        code: wc -lw report.txt
+        description: "Bundling -l and -w prints just those two counts, in that order, instead of all three defaults."
+        output: |
+           40 200 report.txt
+        level: intermediate
+
+  - title: "Reading from stdin"
+    examples:
+      - title: "Count lines from a pipe"
+        code: cat report.txt | wc -l
+        description: "No filename to print, so just the bare number comes back."
+        output: |
+          40
+        level: basic
+        tags: [beginner]
+      - title: "Count lines from redirected input"
+        code: wc -l < report.txt
+        description: "Redirection and piping behave identically here — both feed wc's stdin, and both print just the number with no filename."
+        output: |
+          40
+        level: basic
+      - title: "Count words in a single line"
+        code: echo 'the quick brown fox' | wc -w
+        description: "Works the same on a single echoed line as on a whole file."
+        output: |
+          4
+        level: basic
+        tags: [beginner]
+      - title: "Measure a string's length in characters"
+        code: echo -n 'hello' | wc -c
+        description: "-n on echo suppresses its own trailing newline, so this counts exactly the string's own length rather than length-plus-one."
+        output: |
+          5
+        level: intermediate
+        tags: [beginner]
+
+  - title: "The no-trailing-newline gotcha"
+    examples:
+      - title: "A missing final newline undercounts by one"
+        code: printf 'a\nb\nc' | wc -l
+        description: >-
+          wc -l counts newline characters, not lines of text. This input has three lines of
+          content but only two \n characters — the third line has nothing after it — so wc
+          reports 2, not 3.
+        danger: true
+        output: |
+          2
+        level: advanced
+        tags: [beginner]
+      - title: "The same content, with a trailing newline, counts correctly"
+        code: printf 'a\nb\nc\n' | wc -l
+        description: "Identical visible content, one more trailing newline character, and the count matches what you'd actually expect. Most editors add this automatically; some hand-built files and command substitutions don't."
+        output: |
+          3
+        level: intermediate
+
+  - title: "Using wc on real things"
+    examples:
+      - title: "Count how many files matched a glob"
+        code: ls *.txt | wc -l
+        description: "A very common shape: pipe any line-per-item output into wc -l to get a count instead of a list."
+        output: |
+          3
+        level: basic
+        tags: [beginner]
+      - title: "Count total requests in a real access log"
+        code: wc -w access.log
+        description: "Not a meaningful metric on its own for a log file — shown here mainly to demonstrate that wc doesn't care what the text represents, it just counts."
+        output: |
+          90 access.log
+        level: intermediate
+      - title: "Read a list of filenames from a NUL-separated file"
+        code: wc -l --files0-from=filelist.bin
+        description: "--files0-from reads the list of files to process from a NUL-separated file instead of the command line — the standard pairing with find -print0 when there could be too many files (or files with newlines in their names) for a normal argument list."
+        output: |
+          40 report.txt
+          9 wordlist.txt
+          49 total
+        level: advanced
+      - title: "See the effect of hidden CRLF bytes"
+        code: wc -c crlf.txt
+        description: "Two lines of 'lineN' text plus a trailing \\r\\n each still comes to 14 bytes — 2 more than the same content would take with plain Unix line endings, from the two extra \\r bytes wc -l doesn't count as separate lines but wc -c still counts as bytes."
+        output: |
+          14 crlf.txt
+        level: advanced
+      - title: "wc has no flag for non-blank lines — use grep instead"
+        code: printf 'a\n\nb\n\nc\n' | wc -l
+        description: "wc -l counts every line including blank ones — 5 here, 2 of which are blank. There's no wc flag to exclude them."
+        output: |
+          5
+        level: intermediate
+        tags: [beginner]
+      - title: "The actual way to count only non-blank lines"
+        code: printf 'a\n\nb\n\nc\n' | grep -c .
+        description: "grep -c . counts lines matching 'at least one character' — every blank line fails that match and gets excluded. See the grep page for -c and other counting patterns."
+        output: |
+          3
+        level: intermediate
+        tags: [beginner]
+      - title: "Total lines across every file found, via find and xargs"
+        code: find . -maxdepth 1 -name '*.csv' | xargs wc -l
+        description: "find locates the files, xargs hands them all to a single wc invocation so the total line covers every match — see the find page for more on pairing it with other commands."
+        output: |
+          7 ./users.csv
+          7 ./users2.csv
+          14 total
+        level: advanced
+      - title: "Bundle lines and bytes together"
+        code: wc -lc report.txt
+        description: "Any combination of the short flags can be bundled — this prints just lines and bytes, skipping words and the default full trio."
+        output: |
+           40 871 report.txt
+        level: intermediate
+      - title: "Count how many accounts exist on a system"
+        code: wc -l < /etc/passwd
+        description: "One line per account in /etc/passwd — a quick way to get a headcount without parsing the file's colon-separated fields at all."
+        output: |
+          21
+        level: intermediate
+        tags: [sysadmin]

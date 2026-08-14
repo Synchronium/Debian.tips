@@ -4,7 +4,7 @@ description: "Locate what's actually eating your disk space, from a whole filesy
 category: recipes
 tags: [disk, files, one-liners]
 updated: 2026-07-05
-related: [find, tar]
+related: [find, tar, sort, head]
 ---
 
 **Problem:** Disk space is running low and you need to find out what's using it.
@@ -28,8 +28,9 @@ du -ah /var | sort -rh | head -20
 - `du -ah /var` prints the disk usage of every file and directory under `/var`, in
   human-readable sizes (`-h`), including individual files, not just directory totals (`-a`).
 - `sort -rh` sorts that output by size, largest first (`-r` reverse, `-h` understands
-  human-readable sizes like "1.2G").
-- `head -20` keeps just the top 20 results.
+  human-readable sizes like "1.2G") — see [sort](/commands/sort/) for more, including the
+  common mistake of using `-h` without also telling it which field to sort by.
+- `head -20` keeps just the top 20 results (see [head and tail](/commands/head/)).
 
 **Variations:**
 

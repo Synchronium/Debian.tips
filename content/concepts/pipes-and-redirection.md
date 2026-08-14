@@ -4,7 +4,7 @@ description: "How | connects commands together, and how >, >>, 2>&1, and <() rou
 category: concepts
 tags: [terminal, one-liners, beginner]
 updated: 2026-07-05
-related: [grep, sed, exit-codes-and-error-handling]
+related: [grep, sed, exit-codes-and-error-handling, sort, uniq]
 ---
 
 You've typed `ls | grep foo` a hundred times. Here's what's actually happening, and why the
@@ -41,7 +41,8 @@ one end to `ls` as its stdout and the other to `grep` as its stdin.
 
 Chains of pipes work the same way, one connection at a time: `cat access.log | sort | uniq -c |
 sort -rn` is three separate pipes, each just wiring one command's stdout to the next command's
-stdin.
+stdin — see [sort](/commands/sort/) and [uniq](/commands/uniq/) for more on what each stage
+actually does.
 
 ## Redirecting to and from files
 

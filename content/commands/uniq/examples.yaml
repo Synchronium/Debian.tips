@@ -1,0 +1,244 @@
+command: uniq
+sections:
+  - title: "The adjacency rule"
+    intro: "uniq only ever compares a line to the one immediately before it."
+    examples:
+      - title: "See uniq fail to remove a non-adjacent duplicate"
+        code: printf 'a\nb\na\na\n' | uniq
+        description: "The first and third 'a' aren't next to each other, so only the adjacent pair (lines 3 and 4) collapses. The first 'a' survives untouched."
+        output: |
+          a
+          b
+          a
+        level: basic
+        tags: [beginner]
+      - title: "Sort first, then uniq actually removes all duplicates"
+        code: printf 'a\nb\na\na\n' | sort | uniq
+        description: "Sorting groups every occurrence of a value together, so uniq's adjacent-only comparison now sees all of them next to each other."
+        output: |
+          a
+          b
+        level: basic
+        tags: [beginner]
+
+  - title: "Counting and isolating duplicates"
+    examples:
+      - title: "Count how many times each line occurs"
+        code: sort wordlist.txt | uniq -c
+        description: "-c prefixes every output line with its occurrence count, right-aligned."
+        output: |
+                1 Cherry
+                1 Elderberry
+                3 apple
+                2 banana
+                1 cherry
+                1 date
+        level: basic
+        tags: [beginner]
+      - title: "Show only lines that appeared more than once"
+        code: sort wordlist.txt | uniq -d
+        description: "-d filters the output to just the lines that had at least one duplicate — the unique-only lines disappear entirely, not just their extra copies."
+        output: |
+          apple
+          banana
+        level: basic
+        tags: [beginner]
+      - title: "Show only lines that appeared exactly once"
+        code: sort wordlist.txt | uniq -u
+        description: "The mirror image of -d: only lines with no duplicates at all."
+        output: |
+          Cherry
+          Elderberry
+          cherry
+          date
+        level: basic
+        tags: [beginner]
+      - title: "Show every copy of each duplicated line, not just one"
+        code: sort wordlist.txt | uniq -D
+        description: "Unlike -d, which collapses each duplicate group to a single line, -D prints all the repeated lines in full — useful when you want to review the actual duplicate rows, not just know which values repeat."
+        output: |
+          apple
+          apple
+          apple
+          banana
+          banana
+        level: intermediate
+      - title: "Rank values by how often they occur"
+        code: sort wordlist.txt | uniq -c | sort -rn
+        description: "The classic frequency-count pipeline: sort groups matches, uniq -c counts them, a second sort orders by that count. See the sort page for more on the second sort."
+        output: |
+                3 apple
+                2 banana
+                1 date
+                1 cherry
+                1 Elderberry
+                1 Cherry
+        level: intermediate
+        tags: [one-liners, beginner]
+
+  - title: "Case, fields, and character offsets"
+    examples:
+      - title: "Fold case before comparing"
+        code: sort -f wordlist.txt | uniq -i
+        description: "Without -i, Cherry and cherry count as different lines. -i compares case-insensitively, so they collapse together — sort -f is needed too, so they're adjacent in the first place."
+        output: |
+          apple
+          banana
+          Cherry
+          date
+          Elderberry
+        level: intermediate
+      - title: "Ignore the first field when comparing"
+        code: printf '1 apple\n2 apple\n3 banana\n' | uniq -f1
+        description: "-f N skips the first N whitespace-separated fields before comparing — here, ignoring the leading number so the two 'apple' rows count as duplicates despite different first fields."
+        output: |
+          1 apple
+          3 banana
+        level: intermediate
+      - title: "Ignore the first N characters when comparing"
+        code: printf 'xxapple\nyyapple\nzzbanana\n' | uniq -s2
+        description: "-s N skips the first N characters (not fields) before comparing — useful when duplicates share a fixed-width prefix like a line number or timestamp column that shouldn't count."
+        output: |
+          xxapple
+          zzbanana
+        level: intermediate
+      - title: "Compare only the first N characters"
+        code: printf 'applesauce\napplepie\nbanana\n' | uniq -w5
+        description: "-w N does the opposite of -s: only the first N characters count toward the comparison, and everything after is ignored. Here, both 'apple...' lines share the same first 5 characters, so the second is treated as a duplicate despite differing after that."
+        output: |
+          applesauce
+          banana
+        level: intermediate
+      - title: "Same character-limit comparison, long-form flag"
+        code: printf 'applesauce\napplepie\n' | uniq --check-chars=5
+        description: "--check-chars is the exact same flag as -w, spelled out — useful when reading a script that favours long-form flags for readability."
+        output: |
+          applesauce
+        level: advanced
+
+  - title: "Other input/output forms"
+    examples:
+      - title: "Read NUL-separated input instead of newline-separated"
+        code: printf 'a\0a\0b\0' | uniq -z | tr '\0' '\n'
+        description: "-z (--zero-terminated) works on NUL-terminated records — the safe pairing for filenames from find -print0, same as sort -z."
+        output: |
+          a
+          b
+        level: advanced
+        tags: [beginner]
+      - title: "Group matching lines with a blank line between groups"
+        code: sort wordlist.txt | uniq --group
+        description: "--group prints every line (not just one per group, and not just counts) but inserts a blank line between each distinct value — a middle ground between plain uniq and uniq -c when you want to eyeball the groups themselves."
+        output: |
+          Cherry
+
+          Elderberry
+
+          apple
+          apple
+          apple
+
+          banana
+          banana
+
+          cherry
+
+          date
+        level: advanced
+
+  - title: "Finding duplicates in real data"
+    examples:
+      - title: "Find which visitors hit the site most, from a real access log"
+        code: cut -d' ' -f1 access.log | sort | uniq -c | sort -rn
+        description: "Extract just the IP column with cut, then the standard sort | uniq -c | sort -rn frequency pipeline — the same shape works for any column of any log."
+        output: |
+                4 203.0.113.5
+                3 198.51.100.7
+                3 192.0.2.44
+        level: intermediate
+        tags: [monitoring, beginner]
+      - title: "Confirm there are no accidental exact-duplicate rows in a CSV"
+        code: sort users.csv | uniq -d
+        description: "No output means no duplicate rows — a quick sanity check to run on any file before treating it as a set of unique records."
+        level: intermediate
+        tags: [beginner]
+
+  - title: "File arguments and output forms"
+    examples:
+      - title: "Run against a file directly instead of piping"
+        code: uniq wordlist-sorted.txt
+        description: "uniq takes a filename argument just as readily as stdin — piping from sort is only needed when the file isn't already sorted."
+        output: |
+          Cherry
+          Elderberry
+          apple
+          banana
+          cherry
+          date
+        level: basic
+        tags: [beginner]
+      - title: "Write the result to a file instead of stdout"
+        code: uniq wordlist-sorted.txt uniq-out.txt
+        description: "A second filename argument is the output destination — uniq writes there directly and prints nothing to the terminal, no redirection operator needed."
+        level: intermediate
+      - title: "A file with no duplicates passes through unchanged"
+        code: uniq report.txt | wc -l
+        description: "40 lines in, 40 lines out — uniq only ever removes lines, never adds or reorders them, so a file with no adjacent repeats is untouched."
+        output: |
+          40
+        level: basic
+
+  - title: "Combining flags"
+    examples:
+      - title: "Count occurrences case-insensitively"
+        code: sort -f wordlist.txt | uniq -ci
+        description: "-c and -i combine normally: counts folded-case groups instead of exact-case ones. Cherry and cherry now count together as 2."
+        output: |
+                3 apple
+                2 banana
+                2 Cherry
+                1 date
+                1 Elderberry
+        level: intermediate
+      - title: "Count occurrences within a character-limited comparison"
+        code: printf 'applesauce\napplepie\nbanana\n' | uniq -c -w5
+        description: "-c reports how many lines matched under whatever comparison rule the other flags define — here, only the first 5 characters, so applesauce and applepie count as one group of 2."
+        output: |
+                2 applesauce
+                1 banana
+        level: intermediate
+      - title: "Show every copy of a duplicate group with a separator, long-form flag"
+        code: sort wordlist.txt | uniq --all-repeated=separate
+        description: "--all-repeated is the long-form, more configurable version of -D: separate puts a blank line between groups; prepend (the other common mode) also puts one before the very first group."
+        output: |
+          apple
+          apple
+          apple
+
+          banana
+          banana
+        level: advanced
+      - title: "Same thing, with a separator before the first group too"
+        code: sort wordlist.txt | uniq --all-repeated=prepend
+        description: "prepend mode adds a leading blank line before every group including the first, which separate mode doesn't — a small formatting difference worth knowing before scripting against the output."
+        output: |
+
+          apple
+          apple
+          apple
+
+          banana
+          banana
+        level: advanced
+      - title: "Skip fields, long-form flag"
+        code: printf '1 apple\n2 apple\n' | uniq --skip-fields=1
+        description: "--skip-fields is the long-form spelling of -f — same behaviour, more explicit in a script someone else will read later."
+        output: |
+          1 apple
+        level: intermediate
+      - title: "Skip characters, long-form flag"
+        code: printf 'xxapple\nyyapple\n' | uniq --skip-chars=2
+        description: "--skip-chars is the long-form spelling of -s."
+        output: |
+          xxapple
+        level: intermediate
