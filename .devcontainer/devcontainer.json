@@ -29,19 +29,25 @@
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
-	// Installs the OS-level shared libraries (libnss3, libatk-bridge2.0-0, libgtk-3-0, etc.)
-	// headless Chrome needs to run at all — pa11y-ci and any local Lighthouse run (accessibility/
-	// perf checks) depend on this. Deliberately does NOT install the `chromium` apt package
-	// itself: in some sandboxed environments its crashpad self-test crashes with SIGTRAP on
-	// launch (a ptrace restriction — --cap-add=SYS_PTRACE was tried and did not help). Puppeteer's
-	// own downloaded "Chrome for Testing" build (already a transitive dependency via pa11y-ci)
-	// works fine given just these libraries, so leave PUPPETEER_SKIP_DOWNLOAD /
-	// PUPPETEER_EXECUTABLE_PATH unset and let `npm install`'s postinstall step fetch one
-	// normally. See PLAN-BUILD.md §7.1 for the full story.
+	// Installs the real `chromium` apt package for pa11y-ci and any local Lighthouse run
+	// (accessibility/perf checks) to drive headlessly, instead of letting Puppeteer download its
+	// own separate "Chrome for Testing" build. An earlier, more restrictive sandboxed environment
+	// couldn't run apt's chromium at all — its crashpad self-test crashed with SIGTRAP on launch
+	// (a ptrace restriction) — hence downloading Puppeteer's own build as a workaround. Verified
+	// 2026-08-14 on this Mac-hosted devcontainer: apt's chromium launches cleanly, headless and
+	// sandboxed, both standalone and through a real `pa11y` run against a built page. containerEnv
+	// below points Puppeteer at it and skips its own download. CI (.github/workflows/ci.yml) runs
+	// outside this devcontainer on GitHub's runners and is unaffected — it still uses Puppeteer's
+	// own downloaded Chrome, which already works fine there.
 	// The debiantips-claude-home volume above is created and owned by root on first mount, which
 	// blocks the node user (and thus the Claude Code extension / CLI) from writing to
 	// ~/.claude — chown it back to node before anything else touches it.
-	"postCreateCommand": "sudo mkdir -p /home/node/.claude && sudo chown -R node:node /home/node/.claude && sudo apt-get update && npx --yes playwright install-deps chromium",
+	"postCreateCommand": "sudo mkdir -p /home/node/.claude && sudo chown -R node:node /home/node/.claude && sudo apt-get update && sudo apt-get install -y chromium",
+
+	"containerEnv": {
+		"PUPPETEER_SKIP_DOWNLOAD": "true",
+		"PUPPETEER_EXECUTABLE_PATH": "/usr/bin/chromium"
+	},
 
 	"customizations": {
 		"vscode": {
