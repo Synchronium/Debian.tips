@@ -58,17 +58,26 @@ export async function build(
     writePage(distDir, page.url, rendered);
   }
 
-  writePage(distDir, "/tags/", tagsIndexPage(tags, pages, cssHref));
-  for (const tag of tags) {
-    const taggedPages: Page[] = pages.filter((p) => p.tags.includes(tag.name));
+  // A registered tag with no pages would otherwise render an empty card grid and be
+  // listed as "(0)" on the index — build only the tag pages that have content.
+  const populatedTags = tags
+    .map((tag) => ({ tag, taggedPages: pages.filter((p) => p.tags.includes(tag.name)) }))
+    .filter(({ taggedPages }) => taggedPages.length > 0);
+
+  writePage(distDir, "/tags/", tagsIndexPage(populatedTags.map(({ tag }) => tag), pages, cssHref));
+  for (const { tag, taggedPages } of populatedTags) {
     writePage(distDir, `/tags/${tag.name}/`, tagPage(tag, taggedPages, cssHref));
   }
 
   writeFileSync(join(distDir, "404.html"), notFoundPage(cssHref), "utf-8");
-  writeFileSync(join(distDir, "sitemap.xml"), sitemapXml(pages), "utf-8");
+  writeFileSync(
+    join(distDir, "sitemap.xml"),
+    sitemapXml(pages, populatedTags.map(({ tag }) => tag)),
+    "utf-8",
+  );
   writeFileSync(join(distDir, "feed.xml"), feedXml(pages), "utf-8");
 
-  return { pageCount: pages.length, tagCount: tags.length };
+  return { pageCount: pages.length, tagCount: populatedTags.length };
 }
 
 async function main(): Promise<void> {

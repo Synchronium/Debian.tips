@@ -61,7 +61,7 @@ special. `-E` (or `-r` on some systems) switches to ERE, letting you write
 `s/([a-z]+),([0-9]+)/\2:\1/` instead of the backslash-heavy BRE equivalent. Same tradeoff as
 [grep](/commands/grep/): reach for `-E` the moment your pattern needs grouping or alternation.
 
-## Editing files in place
+## Rewriting a file instead of printing
 
 `-i` rewrites the file directly instead of printing to stdout. `-i.bak` does the same thing but
 keeps a backup of the original with `.bak` appended to the name first.

@@ -30,10 +30,16 @@ const LOAD_LANGS: BundledLanguage[] = ["bash", "yaml", "json", "ini", "awk", "di
  * with pa11y-ci, 4.05:1 and 4.26:1 respectively. Swap in darker equivalents
  * (the comment colour reuses the site's own --text-muted value) after Shiki
  * renders, rather than forking the whole theme for two tokens. Dark-theme
- * colours (--shiki-dark) are untouched; they already pass. */
+ * colours (--shiki-dark) are untouched; they already pass.
+ *
+ * Anchored to the `color:` declaration on purpose. Shiki emits the light colour
+ * as `style="color:#D73A49;--shiki-dark:#FF7B72"` while the highlighted code
+ * itself sits in the element's text, so an unanchored replace would also rewrite
+ * a literal `#D73A49` appearing *inside* a code sample — silently publishing
+ * output that no longer matches what the command actually printed. */
 const LIGHT_CONTRAST_FIXES: [RegExp, string][] = [
-  [/#D73A49/g, "#B31D28"],
-  [/#6A737D/g, "#5B6572"],
+  [/color:#D73A49/g, "color:#B31D28"],
+  [/color:#6A737D/g, "color:#5B6572"],
 ];
 
 function fixLightThemeContrast(html: string): string {

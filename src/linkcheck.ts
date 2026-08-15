@@ -43,13 +43,39 @@ function resolveDistPath(urlPath: string): string | null {
   return null;
 }
 
-function idsInFile(distFile: string): Set<string> {
+function readIds(distFile: string): string[] {
   const source = readFileSync(distFile, "utf-8");
-  const ids = new Set<string>();
+  const ids: string[] = [];
   for (const m of source.matchAll(/\sid="([^"]+)"/g)) {
-    if (m[1] !== undefined) ids.add(m[1]);
+    if (m[1] !== undefined) ids.push(m[1]);
   }
   return ids;
+}
+
+/** Cached: a page with many `#fragment` links would otherwise re-read and re-parse
+ * each target file once per link. */
+const idCache = new Map<string, Set<string>>();
+function idsInFile(distFile: string): Set<string> {
+  let ids = idCache.get(distFile);
+  if (!ids) {
+    ids = new Set(readIds(distFile));
+    idCache.set(distFile, ids);
+  }
+  return ids;
+}
+
+/** Duplicate ids are invalid HTML and silently break `#fragment` navigation: the
+ * browser jumps to the first match, so the second element is unreachable by URL.
+ * The fragment check below can't catch this on its own — it only asserts that *an*
+ * element with that id exists, which stays true when there are two. */
+function duplicateIds(distFile: string): string[] {
+  const seen = new Set<string>();
+  const dupes = new Set<string>();
+  for (const id of readIds(distFile)) {
+    if (seen.has(id)) dupes.add(id);
+    seen.add(id);
+  }
+  return [...dupes];
 }
 
 function main(): void {
@@ -64,6 +90,10 @@ function main(): void {
   for (const page of pages) {
     const pageUrl = toUrlPath(page);
     const links = extractLinks(readFileSync(page, "utf-8"));
+
+    for (const id of duplicateIds(page)) {
+      errors.push(`${pageUrl}: duplicate id "${id}" — anchors to it are ambiguous, rename one`);
+    }
 
     for (const link of links) {
       if (EXTERNAL.test(link) || link.startsWith("mailto:") || link.startsWith("tel:")) continue;

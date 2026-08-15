@@ -39,7 +39,10 @@ export const CATEGORY_META: Record<Category, { label: string; path: string; desc
 };
 
 /** Display grouping for /commands/ — a lookup table, not per-page frontmatter,
- * so pages can be regrouped without touching content. See PLAN-CONTENT.md §2.1/§5.1. */
+ * so pages can be regrouped without touching content. A command page whose slug
+ * isn't listed here still builds, but falls into COMMAND_GROUP_FALLBACK rather
+ * than its logical section. Slugs with no page yet are ignored, so this doubles
+ * as a rough roadmap of intended coverage. */
 export const COMMAND_GROUPS: { title: string; commands: string[] }[] = [
   { title: "Text processing", commands: ["grep", "sed", "awk", "sort", "uniq", "cut", "tr", "head", "tail", "wc", "diff", "column-tools", "tee"] },
   { title: "Files & directories", commands: ["ls", "find", "cp", "mv", "rm", "make-and-link", "inspect-files", "touch", "du", "df", "tree"] },

@@ -30,7 +30,12 @@ export function openSearch() {
   input.focus();
 
   if (!pagefind) {
-    pagefind = import("/pagefind/pagefind.js").then((m) => m.init().then(() => m));
+    // `npm run dev` rebuilds via src/build.ts only, which doesn't run Pagefind —
+    // so this import 404s in local dev. Fail with a visible explanation rather
+    // than an unhandled rejection and a dialog that silently does nothing.
+    pagefind = import("/pagefind/pagefind.js")
+      .then((m) => m.init().then(() => m))
+      .catch(() => null);
   }
 }
 
@@ -41,6 +46,11 @@ async function runSearch() {
     return;
   }
   const pf = await pagefind;
+  if (!pf) {
+    results.innerHTML =
+      '<li class="search-empty">Search index unavailable. Run <code>npm run build</code> to generate it.</li>';
+    return;
+  }
   const search = await pf.debouncedSearch(query);
   // debouncedSearch returns null when a newer keystroke superseded this call.
   if (!search || query !== input.value) return;

@@ -169,10 +169,14 @@ export async function loadContent(contentDir: string = defaultContentDir()): Pro
     raw.push(...sortEntries(category, entries));
   }
 
-  const visible = isProduction() ? raw.filter((e) => !e.data.draft) : raw;
-
+  // Validation below runs against *every* page, drafts included, so `npm run check`
+  // reports the same errors whether or not NODE_ENV=production is set. Validating
+  // only the production-visible subset used to mean a draft could hide a real
+  // problem locally (or, worse, that CI failed on content that passed locally).
+  // Drafts are excluded from `pages` further down — that part is still env-dependent
+  // by design, so drafts render in dev and are dropped from production builds.
   const slugFiles = new Map<string, string[]>();
-  for (const entry of visible) {
+  for (const entry of raw) {
     slugFiles.set(entry.slug, [...(slugFiles.get(entry.slug) ?? []), entry.file]);
   }
   for (const [slug, files] of slugFiles) {
@@ -183,7 +187,7 @@ export async function loadContent(contentDir: string = defaultContentDir()): Pro
     }
   }
 
-  for (const entry of visible) {
+  for (const entry of raw) {
     for (const tag of entry.data.tags) {
       if (!tagRegistry.has(tag)) {
         throw new ContentError(`${entry.file}: unknown tag "${tag}" — add it to content/tags.yaml first`);
@@ -201,7 +205,7 @@ export async function loadContent(contentDir: string = defaultContentDir()): Pro
   }
 
   const seenOrders = new Map<number, string>();
-  for (const entry of visible) {
+  for (const entry of raw) {
     if (entry.category !== "scripting") continue;
     const order = (entry.data as ScriptingFrontmatter).order;
     const existing = seenOrders.get(order);
@@ -209,12 +213,23 @@ export async function loadContent(contentDir: string = defaultContentDir()): Pro
     seenOrders.set(order, entry.file);
   }
 
-  const urlBySlug = new Map(visible.map((e) => [e.slug, urlFor(e.category, e.slug)]));
-  for (const entry of visible) {
+  const entryBySlug = new Map(raw.map((e) => [e.slug, e]));
+  for (const entry of raw) {
     for (const rel of entry.data.related ?? []) {
-      if (!urlBySlug.has(rel)) throw new ContentError(`${entry.file}: related slug "${rel}" does not exist`);
+      const target = entryBySlug.get(rel);
+      if (!target) throw new ContentError(`${entry.file}: related slug "${rel}" does not exist`);
+      // A published page linking to a draft would 404 in production, where the draft
+      // isn't emitted. Caught here rather than only under NODE_ENV=production, so it
+      // surfaces in dev instead of first failing in CI.
+      if (!entry.data.draft && target.data.draft) {
+        throw new ContentError(
+          `${entry.file}: related slug "${rel}" is a draft (${target.file}) — a published page can't link to a page that production builds don't emit`,
+        );
+      }
     }
   }
+
+  const visible = isProduction() ? raw.filter((e) => !e.data.draft) : raw;
 
   const rendered = await Promise.all(
     visible.map(async (entry) => ({ entry, ...(await renderMarkdown(entry.body)) })),

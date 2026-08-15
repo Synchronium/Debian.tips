@@ -80,7 +80,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://example.com
 one number you asked for. This pattern, discard the body and print one templated fact, is the
 backbone of most health-check and monitoring scripts built on `curl`.
 
-## Saving output
+## Where the response body goes
 
 `-o file` saves to a name you choose; `-O` saves using the remote URL's own filename (which
 means the URL needs an actual filename in its path; `-O` on `https://example.com/` with no

@@ -1,16 +1,48 @@
 import { CATEGORY_META, NAV_ORDER, SITE } from "./config.js";
-import type { Page } from "./content/loader.js";
+import type { Page, TagInfo } from "./content/loader.js";
 
 const XML_ESC: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" };
 function escapeXml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => XML_ESC[c]!);
 }
 
-export function sitemapXml(pages: Page[]): string {
-  const categoryPaths = NAV_ORDER.map((c) => CATEGORY_META[c].path);
-  const urls = ["/", ...categoryPaths, "/tags/", ...pages.map((p) => p.url)];
-  const entries = urls.map((u) => `<url><loc>${SITE.url}${u}</loc></url>`).join("");
-  return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${entries}</urlset>\n`;
+function isoDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+/** Newest `updated` among the given pages, or undefined for an empty set. */
+function newestUpdate(pages: Page[]): Date | undefined {
+  return pages.reduce<Date | undefined>(
+    (newest, p) => (newest === undefined || p.updated > newest ? p.updated : newest),
+    undefined,
+  );
+}
+
+/** `tags` is the set of tag pages actually emitted — tags with no pages don't get a
+ * page built (see build.ts), so listing them here would advertise a 404. */
+export function sitemapXml(pages: Page[], tags: TagInfo[]): string {
+  const entries: { path: string; lastmod?: Date | undefined }[] = [
+    { path: "/", lastmod: newestUpdate(pages) },
+    ...NAV_ORDER.map((c) => ({
+      path: CATEGORY_META[c].path,
+      lastmod: newestUpdate(pages.filter((p) => p.category === c)),
+    })),
+    { path: "/tags/", lastmod: newestUpdate(pages) },
+    ...tags.map((t) => ({
+      path: `/tags/${t.name}/`,
+      lastmod: newestUpdate(pages.filter((p) => p.tags.includes(t.name))),
+    })),
+    ...pages.map((p) => ({ path: p.url, lastmod: p.updated })),
+  ];
+
+  const xml = entries
+    .map(({ path, lastmod }) => {
+      const loc = `<loc>${escapeXml(`${SITE.url}${path}`)}</loc>`;
+      return `<url>${loc}${lastmod ? `<lastmod>${isoDate(lastmod)}</lastmod>` : ""}</url>`;
+    })
+    .join("");
+
+  return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${xml}</urlset>\n`;
 }
 
 export function feedXml(pages: Page[]): string {

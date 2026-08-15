@@ -31,8 +31,8 @@ const THEME_SCRIPT =
 
 /** Always-loaded glue: theme toggle, copy buttons, and the search trigger. The
  * search dialog's own wiring (and Pagefind itself) live in /assets/search.js,
- * fetched via dynamic import() only when the dialog is first opened — see
- * PLAN-BUILD.md §6, "Pagefind assets load only when the user opens search." */
+ * fetched via dynamic import() only when the dialog is first opened, so
+ * Pagefind's JS/WASM bundle never loads for visitors who don't search. */
 const INTERACTION_SCRIPT =
   "(function(){" +
   "function setTheme(t){document.documentElement.setAttribute('data-theme',t);try{localStorage.setItem('theme',t);}catch(e){}}" +
@@ -48,6 +48,12 @@ const INTERACTION_SCRIPT =
   "var live=document.getElementById('live-region');if(live)live.textContent='Copied to clipboard';" +
   "clearTimeout(copy._copyTimeout);" +
   "copy._copyTimeout=setTimeout(function(){copy.textContent=original;delete copy.dataset.label;},1500);" +
+  // Clipboard access rejects on insecure origins (any non-localhost host) and when
+  // permission is denied. Without this the button silently does nothing at all.
+  "}).catch(function(){" +
+  "copy.textContent='Press Ctrl+C';" +
+  "clearTimeout(copy._copyTimeout);" +
+  "copy._copyTimeout=setTimeout(function(){copy.textContent=original;delete copy.dataset.label;},2000);" +
   "});}" +
   "});" +
   "document.addEventListener('keydown',function(ev){" +

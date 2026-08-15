@@ -45,7 +45,15 @@ function build(): void {
 }
 
 function resolveFile(urlPath: string): string | null {
-  const clean = decodeURIComponent(urlPath.split("?")[0]!);
+  // decodeURIComponent throws URIError on a malformed escape (e.g. "/%ZZ"), and an
+  // uncaught throw in the request handler takes the whole dev server down — treat
+  // an undecodable path as simply not resolving to a file.
+  let clean: string;
+  try {
+    clean = decodeURIComponent(urlPath.split("?")[0]!);
+  } catch {
+    return null;
+  }
   const withoutTrailingSlash = clean.endsWith("/") && clean !== "/" ? clean.slice(0, -1) : clean;
 
   const candidates =
@@ -63,23 +71,31 @@ function resolveFile(urlPath: string): string | null {
 }
 
 const server = createServer((req, res) => {
-  const url = req.url ?? "/";
-  const file = resolveFile(url);
+  // Backstop: any throw in here would otherwise be an uncaught exception, which
+  // kills the dev server mid-session and needs a manual restart.
+  try {
+    const url = req.url ?? "/";
+    const file = resolveFile(url);
 
-  if (file) {
-    const type = MIME[extname(file)] ?? "application/octet-stream";
-    res.writeHead(200, { "Content-Type": type });
-    res.end(readFileSync(file));
-    return;
-  }
+    if (file) {
+      const type = MIME[extname(file)] ?? "application/octet-stream";
+      res.writeHead(200, { "Content-Type": type });
+      res.end(readFileSync(file));
+      return;
+    }
 
-  const notFound = join(DIST, "404.html");
-  if (existsSync(notFound)) {
-    res.writeHead(404, { "Content-Type": "text/html; charset=utf-8" });
-    res.end(readFileSync(notFound));
-  } else {
-    res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
-    res.end("404 Not Found");
+    const notFound = join(DIST, "404.html");
+    if (existsSync(notFound)) {
+      res.writeHead(404, { "Content-Type": "text/html; charset=utf-8" });
+      res.end(readFileSync(notFound));
+    } else {
+      res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end("404 Not Found");
+    }
+  } catch (err) {
+    console.error(`error serving ${req.url}:`, err instanceof Error ? err.message : err);
+    if (!res.headersSent) res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("500 Internal Server Error");
   }
 });
 

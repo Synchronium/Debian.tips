@@ -6,8 +6,9 @@ function injectAttr(preHtml: string, attr: string): string {
   return preHtml.replace(/^<pre /, `<pre ${attr} `);
 }
 
-/** Single-line, unpiped commands get the `$ ` prompt decoration (CSS-only, see
- * PLAN-DESIGN.md §4.1); multi-line or piped commands don't, so copying stays clean either way. */
+/** Single-line, unpiped commands get the `$ ` prompt decoration, drawn purely in
+ * CSS so it never lands in the clipboard; multi-line or piped commands don't get
+ * it, since a leading prompt reads as noise once the command wraps. */
 function isPromptable(code: string): boolean {
   return !code.includes("\n") && !code.includes("|");
 }

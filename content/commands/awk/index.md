@@ -31,7 +31,7 @@ awk '{ print $1 }' app.log     # action only: same job as cut
 awk '/error/ { print $1 }' app.log   # both: grep + cut in one pass
 ```
 
-## Fields and records
+## How awk splits a record into fields
 
 Each input line is a **record**, split on whitespace by default into **fields**: `$1` is the
 first field, `$2` the second, and so on, `$0` is the whole record, and `$NF` is always the last
