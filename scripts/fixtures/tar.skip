@@ -1,0 +1,5 @@
+# Need a second machine: there is no sshd peer in the replay sandbox, and the point of
+# these two is the network hop, not tar's own behaviour. Verified by hand between two
+# Debian trixie containers with sshd running, where each transferred site/ intact.
+Stream a directory to another machine over ssh
+Pull an archive from a remote machine

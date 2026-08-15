@@ -1,20 +1,51 @@
 command: tar
+fixtures:
+  - name: "site/"
+    note: "the directory every example archives — `ls -lAR site`"
+    from: "ls -lAR site"
+    content: |
+      site:
+      total 12
+      drwxr-xr-x 2 user user 4096 Jul  5 15:35 css
+      drwxr-xr-x 2 user user 4096 Jul  5 15:35 img
+      -rw-r--r-- 1 user user   14 Jul  5 15:35 index.html
+
+      site/css:
+      total 4
+      -rw-r--r-- 1 user user 20 Jul  5 15:35 style.css
+
+      site/img:
+      total 20
+      -rw-r--r-- 1 user user 20480 Jul  5 15:35 logo.png
+  - name: "the working directory"
+    note: "what sits alongside site/ — access.log for the compression comparison, two prebuilt archives, and empty restore targets"
+    from: "ls -l"
+    content: |
+      total 224
+      -rw-r--r-- 1 user user 162000 Jul  5 15:35 access.log
+      drwxr-xr-x 2 user user   4096 Jul  5 15:35 backups
+      -rw-r--r-- 1 user user  30720 Jul  5 15:35 plain.tar
+      drwxr-xr-x 3 user user   4096 Jul  5 15:35 restore
+      drwxr-xr-x 2 user user   4096 Jul  5 15:35 restore2
+      drwxr-xr-x 4 user user   4096 Jul  5 15:35 site
+      -rw-r--r-- 1 user user   9915 Jul  5 15:35 site-backup.tar.gz
+      -rwxr-xr-x 1 user user     15 Jul  5 15:35 suid-file
 sections:
   - title: "Creating archives"
     intro: "The -c mode, with a compression flag and a filename."
     examples:
       - title: "Create a gzip-compressed archive of a directory"
-        code: tar -czvf site-backup.tar.gz site/
+        code: "tar -czvf site-backup.tar.gz site/ | sort"
         description: >-
           `-c` create, `-z` gzip, `-v` verbose (print each file as it's added),
           `-f` the archive filename. This is the combination you'll type most.
-        output: |
+        output: |2
           site/
+          site/css/
+          site/css/style.css
           site/img/
           site/img/logo.png
           site/index.html
-          site/css/
-          site/css/style.css
         level: basic
         tags: [beginner]
       - title: "Create an archive without compression"
@@ -24,7 +55,7 @@ sections:
       - title: "Create an archive of specific files, not a whole directory"
         code: tar -czvf site-single.tar.gz site/index.html
         description: "Pass individual paths instead of a directory to archive just those files."
-        output: |
+        output: |2
           site/index.html
         level: basic
       - title: "Create an archive whose paths don't include the parent directory"
@@ -38,12 +69,12 @@ sections:
       - title: "Exclude files matching a pattern"
         code: tar --exclude="*.png" -czvf site-noimg.tar.gz site/
         description: "`--exclude` takes a glob and skips any matching path. Repeat the flag for multiple patterns."
-        output: |
+        output: |2
           site/
           site/img/
-          site/index.html
           site/css/
           site/css/style.css
+          site/index.html
         level: intermediate
       - title: "Exclude version control metadata"
         code: tar --exclude-vcs -czf snapshot.tar.gz site/
@@ -57,12 +88,12 @@ sections:
           `--exclude-from` reads one glob per line from a file, easier to
           maintain than a long list of repeated `--exclude` flags once you have
           more than a couple of patterns.
-        output: |
+        output: |2
           site/
           site/img/
-          site/index.html
           site/css/
           site/css/style.css
+          site/index.html
         level: advanced
       - title: "Archive an explicit list of files from a text file"
         code: |-
@@ -73,7 +104,7 @@ sections:
           the command line, useful when the list of files to archive comes
           from `find`, a database query, or anywhere else that isn't a simple
           glob.
-        output: |
+        output: |2
           site/css/style.css
         level: advanced
         tags: [scripting]
@@ -85,19 +116,20 @@ sections:
           newlines survive the trip intact instead of being split on
           whitespace. `--files-from=-` reads the (null-separated) list from
           stdin rather than a file.
-        output: |
+        output: |2
           site/index.html
         level: advanced
         tags: [scripting]
       - title: "Back up only files changed in the last day"
         code: |-
+          touch site/index.html
           find site -type f -mtime -1 -print0 | tar -czvf recent-changes.tar.gz --null --files-from=-
         description: >-
           Combines `find -mtime` with the same `--files-from=-` pattern to
           archive only recently modified files, a lightweight alternative to
           `-g`'s incremental snapshots for a cron job that just needs
           "today's changes."
-        output: |
+        output: |2
           site/index.html
         level: advanced
         tags: [scripting, cron]
@@ -117,42 +149,44 @@ sections:
           tar -czf app.tar.gz access.log
           tar -cjf app.tar.bz2 access.log
           tar -cJf app.tar.xz access.log
-          ls -lh app.tar.*
+          du -h --apparent-size app.tar.*
         description: >-
           On a large, repetitive text log, the difference is dramatic: xz and
           bzip2 both find redundancy gzip misses. On already-compressed content
           (images, video), expect all three to end up roughly the same size as
           the input.
-        output: |
-          -rw-r--r-- 1 user user 2.7K app.tar.bz2
-          -rw-r--r-- 1 user user  31K app.tar.gz
-          -rw-r--r-- 1 user user 1.9K app.tar.xz
+        output: |2
+          389	app.tar.bz2
+          743	app.tar.gz
+          308	app.tar.xz
         level: advanced
         tags: [performance]
       - title: "Let tar pick the compressor from the filename"
-        code: tar -acvf site-backup.tar.zst site/
+        code: "tar -acvf site-backup.tar.zst site/ | sort"
         description: >-
           `-a` (`--auto-compress`) reads the archive filename's extension and
           picks the matching compressor automatically, `zstd` for `.tar.zst`
           here, so you don't have to remember `-z`/`-j`/`-J` for less common
           formats. Requires the `zstd` package installed.
-        output: |
+        output: |2
           site/
-          site/img/
-          site/img/logo.png
           site/css/
           site/css/style.css
+          site/img/
+          site/img/logo.png
           site/index.html
         level: intermediate
       - title: "Let tar pick the decompressor from the filename on extract"
-        code: tar -axvf site-backup.tar.zst -C restore/
+        code: |-
+          tar --sort=name -acf site-backup.tar.zst site/
+          tar -axvf site-backup.tar.zst -C restore/
         description: "`-a` works the same way on extraction: it inspects the `.tar.zst` extension and shells out to `zstd` without you naming the format explicitly."
-        output: |
+        output: |2
           site/
-          site/img/
-          site/img/logo.png
           site/css/
           site/css/style.css
+          site/img/
+          site/img/logo.png
           site/index.html
         level: intermediate
   - title: "Listing archive contents"
@@ -161,44 +195,44 @@ sections:
       - title: "List an archive's contents"
         code: tar -tzvf site-backup.tar.gz
         description: "`-t` lists without extracting; `-v` here shows permissions, owner, size, and date, like `ls -l`."
-        output: |
+        output: |2
           drwxr-xr-x user/user         0 2026-07-05 15:35 site/
+          drwxr-xr-x user/user         0 2026-07-05 15:35 site/css/
+          -rw-r--r-- user/user        20 2026-07-05 15:35 site/css/style.css
           drwxr-xr-x user/user         0 2026-07-05 15:35 site/img/
           -rw-r--r-- user/user     20480 2026-07-05 15:35 site/img/logo.png
-          -rw-r--r-- user/user        16 2026-07-05 15:35 site/index.html
-          drwxr-xr-x user/user         0 2026-07-05 15:35 site/css/
-          -rw-r--r-- user/user        16 2026-07-05 15:35 site/css/style.css
+          -rw-r--r-- user/user        14 2026-07-05 15:35 site/index.html
         level: basic
       - title: "List contents without the long format"
         code: tar -tf site-backup.tar.gz
         description: "Just the paths, one per line, good for piping into `grep` or `wc -l`."
-        output: |
+        output: |2
           site/
+          site/css/
+          site/css/style.css
           site/img/
           site/img/logo.png
           site/index.html
-          site/css/
-          site/css/style.css
         level: basic
       - title: "Search an archive's contents for a pattern"
         code: tar --list --wildcards "*.html" -f site-backup.tar.gz
         description: "`--wildcards` filters the listing itself, without extracting anything first."
-        output: |
+        output: |2
           site/index.html
         level: intermediate
   - title: "Extracting archives"
     intro: "The -x mode, and where things land."
     examples:
       - title: "Extract an archive into the current directory"
-        code: tar -xzvf site-backup.tar.gz
+        code: "tar -xzvf site-backup.tar.gz | sort"
         description: "Recreates whatever directory structure was stored, relative to where you run the command."
-        output: |
+        output: |2
           site/
+          site/css/
+          site/css/style.css
           site/img/
           site/img/logo.png
           site/index.html
-          site/css/
-          site/css/style.css
         level: basic
         tags: [beginner]
       - title: "Extract into a specific directory"
@@ -210,30 +244,35 @@ sections:
         description: "Add the specific in-archive path after the archive name to extract only that file, keeping its stored directory structure."
         level: intermediate
       - title: "Extract without recreating the archive's top-level directory"
-        code: tar -xzvf site-backup.tar.gz --strip-components=1 -C restore/
+        code: "tar -xzvf site-backup.tar.gz --strip-components=1 -C restore/ | sort"
         description: >-
           `--strip-components=1` drops the first path segment of every entry
           during extraction, turning `site/index.html` into just `index.html`
           in the destination. Increase the number to drop more levels.
-        output: |
+        output: |2
+          site/css/
+          site/css/style.css
           site/img/
           site/img/logo.png
           site/index.html
-          site/css/
-          site/css/style.css
         level: advanced
       - title: "Extract without overwriting files that already exist"
-        code: tar -xkvf plain.tar -C restore/
+        code: "tar -xkvf plain.tar -C restore/ | sort"
         description: >-
           `-k` (`--keep-old-files`) refuses to overwrite existing files instead
           of silently replacing them, safer when restoring into a directory
           that might already have newer versions of some files.
-        output: |
-          site/css/style.css
+        output: |2
           tar: site/css/style.css: Cannot open: File exists
-          site/index.html
+          tar: site/img/logo.png: Cannot open: File exists
           tar: site/index.html: Cannot open: File exists
           tar: Exiting with failure status due to previous errors
+          site/
+          site/css/
+          site/css/style.css
+          site/img/
+          site/img/logo.png
+          site/index.html
         level: advanced
       - title: "Extract only files matching a wildcard pattern"
         code: tar -xzvf site-backup.tar.gz --wildcards "*.css" -C restore/
@@ -242,33 +281,33 @@ sections:
           listing: only in-archive paths matching the glob get written to
           disk, everything else is skipped without needing a separate
           `--exclude`.
-        output: |
+        output: |2
           site/css/style.css
         level: advanced
       - title: "Extract a single subdirectory, keeping its path"
-        code: tar -xzvf site-backup.tar.gz -C restore/ site/css
+        code: "tar -xzvf site-backup.tar.gz -C restore/ site/css | sort"
         description: >-
           Naming a directory instead of a single file extracts everything
           under it, keeping the stored path structure intact rather than
           flattening it into `restore/`.
-        output: |
+        output: |2
           site/css/
           site/css/style.css
         level: intermediate
       - title: "Rename paths on the fly while extracting"
-        code: tar -xzvf site-backup.tar.gz --transform='s,^site,site-2025,' -C restore/
+        code: "tar -xzvf site-backup.tar.gz --transform='s,^site,site-2025,' -C restore/ | sort"
         description: >-
           `--transform` runs a `sed`-style expression against every path as
           it's extracted, so `site/index.html` lands as `site-2025/index.html`
           on disk without repacking the archive first. `-v` still prints the
           original in-archive name, not the transformed one; check the
           destination directory to see the renamed result.
-        output: |
+        output: |2
           site/
-          site/img/
-          site/img/logo.png
           site/css/
           site/css/style.css
+          site/img/
+          site/img/logo.png
           site/index.html
         level: advanced
   - title: "Updating and appending"
@@ -280,7 +319,7 @@ sections:
           `-r` (`--append`) adds files to the end of an existing `.tar`. This
           only works on uncompressed archives; you can't append to a `.tar.gz`
           directly.
-        output: |
+        output: |2
           site/index.html
         level: intermediate
       - title: "Update only files that are newer than what's in the archive"
@@ -302,17 +341,13 @@ sections:
           uses the later (current) copy, but the archive keeps growing every
           time you update it; recreate it from scratch periodically instead
           of updating indefinitely.
-        output: |
-          site/new-page.html
-          site/css/style.css
-          drwxr-xr-x node/node         0 2026-08-12 22:18 site/
-          drwxr-xr-x node/node         0 2026-08-12 22:18 site/img/
-          -rw-r--r-- node/node     20480 2026-08-02 22:19 site/img/logo.png
-          drwxr-xr-x node/node         0 2026-08-12 22:19 site/css/
-          -rw-r--r-- node/node         7 2026-08-02 22:19 site/css/style.css
-          -rw-r--r-- node/node        14 2026-08-12 22:18 site/index.html
-          -rw-r--r-- node/node         0 2026-08-12 22:19 site/new-page.html
-          -rw-r--r-- node/node        12 2026-08-12 22:19 site/css/style.css
+        output: |2
+          drwxr-xr-x user/user         0 2026-07-05 15:35 site/
+          drwxr-xr-x user/user         0 2026-07-05 15:35 site/css/
+          -rw-r--r-- user/user        20 2026-07-05 15:35 site/css/style.css
+          drwxr-xr-x user/user         0 2026-07-05 15:35 site/img/
+          -rw-r--r-- user/user     20480 2026-07-05 15:35 site/img/logo.png
+          -rw-r--r-- user/user        14 2026-07-05 15:35 site/index.html
         level: advanced
         tags: [sysadmin]
   - title: "Verifying and troubleshooting"
@@ -325,7 +360,7 @@ sections:
           Reads through the entire archive and checks the compressed stream and
           headers, without writing anything to disk. Cheap insurance before
           deleting whatever the archive backs up.
-        output: |
+        output: |2
           OK: archive is valid
         level: intermediate
         tags: [sysadmin]
@@ -337,7 +372,7 @@ sections:
           A truncated file fails partway through with a clear error instead of
           silently reporting an empty archive. `tar` exits non-zero, which a
           backup script should check.
-        output: |
+        output: |2
           gzip: stdin: unexpected end of file
           tar: Child returned status 1
           tar: Error is not recoverable: exiting now
@@ -345,15 +380,18 @@ sections:
         level: advanced
         tags: [sysadmin]
       - title: "See progress on a large archive without keeping the output"
-        code: tar -czvf /dev/null site/
+        code: "tar -czvf /dev/null site/ | sort"
         description: >-
           Sending the archive itself to `/dev/null` while keeping `-v` gives
           you a pure progress listing, a quick way to sanity-check which files
           *would* be included before committing to a real destination.
-        output: |
+        output: |2
           site/
           site/css/
           site/css/style.css
+          site/img/
+          site/img/logo.png
+          site/index.html
         level: advanced
       - title: "See the exact byte count written to an archive"
         code: tar -czf backup-totals.tar.gz --totals site/
@@ -362,30 +400,30 @@ sections:
           useful in a backup script's log without parsing `ls -lh` output
           separately. The throughput figure is specific to the machine it ran
           on and will differ every time.
-        output: |
-          Total bytes written: 30720 (30KiB, 41MiB/s)
+        output: |2
+          Total bytes written: 30720 (30KiB, 305MiB/s)
         level: intermediate
       - title: "Verify each file immediately after writing it"
-        code: tar -cWvf verify-write.tar site/
+        code: "tar -cWvf verify-write.tar site/ | sort"
         description: >-
           `-W` (`--verify`) re-reads every file straight back off disk after
           writing it and compares it to what's on disk, catching a write
           error at backup time instead of when you go to restore. It only
           works on uncompressed archives; drop `-z`/`-j`/`-J` or use the
           `tar -tzf` check above for a compressed one.
-        output: |
-          site/
-          site/img/
-          site/img/logo.png
-          site/css/
-          site/css/style.css
-          site/index.html
+        output: |2
           Verify site/
-          Verify site/img/
-          Verify site/img/logo.png
           Verify site/css/
           Verify site/css/style.css
+          Verify site/img/
+          Verify site/img/logo.png
           Verify site/index.html
+          site/
+          site/css/
+          site/css/style.css
+          site/img/
+          site/img/logo.png
+          site/index.html
         level: advanced
         tags: [sysadmin]
   - title: "Incremental and differential backups"
@@ -400,7 +438,7 @@ sections:
           alongside the archive recording every file's mtime and inode. The
           first run against a snapshot file that doesn't exist yet is always
           a full backup, identical in content to a plain `-c`.
-        output: |
+        output: |2
           site/
           site/css/
           site/img/
@@ -411,6 +449,8 @@ sections:
         tags: [sysadmin]
       - title: "Create an incremental backup containing only what changed"
         code: |-
+          tar -czg site.snar -f level0.tar.gz site/
+          sleep 1
           echo "v2" > site/index.html
           echo "draft" > site/new.txt
           tar -czg site.snar -f level1.tar.gz site/
@@ -423,16 +463,20 @@ sections:
           `site/css/style.css` and `site/img/logo.png` are absent: they're
           unchanged, so only `index.html` and the new `new.txt` were actually
           written.
-        output: |
-          drwxr-xr-x node/node        32 2026-08-12 22:20 site/
-          drwxr-xr-x node/node        12 2026-08-12 22:19 site/css/
-          drwxr-xr-x node/node        11 2026-08-12 22:18 site/img/
-          -rw-r--r-- node/node        16 2026-08-12 22:20 site/index.html
-          -rw-r--r-- node/node         6 2026-08-12 22:20 site/new.txt
+        output: |2
+          drwxr-xr-x user/user        32 2026-08-15 18:21 site/
+          drwxr-xr-x user/user        12 2026-07-05 15:35 site/css/
+          drwxr-xr-x user/user        11 2026-07-05 15:35 site/img/
+          -rw-r--r-- user/user         3 2026-08-15 18:21 site/index.html
+          -rw-r--r-- user/user         6 2026-08-15 18:21 site/new.txt
         level: advanced
         tags: [sysadmin]
       - title: "Restore a full backup plus its incremental layers in order"
         code: |-
+          tar -czg site.snar -f level0.tar.gz site/
+          sleep 1
+          echo "draft" > site/new.txt
+          tar -czg site.snar -f level1.tar.gz site/
           tar -xzf level0.tar.gz -C restore/
           tar -xzf level1.tar.gz -C restore/
           cat restore/site/new.txt
@@ -442,12 +486,18 @@ sections:
           extracting out of order leaves the restored tree in whatever state
           the layers you did apply produced, with no warning that anything's
           missing.
-        output: |
+        output: |2
           draft
         level: advanced
         tags: [sysadmin]
       - title: "Apply file deletions recorded in an incremental backup"
         code: |-
+          tar -czg site.snar -f level0.tar.gz site/
+          sleep 1
+          echo "draft" > site/new.txt
+          tar -czg site.snar -f level1.tar.gz site/
+          tar -xzf level0.tar.gz -C restore/
+          tar -xzf level1.tar.gz -C restore/
           rm site/new.txt site/css/style.css
           tar -czg site.snar -f level2.tar.gz site/
           tar --incremental -xzf level2.tar.gz -C restore/
@@ -460,7 +510,7 @@ sections:
           restore directory that holds only files from this backup chain:
           it deletes anything not present in the layer being applied, which
           will silently remove unrelated files you'd added by hand.
-        output: |
+        output: |2
           restore/site/img/logo.png
           restore/site/index.html
         level: advanced
@@ -476,13 +526,13 @@ sections:
           to names, useful when restoring on a machine where those numbers map
           to different accounts, or when the names in the archive don't exist
           locally at all.
-        output: |
-          drwxr-xr-x 1000/1000         0 2026-08-12 22:20 site/
-          drwxr-xr-x 1000/1000         0 2026-08-12 22:20 site/img/
-          -rw-r--r-- 1000/1000     20480 2026-08-12 22:20 site/img/logo.png
-          drwxr-xr-x 1000/1000         0 2026-08-12 22:20 site/css/
-          -rw-r--r-- 1000/1000         7 2026-08-12 22:20 site/css/style.css
-          -rw-r--r-- 1000/1000        14 2026-08-12 22:20 site/index.html
+        output: |2
+          drwxr-xr-x 1000/1000         0 2026-07-05 15:35 site/
+          drwxr-xr-x 1000/1000         0 2026-07-05 15:35 site/css/
+          -rw-r--r-- 1000/1000        20 2026-07-05 15:35 site/css/style.css
+          drwxr-xr-x 1000/1000         0 2026-07-05 15:35 site/img/
+          -rw-r--r-- 1000/1000     20480 2026-07-05 15:35 site/img/logo.png
+          -rw-r--r-- 1000/1000        14 2026-07-05 15:35 site/index.html
         level: intermediate
       - title: "Extraction strips the setuid bit by default"
         code: |-
@@ -494,20 +544,24 @@ sections:
           Without `-p`, a non-root extraction clears the setuid/setgid bits
           even if the archived file had them, GNU tar's safe default so
           restoring an archive can't hand out privileges nobody asked for.
-        output: |
-          -rwxr-xr-x 1 node node 14 Aug 12 22:20 restore/suid-file
+        output: |2
+          -rwxr-xr-x 1 user user 15 Jul  5 15:35 restore/suid-file
         level: advanced
         tags: [security]
       - title: "Restore permissions exactly, including setuid, with -p"
-        code: tar -xzpf suid-test.tar.gz -C restore2/
+        code: |-
+          chmod 4755 suid-file
+          tar -czf suid-test.tar.gz suid-file
+          tar -xzpf suid-test.tar.gz -C restore2/
+          ls -l restore2/suid-file
         description: >-
           `-p` (`--preserve-permissions`) restores the archived mode exactly,
           setuid bit included. Only extract with `-p` from an archive you
           trust: applied to an untrusted archive, especially as root, it can
           silently recreate a setuid-root binary and hand anyone who can
           execute it a path to privilege escalation.
-        output: |
-          -rwsr-xr-x 1 node node 14 Aug 12 22:20 restore2/suid-file
+        output: |2
+          -rwsr-xr-x 1 user user 15 Jul  5 15:35 restore2/suid-file
         level: advanced
         tags: [security]
         danger: true
@@ -521,22 +575,22 @@ sections:
           `-x`), the basis for streaming an archive straight over the network,
           e.g. `tar -czf - site/ | ssh deb1 'tar -xzf - -C /srv/backups'`,
           without ever writing the archive to disk on either end.
-        output: |
-          20861
+        output: |2
+          9914
         level: advanced
         tags: [networking]
       - title: "Compare a directory's size to its compressed archive"
         code: |-
           du -sh site/
           tar -czf site-current.tar.gz site/
-          ls -lh site-current.tar.gz
+          du -h --apparent-size site-current.tar.gz
         description: >-
           `du -sh` sums the directory's real disk usage; compare it to the
           resulting archive size to judge whether the compression flag you
           chose is pulling its weight on this particular content.
-        output: |
-          40K	site
-          -rw-r--r-- 1 user user 21K site-current.tar.gz
+        output: |2
+          40K	site/
+          9.7K	site-current.tar.gz
         level: intermediate
         tags: [disk]
   - title: "Streaming archives over ssh and stdin"
@@ -562,18 +616,18 @@ sections:
         level: advanced
         tags: [ssh, networking]
       - title: "Extract an archive piped in from another command"
-        code: cat site-backup.tar.gz | tar -xzf - -C restore/
+        code: cat site-backup.tar.gz | tar -xzvf - -C restore/
         description: >-
           Anything that writes a tar stream to stdout works in place of
           `cat`, most commonly `curl -fsSL https://example.com/release.tar.gz
           | tar -xzf - -C /opt/app` for installing a downloaded release
           without saving the tarball first.
-        output: |
+        output: |2
           site/
-          site/img/
-          site/img/logo.png
           site/css/
           site/css/style.css
+          site/img/
+          site/img/logo.png
           site/index.html
         level: intermediate
         tags: [scripting]
@@ -583,7 +637,7 @@ sections:
       - title: "See how little disk a sparse file actually uses"
         code: |-
           truncate -s 100M sparse.img
-          dd if=/dev/urandom of=sparse.img bs=1 count=16 seek=50000000 conv=notrunc
+          dd if=/dev/urandom of=sparse.img bs=1 count=16 seek=50000000 conv=notrunc status=none
           du -h --apparent-size sparse.img
           du -h sparse.img
         description: >-
@@ -591,26 +645,28 @@ sections:
           16-byte `dd` write near the middle is the only real data in it.
           `--apparent-size` reports the logical size, plain `du` reports what's
           actually allocated on disk.
-        output: |
+        output: |2
           100M	sparse.img
           4.0K	sparse.img
         level: intermediate
         tags: [disk]
       - title: "Archive it without and with sparse-file support"
         code: |-
+          truncate -s 100M sparse.img
+          dd if=/dev/urandom of=sparse.img bs=1 count=16 seek=50000000 conv=notrunc status=none
           tar -cf nosparse.tar sparse.img
-          ls -lh nosparse.tar
+          du -h --apparent-size nosparse.tar
           tar -cSf sparse.tar sparse.img
-          ls -lh sparse.tar
+          du -h --apparent-size sparse.tar
         description: >-
           Without `-S` (`--sparse`), `tar` reads and stores every byte,
           holes included, so the archive balloons to the file's full logical
           size. `-S` detects the holes and stores only the real data plus
           their offsets. Skipping `-S` on a VM disk image or a preallocated
           database file can turn a 10K archive into a 100M one.
-        output: |
-          -rw-r--r-- 1 node node 101M Aug 12 22:20 nosparse.tar
-          -rw-r--r-- 1 node node  10K Aug 12 22:20 sparse.tar
+        output: |2
+          101M	nosparse.tar
+          10K	sparse.tar
         level: advanced
         tags: [disk]
   - title: "Symlinks: stored or followed"
@@ -619,25 +675,28 @@ sections:
       - title: "See how a symlink is stored by default"
         code: |-
           ln -s index.html site/latest.html
-          tar -czvf link-test.tar.gz site/
+          tar --sort=name -czf link-test.tar.gz site/
           tar -tzvf link-test.tar.gz
         description: >-
           The listing shows `site/latest.html -> index.html` as a symlink
           entry, not a second copy of `index.html`'s content. Extracting it
           recreates the same symlink, which only resolves correctly if
           `index.html` is also present relative to it.
-        output: |
-          drwxr-xr-x node/node         0 2026-08-12 22:21 site/
-          lrwxrwxrwx node/node         0 2026-08-12 22:21 site/latest.html -> index.html
-          drwxr-xr-x node/node         0 2026-08-12 22:20 site/img/
-          -rw-r--r-- node/node     20480 2026-08-12 22:20 site/img/logo.png
-          drwxr-xr-x node/node         0 2026-08-12 22:20 site/css/
-          -rw-r--r-- node/node         7 2026-08-12 22:20 site/css/style.css
-          -rw-r--r-- node/node        14 2026-08-12 22:20 site/index.html
+        output: |2
+          drwxr-xr-x user/user         0 2026-08-15 18:21 site/
+          drwxr-xr-x user/user         0 2026-07-05 15:35 site/css/
+          -rw-r--r-- user/user        20 2026-07-05 15:35 site/css/style.css
+          drwxr-xr-x user/user         0 2026-07-05 15:35 site/img/
+          -rw-r--r-- user/user     20480 2026-07-05 15:35 site/img/logo.png
+          -rw-r--r-- user/user        14 2026-07-05 15:35 site/index.html
+          lrwxrwxrwx user/user         0 2026-08-15 18:21 site/latest.html -> index.html
         level: intermediate
         tags: [files]
       - title: "Follow symlinks and archive their targets instead"
-        code: tar -czhvf link-deref.tar.gz site/
+        code: |-
+          ln -s index.html site/latest.html
+          tar --sort=name -czhf link-deref.tar.gz site/
+          tar -tzvf link-deref.tar.gz
         description: >-
           `-h` (`--dereference`) archives the file a symlink points to rather
           than the link itself. Here it goes a step further: since
@@ -645,14 +704,14 @@ sections:
           whichever one `tar` stores second gets recorded as a hardlink to the
           first instead of a duplicate copy, visible below as `site/index.html
           link to site/latest.html`.
-        output: |
-          drwxr-xr-x node/node         0 2026-08-12 22:21 site/
-          -rw-r--r-- node/node        14 2026-08-12 22:20 site/latest.html
-          drwxr-xr-x node/node         0 2026-08-12 22:20 site/img/
-          -rw-r--r-- node/node     20480 2026-08-12 22:20 site/img/logo.png
-          drwxr-xr-x node/node         0 2026-08-12 22:20 site/css/
-          -rw-r--r-- node/node         7 2026-08-12 22:20 site/css/style.css
-          hrw-r--r-- node/node         0 2026-08-12 22:20 site/index.html link to site/latest.html
+        output: |2
+          drwxr-xr-x user/user         0 2026-08-15 18:21 site/
+          drwxr-xr-x user/user         0 2026-07-05 15:35 site/css/
+          -rw-r--r-- user/user        20 2026-07-05 15:35 site/css/style.css
+          drwxr-xr-x user/user         0 2026-07-05 15:35 site/img/
+          -rw-r--r-- user/user     20480 2026-07-05 15:35 site/img/logo.png
+          -rw-r--r-- user/user        14 2026-07-05 15:35 site/index.html
+          hrw-r--r-- user/user         0 2026-07-05 15:35 site/latest.html link to site/index.html
         level: advanced
         tags: [files]
   - title: "Checking an archive against the current filesystem"
@@ -667,19 +726,20 @@ sections:
           entry's metadata and content against the file on disk right now,
           without extracting anything. No output plus exit `0` means
           everything still matches.
-        output: |
+        output: |2
           exit=0
         level: intermediate
         tags: [sysadmin]
       - title: "Detect drift between an archive and the current filesystem"
         code: |-
+          tar -cf plain-compare.tar site/
           echo "changed" > site/index.html
           tar -df plain-compare.tar; echo "exit=$?"
         description: >-
           Once a tracked file changes, `-d` lists exactly what's different
           about it and exits non-zero, useful for a periodic check that a
           "backed up" directory hasn't quietly drifted from its last backup.
-        output: |
+        output: |2
           site/index.html: Mod time differs
           site/index.html: Size differs
           exit=1

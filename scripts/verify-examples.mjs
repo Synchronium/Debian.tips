@@ -128,12 +128,19 @@ for (let i = 1; i < chunks.length; i += 2) actual.set(Number(chunks[i]), (chunks
 const normTimestamps = (s) =>
   s
     .replace(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)? [+-]\d{4}/g, "<TIMESTAMP>")
-    .replace(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun) [A-Z][a-z]{2} +\d+ \d{2}:\d{2}:\d{2} \d{4}\b/g, "<TIMESTAMP>");
+    .replace(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun) [A-Z][a-z]{2} +\d+ \d{2}:\d{2}:\d{2} \d{4}\b/g, "<TIMESTAMP>")
+    // `tar -tvf`'s mtime column. Examples that archive a file they just created can only
+    // ever stamp it "now", so the fixture pins what it can and this covers the rest.
+    .replace(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}\b/g, "<TIMESTAMP>");
+
+// `tar --totals` reports a transfer rate, which is a property of the machine and the
+// moment, not of the command. The byte count either side of it still has to match.
+const normRates = (s) => s.replace(/, \d+(\.\d+)?[KMG]iB\/s\)/g, ", <RATE>)");
 // Examples run inside `bash -c`, which prefixes its diagnostics with the line number in
 // that script ("bash: line 1: ./backup.sh: Permission denied"). An interactive shell
 // prints no such prefix, so it's an artifact of the harness, not something to publish.
 const normBashLine = (s) => s.replace(/^bash: line \d+: /gm, "bash: ");
-const norm = (s) => normBashLine(normTimestamps(s.replace(/\s+$/gm, "").replace(/\n+$/, "").trim()));
+const norm = (s) => normRates(normBashLine(normTimestamps(s.replace(/\s+$/gm, "").replace(/\n+$/, "").trim())));
 
 let match = 0;
 const differ = [];
