@@ -1,4 +1,20 @@
 command: tr
+fixtures:
+  - name: users.csv
+    note: "a header row plus 6 records"
+    content: |
+      name,age,department
+      Alice,34,Engineering
+      Bob,29,Sales
+      Carol,41,Engineering
+      Dave,25,Marketing
+      Erin,38,Sales
+      Frank,31,Engineering
+  - name: crlf.txt
+    note: "two lines with Windows CRLF endings — 14 bytes, not 12"
+    content: |
+      line1␍
+      line2␍
 sections:
   - title: "Translating characters"
     intro: "SET1 and SET2 map position-for-position: the Nth character of SET1 becomes the Nth character of SET2."
@@ -217,7 +233,7 @@ sections:
           XBX
         level: advanced
       - title: "Convert a CSV file to tab-separated"
-        code: tr ',' '\t' < users.csv
+        code: tr ',' '\t' < users.csv | head -3
         description: "Works fine for simple CSV with no quoted fields or embedded commas — for anything with quoting rules, use a real CSV-aware tool instead."
         output: |
           name	age	department
@@ -262,7 +278,7 @@ sections:
       - title: "Count word frequency in a block of text"
         code: printf 'the quick brown fox jumps over the lazy dog the fox runs\n' | tr -cs '[:alpha:]' '\n' | tr '[:upper:]' '[:lower:]' | sort | uniq -c | sort -rn
         description: "A classic Unix pipeline: split into one word per line, lowercase everything so case doesn't fragment the count, then the standard sort | uniq -c | sort -rn frequency count from the sort and uniq pages."
-        output: |
+        output: |2
                 3 the
                 2 fox
                 1 runs

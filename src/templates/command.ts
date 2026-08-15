@@ -4,14 +4,38 @@ import { breadcrumbs } from "./partials/breadcrumbs.js";
 import { tagChips } from "./partials/tagChips.js";
 import { toc } from "./partials/toc.js";
 import { exampleCard } from "./partials/exampleCard.js";
-import type { TocEntry } from "../content/markdown.js";
+import { highlightCode, type TocEntry } from "../content/markdown.js";
 import type { Page } from "../content/loader.js";
+import type { ExamplesFile } from "../content/schema.js";
 
 function slugify(title: string): string {
   return title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
+}
+
+/** Collapsed by default: useful when an output can't be interpreted without seeing its
+ * input, but noise for a reader who already knows the data or is skimming for a flag. */
+async function fixturesHtml(examplesFile: ExamplesFile): Promise<string> {
+  const fixtures = examplesFile.fixtures ?? [];
+  if (fixtures.length === 0) return "";
+
+  const blocks = await Promise.all(
+    fixtures.map(async (fixture) => {
+      const body = await highlightCode(fixture.content, "plaintext");
+      return html`<div class="fixture">
+<p class="fixture-name"><code>${fixture.name}</code>${fixture.note ? raw(html` <span class="fixture-note">${fixture.note}</span>`) : ""}</p>
+${raw(body)}
+</div>`;
+    }),
+  );
+
+  return html`<details class="fixtures">
+<summary>Sample files used on this page</summary>
+<p class="fixtures-intro">Every example below was run against these files. Recreate them to follow along.</p>
+${blocks.map((b) => raw(b))}
+</details>`;
 }
 
 export async function commandPage(page: Page, cssHref: string): Promise<string> {
@@ -71,6 +95,7 @@ ${raw(breadcrumbs(page.category, page.title))}
 <p class="meta">Updated ${dateStr}</p>
 ${raw(tagChips(page.tags))}
 <div class="prose">${raw(page.html)}</div>
+${raw(await fixturesHtml(examplesFile))}
 ${sectionsHtml.map((s) => raw(s))}
 ${raw(relatedHtml)}
 </div>

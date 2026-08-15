@@ -1,4 +1,48 @@
 command: uniq
+fixtures:
+  - name: wordlist.txt
+    note: "duplicates and mixed case, so -u / -f / -i have something to do"
+    content: |
+      banana
+      apple
+      Cherry
+      apple
+      date
+      banana
+      apple
+      Elderberry
+      cherry
+  - name: access.log
+    note: "10 requests in the standard combined log format; IP is field 1"
+    content: |
+      203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
+      203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
+      198.51.100.7 - - [13/Aug/2026:09:14:22] "GET /index.html HTTP/1.1" 200 512
+      198.51.100.7 - - [13/Aug/2026:09:14:25] "GET /missing.html HTTP/1.1" 404 162
+      203.0.113.5 - - [13/Aug/2026:09:15:47] "GET /index.html HTTP/1.1" 200 512
+      192.0.2.44 - - [13/Aug/2026:09:16:03] "POST /login HTTP/1.1" 302 0
+      192.0.2.44 - - [13/Aug/2026:09:16:04] "GET /dashboard HTTP/1.1" 200 4021
+      198.51.100.7 - - [13/Aug/2026:09:18:51] "GET /index.html HTTP/1.1" 200 512
+      203.0.113.5 - - [13/Aug/2026:09:19:10] "GET /api/status HTTP/1.1" 500 89
+      192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
+  - name: users.csv
+    note: "a header row plus 6 records"
+    content: |
+      name,age,department
+      Alice,34,Engineering
+      Bob,29,Sales
+      Carol,41,Engineering
+      Dave,25,Marketing
+      Erin,38,Sales
+      Frank,31,Engineering
+  - name: report.txt
+    note: "40 numbered lines, each 5 words"
+    content: |
+      line 1 of the report
+      line 2 of the report
+      line 3 of the report
+      …
+      line 40 of the report
 sections:
   - title: "The adjacency rule"
     intro: "uniq only ever compares a line to the one immediately before it."
@@ -26,7 +70,7 @@ sections:
       - title: "Count how many times each line occurs"
         code: sort wordlist.txt | uniq -c
         description: "-c prefixes every output line with its occurrence count, right-aligned."
-        output: |
+        output: |2
                 1 Cherry
                 1 Elderberry
                 3 apple
@@ -66,7 +110,7 @@ sections:
       - title: "Rank values by how often they occur"
         code: sort wordlist.txt | uniq -c | sort -rn
         description: "The classic frequency-count pipeline: sort groups matches, uniq -c counts them, a second sort orders by that count. See the sort page for more on the second sort."
-        output: |
+        output: |2
                 3 apple
                 2 banana
                 1 date
@@ -151,7 +195,7 @@ sections:
       - title: "Find which visitors hit the site most, from a real access log"
         code: cut -d' ' -f1 access.log | sort | uniq -c | sort -rn
         description: "Extract just the IP column with cut, then the standard sort | uniq -c | sort -rn frequency pipeline — the same shape works for any column of any log."
-        output: |
+        output: |2
                 4 203.0.113.5
                 3 198.51.100.7
                 3 192.0.2.44
@@ -193,7 +237,7 @@ sections:
       - title: "Count occurrences case-insensitively"
         code: sort -f wordlist.txt | uniq -ci
         description: "-c and -i combine normally: counts folded-case groups instead of exact-case ones. Cherry and cherry now count together as 2."
-        output: |
+        output: |2
                 3 apple
                 2 banana
                 2 Cherry
@@ -203,7 +247,7 @@ sections:
       - title: "Count occurrences within a character-limited comparison"
         code: printf 'applesauce\napplepie\nbanana\n' | uniq -c -w5
         description: "-c reports how many lines matched under whatever comparison rule the other flags define — here, only the first 5 characters, so applesauce and applepie count as one group of 2."
-        output: |
+        output: |2
                 2 applesauce
                 1 banana
         level: intermediate

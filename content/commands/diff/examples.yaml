@@ -1,4 +1,66 @@
 command: diff
+fixtures:
+  - name: nginx-old.conf
+    note: "the starting version — 10 lines"
+    content: |
+      server {
+          listen 80;
+          server_name example.com;
+          root /var/www/html;
+          index index.html;
+
+          location / {
+              try_files $uri $uri/ =404;
+          }
+      }
+  - name: nginx-new.conf
+    note: "the same file after adding IPv6, a second server_name, and an /api/ block"
+    content: |
+      server {
+          listen 80;
+          listen [::]:80;
+          server_name example.com www.example.com;
+          root /var/www/html;
+          index index.html;
+
+          location / {
+              try_files $uri $uri/ =404;
+          }
+
+          location /api/ {
+              proxy_pass http://127.0.0.1:8080;
+          }
+      }
+  - name: "sp1.txt / sp2.txt"
+    note: "differ only in the amount of whitespace, for -w"
+    content: |
+      sp1.txt:  a  b     (two spaces)
+      sp2.txt:  a b      (one space)
+  - name: "ws1.txt / ws2.txt"
+    note: "same words, different spacing throughout, for -b"
+    content: |
+      ws1.txt:  a b  c
+      ws2.txt:  a   b c
+  - name: "c1.txt / c2.txt"
+    note: "differ only in case, for -i"
+    content: |
+      c1.txt:  Hello
+      c2.txt:  hello
+  - name: "bl1.txt / bl2.txt"
+    note: "differ only by an inserted blank line, for -B"
+    content: |
+      bl1.txt:  a / b / c
+      bl2.txt:  a / (blank) / b / c
+  - name: "crlf-a.txt / crlf-b.txt"
+    note: "identical text, different line endings, for --strip-trailing-cr"
+    content: |
+      crlf-a.txt:  line1␍ line2␍   (CRLF)
+      crlf-b.txt:  line1 line2      (LF)
+  - name: "confA/ and confB/"
+    note: "two directory trees for the -r examples"
+    content: |
+      confA/  nginx.conf (= nginx-old.conf)  common.conf  onlyA.conf
+      confB/  nginx.conf (= nginx-new.conf)  common.conf  onlyB.conf
 sections:
   - title: "Basic comparison and exit codes"
     intro: "diff's exit code is as useful as its output — 0 for identical, 1 for different, 2 for an error."
@@ -83,22 +145,29 @@ sections:
       - title: "Control how many context lines unified format shows"
         code: diff -U1 nginx-old.conf nginx-new.conf
         description: "-U takes a number — fewer context lines than the default 3, for a tighter diff when you only care about the exact change, not its surroundings."
-        output: |
-          --- nginx-old.conf	2026-08-14 09:15:00.000000000 +0000
-          +++ nginx-new.conf	2026-08-14 09:15:05.000000000 +0000
+        output: |2
+          --- nginx-old.conf	2026-08-15 10:09:33.149381006 +0000
+          +++ nginx-new.conf	2026-08-15 10:09:33.149381006 +0000
           @@ -2,3 +2,4 @@
                listen 80;
           -    server_name example.com;
           +    listen [::]:80;
           +    server_name example.com www.example.com;
                root /var/www/html;
+          @@ -9,2 +10,6 @@
+               }
+          +
+          +    location /api/ {
+          +        proxy_pass http://127.0.0.1:8080;
+          +    }
+           }
         level: intermediate
       - title: "Context format — the older alternative to unified"
         code: diff -c nginx-old.conf nginx-new.conf
         description: "Shows both versions of each changed block in full, marked with !, rather than interleaving - and + lines — more verbose than unified, mostly seen in older codebases and some BSD tooling."
-        output: |
-          *** nginx-old.conf	Fri Aug 14 09:15:00 2026
-          --- nginx-new.conf	Fri Aug 14 09:15:05 2026
+        output: |2
+          *** nginx-old.conf	Sat Aug 15 10:09:33 2026
+          --- nginx-new.conf	Sat Aug 15 10:09:33 2026
           ***************
           *** 1,10 ****
             server {
@@ -106,7 +175,6 @@ sections:
           !     server_name example.com;
                 root /var/www/html;
                 index index.html;
-
                 location / {
                     try_files $uri $uri/ =404;
                 }
@@ -117,21 +185,34 @@ sections:
           !     listen [::]:80;
           !     server_name example.com www.example.com;
                 root /var/www/html;
+                index index.html;
+                location / {
+                    try_files $uri $uri/ =404;
+                }
+          +
+          +     location /api/ {
+          +         proxy_pass http://127.0.0.1:8080;
+          +     }
+            }
         level: advanced
       - title: "Side-by-side comparison"
         code: diff -y --width=60 nginx-old.conf nginx-new.conf
         description: "-y puts both files in two columns with changed lines marked by | (changed), < (removed), or > (added) in the middle. --width caps the line length so it doesn't overflow a normal terminal."
-        output: |
+        output: |2
           server {			server {
               listen 80;			    listen 80;
               server_name example.com; |	    listen [::]:80;
           			     >	    server_name example.com
               root /var/www/html;		    root /var/www/html;
               index index.html;		    index index.html;
-
               location / {		    location / {
                   try_files $uri $uri/	        try_files $uri $uri/
           			     >	    }
+          			     >
+          			     >	    location /api/ {
+          			     >	        proxy_pass http://12
+              }				    }
+          }				}
         level: intermediate
       - title: "ed script format — output you could feed back into ed"
         code: diff -e nginx-old.conf nginx-new.conf
@@ -174,12 +255,16 @@ sections:
         description: "-i treats 'Hello' and 'hello' as the same line — useful when comparing output that might differ only in casing conventions."
         level: intermediate
         tags: [beginner]
-      - title: "Ignore changes that only add or remove blank lines"
-        code: diff -B bl1.txt bl2.txt
-        description: "Without -B, an inserted blank line shows up as a real change (1a2, adding an empty line). With -B, purely blank-line changes are ignored — useful when reformatting shouldn't count as a content change."
+      - title: "See a blank-line-only change reported as a real difference"
+        code: diff bl1.txt bl2.txt
+        description: "bl2.txt differs from bl1.txt only by an inserted blank line, and by default that counts: 1a2 means a line was added after line 1."
         output: |
           1a2
           >
+        level: advanced
+      - title: "Ignore changes that only add or remove blank lines"
+        code: diff -B bl1.txt bl2.txt
+        description: "-B treats purely blank-line changes as no change at all, so this prints nothing and exits 0 — useful when reformatting shouldn't count as a content difference."
         level: advanced
       - title: "Ignore line-ending differences between Unix and Windows files"
         code: diff crlf-a.txt crlf-b.txt

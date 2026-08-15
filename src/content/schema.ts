@@ -89,8 +89,23 @@ export const exampleSectionSchema = z.object({
 });
 export type ExampleSection = z.infer<typeof exampleSectionSchema>;
 
+/** The sample data an example's `output:` was actually produced against. Without it a
+ * reader can't evaluate output that doesn't echo its input — `wc -l report.txt` printing
+ * "40" is unverifiable unless report.txt is on the page somewhere. Contents must be
+ * captured from a real run, never written from memory: a fixture that doesn't reproduce
+ * the documented output is worse than no fixture at all. */
+export const fixtureSchema = z.object({
+  /** Filename as referenced in the examples, e.g. "report.txt". */
+  name: z.string().min(1),
+  /** One-line orientation, e.g. "40 numbered lines". Optional. */
+  note: z.string().optional(),
+  content: z.string().min(1),
+});
+export type Fixture = z.infer<typeof fixtureSchema>;
+
 export const examplesFileSchema = z.object({
   command: z.string().min(1),
+  fixtures: z.array(fixtureSchema).optional(),
   sections: z.array(exampleSectionSchema).min(1, "examples.yaml needs at least one section"),
 });
 export type ExamplesFile = z.infer<typeof examplesFileSchema>;

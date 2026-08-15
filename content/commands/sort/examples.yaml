@@ -1,4 +1,80 @@
 command: sort
+fixtures:
+  - name: wordlist.txt
+    note: "duplicates and mixed case, to show what -u and -f actually do"
+    content: |
+      banana
+      apple
+      Cherry
+      apple
+      date
+      banana
+      apple
+      Elderberry
+      cherry
+  - name: numbers.txt
+    note: "deliberately ordered so lexicographic and numeric sorting disagree"
+    content: |
+      10
+      2
+      33
+      4
+  - name: scores.txt
+    note: "three whitespace-separated fields; the score is field 3"
+    content: |
+      Team Alpha 89
+      Team Beta 42
+      Team Gamma 100
+      Team Delta 7
+  - name: sizes.txt
+    note: "human-readable sizes in field 2, spanning bytes to gigabytes"
+    content: |
+      report.txt 1.2K
+      access.log 890
+      photos.tar.gz 4.3G
+      backup.sql 128M
+      notes.txt 340
+  - name: users.csv
+    note: "comma-separated, with a header row that must stay on top"
+    content: |
+      name,age,department
+      Alice,34,Engineering
+      Bob,29,Sales
+      Carol,41,Engineering
+      Dave,25,Marketing
+      Erin,38,Sales
+      Frank,31,Engineering
+  - name: people.csv
+    note: "two records per department, for the stable-sort and dedupe-by-field examples"
+    content: |
+      Carol,Eng
+      Bob,Sales
+      Alice,Eng
+      Dave,Sales
+  - name: access.log
+    note: "standard combined log format: IP is field 1, status field 8, bytes field 9"
+    content: |
+      203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
+      203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
+      198.51.100.7 - - [13/Aug/2026:09:14:22] "GET /index.html HTTP/1.1" 200 512
+      198.51.100.7 - - [13/Aug/2026:09:14:25] "GET /missing.html HTTP/1.1" 404 162
+      203.0.113.5 - - [13/Aug/2026:09:15:47] "GET /index.html HTTP/1.1" 200 512
+      192.0.2.44 - - [13/Aug/2026:09:16:03] "POST /login HTTP/1.1" 302 0
+      192.0.2.44 - - [13/Aug/2026:09:16:04] "GET /dashboard HTTP/1.1" 200 4021
+      198.51.100.7 - - [13/Aug/2026:09:18:51] "GET /index.html HTTP/1.1" 200 512
+      203.0.113.5 - - [13/Aug/2026:09:19:10] "GET /api/status HTTP/1.1" 500 89
+      192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
+  - name: data.txt
+    note: "fixed 1-character prefix then a 3-letter code, for the -k1.2,1.4 example"
+    content: |
+      xAAAy
+      xCCCa
+      xBBBz
+  - name: setA.txt / setB.txt
+    note: "two overlapping sets, for the comm example"
+    content: |
+      setA.txt:  a  c  b
+      setB.txt:  b  d  a
 sections:
   - title: "Default order: lexicographic, not numeric"
     intro: "With no flags, sort compares lines character by character. That's exactly what you want for words, and almost never what you want for numbers."
@@ -88,7 +164,7 @@ sections:
         level: advanced
         tags: [beginner]
       - title: "Sort filenames with embedded numbers correctly"
-        code: sort -V
+        code: printf 'file10.txt\nfile2.txt\nfile1.txt\n' | sort -V
         description: "-V (version sort) treats digit runs as numbers, so file2.txt sorts before file10.txt instead of after it — the opposite of what plain sort would do."
         output: |
           file1.txt
@@ -96,7 +172,7 @@ sections:
           file10.txt
         level: intermediate
       - title: "Sort by month name"
-        code: sort -M
+        code: printf 'Mar 3\nJan 1\nFeb 2\n' | sort -M
         description: "-M recognises the first three letters of month names (Jan, Feb, Mar...) and sorts chronologically instead of alphabetically."
         output: |
           Jan 1
@@ -143,6 +219,7 @@ sections:
         code: (head -1 users.csv; tail -n +2 users.csv | sort -t, -k3,3 -k2,2n)
         description: "Two -k options apply in order: group by department (field 3) first, then sort each group by age (field 2) numerically. -k3,3 means 'field 3 to field 3' — without the end bound, -k3 alone would sort by field 3 through the end of the line."
         output: |
+          name,age,department
           Frank,31,Engineering
           Alice,34,Engineering
           Carol,41,Engineering
@@ -179,14 +256,7 @@ sections:
         level: basic
       - title: "Sort a file in place safely"
         code: sort -u -o wordlist.txt wordlist.txt
-        description: "-o lets the output filename be the same as the input — sort reads the whole file into memory before opening the output, so this doesn't truncate the input out from under itself the way sort wordlist.txt > wordlist.txt would."
-        output: |
-          Cherry
-          Elderberry
-          apple
-          banana
-          cherry
-          date
+        description: "-o lets the output filename be the same as the input — sort reads the whole file into memory before opening the output, so this doesn't truncate the input out from under itself the way sort wordlist.txt > wordlist.txt would. It prints nothing: the result goes to the file."
         level: intermediate
         tags: [beginner]
       - title: "Reverse the sort order"
@@ -239,17 +309,13 @@ sections:
         level: intermediate
         tags: [beginner]
       - title: "Sort output from another command"
-        code: find . -maxdepth 1 -name '*.txt' | sort
+        code: find . -maxdepth 1 -name 'numbers*' | sort
         description: "sort reads stdin when no filename is given, same as most Unix text tools — the standard way to get find's arbitrary directory-walk order into something predictable."
         output: |
+          ./numbers-pair.txt
+          ./numbers-sci.txt
           ./numbers-sorted.txt
           ./numbers.txt
-          ./other-sorted.txt
-          ./report.txt
-          ./scores.txt
-          ./sizes.txt
-          ./wordlist-sorted.txt
-          ./wordlist.txt
         level: basic
         tags: [beginner]
       - title: "Sort NUL-separated input safely"
@@ -277,12 +343,12 @@ sections:
     intro: "-k accepts a lot more than a bare field number: character ranges within a field, colon or tab separators, stability guarantees."
     examples:
       - title: "Sort colon-separated data, the /etc/passwd shape"
-        code: "sort -t: -k3 -n /etc/passwd"
+        code: "sort -t: -k3 -n /etc/passwd | head -3"
         description: "-t: splits on colons; -k3 -n sorts by the numeric UID field. The same shape works for any colon-delimited system file."
         output: |
-          root:x:0:0
-          daemon:x:1:1
-          user:x:1000:1000
+          root:x:0:0:root:/root:/bin/bash
+          daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+          bin:x:2:2:bin:/bin:/usr/sbin/nologin
         level: intermediate
         tags: [sysadmin]
       - title: "Sort on part of a field, not the whole thing"
@@ -354,8 +420,12 @@ sections:
         description: "Field 8 in a standard combined log line is the status code — the quoted request eats fields 5–7, so counting whitespace-separated fields by hand (not by meaning) is what actually finds it."
         output: |
           192.0.2.44 - - [13/Aug/2026:09:16:04] "GET /dashboard HTTP/1.1" 200 4021
+          192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
           198.51.100.7 - - [13/Aug/2026:09:14:22] "GET /index.html HTTP/1.1" 200 512
+          198.51.100.7 - - [13/Aug/2026:09:18:51] "GET /index.html HTTP/1.1" 200 512
           203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
+          203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
+          203.0.113.5 - - [13/Aug/2026:09:15:47] "GET /index.html HTTP/1.1" 200 512
           192.0.2.44 - - [13/Aug/2026:09:16:03] "POST /login HTTP/1.1" 302 0
           198.51.100.7 - - [13/Aug/2026:09:14:25] "GET /missing.html HTTP/1.1" 404 162
           203.0.113.5 - - [13/Aug/2026:09:19:10] "GET /api/status HTTP/1.1" 500 89
@@ -392,23 +462,19 @@ sections:
         level: intermediate
         tags: [disk, beginner]
       - title: "Rank files by line count"
-        code: wc -l *.txt | sort -rn
+        code: wc -l *.txt | sort -rn | head -5
         description: "wc -l prints a count-then-filename line per file plus a total; sort -rn puts the biggest counts first, total included since it's just another number in the stream."
-        output: |
-            78 total
+        output: |2
+            92 total
             40 report.txt
              9 wordlist.txt
              9 wordlist-sorted.txt
              5 sizes.txt
-             4 scores.txt
-             4 numbers.txt
-             4 numbers-sorted.txt
-             3 other-sorted.txt
         level: intermediate
       - title: "Count how often each line appears"
         code: sort wordlist.txt | uniq -c | sort -rn
         description: "The classic frequency-count pipeline: sort groups identical lines together so uniq -c can count them, then a second sort orders by that count. See the uniq page for -c and its other counting flags."
-        output: |
+        output: |2
                 3 apple
                 2 banana
                 1 date

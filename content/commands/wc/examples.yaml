@@ -1,4 +1,57 @@
 command: wc
+fixtures:
+  - name: report.txt
+    note: "40 numbered lines, each 5 words — hence 40 lines / 200 words"
+    content: |
+      line 1 of the report
+      line 2 of the report
+      line 3 of the report
+      …
+      line 40 of the report
+  - name: users.csv
+    note: "a header row plus 6 records"
+    content: |
+      name,age,department
+      Alice,34,Engineering
+      Bob,29,Sales
+      Carol,41,Engineering
+      Dave,25,Marketing
+      Erin,38,Sales
+      Frank,31,Engineering
+  - name: wordlist.txt
+    note: "9 lines with deliberate duplicates and mixed case"
+    content: |
+      banana
+      apple
+      Cherry
+      apple
+      date
+      banana
+      apple
+      Elderberry
+      cherry
+  - name: access.log
+    note: "10 requests in the standard combined log format"
+    content: |
+      203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
+      203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
+      198.51.100.7 - - [13/Aug/2026:09:14:22] "GET /index.html HTTP/1.1" 200 512
+      198.51.100.7 - - [13/Aug/2026:09:14:25] "GET /missing.html HTTP/1.1" 404 162
+      203.0.113.5 - - [13/Aug/2026:09:15:47] "GET /index.html HTTP/1.1" 200 512
+      192.0.2.44 - - [13/Aug/2026:09:16:03] "POST /login HTTP/1.1" 302 0
+      192.0.2.44 - - [13/Aug/2026:09:16:04] "GET /dashboard HTTP/1.1" 200 4021
+      198.51.100.7 - - [13/Aug/2026:09:18:51] "GET /index.html HTTP/1.1" 200 512
+      203.0.113.5 - - [13/Aug/2026:09:19:10] "GET /api/status HTTP/1.1" 500 89
+      192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
+  - name: crlf.txt
+    note: "two lines with Windows CRLF endings — 14 bytes, not 12"
+    content: |
+      line1␍
+      line2␍
+  - name: filelist.bin
+    note: "two filenames separated by NUL bytes, for --files0-from"
+    content: |
+      report.txt␀wordlist.txt␀
 sections:
   - title: "Counting lines, words, bytes, and characters"
     intro: "The four counting modes, each narrowed with a single flag."
@@ -48,11 +101,11 @@ sections:
       - title: "Count several files at once"
         code: wc -l users.csv wordlist.txt access.log
         description: "Each file gets its own line, plus an automatic total line summing them all."
-        output: |
-          7 users.csv
-          9 wordlist.txt
-          10 access.log
-          26 total
+        output: |2
+            7 users.csv
+            9 wordlist.txt
+           10 access.log
+           26 total
         level: basic
         tags: [beginner]
       - title: "Force a total line even for a single file"
@@ -65,7 +118,7 @@ sections:
       - title: "Suppress the total line for multiple files"
         code: wc -l --total=never users.csv wordlist.txt
         description: "The opposite override — keep the per-file counts, drop the automatic total."
-        output: |
+        output: |2
             7 users.csv
             9 wordlist.txt
         level: advanced
@@ -144,10 +197,10 @@ sections:
       - title: "Read a list of filenames from a NUL-separated file"
         code: wc -l --files0-from=filelist.bin
         description: "--files0-from reads the list of files to process from a NUL-separated file instead of the command line — the standard pairing with find -print0 when there could be too many files (or files with newlines in their names) for a normal argument list."
-        output: |
-          40 report.txt
-          9 wordlist.txt
-          49 total
+        output: |2
+           40 report.txt
+            9 wordlist.txt
+           49 total
         level: advanced
       - title: "See the effect of hidden CRLF bytes"
         code: wc -c crlf.txt
@@ -172,10 +225,10 @@ sections:
       - title: "Total lines across every file found, via find and xargs"
         code: find . -maxdepth 1 -name '*.csv' | xargs wc -l
         description: "find locates the files, xargs hands them all to a single wc invocation so the total line covers every match — see the find page for more on pairing it with other commands."
-        output: |
-          7 ./users.csv
-          7 ./users2.csv
-          14 total
+        output: |2
+            7 ./users.csv
+            7 ./users2.csv
+           14 total
         level: advanced
       - title: "Bundle lines and bytes together"
         code: wc -lc report.txt

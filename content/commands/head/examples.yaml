@@ -1,4 +1,48 @@
 command: head
+fixtures:
+  - name: report.txt
+    note: "40 numbered lines, each 5 words"
+    content: |
+      line 1 of the report
+      line 2 of the report
+      line 3 of the report
+      …
+      line 40 of the report
+  - name: users.csv
+    note: "a header row plus 6 records"
+    content: |
+      name,age,department
+      Alice,34,Engineering
+      Bob,29,Sales
+      Carol,41,Engineering
+      Dave,25,Marketing
+      Erin,38,Sales
+      Frank,31,Engineering
+  - name: wordlist.txt
+    note: "duplicates and mixed case, so -u / -f / -i have something to do"
+    content: |
+      banana
+      apple
+      Cherry
+      apple
+      date
+      banana
+      apple
+      Elderberry
+      cherry
+  - name: access.log
+    note: "10 requests in the standard combined log format; IP is field 1"
+    content: |
+      203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
+      203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
+      198.51.100.7 - - [13/Aug/2026:09:14:22] "GET /index.html HTTP/1.1" 200 512
+      198.51.100.7 - - [13/Aug/2026:09:14:25] "GET /missing.html HTTP/1.1" 404 162
+      203.0.113.5 - - [13/Aug/2026:09:15:47] "GET /index.html HTTP/1.1" 200 512
+      192.0.2.44 - - [13/Aug/2026:09:16:03] "POST /login HTTP/1.1" 302 0
+      192.0.2.44 - - [13/Aug/2026:09:16:04] "GET /dashboard HTTP/1.1" 200 4021
+      198.51.100.7 - - [13/Aug/2026:09:18:51] "GET /index.html HTTP/1.1" 200 512
+      203.0.113.5 - - [13/Aug/2026:09:19:10] "GET /api/status HTTP/1.1" 500 89
+      192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
 sections:
   - title: "The basics: first and last N lines"
     intro: "Both default to 10 lines with no flags at all."
@@ -134,7 +178,7 @@ sections:
     intro: "Two GNU extensions that read almost like mirror images of each other."
     examples:
       - title: "Show everything except the last N lines"
-        code: head -n -5 report.txt
+        code: head -n -5 report.txt | tail -n3
         description: "A negative count with head means 'stop N lines before the end' instead of 'stop after N lines' — the last 3 lines shown here are lines 33-35, five lines short of the file's actual end at line 40."
         output: |
           line 33 of the report

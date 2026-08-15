@@ -628,6 +628,22 @@ pre[data-prompt] .line::before {
 .example-danger { border-left: 3px solid var(--danger); padding-left: var(--space-4); }
 .section-intro { color: var(--text-muted); margin-top: var(--space-2); }
 
+/* Sample data the examples were run against — collapsed so it orients a reader who
+   needs it without pushing the examples themselves below the fold. */
+.fixtures {
+  margin-top: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-surface);
+  padding: var(--space-3) var(--space-4);
+}
+.fixtures summary { cursor: pointer; font-weight: 600; }
+.fixtures-intro { color: var(--text-muted); font-size: var(--fs-s); margin-top: var(--space-2); }
+.fixture { margin-top: var(--space-4); }
+.fixture-name { font-size: var(--fs-s); margin-bottom: var(--space-2); }
+.fixture-note { color: var(--text-muted); font-weight: 400; }
+.fixture pre { margin-top: 0; }
+
 /* ==========================================================================
    14. Search dialog
    ========================================================================== */
