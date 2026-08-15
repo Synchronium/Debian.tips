@@ -66,7 +66,7 @@ if (!wantAll) {
 const script = [
   "umask 0022",
   `cd ${WORKDIR}`,
-  ...targets.map(({ ex, i }) => `${restore}\ncd ${WORKDIR}\nprintf '\\n${MARK}${i}\\n'\ntimeout 5 bash -c ${q(ex.code)} 2>&1`),
+  ...targets.map(({ ex, i }) => `${restore}\ncd ${WORKDIR}\nprintf '\\n${MARK}${i}\\n'\ntimeout 5 bash -c ${q(ex.code)} </dev/null 2>&1`),
 ].join("\n");
 let raw = "";
 try {

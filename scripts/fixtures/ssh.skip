@@ -1,0 +1,20 @@
+# Print key material or a fingerprint from a key generated fresh each run, so no fixture can
+# pin them. Committing a private key to reproduce them would be worse. Verified by hand in
+# the sandbox against a generated key, where each printed the expected shape.
+View the public key
+Show a key's fingerprint
+Start ssh-agent and add a key
+List keys currently held by the agent
+
+# Needs the public internet and a third party's server. Verified by hand from a networked
+# Debian trixie box.
+Pre-populate known_hosts without logging in
+Test key-based auth against a known real host
+
+# Needs a real host to connect to; the trace is also full of per-connection detail. Verified
+# by hand between two sandbox containers with sshd running.
+Get a step-by-step trace of the connection
+
+# The "code" here is an ssh_config block, not a shell command. Its output comes from `ssh -G`
+# after the block is in place. Verified by hand with the block written to ~/.ssh/config.
+Enable connection sharing for a host

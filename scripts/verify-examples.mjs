@@ -67,6 +67,12 @@ const fixtures = doc.fixtures ?? [];
 const WORKDIR = `/home/user/verify-${command}`;
 
 const MARK = "@@EX@@";
+// Output is capped per example. `crontab -i -r` prompts, then loops on EOF, emitting
+// 138MB in the five seconds before timeout kills it — enough to blow the read buffer and
+// leave every later example reporting empty. A runaway example should fail alone.
+// Every example gets /dev/null on stdin. An interactive one (`crontab -i -r` prompting
+// for y/n) otherwise reads the rest of the generated script as its answers, and every
+// example after it silently reports empty output.
 // Every example runs under `timeout`: pages legitimately document blocking commands
 // (`tail -f`, `journalctl -f`), and without this the whole run hangs on the first one.
 // A timed-out example simply reports as a mismatch for a human to look at.
@@ -87,7 +93,7 @@ const script = [
   "umask 0022",
   `cd ${WORKDIR}`,
   ...[...examples.map((ex) => ex.code), ...fixtureCommands].map(
-    (code, i) => `${restore}\ncd ${WORKDIR}\nprintf '\\n${MARK}${i}\\n'\ntimeout 5 bash -c ${shellQuote(code)} 2>&1`,
+    (code, i) => `${restore}\ncd ${WORKDIR}\nprintf '\\n${MARK}${i}\\n'\ntimeout 5 bash -c ${shellQuote(code)} </dev/null 2>&1 | head -c 100000`,
   ),
 ].join("\n");
 
@@ -139,7 +145,12 @@ const normRates = (s) => s.replace(/, \d+(\.\d+)?[KMG]iB\/s\)/g, ", <RATE>)");
 // Examples run inside `bash -c`, which prefixes its diagnostics with the line number in
 // that script ("bash: line 1: ./backup.sh: Permission denied"). An interactive shell
 // prints no such prefix, so it's an artifact of the harness, not something to publish.
-const normBashLine = (s) => s.replace(/^bash: line \d+: /gm, "bash: ");
+const normBashLine = (s) =>
+  s
+    .replace(/^bash: line \d+: /gm, "bash: ")
+    // ssh says this whenever stdin is not a terminal, which it never is here. An
+    // interactive shell running the same command does not print it.
+    .replace(/^Pseudo-terminal will not be allocated because stdin is not a terminal\.\n/gm, "");
 const norm = (s) => normRates(normBashLine(normTimestamps(s.replace(/\s+$/gm, "").replace(/\n+$/, "").trim())));
 
 let match = 0;

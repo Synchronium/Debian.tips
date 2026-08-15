@@ -1,4 +1,18 @@
 command: crontab
+fixtures:
+  - name: mycron.txt
+    note: "the file the install and syntax-check examples read — a comment header plus five jobs"
+    content: |
+      # m h  dom mon dow   command
+      0 3 * * * /usr/bin/find /var/log -name '*.log' -mtime +7 -delete
+      */15 * * * * /home/user/bin/check-disk.sh
+      0 9 * * 1-5 /home/user/bin/send-report.sh
+      @reboot /home/user/bin/startup.sh
+      @daily /home/user/bin/cleanup.sh
+  - name: usercron.txt
+    note: "a one-job crontab, for the `-u` examples"
+    content: |
+      0 2 * * * /home/user/bin/backup.sh
 sections:
   - title: "Managing your crontab"
     intro: "The three flags you'll use almost every time: `-e` to edit, `-l` to list, `-r` to remove."
@@ -14,14 +28,16 @@ sections:
       - title: "List your crontab"
         code: crontab -l
         description: "Prints your installed crontab as-is, unformatted, exactly what cron reads."
-        output: |
+        output: |2
           no crontab for root
         level: basic
         tags: [beginner]
       - title: "List a crontab that has jobs installed"
-        code: crontab -l
+        code: |-
+          crontab mycron.txt
+          crontab -l
         description: "Comments and blank lines round-trip unchanged; this is the literal file cron reads."
-        output: |
+        output: |2
           # m h  dom mon dow   command
           0 3 * * * /usr/bin/find /var/log -name '*.log' -mtime +7 -delete
           */15 * * * * /home/user/bin/check-disk.sh
@@ -37,11 +53,13 @@ sections:
       - title: "Confirm what -r just did"
         code: crontab -l
         description: "After `-r`, listing falls back to the same message as a never-configured crontab."
-        output: |
+        output: |2
           no crontab for root
         level: basic
       - title: "Prompt before deleting"
-        code: crontab -i -r
+        code: |-
+          crontab mycron.txt
+          crontab -i -r
         description: "`-i` adds a y/n confirmation in front of `-r`, for when you don't fully trust the muscle memory that typed `-r`."
         output: |
           crontab: really delete root's crontab? (y/n)
@@ -58,7 +76,7 @@ sections:
       - title: "Check a crontab file's syntax without installing it"
         code: crontab -n mycron.txt
         description: "`-n` parses the file and reports success or failure but leaves your actual crontab untouched. Useful before piping generated content straight into `crontab -`."
-        output: |
+        output: |2
           The syntax of the crontab file was successfully checked.
         level: intermediate
 
@@ -150,7 +168,7 @@ sections:
       - title: "List another user's crontab as root"
         code: crontab -u user -l
         description: "`-u` names the target user. Requires root (or the target user themself)."
-        output: |
+        output: |2
           no crontab for user
         level: intermediate
         tags: [permissions]
@@ -159,9 +177,11 @@ sections:
         description: "Loads a crontab file for user, not for whoever's actually running the command."
         level: intermediate
       - title: "Confirm it landed in the right place"
-        code: crontab -u user -l
+        code: |-
+          crontab -u user usercron.txt
+          crontab -u user -l
         description: "Read back what was just installed for the target user."
-        output: |
+        output: |2
           0 2 * * * /home/user/bin/backup.sh
         level: intermediate
       - title: "Non-root trying to read someone else's crontab"
@@ -172,10 +192,12 @@ sections:
         level: intermediate
         tags: [permissions]
       - title: "Where per-user crontabs actually live on disk"
-        code: sudo ls -l /var/spool/cron/crontabs/
+        code: |-
+          crontab mycron.txt
+          sudo stat -c '%A %U:%G %n' /var/spool/cron/crontabs/*
         description: "One file per user who has a crontab, named after the username, owned root:crontab, mode 600. Never edit these directly — always go through crontab so cron notices the change."
-        output: |
-          -rw------- 1 root crontab 190 Aug 13 20:41 root
+        output: |2
+          -rw------- root:crontab /var/spool/cron/crontabs/root
         level: advanced
         tags: [permissions]
 
@@ -271,11 +293,27 @@ sections:
       - title: "Read the system crontab"
         code: cat /etc/crontab
         description: "Ships pre-populated on Debian, wiring up the standard periodic directories below via anacron."
-        output: |
-          17 *    * * *   root    cd / && run-parts --report /etc/cron.hourly
-          25 6    * * *   root    test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.daily; }
-          47 6    * * 7   root    test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.weekly; }
-          52 6    1 * *   root    test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.monthly; }
+        output: |2
+          # /etc/crontab: system-wide crontab
+          # Unlike any other crontab you don't have to run the `crontab'
+          # command to install the new version when you edit this file
+          # and files in /etc/cron.d. These files also have username fields,
+          # that none of the other crontabs do.
+          SHELL=/bin/sh
+          PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+          # Example of job definition:
+          # .---------------- minute (0 - 59)
+          # |  .------------- hour (0 - 23)
+          # |  |  .---------- day of month (1 - 31)
+          # |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+          # |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+          # |  |  |  |  |
+          # *  *  *  *  * user-name command to be executed
+          17 *	* * *	root	cd / && run-parts --report /etc/cron.hourly
+          25 6	* * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.daily; }
+          47 6	* * 7	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.weekly; }
+          52 6	1 * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.monthly; }
+          #
         level: intermediate
         tags: [sysadmin]
       - title: "Add a system job as a drop-in file"

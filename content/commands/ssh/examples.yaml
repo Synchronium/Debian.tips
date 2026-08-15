@@ -1,4 +1,20 @@
 command: ssh
+fixtures:
+  - name: "~/.ssh/config"
+    note: "the host block the `-G` and connection-sharing examples resolve against"
+    from: "cat ~/.ssh/config"
+    content: |
+      Host deb1
+          HostName deb1.example.com
+          User user
+          Port 2222
+          IdentityFile ~/.ssh/id_ed25519
+  - name: "~/.ssh/known_hosts"
+    note: "two saved host keys, for the lookup and removal examples — host keys are public, so nothing secret is shown"
+    from: "cut -c1-72 ~/.ssh/known_hosts"
+    content: |
+      |1|54lfM/zb+rQclYh4kZPZwbDAJXY=|0nF4Tq2N1xiwJDS540Be7ylsvKU= ssh-ed25519
+      deb1.example.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOo
 sections:
   - title: "Connecting and running commands"
     intro: "The two shapes every ssh invocation takes: an interactive shell, or one command with its output streamed back."
@@ -24,7 +40,7 @@ sections:
       - title: "Check the installed ssh version"
         code: ssh -V
         description: "Prints the OpenSSH and OpenSSL versions in use, useful when a flag doesn't behave as documented and you suspect an older build."
-        output: |
+        output: |2
           OpenSSH_10.0p2 Debian-7+deb13u4, OpenSSL 3.5.6 7 Apr 2026
         level: basic
       - title: "Run a command that needs a real shell (quoting)"
@@ -44,14 +60,12 @@ sections:
     intro: "Generating a key pair, installing the public half on a server, and letting an agent hold the unlocked key for the session."
     examples:
       - title: "Generate an Ed25519 key pair"
-        code: ssh-keygen -t ed25519 -C "user@deb1"
-        description: "`-t ed25519` picks the current recommended key type (smaller and faster to verify than RSA). `-C` sets a comment, conventionally an identifying label, stored alongside the public key. Accepts the default file location and an empty passphrase when run non-interactively; interactively it prompts for both."
-        output: |
+        code: ssh-keygen -t ed25519 -C "user@deb1" -f ./id_ed25519_test -N "" | head -3
+        description: "`-t ed25519` picks the current recommended key type (smaller and faster to verify than RSA). `-C` sets a comment, conventionally an identifying label, stored alongside the public key. `-f` names the output file and `-N \"\"` sets an empty passphrase; run without them, `ssh-keygen` prompts for both. It also prints the new key's fingerprint and a randomart image, which differ for every key generated."
+        output: |2
           Generating public/private ed25519 key pair.
-          Your identification has been saved in ./id_ed25519_test
-          Your public key has been saved in ./id_ed25519_test.pub
-          The key fingerprint is:
-          SHA256:EpmQiJDQS3h8FvlWEXRLoxPebOnp/F5nMGf59V9hYEs user@deb1
+          ./id_ed25519_test already exists.
+          Overwrite (y/n)?
         level: basic
         tags: [beginner, security]
       - title: "View the public key"
@@ -98,13 +112,16 @@ sections:
       - title: "See the error when no agent is running"
         code: ssh-add -l
         description: "Without `SSH_AUTH_SOCK` set (no agent started, or the variable lost in a new shell), ssh-add can't reach an agent at all."
-        output: |
+        output: |2
           Could not open a connection to your authentication agent.
         level: intermediate
       - title: "Remove all keys from the agent"
-        code: ssh-add -D
+        code: |-
+          eval "$(ssh-agent -s)" >/dev/null
+          ssh-add ~/.ssh/id_ed25519 2>/dev/null
+          ssh-add -D
         description: "Clears every identity the agent is holding, without stopping the agent process itself. Useful before switching to a different set of keys mid-session."
-        output: |
+        output: |2
           All identities removed.
         level: intermediate
       - title: "Change a key's passphrase"
@@ -114,7 +131,7 @@ sections:
       - title: "Refuse a private key with overly open permissions"
         code: ssh-keygen -y -f ./id_ed25519_test
         description: "A private key readable by group or other (here deliberately set to `644`) is rejected outright rather than used. `chmod 600` on the key file is the fix."
-        output: |
+        output: |2
           @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
           @         WARNING: UNPROTECTED PRIVATE KEY FILE!          @
           @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -152,7 +169,8 @@ sections:
       - title: "Show the fully resolved config for a host"
         code: ssh -G deb1
         description: "Prints every setting ssh would actually use for `deb1` after merging all matching `Host` blocks, without opening a connection. The fastest way to check why ssh is using a particular port, key, or jump host."
-        output: |
+        output: |2
+          Pseudo-terminal will not be allocated because stdin is not a terminal.
           host deb1
           user user
           hostname deb1.example.com
@@ -160,6 +178,84 @@ sections:
           addressfamily any
           batchmode no
           canonicalizefallbacklocal yes
+          canonicalizehostname false
+          checkhostip no
+          compression no
+          controlmaster false
+          enablesshkeysign no
+          clearallforwardings no
+          exitonforwardfailure no
+          fingerprinthash SHA256
+          forwardx11 no
+          forwardx11trusted yes
+          gatewayports no
+          gssapiauthentication yes
+          gssapikeyexchange no
+          gssapidelegatecredentials no
+          gssapitrustdns no
+          gssapirenewalforcesrekey no
+          gssapikexalgorithms gss-group14-sha256-,gss-group16-sha512-,gss-nistp256-sha256-,gss-curve25519-sha256-,gss-group14-sha1-,gss-gex-sha1-
+          hashknownhosts yes
+          hostbasedauthentication no
+          identitiesonly no
+          kbdinteractiveauthentication yes
+          nohostauthenticationforlocalhost no
+          passwordauthentication yes
+          permitlocalcommand no
+          proxyusefdpass no
+          pubkeyauthentication true
+          requesttty auto
+          sessiontype default
+          stdinnull no
+          forkafterauthentication no
+          streamlocalbindunlink no
+          stricthostkeychecking ask
+          tcpkeepalive yes
+          tunnel false
+          verifyhostkeydns false
+          visualhostkey no
+          updatehostkeys true
+          enableescapecommandline no
+          canonicalizemaxdots 1
+          connectionattempts 1
+          forwardx11timeout 1200
+          numberofpasswordprompts 3
+          serveralivecountmax 3
+          serveraliveinterval 0
+          requiredrsasize 1024
+          obscurekeystroketiming yes
+          ciphers chacha20-poly1305@openssh.com,aes128-gcm@openssh.com,aes256-gcm@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr
+          hostkeyalgorithms ssh-ed25519-cert-v01@openssh.com,ecdsa-sha2-nistp256-cert-v01@openssh.com,ecdsa-sha2-nistp384-cert-v01@openssh.com,ecdsa-sha2-nistp521-cert-v01@openssh.com,sk-ssh-ed25519-cert-v01@openssh.com,sk-ecdsa-sha2-nistp256-cert-v01@openssh.com,rsa-sha2-512-cert-v01@openssh.com,rsa-sha2-256-cert-v01@openssh.com,ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,sk-ssh-ed25519@openssh.com,sk-ecdsa-sha2-nistp256@openssh.com,rsa-sha2-512,rsa-sha2-256
+          hostbasedacceptedalgorithms ssh-ed25519-cert-v01@openssh.com,ecdsa-sha2-nistp256-cert-v01@openssh.com,ecdsa-sha2-nistp384-cert-v01@openssh.com,ecdsa-sha2-nistp521-cert-v01@openssh.com,sk-ssh-ed25519-cert-v01@openssh.com,sk-ecdsa-sha2-nistp256-cert-v01@openssh.com,rsa-sha2-512-cert-v01@openssh.com,rsa-sha2-256-cert-v01@openssh.com,ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,sk-ssh-ed25519@openssh.com,sk-ecdsa-sha2-nistp256@openssh.com,rsa-sha2-512,rsa-sha2-256
+          kexalgorithms mlkem768x25519-sha256,sntrup761x25519-sha512,sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256
+          casignaturealgorithms ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,sk-ssh-ed25519@openssh.com,sk-ecdsa-sha2-nistp256@openssh.com,rsa-sha2-512,rsa-sha2-256
+          loglevel INFO
+          macs umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1
+          securitykeyprovider internal
+          pubkeyacceptedalgorithms ssh-ed25519-cert-v01@openssh.com,ecdsa-sha2-nistp256-cert-v01@openssh.com,ecdsa-sha2-nistp384-cert-v01@openssh.com,ecdsa-sha2-nistp521-cert-v01@openssh.com,sk-ssh-ed25519-cert-v01@openssh.com,sk-ecdsa-sha2-nistp256-cert-v01@openssh.com,rsa-sha2-512-cert-v01@openssh.com,rsa-sha2-256-cert-v01@openssh.com,ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,sk-ssh-ed25519@openssh.com,sk-ecdsa-sha2-nistp256@openssh.com,rsa-sha2-512,rsa-sha2-256
+          xauthlocation /usr/bin/xauth
+          identityfile ~/.ssh/id_ed25519
+          canonicaldomains none
+          globalknownhostsfile /etc/ssh/ssh_known_hosts /etc/ssh/ssh_known_hosts2
+          userknownhostsfile /home/user/.ssh/known_hosts /home/user/.ssh/known_hosts2
+          sendenv LANG
+          sendenv LC_*
+          sendenv COLORTERM
+          sendenv NO_COLOR
+          logverbose none
+          channeltimeout none
+          permitremoteopen any
+          addkeystoagent false
+          forwardagent no
+          connecttimeout none
+          tunneldevice any:any
+          canonicalizePermittedcnames none
+          controlpersist no
+          escapechar ~
+          ipqos ef cs1
+          rekeylimit 0 0
+          streamlocalbindmask 0177
+          syslogfacility USER
         level: intermediate
         tags: [scripting]
       - title: "Use an alternate config file"
@@ -215,15 +311,15 @@ sections:
       - title: "Query known_hosts for a saved entry"
         code: ssh-keygen -F github.com
         description: "Looks up a host's saved key without connecting anywhere. `known_hosts` entries are hashed by default (`HashKnownHosts yes` on Debian), so the file itself doesn't reveal which hosts you've connected to at a glance; `-F` decodes the lookup."
-        output: |
+        output: |2
           # Host github.com found: line 1
           |1|54lfM/zb+rQclYh4kZPZwbDAJXY=|0nF4Tq2N1xiwJDS540Be7ylsvKU= ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
         level: intermediate
       - title: "Remove a stale host key"
         code: ssh-keygen -R deb1.example.com
         description: "Deletes a host's entry from `known_hosts` after you've confirmed a key change is legitimate (server rebuilt, hosting provider recycled the IP), so the next connection re-prompts instead of refusing outright. Keeps a `.old` backup of the file it edited."
-        output: |
-          # Host github.com found: line 1
+        output: |2
+          # Host deb1.example.com found: line 2
           /home/user/.ssh/known_hosts updated.
           Original contents retained as /home/user/.ssh/known_hosts.old
         level: intermediate
@@ -374,7 +470,7 @@ sections:
       - title: "See why a host is unreachable at all"
         code: ssh -o BatchMode=yes -o ConnectTimeout=3 nonexistent.invalid echo hi
         description: "`BatchMode=yes` stops ssh from ever prompting (for a password or a host key confirmation), so a script gets a clean failure instead of hanging. This is a real, unresolvable hostname, so the error and exit code below are genuine."
-        output: |
+        output: |2
           ssh: Could not resolve hostname nonexistent.invalid: Name or service not known
         level: intermediate
         tags: [scripting]
@@ -383,7 +479,7 @@ sections:
           ssh -o BatchMode=yes -o ConnectTimeout=3 nonexistent.invalid echo hi
           echo "exit=$?"
         description: "255 specifically means ssh itself failed to connect or authenticate, distinct from any exit code the remote command might have returned had it actually run."
-        output: |
+        output: |2
           ssh: Could not resolve hostname nonexistent.invalid: Name or service not known
           exit=255
         level: intermediate
@@ -423,7 +519,7 @@ sections:
       - title: "List the key exchange and cipher algorithms this build supports"
         code: ssh -Q cipher
         description: "`-Q` queries ssh's own compiled-in capabilities, here symmetric ciphers offered during negotiation. Also accepts `key`, `mac`, `kex`, and others."
-        output: |
+        output: |2
           3des-cbc
           aes128-cbc
           aes192-cbc
@@ -432,6 +528,8 @@ sections:
           aes192-ctr
           aes256-ctr
           aes128-gcm@openssh.com
+          aes256-gcm@openssh.com
+          chacha20-poly1305@openssh.com
         level: advanced
       - title: "Restrict a shared account key to one command"
         code: |-
