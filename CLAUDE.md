@@ -74,8 +74,7 @@ bytes made visible with `sed "s/\r/␍/"`, or several files shown together with 
 The rule is that every rendered block is something a reader could actually produce; `from:` is
 never rendered, it only keeps the block honest.
 
-Fifteen pages currently replay at 100% (wc, sort, uniq, cut, tr, head, diff, grep, sed, awk,
-find, chmod, tar, crontab, ssh — 460 outputs). Only `curl` has no fixtures. If you touch a
+Every command page replays at 100% — 485 outputs across all sixteen. If you touch a
 covered page, re-run its replay; if you add examples to an uncovered one, consider adding them.
 
 Examples a batch can't replay (needing a concurrent writer or a network peer) are listed by title

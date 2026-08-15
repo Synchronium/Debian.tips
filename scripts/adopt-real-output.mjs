@@ -9,6 +9,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { parse } from "yaml";
+import { normalise } from "./lib/normalise.mjs";
 
 const argv = process.argv.slice(2);
 // Must mirror verify-examples.mjs: capturing as root when the page replays as `user`
@@ -80,11 +81,7 @@ for (let i = 1; i < parts.length; i += 2) actual.set(Number(parts[i]), parts[i +
 
 let lines = readFileSync(path, "utf-8").split("\n");
 for (const { ex, i } of [...targets].reverse()) {
-  const got = (actual.get(i) ?? "")
-    .replace(/\s+$/gm, "")
-    .replace(/^\n+|\n+$/g, "")
-    // `bash -c` numbers its diagnostics; an interactive shell does not.
-    .replace(/^bash: line \d+: /gm, "bash: ");
+  const got = normalise(actual.get(i) ?? "");
   if (!got) { console.log(`  SKIP (no output captured): ${ex.title}`); continue; }
   const titleIdx = lines.findIndex((l) => l.includes("- title:") && l.includes(ex.title.slice(0, 40)));
   if (titleIdx === -1) { console.log(`  SKIP (title not found): ${ex.title}`); continue; }

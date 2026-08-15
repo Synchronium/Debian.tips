@@ -1,0 +1,11 @@
+# Reports how long the transfer took, which is a property of the moment. Verified by hand;
+# the shape is stable, the numbers are not.
+Print several facts about a transfer at once
+
+# The -v transcript carries the negotiated TLS parameters, the resolved IP and per-connection
+# detail, none of which is reproducible. Verified by hand against https://example.com.
+Watch the full TLS handshake and request
+
+# Returns the caller's own public IP, which differs for every reader by definition. Verified
+# by hand from a networked Debian trixie box.
+See the public IP a request would come from

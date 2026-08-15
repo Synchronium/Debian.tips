@@ -19,6 +19,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { parse } from "yaml";
+import { normalise } from "./lib/normalise.mjs";
 
 const argv = process.argv.slice(2);
 const asUser = argv[0] === "--user" ? (argv.shift(), true) : false;
@@ -128,30 +129,7 @@ const chunks = raw.split(new RegExp(`^${MARK}(\\d+)$`, "m"));
 const actual = new Map();
 for (let i = 1; i < chunks.length; i += 2) actual.set(Number(chunks[i]), (chunks[i + 1] ?? "").replace(/^\n/, ""));
 
-// File mtimes appear in `diff -u`/`-c` headers and change on every run, so they're
-// normalised on both sides — the same reason the style guide sanitises hostnames.
-// Everything else must match byte for byte.
-const normTimestamps = (s) =>
-  s
-    .replace(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)? [+-]\d{4}/g, "<TIMESTAMP>")
-    .replace(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun) [A-Z][a-z]{2} +\d+ \d{2}:\d{2}:\d{2} \d{4}\b/g, "<TIMESTAMP>")
-    // `tar -tvf`'s mtime column. Examples that archive a file they just created can only
-    // ever stamp it "now", so the fixture pins what it can and this covers the rest.
-    .replace(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}\b/g, "<TIMESTAMP>");
-
-// `tar --totals` reports a transfer rate, which is a property of the machine and the
-// moment, not of the command. The byte count either side of it still has to match.
-const normRates = (s) => s.replace(/, \d+(\.\d+)?[KMG]iB\/s\)/g, ", <RATE>)");
-// Examples run inside `bash -c`, which prefixes its diagnostics with the line number in
-// that script ("bash: line 1: ./backup.sh: Permission denied"). An interactive shell
-// prints no such prefix, so it's an artifact of the harness, not something to publish.
-const normBashLine = (s) =>
-  s
-    .replace(/^bash: line \d+: /gm, "bash: ")
-    // ssh says this whenever stdin is not a terminal, which it never is here. An
-    // interactive shell running the same command does not print it.
-    .replace(/^Pseudo-terminal will not be allocated because stdin is not a terminal\.\n/gm, "");
-const norm = (s) => normRates(normBashLine(normTimestamps(s.replace(/\s+$/gm, "").replace(/\n+$/, "").trim())));
+const norm = normalise;
 
 let match = 0;
 const differ = [];

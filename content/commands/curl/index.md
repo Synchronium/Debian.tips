@@ -29,6 +29,14 @@ curl -v https://example.com           # GET, print the whole conversation (conne
 `-i`/`-I`/`-v` are about **what curl shows you**, not what request it sends. A common
 confusion is meaning "make a HEAD request" but reaching for `-i`.
 
+> [!NOTE]
+> The examples below send their POSTs, redirects, cookies and auth challenges to
+> `http://localhost:8080` — a small test server kept in this site's repository at
+> `scripts/fixtures/http-mock.py`. Start it with `python3 http-mock.py` and every result on
+> this page is reproducible on your own machine. Public request-echo services drift, go
+> down, and answer with a trace id and your own IP address, none of which can be printed
+> here as exact output.
+
 ## GET is implicit; other methods usually aren't
 
 Without `-X`, `curl` sends GET, unless you give it a request body with `-d`/`--data` or
