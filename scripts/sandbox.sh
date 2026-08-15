@@ -13,10 +13,22 @@ IMAGE="debian-tips-sandbox:trixie"
 DOCKERFILE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/sandbox" && pwd)"
 NAME_PREFIX="content-sandbox-"
 
+# Builds the image when it's missing *or* out of date. Checking only for existence meant a
+# Dockerfile edit never reached an already-built image, and the symptom is misleading:
+# examples replay against a stale toolset and fail as though the page were wrong. Adding
+# `patch` to the image once surfaced days later as the diff page dropping to 16/17.
 ensure_image() {
-  if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
-    docker build -t "$IMAGE" "$DOCKERFILE_DIR" >&2
+  local created epoch
+  if created=$(docker image inspect -f '{{.Created}}' "$IMAGE" 2>/dev/null); then
+    epoch=$(date -d "$created" +%s 2>/dev/null) || epoch=0
+    # Anything in the build context newer than the image means a rebuild, not just the
+    # Dockerfile — whatever gets added alongside it later is covered without editing this.
+    if [[ -z "$(find "$DOCKERFILE_DIR" -type f -newermt "@$epoch" -print -quit 2>/dev/null)" ]]; then
+      return
+    fi
+    echo "sandbox: $DOCKERFILE_DIR is newer than $IMAGE — rebuilding" >&2
   fi
+  docker build -t "$IMAGE" "$DOCKERFILE_DIR" >&2
 }
 
 require_sandbox_name() {
