@@ -96,7 +96,7 @@ sections:
         tags: [beginner]
       - title: "Fold case before comparing"
         code: sort -f wordlist.txt
-        description: "-f (--ignore-case) compares case-insensitively, so Cherry and cherry sort next to each other instead of at opposite ends of the file."
+        description: "`-f` (`--ignore-case`) compares case-insensitively, so Cherry and cherry sort next to each other instead of at opposite ends of the file."
         output: |
           apple
           apple
@@ -121,7 +121,7 @@ sections:
         tags: [beginner]
       - title: "Sort those same numbers correctly"
         code: sort -n numbers.txt
-        description: "-n switches to numeric comparison. Same input, correct order."
+        description: "`-n` switches to numeric comparison. Same input, correct order."
         output: |
           2
           4
@@ -140,11 +140,11 @@ sections:
         level: intermediate
 
   - title: "Numeric and human-readable sorting"
-    intro: "-n for plain numbers, -h when the numbers carry K/M/G suffixes, -V for version-style strings, -M for month names."
+    intro: "`-n` for plain numbers, `-h` when the numbers carry K/M/G suffixes, `-V` for version-style strings, `-M` for month names."
     examples:
       - title: "Sort du or ls -h output by actual size"
         code: sort -k2 -h sizes.txt
-        description: "-h understands K/M/G suffixes as multipliers, so 890 < 1.2K < 128M < 4.3G comes out in the order a human expects."
+        description: "`-h` understands K/M/G suffixes as multipliers, so 890 < 1.2K < 128M < 4.3G comes out in the order a human expects."
         output: |
           notes.txt 340
           access.log 890
@@ -156,7 +156,7 @@ sections:
       - title: "The mistake: -h without picking the size field"
         code: sort -h sizes.txt
         description: >-
-          Without -k2, sort -h compares from the start of each line — the filename — which isn't
+          Without `-k2`, `sort -h` compares from the start of each line — the filename — which isn't
           a number at all, so this silently falls back to sorting alphabetically by filename
           instead of by size. Verified: this produces access.log, backup.sql, notes.txt,
           photos.tar.gz, report.txt — alphabetical order, not size order.
@@ -165,7 +165,7 @@ sections:
         tags: [beginner]
       - title: "Sort filenames with embedded numbers correctly"
         code: printf 'file10.txt\nfile2.txt\nfile1.txt\n' | sort -V
-        description: "-V (version sort) treats digit runs as numbers, so file2.txt sorts before file10.txt instead of after it — the opposite of what plain sort would do."
+        description: "`-V` (version sort) treats digit runs as numbers, so file2.txt sorts before file10.txt instead of after it — the opposite of what plain sort would do."
         output: |
           file1.txt
           file2.txt
@@ -173,7 +173,7 @@ sections:
         level: intermediate
       - title: "Sort by month name"
         code: printf 'Mar 3\nJan 1\nFeb 2\n' | sort -M
-        description: "-M recognises the first three letters of month names (Jan, Feb, Mar...) and sorts chronologically instead of alphabetically."
+        description: "`-M` recognises the first three letters of month names (Jan, Feb, Mar...) and sorts chronologically instead of alphabetically."
         output: |
           Jan 1
           Feb 2
@@ -181,11 +181,11 @@ sections:
         level: advanced
 
   - title: "Sorting by field with -k"
-    intro: "-k N sorts by the Nth field instead of the whole line. -t changes what counts as a field separator."
+    intro: "`-k` N sorts by the Nth field instead of the whole line. `-t` changes what counts as a field separator."
     examples:
       - title: "Sort a scoreboard by score"
         code: sort -k3 -n scores.txt
-        description: "-k3 picks the third whitespace-separated field; -n makes that comparison numeric."
+        description: "`-k3` picks the third whitespace-separated field; `-n` makes that comparison numeric."
         output: |
           Team Delta 7
           Team Beta 42
@@ -195,7 +195,7 @@ sections:
         tags: [beginner]
       - title: "Same scoreboard, highest first"
         code: sort -k3 -rn scores.txt
-        description: "-r reverses whatever order the rest of the flags produce — combine it with -n rather than trying to sort ascending and pipe through tac."
+        description: "`-r` reverses whatever order the rest of the flags produce — combine it with `-n` rather than trying to sort ascending and pipe through `tac`."
         output: |
           Team Gamma 100
           Team Alpha 89
@@ -204,7 +204,7 @@ sections:
         level: intermediate
       - title: "Sort CSV data by a numeric column"
         code: (head -1 users.csv; tail -n +2 users.csv | sort -t, -k2 -n)
-        description: "-t, treats a comma as the field separator instead of whitespace. Keeping the header out of the sort with head/tail is the standard trick for not sorting it into the middle of the data."
+        description: "`-t,` treats a comma as the field separator instead of whitespace. Keeping the header out of the sort with head/tail is the standard trick for not sorting it into the middle of the data."
         output: |
           name,age,department
           Dave,25,Marketing
@@ -217,7 +217,7 @@ sections:
         tags: [beginner]
       - title: "Sort by one field, then break ties with another"
         code: (head -1 users.csv; tail -n +2 users.csv | sort -t, -k3,3 -k2,2n)
-        description: "Two -k options apply in order: group by department (field 3) first, then sort each group by age (field 2) numerically. -k3,3 means 'field 3 to field 3' — without the end bound, -k3 alone would sort by field 3 through the end of the line."
+        description: "Two `-k` options apply in order: group by department (field 3) first, then sort each group by age (field 2) numerically. `-k3,3` means 'field 3 to field 3' — without the end bound, `-k3` alone would sort by field 3 through the end of the line."
         output: |
           name,age,department
           Frank,31,Engineering
@@ -229,7 +229,7 @@ sections:
         level: advanced
       - title: "Ignore leading whitespace when comparing"
         code: printf '   banana\napple\n  cherry\n' | sort -b
-        description: "-b (--ignore-leading-blanks) skips indentation before comparing, so inconsistently-indented input still sorts by content."
+        description: "`-b` (`--ignore-leading-blanks`) skips indentation before comparing, so inconsistently-indented input still sorts by content."
         output: |
           apple
              banana
@@ -240,7 +240,7 @@ sections:
     examples:
       - title: "Sort and deduplicate in one pass"
         code: sort -u wordlist.txt
-        description: "-u drops duplicate lines after sorting — cheaper than sort | uniq when you don't need the two steps separately, and it needs the file sorted anyway."
+        description: "`-u` drops duplicate lines after sorting — cheaper than `sort | uniq` when you don't need the two steps separately, and it needs the file sorted anyway."
         output: |
           Cherry
           Elderberry
@@ -252,16 +252,16 @@ sections:
         tags: [beginner]
       - title: "The same thing, long-form flag"
         code: sort --unique wordlist.txt
-        description: "--unique is the exact same flag as -u — useful to know when reading someone else's script that spells it out."
+        description: "`--unique` is the exact same flag as `-u` — useful to know when reading someone else's script that spells it out."
         level: basic
       - title: "Sort a file in place safely"
         code: sort -u -o wordlist.txt wordlist.txt
-        description: "-o lets the output filename be the same as the input — sort reads the whole file into memory before opening the output, so this doesn't truncate the input out from under itself the way sort wordlist.txt > wordlist.txt would. It prints nothing: the result goes to the file."
+        description: "`-o` lets the output filename be the same as the input — sort reads the whole file into memory before opening the output, so this doesn't truncate the input out from under itself the way sort wordlist.txt > wordlist.txt would. It prints nothing: the result goes to the file."
         level: intermediate
         tags: [beginner]
       - title: "Reverse the sort order"
         code: sort -r wordlist.txt
-        description: "-r reverses the final order, applied after any other comparison flags."
+        description: "`-r` reverses the final order, applied after any other comparison flags."
         output: |
           date
           cherry
@@ -276,7 +276,7 @@ sections:
         tags: [beginner]
       - title: "Merge two files that are already sorted"
         code: sort -m -n numbers-sorted.txt other-sorted.txt
-        description: "-m merges pre-sorted inputs without re-sorting each one from scratch — much cheaper than cat-ing them together and sorting the result, on large files."
+        description: "`-m` merges pre-sorted inputs without re-sorting each one from scratch — much cheaper than cat-ing them together and sorting the result, on large files."
         output: |
           1
           2
@@ -292,20 +292,20 @@ sections:
     examples:
       - title: "Check whether a file is already sorted"
         code: sort -c numbers.txt
-        description: "-c prints nothing and exits 0 if the file is already in sorted order for the comparison rules given — here, default lexicographic order, under which 10, 2, 33, 4 happens to already qualify."
+        description: "`-c` prints nothing and exits 0 if the file is already in sorted order for the comparison rules given — here, default lexicographic order, under which 10, 2, 33, 4 happens to already qualify."
         level: intermediate
         tags: [beginner]
       - title: "Check with the comparison rule that actually matches the data"
         code: sort -cn numbers.txt
         description: >-
           Same file, checked numerically instead: reports exactly where it breaks. This is the
-          check that actually matters for a file of numbers — -c alone checked the wrong thing.
+          check that actually matters for a file of numbers — `-c` alone checked the wrong thing.
         output: |
           sort: numbers.txt:2: disorder: 2
         level: intermediate
       - title: "Write sorted output to a new file"
         code: sort -o wordlist-sorted.txt wordlist.txt
-        description: "-o is the safe way to 'sort in place' — sort > wordlist.txt would truncate the file before reading it, destroying the input. -o opens the output only after reading the input fully, so input and output can even be the same filename."
+        description: "`-o` is the safe way to 'sort in place' — `sort > wordlist.txt` would truncate the file before reading it, destroying the input. `-o` opens the output only after reading the input fully, so input and output can even be the same filename."
         level: intermediate
         tags: [beginner]
       - title: "Sort output from another command"
@@ -320,7 +320,7 @@ sections:
         tags: [beginner]
       - title: "Sort NUL-separated input safely"
         code: find . -maxdepth 1 -name '*.txt' -print0 | sort -z
-        description: "-z reads and writes NUL-terminated records instead of newline-terminated ones — the correct pairing with find -print0 and xargs -0 for filenames that might contain newlines."
+        description: "`-z` reads and writes NUL-terminated records instead of newline-terminated ones — the correct pairing with `find -print0` and `xargs -0` for filenames that might contain newlines."
         level: advanced
         tags: [beginner]
       - title: "Force byte-order sorting regardless of locale"
@@ -340,11 +340,11 @@ sections:
         tags: [scripting]
 
   - title: "More field-sorting patterns"
-    intro: "-k accepts a lot more than a bare field number: character ranges within a field, colon or tab separators, stability guarantees."
+    intro: "`-k` accepts a lot more than a bare field number: character ranges within a field, colon or tab separators, stability guarantees."
     examples:
       - title: "Sort colon-separated data, the /etc/passwd shape"
         code: "sort -t: -k3 -n /etc/passwd | head -3"
-        description: "-t: splits on colons; -k3 -n sorts by the numeric UID field. The same shape works for any colon-delimited system file."
+        description: "`-t:` splits on colons; `-k3 -n` sorts by the numeric UID field. The same shape works for any colon-delimited system file."
         output: |
           root:x:0:0:root:/root:/bin/bash
           daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
@@ -361,7 +361,7 @@ sections:
         level: advanced
       - title: "Keep equal-key rows in their original relative order"
         code: sort -s -t, -k2,2 people.csv
-        description: "Default sort doesn't guarantee what happens to rows that compare equal — -s (--stable) guarantees ties keep their original relative order, which matters when you sort by one field but still care about a secondary implicit order."
+        description: "Default sort doesn't guarantee what happens to rows that compare equal — `-s` (`--stable`) guarantees ties keep their original relative order, which matters when you sort by one field but still care about a secondary implicit order."
         output: |
           Carol,Eng
           Alice,Eng
@@ -370,14 +370,14 @@ sections:
         level: advanced
       - title: "Sort a tab-separated file"
         code: sort -t$'\t' -k2 data.tsv
-        description: "$'\\t' is bash's way of writing a literal tab in a single-quoted-feeling argument — plain -t '	' works too but is easy to mistype invisibly."
+        description: "`$'\\t'` is bash's way of writing a literal tab in a single-quoted-feeling argument — plain `-t '	'` works too but is easy to mistype invisibly."
         output: |
           b	a
           a	z
         level: advanced
       - title: "General numeric sort handles scientific notation"
         code: sort -g numbers-sci.txt
-        description: "-n treats anything it can't parse as zero; -g (--general-numeric-sort) additionally understands scientific notation like 1e2, at some extra performance cost. Use -n unless you specifically have exponents in the data."
+        description: "`-n` treats anything it can't parse as zero; `-g` (`--general-numeric-sort`) additionally understands scientific notation like 1e2, at some extra performance cost. Use `-n` unless you specifically have exponents in the data."
         output: |
           3
           2.5e1
@@ -385,14 +385,14 @@ sections:
         level: advanced
       - title: "Deduplicate by one field, keeping one row per key"
         code: sort -t, -k2,2 -u people.csv
-        description: "-u after a -k range dedupes on just that field, not the whole line — one row per distinct field-2 value survives (whichever sorts first once the rest of the line is compared as the tiebreak)."
+        description: "`-u` after a `-k` range dedupes on just that field, not the whole line — one row per distinct field-2 value survives (whichever sorts first once the rest of the line is compared as the tiebreak)."
         output: |
           Carol,Eng
           Bob,Sales
         level: advanced
       - title: "Multiple -k options without explicit end bounds"
         code: printf 'b 2 x\na 2 y\nc 1 z\n' | sort -k2 -k1
-        description: "Without a comma, each -k extends to the end of the line, so the second -k1 only actually breaks ties left over after the first key already covered everything from field 2 onward. For precise multi-column sorts, always give explicit N,N ranges instead."
+        description: "Without a comma, each `-k` extends to the end of the line, so the second `-k1` only actually breaks ties left over after the first key already covered everything from field 2 onward. For precise multi-column sorts, always give explicit N,N ranges instead."
         output: |
           c 1 z
           b 2 x
@@ -400,7 +400,7 @@ sections:
         level: advanced
       - title: "See exactly what sort is comparing and why"
         code: sort -n --debug numbers-pair.txt
-        description: "--debug annotates the comparison it performed under each line — invaluable when a sort order looks wrong and you can't tell whether it's reading the field, locale, or numeric parsing you expect."
+        description: "`--debug` annotates the comparison it performed under each line — invaluable when a sort order looks wrong and you can't tell whether it's reading the field, locale, or numeric parsing you expect."
         output: |
           sort: text ordering performed using simple byte comparison
           sort: numbers use '.' as a decimal point in this locale
@@ -413,7 +413,7 @@ sections:
         level: advanced
 
   - title: "Sorting real log and system data"
-    intro: "Applying -k to data you didn't design yourself — a web server access log with quoted fields."
+    intro: "Applying `-k` to data you didn't design yourself — a web server access log with quoted fields."
     examples:
       - title: "Group log entries by HTTP status code"
         code: sort -k8 -n access.log
@@ -433,7 +433,7 @@ sections:
         tags: [monitoring]
       - title: "Find the biggest responses a server sent"
         code: sort -k9 -rn access.log | head -n 3
-        description: "Field 9 is response size in bytes. Combining -r, -n, and head is the standard 'top N' shape for any sortable log column."
+        description: "Field 9 is response size in bytes. Combining `-r`, `-n`, and head is the standard 'top N' shape for any sortable log column."
         output: |
           192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
           192.0.2.44 - - [13/Aug/2026:09:16:04] "GET /dashboard HTTP/1.1" 200 4021
@@ -442,7 +442,7 @@ sections:
         tags: [monitoring, beginner]
       - title: "Sort IPv4 addresses in actual numeric order"
         code: sort -t. -k1,1n -k2,2n -k3,3n -k4,4n access.log
-        description: "Four chained -k options, one per octet, each numeric. Plain sort on IPs compares them as text and gets 10.x ahead of 9.x — this is the fix."
+        description: "Four chained `-k` options, one per octet, each numeric. Plain sort on IPs compares them as text and gets 10.x ahead of 9.x — this is the fix."
         level: advanced
         tags: [networking]
 
@@ -454,7 +454,7 @@ sections:
         level: basic
       - title: "Find the largest directories, biggest first"
         code: du -sh */ | sort -rh
-        description: "du -sh */ prints one human-readable size per top-level directory; piping through sort -rh orders them biggest first. See the find-the-largest-files recipe for the file-level version of this pattern."
+        description: "`du -sh */` prints one human-readable size per top-level directory; piping through `sort -rh` orders them biggest first. See the find-the-largest-files recipe for the file-level version of this pattern."
         output: |
           2.0M	archive/
           504K	photos/
@@ -463,7 +463,7 @@ sections:
         tags: [disk, beginner]
       - title: "Rank files by line count"
         code: wc -l *.txt | sort -rn | head -5
-        description: "wc -l prints a count-then-filename line per file plus a total; sort -rn puts the biggest counts first, total included since it's just another number in the stream."
+        description: "`wc -l` prints a count-then-filename line per file plus a total; `sort -rn` puts the biggest counts first, total included since it's just another number in the stream."
         output: |2
             92 total
             40 report.txt
@@ -473,7 +473,7 @@ sections:
         level: intermediate
       - title: "Count how often each line appears"
         code: sort wordlist.txt | uniq -c | sort -rn
-        description: "The classic frequency-count pipeline: sort groups identical lines together so uniq -c can count them, then a second sort orders by that count. See the uniq page for -c and its other counting flags."
+        description: "The classic frequency-count pipeline: sort groups identical lines together so `uniq -c` can count them, then a second sort orders by that count. See the uniq page for `-c` and its other counting flags."
         output: |2
                 3 apple
                 2 banana
@@ -506,12 +506,12 @@ sections:
         tags: [scripting]
       - title: "Confirm sort -u and sort | uniq agree"
         code: diff <(sort -u wordlist.txt) <(sort wordlist.txt | uniq)
-        description: "No output and exit 0 means the two files are identical — confirms -u is a safe shortcut for sort | uniq when you don't need the two steps split apart in a pipeline."
+        description: "No output and exit 0 means the two files are identical — confirms `-u` is a safe shortcut for `sort | uniq` when you don't need the two steps split apart in a pipeline."
         level: advanced
         tags: [beginner]
       - title: "Get the smallest value in a list"
         code: sort -n numbers.txt | head -n 1
-        description: "sort plus head -n 1 is the standard shell idiom for a minimum — there's no separate 'min' utility."
+        description: "`sort` plus `head -n 1` is the standard shell idiom for a minimum — there's no separate 'min' utility."
         output: |
           2
         level: basic
@@ -543,7 +543,7 @@ sections:
     examples:
       - title: "Use multiple CPU cores for the sort"
         code: sort --parallel=2 -n numbers.txt
-        description: "--parallel caps how many sort threads run at once — helps on large files, does nothing measurable on a file this small."
+        description: "`--parallel` caps how many sort threads run at once — helps on large files, does nothing measurable on a file this small."
         output: |
           2
           4
@@ -553,7 +553,7 @@ sections:
         tags: [performance]
       - title: "Set how much memory sort is allowed to use"
         code: sort -S 1K -n numbers.txt
-        description: "-S bounds sort's in-memory buffer; once a sort exceeds it, sort spills to temporary files on disk and merges them instead of holding everything in RAM at once. Same correct result either way."
+        description: "`-S` bounds sort's in-memory buffer; once a sort exceeds it, sort spills to temporary files on disk and merges them instead of holding everything in RAM at once. Same correct result either way."
         output: |
           2
           4
@@ -563,7 +563,7 @@ sections:
         tags: [performance]
       - title: "Compress the temporary files a large external sort spills to disk"
         code: sort --compress-program=gzip -n numbers.txt
-        description: "Only matters once a sort is big enough to spill to disk (see -S above) — compressing those temporary files trades CPU time for disk I/O on genuinely large sorts."
+        description: "Only matters once a sort is big enough to spill to disk (see `-S` above) — compressing those temporary files trades CPU time for disk I/O on genuinely large sorts."
         output: |
           2
           4

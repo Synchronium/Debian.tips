@@ -69,7 +69,7 @@ sections:
     examples:
       - title: "Count how many times each line occurs"
         code: sort wordlist.txt | uniq -c
-        description: "-c prefixes every output line with its occurrence count, right-aligned."
+        description: "`-c` prefixes every output line with its occurrence count, right-aligned."
         output: |2
                 1 Cherry
                 1 Elderberry
@@ -81,7 +81,7 @@ sections:
         tags: [beginner]
       - title: "Show only lines that appeared more than once"
         code: sort wordlist.txt | uniq -d
-        description: "-d filters the output to just the lines that had at least one duplicate — the unique-only lines disappear entirely, not just their extra copies."
+        description: "`-d` filters the output to just the lines that had at least one duplicate — the unique-only lines disappear entirely, not just their extra copies."
         output: |
           apple
           banana
@@ -89,7 +89,7 @@ sections:
         tags: [beginner]
       - title: "Show only lines that appeared exactly once"
         code: sort wordlist.txt | uniq -u
-        description: "The mirror image of -d: only lines with no duplicates at all."
+        description: "The mirror image of `-d`: only lines with no duplicates at all."
         output: |
           Cherry
           Elderberry
@@ -99,7 +99,7 @@ sections:
         tags: [beginner]
       - title: "Show every copy of each duplicated line, not just one"
         code: sort wordlist.txt | uniq -D
-        description: "Unlike -d, which collapses each duplicate group to a single line, -D prints all the repeated lines in full — useful when you want to review the actual duplicate rows, not just know which values repeat."
+        description: "Unlike `-d`, which collapses each duplicate group to a single line, `-D` prints all the repeated lines in full — useful when you want to review the actual duplicate rows, not just know which values repeat."
         output: |
           apple
           apple
@@ -109,7 +109,7 @@ sections:
         level: intermediate
       - title: "Rank values by how often they occur"
         code: sort wordlist.txt | uniq -c | sort -rn
-        description: "The classic frequency-count pipeline: sort groups matches, uniq -c counts them, a second sort orders by that count. See the sort page for more on the second sort."
+        description: "The classic frequency-count pipeline: sort groups matches, `uniq -c` counts them, a second sort orders by that count. See the sort page for more on the second sort."
         output: |2
                 3 apple
                 2 banana
@@ -124,7 +124,7 @@ sections:
     examples:
       - title: "Fold case before comparing"
         code: sort -f wordlist.txt | uniq -i
-        description: "Without -i, Cherry and cherry count as different lines. -i compares case-insensitively, so they collapse together — sort -f is needed too, so they're adjacent in the first place."
+        description: "Without `-i`, Cherry and cherry count as different lines. `-i` compares case-insensitively, so they collapse together — `sort -f` is needed too, so they're adjacent in the first place."
         output: |
           apple
           banana
@@ -134,28 +134,28 @@ sections:
         level: intermediate
       - title: "Ignore the first field when comparing"
         code: printf '1 apple\n2 apple\n3 banana\n' | uniq -f1
-        description: "-f N skips the first N whitespace-separated fields before comparing — here, ignoring the leading number so the two 'apple' rows count as duplicates despite different first fields."
+        description: "`-f N` skips the first N whitespace-separated fields before comparing — here, ignoring the leading number so the two 'apple' rows count as duplicates despite different first fields."
         output: |
           1 apple
           3 banana
         level: intermediate
       - title: "Ignore the first N characters when comparing"
         code: printf 'xxapple\nyyapple\nzzbanana\n' | uniq -s2
-        description: "-s N skips the first N characters (not fields) before comparing — useful when duplicates share a fixed-width prefix like a line number or timestamp column that shouldn't count."
+        description: "`-s N` skips the first N characters (not fields) before comparing — useful when duplicates share a fixed-width prefix like a line number or timestamp column that shouldn't count."
         output: |
           xxapple
           zzbanana
         level: intermediate
       - title: "Compare only the first N characters"
         code: printf 'applesauce\napplepie\nbanana\n' | uniq -w5
-        description: "-w N does the opposite of -s: only the first N characters count toward the comparison, and everything after is ignored. Here, both 'apple...' lines share the same first 5 characters, so the second is treated as a duplicate despite differing after that."
+        description: "`-w N` does the opposite of `-s`: only the first N characters count toward the comparison, and everything after is ignored. Here, both 'apple...' lines share the same first 5 characters, so the second is treated as a duplicate despite differing after that."
         output: |
           applesauce
           banana
         level: intermediate
       - title: "Same character-limit comparison, long-form flag"
         code: printf 'applesauce\napplepie\n' | uniq --check-chars=5
-        description: "--check-chars is the exact same flag as -w, spelled out — useful when reading a script that favours long-form flags for readability."
+        description: "`--check-chars` is the exact same flag as `-w`, spelled out — useful when reading a script that favours long-form flags for readability."
         output: |
           applesauce
         level: advanced
@@ -164,7 +164,7 @@ sections:
     examples:
       - title: "Read NUL-separated input instead of newline-separated"
         code: printf 'a\0a\0b\0' | uniq -z | tr '\0' '\n'
-        description: "-z (--zero-terminated) works on NUL-terminated records — the safe pairing for filenames from find -print0, same as sort -z."
+        description: "`-z` (`--zero-terminated`) works on NUL-terminated records — the safe pairing for filenames from `find -print0`, same as `sort -z`."
         output: |
           a
           b
@@ -172,7 +172,7 @@ sections:
         tags: [beginner]
       - title: "Group matching lines with a blank line between groups"
         code: sort wordlist.txt | uniq --group
-        description: "--group prints every line (not just one per group, and not just counts) but inserts a blank line between each distinct value — a middle ground between plain uniq and uniq -c when you want to eyeball the groups themselves."
+        description: "`--group` prints every line (not just one per group, and not just counts) but inserts a blank line between each distinct value — a middle ground between plain uniq and `uniq -c` when you want to eyeball the groups themselves."
         output: |
           Cherry
 
@@ -194,7 +194,7 @@ sections:
     examples:
       - title: "Find which visitors hit the site most, from a real access log"
         code: cut -d' ' -f1 access.log | sort | uniq -c | sort -rn
-        description: "Extract just the IP column with cut, then the standard sort | uniq -c | sort -rn frequency pipeline — the same shape works for any column of any log."
+        description: "Extract just the IP column with `cut`, then the standard `sort | uniq -c | sort -rn` frequency pipeline — the same shape works for any column of any log."
         output: |2
                 4 203.0.113.5
                 3 198.51.100.7
@@ -236,7 +236,7 @@ sections:
     examples:
       - title: "Count occurrences case-insensitively"
         code: sort -f wordlist.txt | uniq -ci
-        description: "-c and -i combine normally: counts folded-case groups instead of exact-case ones. Cherry and cherry now count together as 2."
+        description: "`-c` and `-i` combine normally: counts folded-case groups instead of exact-case ones. Cherry and cherry now count together as 2."
         output: |2
                 3 apple
                 2 banana
@@ -246,14 +246,14 @@ sections:
         level: intermediate
       - title: "Count occurrences within a character-limited comparison"
         code: printf 'applesauce\napplepie\nbanana\n' | uniq -c -w5
-        description: "-c reports how many lines matched under whatever comparison rule the other flags define — here, only the first 5 characters, so applesauce and applepie count as one group of 2."
+        description: "`-c` reports how many lines matched under whatever comparison rule the other flags define — here, only the first 5 characters, so applesauce and applepie count as one group of 2."
         output: |2
                 2 applesauce
                 1 banana
         level: intermediate
       - title: "Show every copy of a duplicate group with a separator, long-form flag"
         code: sort wordlist.txt | uniq --all-repeated=separate
-        description: "--all-repeated is the long-form, more configurable version of -D: separate puts a blank line between groups; prepend (the other common mode) also puts one before the very first group."
+        description: "`--all-repeated` is the long-form, more configurable version of `-D`: separate puts a blank line between groups; prepend (the other common mode) also puts one before the very first group."
         output: |
           apple
           apple
@@ -276,13 +276,13 @@ sections:
         level: advanced
       - title: "Skip fields, long-form flag"
         code: printf '1 apple\n2 apple\n' | uniq --skip-fields=1
-        description: "--skip-fields is the long-form spelling of -f — same behaviour, more explicit in a script someone else will read later."
+        description: "`--skip-fields` is the long-form spelling of `-f` — same behaviour, more explicit in a script someone else will read later."
         output: |
           1 apple
         level: intermediate
       - title: "Skip characters, long-form flag"
         code: printf 'xxapple\nyyapple\n' | uniq --skip-chars=2
-        description: "--skip-chars is the long-form spelling of -s."
+        description: "`--skip-chars` is the long-form spelling of `-s`."
         output: |
           xxapple
         level: intermediate

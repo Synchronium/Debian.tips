@@ -1,5 +1,5 @@
 import { html, raw } from "../../html.js";
-import { highlightCode } from "../../content/markdown.js";
+import { highlightCode, renderInline } from "../../content/markdown.js";
 import type { Example } from "../../content/schema.js";
 
 function injectAttr(preHtml: string, attr: string): string {
@@ -23,13 +23,15 @@ export async function exampleCard(sectionSlug: string, index: number, example: E
     ? injectAttr(await highlightCode(example.output, "plaintext"), 'aria-label="output"')
     : null;
 
+  const descHtml = await renderInline(example.description, `example "${example.title}"`);
+
   return html`<article class="example${example.danger ? " example-danger" : ""}" id="${id}">
 <h3 class="example-title"><a href="#${id}">${example.title}</a></h3>
 <div class="example-code">
 ${raw(codeHtml)}
 <button class="copy" type="button" aria-label="Copy command" data-copy="${example.code}">Copy</button>
 </div>
-<p class="example-desc">${example.description}</p>
+<p class="example-desc">${raw(descHtml)}</p>
 ${outputHtml ? raw(html`<details class="example-output"><summary>Show output</summary>${raw(outputHtml)}</details>`) : ""}
 </article>`;
 }

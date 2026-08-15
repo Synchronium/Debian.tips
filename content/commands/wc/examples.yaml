@@ -58,7 +58,7 @@ sections:
     examples:
       - title: "Count lines"
         code: wc -l report.txt
-        description: "-l counts newline characters — see the gotcha section below for what that means for a file with no trailing newline."
+        description: "`-l` counts newline characters — see the gotcha section below for what that means for a file with no trailing newline."
         output: |
           40 report.txt
         level: basic
@@ -78,13 +78,13 @@ sections:
         level: basic
       - title: "Count characters"
         code: wc -m report.txt
-        description: "Character count rather than byte count — identical to -c here because this file is plain ASCII, where every character is exactly one byte. They diverge on multi-byte UTF-8 text."
+        description: "Character count rather than byte count — identical to `-c` here because this file is plain ASCII, where every character is exactly one byte. They diverge on multi-byte UTF-8 text."
         output: |
           871 report.txt
         level: basic
       - title: "Find the longest line"
         code: wc -L report.txt
-        description: "-L reports the length of the longest line in the file, not a count at all — useful for deciding whether a file needs wrapping to fit a fixed-width display."
+        description: "`-L` reports the length of the longest line in the file, not a count at all — useful for deciding whether a file needs wrapping to fit a fixed-width display."
         output: |
           21 report.txt
         level: intermediate
@@ -110,7 +110,7 @@ sections:
         tags: [beginner]
       - title: "Force a total line even for a single file"
         code: wc -l --total=always report.txt
-        description: "By default a lone file gets no total line since it would just repeat the count — --total=always prints one anyway, useful for consistent output in a script that sometimes gets one file and sometimes several."
+        description: "By default a lone file gets no total line since it would just repeat the count — `--total=always` prints one anyway, useful for consistent output in a script that sometimes gets one file and sometimes several."
         output: |
           40 report.txt
           40 total
@@ -124,7 +124,7 @@ sections:
         level: advanced
       - title: "Combine short flags"
         code: wc -lw report.txt
-        description: "Bundling -l and -w prints just those two counts, in that order, instead of all three defaults."
+        description: "Bundling `-l` and `-w` prints just those two counts, in that order, instead of all three defaults."
         output: |
            40 200 report.txt
         level: intermediate
@@ -153,7 +153,7 @@ sections:
         tags: [beginner]
       - title: "Measure a string's length in characters"
         code: echo -n 'hello' | wc -c
-        description: "-n on echo suppresses its own trailing newline, so this counts exactly the string's own length rather than length-plus-one."
+        description: "`-n` on echo suppresses its own trailing newline, so this counts exactly the string's own length rather than length-plus-one."
         output: |
           5
         level: intermediate
@@ -164,7 +164,7 @@ sections:
       - title: "A missing final newline undercounts by one"
         code: printf 'a\nb\nc' | wc -l
         description: >-
-          wc -l counts newline characters, not lines of text. This input has three lines of
+          `wc -l` counts newline characters, not lines of text. This input has three lines of
           content but only two \n characters — the third line has nothing after it — so wc
           reports 2, not 3.
         danger: true
@@ -183,7 +183,7 @@ sections:
     examples:
       - title: "Count how many files matched a glob"
         code: ls *.txt | wc -l
-        description: "A very common shape: pipe any line-per-item output into wc -l to get a count instead of a list."
+        description: "A very common shape: pipe any line-per-item output into `wc -l` to get a count instead of a list."
         output: |
           3
         level: basic
@@ -196,7 +196,7 @@ sections:
         level: intermediate
       - title: "Read a list of filenames from a NUL-separated file"
         code: wc -l --files0-from=filelist.bin
-        description: "--files0-from reads the list of files to process from a NUL-separated file instead of the command line — the standard pairing with find -print0 when there could be too many files (or files with newlines in their names) for a normal argument list."
+        description: "`--files0-from` reads the list of files to process from a NUL-separated file instead of the command line — the standard pairing with `find -print0` when there could be too many files (or files with newlines in their names) for a normal argument list."
         output: |2
            40 report.txt
             9 wordlist.txt
@@ -204,20 +204,20 @@ sections:
         level: advanced
       - title: "See the effect of hidden CRLF bytes"
         code: wc -c crlf.txt
-        description: "Two lines of 'lineN' text plus a trailing \\r\\n each still comes to 14 bytes — 2 more than the same content would take with plain Unix line endings, from the two extra \\r bytes wc -l doesn't count as separate lines but wc -c still counts as bytes."
+        description: "Two lines of 'lineN' text plus a trailing \\r\\n each still comes to 14 bytes — 2 more than the same content would take with plain Unix line endings, from the two extra \\r bytes `wc -l` doesn't count as separate lines but `wc -c` still counts as bytes."
         output: |
           14 crlf.txt
         level: advanced
       - title: "wc has no flag for non-blank lines — use grep instead"
         code: printf 'a\n\nb\n\nc\n' | wc -l
-        description: "wc -l counts every line including blank ones — 5 here, 2 of which are blank. There's no wc flag to exclude them."
+        description: "`wc -l` counts every line including blank ones — 5 here, 2 of which are blank. There's no wc flag to exclude them."
         output: |
           5
         level: intermediate
         tags: [beginner]
       - title: "The actual way to count only non-blank lines"
         code: printf 'a\n\nb\n\nc\n' | grep -c .
-        description: "grep -c . counts lines matching 'at least one character' — every blank line fails that match and gets excluded. See the grep page for -c and other counting patterns."
+        description: "`grep -c .` counts lines matching 'at least one character' — every blank line fails that match and gets excluded. See the grep page for `-c` and other counting patterns."
         output: |
           3
         level: intermediate

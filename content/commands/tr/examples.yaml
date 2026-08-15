@@ -53,7 +53,7 @@ sections:
         level: advanced
 
   - title: "Deleting characters with -d"
-    intro: "-d removes every character listed in SET1. No SET2 is given — there's nothing to translate them to."
+    intro: "`-d` removes every character listed in SET1. No SET2 is given — there's nothing to translate them to."
     examples:
       - title: "Delete specific characters"
         code: echo 'Hello, World!' | tr -d ','
@@ -87,25 +87,25 @@ sections:
         tags: [beginner]
       - title: "The correct way to delete everything except a set"
         code: echo 'Hello123' | tr -cd '0-9'
-        description: "-c complements the set first, then -d deletes what's left after complementing — so this keeps only digits. This is the actual tr equivalent of grep's [^...]."
+        description: "`-c` complements the set first, then `-d` deletes what's left after complementing — so this keeps only digits. This is the actual tr equivalent of grep's `[^...]`."
         output: |
           123
         level: intermediate
         tags: [beginner]
 
   - title: "Squeezing repeats with -s"
-    intro: "-s collapses any run of the same character, however long, down to a single instance."
+    intro: "`-s` collapses any run of the same character, however long, down to a single instance."
     examples:
       - title: "Collapse repeated spaces into one"
         code: printf 'a   b     c\n' | tr -s ' '
-        description: "Whatever the run length — 3 spaces or 30 — -s reduces it to exactly one."
+        description: "Whatever the run length — 3 spaces or 30 — `-s` reduces it to exactly one."
         output: |
           a b c
         level: basic
         tags: [beginner]
       - title: "Fix column extraction on padded text"
         code: printf 'a   b     c\n' | tr -s ' ' | cut -d' ' -f2
-        description: "Squeeze first, then cut works correctly — this is the standard fix for cut's one-character-delimiter limitation on space-padded output like ps or ls -l. See the cut page."
+        description: "Squeeze first, then cut works correctly — this is the standard fix for cut's one-character-delimiter limitation on space-padded output like `ps` or `ls -l`. See the cut page."
         output: |
           b
         level: intermediate
@@ -118,9 +118,9 @@ sections:
       - title: "Squeezing newlines removes blank lines entirely, not just extras"
         code: printf 'a\n\nb\n\n\n\nc\n' | tr -s '\n'
         description: >-
-          Worth being precise about: a blank line is just two adjacent newlines, and -s squeezes
+          Worth being precise about: a blank line is just two adjacent newlines, and `-s` squeezes
           any run of them down to one — which eliminates the blank line completely rather than
-          leaving a single blank line the way cat -s does. Verified: three paragraphs separated
+          leaving a single blank line the way `cat -s` does. Verified: three paragraphs separated
           by blank lines come out with no blank lines at all, just adjacent text lines.
         output: |
           a
@@ -133,7 +133,7 @@ sections:
     examples:
       - title: "Delete one set, then squeeze what's left"
         code: printf 'aabbccdd11\n' | tr -ds '0-9' 'a-z'
-        description: "-ds takes two sets: SET1 is deleted first, then runs of characters in SET2 are squeezed in what remains. Here, digits are removed, then the repeated letters collapse."
+        description: "`-ds` takes two sets: SET1 is deleted first, then runs of characters in SET2 are squeezed in what remains. Here, digits are removed, then the repeated letters collapse."
         output: |
           abcd
         level: advanced
@@ -148,17 +148,17 @@ sections:
         level: intermediate
       - title: "Truncate SET1 to match SET2's length instead"
         code: echo 'abcdef' | tr -t 'a-f' 'XY'
-        description: "-t changes that behaviour: SET1 is truncated to SET2's length instead of SET2 being extended, so only a and b are translated (to X and Y) and c through f pass through untouched."
+        description: "`-t` changes that behaviour: SET1 is truncated to SET2's length instead of SET2 being extended, so only a and b are translated (to X and Y) and c through f pass through untouched."
         output: |
           XYcdef
         level: advanced
 
   - title: "Complementing a set with -c"
-    intro: "-c operates on every character NOT in SET1 — the actual way to express 'everything except.'"
+    intro: "`-c` operates on every character NOT in SET1 — the actual way to express 'everything except.'"
     examples:
       - title: "Keep only digits"
         code: echo 'Hello123World' | tr -cd '[:digit:]'
-        description: "Complement of digits is every letter; -d deletes that complement, leaving only the digits."
+        description: "Complement of digits is every letter; `-d` deletes that complement, leaving only the digits."
         output: |
           123
         level: intermediate
@@ -246,19 +246,19 @@ sections:
     examples:
       - title: "Squeeze, spelled out"
         code: echo 'aabbcc' | tr --squeeze-repeats 'a-z'
-        description: "--squeeze-repeats is the long-form spelling of -s."
+        description: "`--squeeze-repeats` is the long-form spelling of `-s`."
         output: |
           abc
         level: intermediate
       - title: "Delete, spelled out"
         code: echo 'a,b,c' | tr --delete ','
-        description: "--delete is the long-form spelling of -d."
+        description: "`--delete` is the long-form spelling of `-d`."
         output: |
           abc
         level: intermediate
       - title: "Complement, spelled out"
         code: echo 'Hello123World' | tr --complement --delete '[:digit:]'
-        description: "--complement is the long-form spelling of -c, and combines with --delete exactly like -cd does."
+        description: "`--complement` is the long-form spelling of `-c`, and combines with `--delete` exactly like `-cd` does."
         output: |
           123
         level: intermediate
@@ -267,7 +267,7 @@ sections:
     examples:
       - title: "One word per line"
         code: printf 'the quick brown fox\n' | tr -cs '[:alpha:]' '\n'
-        description: "-c takes the complement of letters (everything that isn't a letter — spaces, in this case), -s squeezes runs of it, giving one word per output line. The starting point for the classic word-frequency pipeline below."
+        description: "`-c` takes the complement of letters (everything that isn't a letter — spaces, in this case), `-s` squeezes runs of it, giving one word per output line. The starting point for the classic word-frequency pipeline below."
         output: |
           the
           quick
@@ -277,7 +277,7 @@ sections:
         tags: [beginner]
       - title: "Count word frequency in a block of text"
         code: printf 'the quick brown fox jumps over the lazy dog the fox runs\n' | tr -cs '[:alpha:]' '\n' | tr '[:upper:]' '[:lower:]' | sort | uniq -c | sort -rn
-        description: "A classic Unix pipeline: split into one word per line, lowercase everything so case doesn't fragment the count, then the standard sort | uniq -c | sort -rn frequency count from the sort and uniq pages."
+        description: "A classic Unix pipeline: split into one word per line, lowercase everything so case doesn't fragment the count, then the standard `sort | uniq -c | sort -rn` frequency count from the sort and uniq pages."
         output: |2
                 3 the
                 2 fox

@@ -32,6 +32,12 @@ describe("exampleCard", () => {
     expect(html).toContain('class="example example-danger"');
   });
 
+  it("renders the description as inline markdown, not escaped literal text", async () => {
+    const html = await exampleCard("sec", 1, example({ description: "`-g` replaces *every* match." }));
+    expect(html).toContain("<code>-g</code> replaces <em>every</em> match.");
+    expect(html).not.toContain("`");
+  });
+
   it("renders a collapsible output block only when output is present", async () => {
     const withOutput = await exampleCard("sec", 1, example({ output: "hi\n" }));
     const withoutOutput = await exampleCard("sec", 1, example({}));

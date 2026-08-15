@@ -65,7 +65,7 @@ sections:
         tags: [beginner]
       - title: "Show the first 5 lines"
         code: head -n5 report.txt
-        description: "-n takes the exact count."
+        description: "`-n` takes the exact count."
         output: |
           line 1 of the report
           line 2 of the report
@@ -76,7 +76,7 @@ sections:
         tags: [beginner]
       - title: "Same thing, older shorthand syntax"
         code: head -5 report.txt
-        description: "A bare number after the dash, with no n, is an older but still-supported spelling of -n5."
+        description: "A bare number after the dash, with no n, is an older but still-supported spelling of `-n5`."
         level: basic
       - title: "Show the last 10 lines of a file"
         code: tail report.txt
@@ -96,7 +96,7 @@ sections:
         tags: [beginner]
       - title: "Show the last 5 lines"
         code: tail -n5 report.txt
-        description: "Same -n flag as head, counting from the end instead."
+        description: "Same `-n` flag as head, counting from the end instead."
         output: |
           line 36 of the report
           line 37 of the report
@@ -118,7 +118,7 @@ sections:
     examples:
       - title: "Show the first N bytes"
         code: head -c 20 report.txt
-        description: "-c switches from lines to raw bytes — cuts mid-line if the count lands there, with no regard for line boundaries at all."
+        description: "`-c` switches from lines to raw bytes — cuts mid-line if the count lands there, with no regard for line boundaries at all."
         output: |
           line 1 of the report
         level: intermediate
@@ -133,7 +133,7 @@ sections:
     examples:
       - title: "head on several files at once"
         code: head -n2 users.csv wordlist.txt
-        description: "Each file gets a ==> filename <== header before its output, with a blank line separating them."
+        description: "Each file gets a `==> filename <==` header before its output, with a blank line separating them."
         output: |
           ==> users.csv <==
           name,age,department
@@ -158,7 +158,7 @@ sections:
         level: intermediate
       - title: "Suppress the headers with multiple files"
         code: head -n2 -q users.csv wordlist.txt
-        description: "-q (--quiet) drops the ==> filename <== headers entirely, even with several files given — useful when you just want the lines, not which file they came from."
+        description: "`-q` (`--quiet`) drops the `==> filename <==` headers entirely, even with several files given — useful when you just want the lines, not which file they came from."
         output: |
           name,age,department
           Alice,34,Engineering
@@ -167,7 +167,7 @@ sections:
         level: intermediate
       - title: "Force headers even for a single file"
         code: head -n2 -v report.txt
-        description: "-v (--verbose) is the opposite of -q: always show the header, even with just one file — useful in a script that sometimes gets one filename and sometimes several, for consistent output either way."
+        description: "`-v` (`--verbose`) is the opposite of `-q`: always show the header, even with just one file — useful in a script that sometimes gets one filename and sometimes several, for consistent output either way."
         output: |
           ==> report.txt <==
           line 1 of the report
@@ -197,7 +197,7 @@ sections:
         tags: [beginner]
       - title: "Pull a specific slice out of the middle of a file"
         code: head -n15 report.txt | tail -n3
-        description: "head down to line 15, then tail the last 3 of those — lines 13 through 15. A common lightweight alternative to sed -n 'N,Mp' for a quick one-off slice."
+        description: "head down to line 15, then tail the last 3 of those — lines 13 through 15. A common lightweight alternative to `sed -n 'N,Mp'` for a quick one-off slice."
         output: |
           line 13 of the report
           line 14 of the report
@@ -212,7 +212,7 @@ sections:
         level: advanced
       - title: "Start from a specific byte instead of a specific line"
         code: printf 'abcdefghij' | tail -c +8
-        description: "From byte 8 to the end — the same +N convention as tail -n, applied to bytes."
+        description: "From byte 8 to the end — the same `+N` convention as `tail -n`, applied to bytes."
         output: |
           hij
         level: advanced
@@ -237,7 +237,7 @@ sections:
         description: >-
           Blocks and prints new lines as they're appended, instead of exiting once it reaches
           the current end of the file. Verified with a real background writer: two lines
-          appended after tail -f started both appeared in its output within a second, live.
+          appended after `tail -f` started both appeared in its output within a second, live.
         output: |
           first new line
           second new line
@@ -245,13 +245,13 @@ sections:
         tags: [beginner]
       - title: "Follow only new lines, skipping existing content"
         code: tail -n0 -f watch.log
-        description: "-n0 starts from the current end of the file instead of printing the last 10 lines first — the shape you want when you only care about what happens from now on, not history."
+        description: "`-n0` starts from the current end of the file instead of printing the last 10 lines first — the shape you want when you only care about what happens from now on, not history."
         level: intermediate
         tags: [beginner]
       - title: "Filter a live-followed log for just the lines you care about"
         code: tail -n0 -f watch.log | grep --line-buffered ERROR
         description: >-
-          grep --line-buffered is needed here — grep normally buffers its output in blocks when
+          `grep --line-buffered` is needed here — grep normally buffers its output in blocks when
           piped, which would delay matching lines from appearing until the buffer filled.
           Verified live: an INFO line and a later INFO line were both filtered out, only the
           ERROR line in between made it through, in real time.
@@ -262,20 +262,20 @@ sections:
       - title: "Stop following once a specific process exits"
         code: tail -f --pid=1234 pidlog.txt
         description: >-
-          --pid makes tail exit on its own once the given PID is no longer running, instead of
+          `--pid` makes tail exit on its own once the given PID is no longer running, instead of
           following forever — useful for tailing a service's log only for the duration of a
           script that also manages that service. Verified: tail exited by itself immediately
           after the watched process was killed, and did not pick up a line appended after that.
         level: advanced
 
   - title: "Handling log rotation: -f vs -F"
-    intro: "logrotate (and similar tools) renames the current log and starts a fresh file with the old name. Plain -f and capital -F react to that very differently."
+    intro: "logrotate (and similar tools) renames the current log and starts a fresh file with the old name. Plain `-f` and capital `-F` react to that very differently."
     examples:
       - title: "Plain -f keeps watching the old file after rotation"
         code: tail -f rotlog.txt
         description: >-
           Verified: after rotlog.txt was renamed aside and a new file created with the same
-          name, tail -f kept following the renamed (now-disconnected) file by its original
+          name, `tail -f` kept following the renamed (now-disconnected) file by its original
           inode — it printed the content from before the rotation, but never saw the new file's
           content at all, despite still technically running.
         danger: true
@@ -286,7 +286,7 @@ sections:
       - title: "-F notices the replacement and follows the new file"
         code: tail -F --sleep-interval=1 rotlog4.txt
         description: >-
-          Verified: -F detected that rotlog4.txt had been replaced, printed an explicit notice
+          Verified: `-F` detected that rotlog4.txt had been replaced, printed an explicit notice
           to that effect, and picked up the new file's content — the correct choice for
           following anything that might be log-rotated out from under it.
         output: |

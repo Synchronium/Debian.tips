@@ -128,6 +128,23 @@ body {
 
 code, pre, kbd { font-family: var(--font-mono); }
 
+/* Inline code — a backticked flag, path or command in prose, an example
+   description or a section intro. The child combinator excludes `pre > code`,
+   where Shiki owns the colours and a box would sit inside the code block.
+   --bg-inset sits on the other side of --bg in both themes (darker in dark,
+   lighter in light), so the same rule reads as inset either way.
+   `color: var(--text)` is deliberate: these appear inside muted paragraphs,
+   and the whole point is that the flag stands out from the sentence. */
+:not(pre) > code {
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  padding: 0.05em 0.35em;
+  font-size: 0.9em;
+  color: var(--text);
+  overflow-wrap: break-word;
+}
+
 a { color: var(--accent); }
 a:hover { color: var(--accent-hover); }
 .prose a, .example-desc a, .callout a {
@@ -633,7 +650,7 @@ pre[data-prompt] .line::before {
 .fixtures {
   margin-top: var(--space-5);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-m);
   background: var(--bg-surface);
   padding: var(--space-3) var(--space-4);
 }

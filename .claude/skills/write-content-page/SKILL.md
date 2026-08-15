@@ -126,6 +126,13 @@ output was silently abridged).
 
 ## 5. Style guide (apply to every sentence)
 
+An example's `description`, a section's `intro` and a fixture's `note` are rendered as **inline
+markdown** — backtick every flag, path, command and literal string in them (`` `-g` ``,
+`` `access.log` ``), and use `[text](/commands/grep/)` for cross-links and `*emphasis*` sparingly.
+Each must stay a single paragraph; a blank line or a leading `- ` fails the build. Nothing else on
+a page is markdown: `title`, `tagline` and frontmatter `description` are plain text, so a backtick
+there ships literally.
+
 Direct, second person, no fluff, no "In today's fast-paced world." **British English in all
 prose** (`colour`, `flavour`, `behaviour`, `sanitised`, `organise`, `-ise` not `-ize`) — but never
 touch a real flag, command, package name, or captured output for spelling (`--color` stays

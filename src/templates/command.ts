@@ -4,7 +4,7 @@ import { breadcrumbs } from "./partials/breadcrumbs.js";
 import { tagChips } from "./partials/tagChips.js";
 import { toc } from "./partials/toc.js";
 import { exampleCard } from "./partials/exampleCard.js";
-import { highlightCode, type TocEntry } from "../content/markdown.js";
+import { highlightCode, renderInline, type TocEntry } from "../content/markdown.js";
 import type { Page } from "../content/loader.js";
 import type { ExamplesFile } from "../content/schema.js";
 
@@ -24,8 +24,9 @@ async function fixturesHtml(examplesFile: ExamplesFile): Promise<string> {
   const blocks = await Promise.all(
     fixtures.map(async (fixture) => {
       const body = await highlightCode(fixture.content, "plaintext");
+      const note = fixture.note ? await renderInline(fixture.note, `fixture "${fixture.name}" note`) : "";
       return html`<div class="fixture">
-<p class="fixture-name"><code>${fixture.name}</code>${fixture.note ? raw(html` <span class="fixture-note">${fixture.note}</span>`) : ""}</p>
+<p class="fixture-name"><code>${fixture.name}</code>${note ? raw(html` <span class="fixture-note">${raw(note)}</span>`) : ""}</p>
 ${raw(body)}
 </div>`;
     }),
@@ -72,9 +73,10 @@ export async function commandPage(page: Page, cssHref: string): Promise<string> 
       }
       seenSectionSlugs.add(sectionSlug);
       const cards = await Promise.all(section.examples.map((ex, i) => exampleCard(sectionSlug, i + 1, ex)));
+      const intro = section.intro ? await renderInline(section.intro, `section "${section.title}" intro`) : "";
       return html`<section class="example-section">
 <h2 id="${sectionSlug}">${section.title}</h2>
-${section.intro ? raw(html`<p class="section-intro">${section.intro}</p>`) : ""}
+${intro ? raw(html`<p class="section-intro">${raw(intro)}</p>`) : ""}
 ${cards.map((c) => raw(c))}
 </section>`;
     }),

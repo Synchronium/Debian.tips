@@ -68,8 +68,8 @@ sections:
       - title: "Compare two files"
         code: diff nginx-old.conf nginx-new.conf
         description: >-
-          The default format: 3c3,4 means line 3 of the first file changed into lines 3-4 of the
-          second; 8a10,13 means after line 8, four lines were added. < marks the old side, > the
+          The default format: `3c3,4` means line 3 of the first file changed into lines 3-4 of the
+          second; `8a10,13` means after line 8, four lines were added. `<` marks the old side, `>` the
           new side.
         output: |
           3c3,4
@@ -91,7 +91,7 @@ sections:
         tags: [beginner]
       - title: "Just report whether files differ, not how"
         code: diff -q nginx-old.conf nginx-new.conf
-        description: "-q (--brief) skips the line-by-line detail entirely — useful in a script that only needs a yes/no answer."
+        description: "`-q` (`--brief`) skips the line-by-line detail entirely — useful in a script that only needs a yes/no answer."
         output: |
           Files nginx-old.conf and nginx-new.conf differ
         level: basic
@@ -109,7 +109,7 @@ sections:
         tags: [beginner]
       - title: "Explicitly confirm two files are identical"
         code: diff -s nginx-old.conf nginx-old.conf
-        description: "-s (--report-identical-files) is the mirror image of -q: prints a positive confirmation instead of staying silent, useful when silence-means-success would otherwise be ambiguous in a script's output."
+        description: "`-s` (`--report-identical-files`) is the mirror image of `-q`: prints a positive confirmation instead of staying silent, useful when silence-means-success would otherwise be ambiguous in a script's output."
         output: |
           Files nginx-old.conf and nginx-old.conf are identical
         level: intermediate
@@ -144,7 +144,7 @@ sections:
         tags: [beginner]
       - title: "Control how many context lines unified format shows"
         code: diff -U1 nginx-old.conf nginx-new.conf
-        description: "-U takes a number — fewer context lines than the default 3, for a tighter diff when you only care about the exact change, not its surroundings."
+        description: "`-U` takes a number — fewer context lines than the default 3, for a tighter diff when you only care about the exact change, not its surroundings."
         output: |2
           --- nginx-old.conf	2026-08-15 10:09:33.149381006 +0000
           +++ nginx-new.conf	2026-08-15 10:09:33.149381006 +0000
@@ -197,7 +197,7 @@ sections:
         level: advanced
       - title: "Side-by-side comparison"
         code: diff -y --width=60 nginx-old.conf nginx-new.conf
-        description: "-y puts both files in two columns with changed lines marked by | (changed), < (removed), or > (added) in the middle. --width caps the line length so it doesn't overflow a normal terminal."
+        description: "`-y` puts both files in two columns with changed lines marked by `|` (changed), `<` (removed), or `>` (added) in the middle. `--width` caps the line length so it doesn't overflow a normal terminal."
         output: |2
           server {			server {
               listen 80;			    listen 80;
@@ -243,16 +243,16 @@ sections:
         level: basic
       - title: "Ignore whitespace differences entirely"
         code: diff -w sp1.txt sp2.txt
-        description: "-w (--ignore-all-space) treats any amount of whitespace as equivalent, including none at all — the strongest whitespace-ignoring option."
+        description: "`-w` (`--ignore-all-space`) treats any amount of whitespace as equivalent, including none at all — the strongest whitespace-ignoring option."
         level: intermediate
         tags: [beginner]
       - title: "Ignore changes in the amount of whitespace, but not its presence"
         code: diff -b ws1.txt ws2.txt
-        description: "-b (--ignore-space-change) is gentler than -w: 'a b  c' and 'a   b c' are still both a-then-b-then-c with spaces between, even though the exact spacing differs."
+        description: "`-b` (`--ignore-space-change`) is gentler than `-w`: `a b  c` and `a   b c` are still both a-then-b-then-c with spaces between, even though the exact spacing differs."
         level: intermediate
       - title: "Ignore case differences"
         code: diff -i c1.txt c2.txt
-        description: "-i treats 'Hello' and 'hello' as the same line — useful when comparing output that might differ only in casing conventions."
+        description: "`-i` treats `Hello` and `hello` as the same line — useful when comparing output that might differ only in casing conventions."
         level: intermediate
         tags: [beginner]
       - title: "See a blank-line-only change reported as a real difference"
@@ -264,7 +264,7 @@ sections:
         level: advanced
       - title: "Ignore changes that only add or remove blank lines"
         code: diff -B bl1.txt bl2.txt
-        description: "-B treats purely blank-line changes as no change at all, so this prints nothing and exits 0 — useful when reformatting shouldn't count as a content difference."
+        description: "`-B` treats purely blank-line changes as no change at all, so this prints nothing and exits 0 — useful when reformatting shouldn't count as a content difference."
         level: advanced
       - title: "Ignore line-ending differences between Unix and Windows files"
         code: diff crlf-a.txt crlf-b.txt
@@ -306,7 +306,7 @@ sections:
         tags: [beginner]
       - title: "Recursively diff, but only list which files differ"
         code: diff -rq confA confB
-        description: "Combines -r with -q — a fast overview of an entire tree without the line-by-line detail for every changed file."
+        description: "Combines `-r` with `-q` — a fast overview of an entire tree without the line-by-line detail for every changed file."
         output: |
           Files confA/nginx.conf and confB/nginx.conf differ
           Only in confA: onlyA.conf
@@ -321,23 +321,23 @@ sections:
         level: intermediate
       - title: "Treat a missing file as empty instead of erroring"
         code: diff -N confA/onlyA.conf confB/onlyA.conf
-        description: "-N (--new-file) changes a missing file from an error into 'compare against nothing' — every line in the existing file shows as added or removed, depending on which side it's missing from."
+        description: "`-N` (`--new-file`) changes a missing file from an error into 'compare against nothing' — every line in the existing file shows as added or removed, depending on which side it's missing from."
         output: |
           1d0
           < only in A
         level: advanced
 
   - title: "Generating and applying a patch"
-    intro: "diff -u's output isn't just for reading — it's a format patch understands directly."
+    intro: "`diff -u`'s output isn't just for reading — it's a format patch understands directly."
     examples:
       - title: "Save a unified diff to a patch file"
         code: diff -u nginx-old.conf nginx-new.conf > changes.patch
-        description: "Redirecting -u output to a file produces exactly the .patch/.diff format used everywhere — email patches, git diff output, code review tools."
+        description: "Redirecting `-u` output to a file produces exactly the .patch/.diff format used everywhere — email patches, git diff output, code review tools."
         level: intermediate
         tags: [beginner]
       - title: "Apply that patch to reproduce the change elsewhere"
         code: patch test-apply.conf < changes.patch
-        description: "Given a copy of the original file and the patch, patch reconstructs the new version — this is literally how the patch was generated: diff old new, then patch old < that output equals new."
+        description: "Given a copy of the original file and the patch, patch reconstructs the new version — this is literally how the patch was generated: `diff old new` produces the patch, and `patch old < patchfile` reconstructs new from it."
         output: |
           patching file test-apply.conf
         level: intermediate

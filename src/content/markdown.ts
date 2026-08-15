@@ -173,6 +173,48 @@ function collectHeadings(tree: any): TocEntry[] {
   return toc;
 }
 
+/* Short prose fields — an example's `description`, a section's `intro`, a fixture's
+ * `note` — have always been authored as markdown (backticked flags, the occasional
+ * `[link](/path/)`, emphasis) but were interpolated into templates as escaped plain
+ * text, so the markers shipped literally: readers saw `` `-g` `` rather than a
+ * monospaced -g. This renders them through the same remark parser as page prose, so
+ * there's one set of markdown rules on the site rather than a second hand-rolled one.
+ *
+ * Deliberately *without* `allowDangerousHtml`: a stray `<tag>` in one of these fields
+ * is dropped rather than injected. Nothing in content/ needs raw HTML here, and these
+ * strings land inside a <p>. */
+const inlineProcessor = unified()
+  .use(remarkParse)
+  .use(remarkGfm)
+  .use(remarkRehype)
+  .use(rehypeStringify)
+  .freeze();
+
+/** Renders one short field as inline markdown, with no wrapping <p>.
+ *
+ * `context` only ever appears in the error message, so name the field the way an
+ * author would recognise it ('example "Sort by score"'). */
+export async function renderInline(source: string, context: string): Promise<string> {
+  if (source.trim() === "") return "";
+
+  // Parsed and validated as mdast before rendering: these fields are single
+  // sentences by contract, and a stray blank line or leading "- " would otherwise
+  // emit block elements inside a <p>, which is invalid HTML the linkchecker
+  // wouldn't catch. Fail the build with the offending text instead.
+  const mdast = inlineProcessor.parse(source) as any;
+  const [only] = mdast.children;
+  if (mdast.children.length !== 1 || only?.type !== "paragraph") {
+    throw new Error(
+      `${context}: must be a single paragraph of inline markdown (code spans, links, emphasis) — got block-level content. Text: ${JSON.stringify(source)}`,
+    );
+  }
+
+  const hast = (await inlineProcessor.run(mdast)) as any;
+  const paragraph = hast.children.find((child: any) => child.type === "element" && child.tagName === "p");
+  hast.children = paragraph ? paragraph.children : [];
+  return String(inlineProcessor.stringify(hast));
+}
+
 export async function renderMarkdown(source: string): Promise<RenderedMarkdown> {
   const toc: TocEntry[] = [];
 

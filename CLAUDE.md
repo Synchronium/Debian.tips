@@ -132,6 +132,19 @@ and highlights fenced code blocks with Shiki in both light and dark themes at on
 fail WCAG AA against this site's light background — verified with pa11y-ci; don't remove that fix
 without re-checking contrast.
 
+### Inline markdown in short fields
+
+Most template interpolation is escaped plain text, but three short prose fields on command pages —
+an example's `description`, a section's `intro`, a fixture's `note` — go through
+`renderInline()` in `src/content/markdown.ts`, which runs the same remark parser as page prose and
+strips the wrapping `<p>`. That's what makes a backticked flag render monospaced instead of
+shipping literal backticks. It deliberately rejects block-level content (a blank line, a leading
+`- `) with a build error naming the field, because a `<ul>` inside the `<p>` these render into is
+invalid HTML that linkcheck wouldn't catch. Raw HTML is dropped rather than passed through.
+
+Everything else — `title`, `tagline`, frontmatter `description` — is still plain text, and must
+stay that way: frontmatter `description` also feeds `<meta name="description">` and JSON-LD.
+
 ### Dev server
 
 `src/server.ts` is a plain `node:http` server over `dist/`, not a bundler dev server — it does a
