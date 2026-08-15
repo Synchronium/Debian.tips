@@ -1,4 +1,56 @@
 command: grep
+fixtures:
+  - name: "app.log"
+    note: "8 syslog-style lines: 2 errors, 1 warning, and a 4-line Python traceback"
+    content: |
+      Jul  5 09:14:22 deb1 app[312]: error: connection refused
+      Jul  5 09:14:23 deb1 app[312]: warning: retrying in 5s
+      Jul  5 09:14:25 deb1 app[312]: info: retry scheduled
+      Jul  5 09:14:28 deb1 app[312]: error: connection refused
+      Jul  5 09:14:33 deb1 app[312]: info: connected
+      Jul  5 09:15:01 deb1 app[313]: Traceback (most recent call last):
+      Jul  5 09:15:01 deb1 app[313]:   File "worker.py", line 42, in run
+      Jul  5 09:15:01 deb1 app[313]:     result = process(item)
+      Jul  5 09:15:01 deb1 app[313]: ValueError: invalid item
+  - name: "config.conf"
+    note: "settings plus comments, and no blank lines"
+    content: |
+      # app configuration
+      listen 8080
+      # workers = number of worker processes
+      workers 4
+      timeout 30
+  - name: "notes.txt"
+    note: "prose with blank lines, and words that only differ by case or word boundary"
+    content: |
+      Meeting notes
+
+      The login system needs work.
+      Login attempts are logged separately.
+
+      catalogue entries pending review
+      See the log for details.
+  - name: "access.log"
+    note: "7 requests from 3 addresses, including two 401s"
+    content: |
+      203.0.113.5 - - [05/Jul/2026:09:12:01 +0000] "GET /index.html HTTP/1.1" 200 1024
+      203.0.113.5 - - [05/Jul/2026:09:12:03 +0000] "GET /style.css HTTP/1.1" 200 512
+      203.0.113.9 - - [05/Jul/2026:09:13:20 +0000] "GET /index.html HTTP/1.1" 200 1024
+      203.0.113.9 - - [05/Jul/2026:09:13:25 +0000] "GET /about.html HTTP/1.1" 200 768
+      198.51.100.7 - - [05/Jul/2026:09:14:10 +0000] "POST /login HTTP/1.1" 401 128
+      198.51.100.7 - - [05/Jul/2026:09:14:12 +0000] "POST /login HTTP/1.1" 401 128
+      198.51.100.7 - - [05/Jul/2026:09:14:15 +0000] "GET /dashboard HTTP/1.1" 200 2048
+  - name: "allowed-users.txt / current-users.txt"
+    note: "two lists, for the -vFf set-difference example"
+    content: |
+      allowed-users.txt:  bob  dave
+      current-users.txt:  alice  bob  carol  dave
+  - name: "projects/"
+    note: "a small tree for the recursive examples"
+    content: |
+      projects/app/README.md      line 2 is "TODO: write docs"
+      projects/app/src/main.ts    line 1 is "// TODO: refactor this"
+      projects/app/src/util.ts    no TODO
 sections:
   - title: "Basic matching"
     intro: "Plain-text searches, the bread and butter."
@@ -99,16 +151,16 @@ sections:
     intro: "Point grep at a whole tree instead of a single file."
     examples:
       - title: "Search recursively through a directory"
-        code: grep -r "TODO" ~/projects
+        code: grep -r "TODO" projects
         description: >-
           `-r` (`--recursive`) walks every file under the directory, printing
           matching lines prefixed with the file path.
-        output: |
-          projects/app/src/main.ts:// TODO: refactor this
+        output: |2
           projects/app/README.md:TODO: write docs
+          projects/app/src/main.ts:// TODO: refactor this
         level: intermediate
       - title: "Search only specific file types"
-        code: grep -r --include="*.ts" "TODO" ~/projects
+        code: grep -r --include="*.ts" "TODO" projects
         description: >-
           Restricts a recursive search to files matching a glob, so you don't
           wade through generated files or docs.
@@ -116,14 +168,14 @@ sections:
           projects/app/src/main.ts:// TODO: refactor this
         level: intermediate
       - title: "Show the file and line number of each match"
-        code: grep -rn "TODO" ~/projects
+        code: grep -rn "TODO" projects
         description: "`-n` (`--line-number`) prefixes each match with its line number, `-r` makes it recursive."
         output: |
           projects/app/README.md:2:TODO: write docs
           projects/app/src/main.ts:1:// TODO: refactor this
         level: intermediate
       - title: "Exclude a subdirectory from a recursive search"
-        code: grep --exclude-dir=src -r "TODO" ~/projects
+        code: grep --exclude-dir=src -r "TODO" projects
         description: >-
           `--exclude-dir` skips whole directories by name, useful for `node_modules`,
           `.git`, or in this case a `src/` tree you've already checked separately.
@@ -131,21 +183,21 @@ sections:
           projects/app/README.md:TODO: write docs
         level: intermediate
       - title: "Exclude files by glob"
-        code: grep --exclude="*.md" -r "TODO" ~/projects
+        code: grep --exclude="*.md" -r "TODO" projects
         description: "The file-level counterpart to `--exclude-dir`: skip anything matching the glob."
         output: |
           projects/app/src/main.ts:// TODO: refactor this
         level: intermediate
       - title: "Count matches per file across a whole tree"
-        code: grep -rc "TODO" ~/projects
+        code: grep -rc "TODO" projects
         description: >-
           Combine `-r` with `-c` to get a per-file tally, including `0` for
           files that don't match. Useful for spotting which files in a batch
           still need attention.
-        output: |
+        output: |2
+          projects/app/README.md:1
           projects/app/src/main.ts:1
           projects/app/src/util.ts:0
-          projects/app/README.md:1
         level: intermediate
   - title: "Regex: extended patterns and character classes"
     intro: "Extended regex syntax, anchors, and character classes."
@@ -419,7 +471,7 @@ sections:
         description: >-
           `grep` alone can't group and count. Chain it with `awk` (or `cut`) to
           pull a field, then `sort | uniq -c` to tally, then `sort -rn` to rank.
-        output: |
+        output: |2
                 3 198.51.100.7
                 2 203.0.113.9
                 2 203.0.113.5

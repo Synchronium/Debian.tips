@@ -1,4 +1,58 @@
 command: awk
+fixtures:
+  - name: "employees.csv"
+    note: "a header row plus 6 records: name,department,salary"
+    content: |
+      name,department,salary
+      alice,engineering,95000
+      bob,design,72000
+      carol,engineering,110000
+      dave,sales,68000
+      erin,design,81000
+      frank,engineering,88000
+  - name: "app.log"
+    note: "8 syslog-style lines, 3 of them errors"
+    content: |
+      Jul  5 09:14:20 deb1 app[312]: info: service starting
+      Jul  5 09:14:21 deb1 app[312]: info: listening on port 8080
+      Jul  5 09:14:22 deb1 app[312]: error: connection refused
+      Jul  5 09:14:23 deb1 app[312]: warning: retrying in 5s
+      Jul  5 09:14:28 deb1 app[312]: error: connection refused
+      Jul  5 09:14:33 deb1 app[312]: info: connected
+      Jul  5 09:15:01 deb1 app[313]: error: connection refused
+      Jul  5 09:15:05 deb1 app[313]: info: connected
+  - name: "access.log"
+    note: "11 fields per line — combined log format plus a trailing response time"
+    content: |
+      198.51.100.7 - - [05/Jul/2026:09:12:01 +0000] "GET /index.html HTTP/1.1" 200 1024 0.021
+      203.0.113.5 - - [05/Jul/2026:09:12:03 +0000] "GET /style.css HTTP/1.1" 200 512 0.008
+      203.0.113.5 - - [05/Jul/2026:09:12:07 +0000] "GET /app.js HTTP/1.1" 200 2048 0.014
+      198.51.100.7 - - [05/Jul/2026:09:12:15 +0000] "POST /login HTTP/1.1" 401 128 0.045
+      203.0.113.9 - - [05/Jul/2026:09:12:22 +0000] "GET /index.html HTTP/1.1" 200 1024 0.019
+      198.51.100.7 - - [05/Jul/2026:09:12:40 +0000] "POST /login HTTP/1.1" 401 128 0.052
+      203.0.113.9 - - [05/Jul/2026:09:13:02 +0000] "GET /missing HTTP/1.1" 404 0 0.003
+      198.51.100.7 - - [05/Jul/2026:09:13:10 +0000] "GET /dashboard HTTP/1.1" 200 4096 0.081
+  - name: "config.conf"
+    note: "a comment line plus four key=value settings"
+    content: |
+      # Server configuration
+      host=localhost
+      port=8080
+      debug=false
+      timeout=30
+  - name: "passwd.txt"
+    note: "an excerpt in /etc/passwd format, for the -F: examples"
+    content: |
+      root:x:0:0:root:/root:/bin/bash
+      daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+      user:x:1000:1000:user:/home/user:/bin/bash
+      www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+  - name: "allowed.txt"
+    note: "the names treated as already approved, for the two-file example"
+    content: |
+      alice
+      bob
+      carol
 sections:
   - title: "Fields and records"
     intro: "Every line is a record, split automatically into numbered fields."
@@ -305,7 +359,7 @@ sections:
     intro: "awk arrays are keyed by string, which makes them a natural fit for tallying and grouping in one pass."
     examples:
       - title: "Count occurrences of a field value"
-        code: awk -F, 'NR>1{count[$2]++} END{for (d in count) print d, count[d]}' employees.csv
+        code: awk -F, 'NR>1{count[$2]++} END{for (d in count) print d, count[d]}' employees.csv | sort
         description: "`count[$2]++` builds a frequency table keyed by department, all in a single pass, no external `sort | uniq -c` needed."
         output: |
           design 2
@@ -314,7 +368,7 @@ sections:
         level: intermediate
         tags: [one-liners]
       - title: "Sum a field, grouped by another field"
-        code: awk -F, 'NR>1{sum[$2]+=$3} END{for (d in sum) print d, sum[d]}' employees.csv
+        code: awk -F, 'NR>1{sum[$2]+=$3} END{for (d in sum) print d, sum[d]}' employees.csv | sort
         description: "Same idea as counting, but accumulating a value instead of a count: total salary per department."
         output: |
           design 153000
@@ -724,7 +778,7 @@ sections:
       - title: "Extract a field, then rank it with sort and uniq"
         code: awk '{print $9}' access.log | sort | uniq -c | sort -rn
         description: "The alternative to counting inside `awk` with an array: hand the extracted field to the standard `sort | uniq -c | sort -rn` tallying pipeline instead."
-        output: |
+        output: |2
                 5 200
                 2 401
                 1 404

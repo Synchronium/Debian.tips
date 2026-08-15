@@ -1,4 +1,30 @@
 command: sed
+fixtures:
+  - name: "app.log"
+    note: "8 log lines with INFO / DEBUG / WARN / ERROR levels"
+    content: |
+      INFO: service starting
+      DEBUG: loading config from /etc/app.conf
+      INFO: listening on port 8080
+      WARN: deprecated option 'foo' used
+      ERROR: connection refused
+      INFO: retrying connection
+      ERROR: connection refused
+      INFO: connected successfully
+  - name: "config.conf"
+    note: "a comment line plus four key=value settings"
+    content: |
+      # Server configuration
+      host=localhost
+      port=8080
+      debug=false
+      timeout=30
+  - name: "names.csv"
+    note: "three rows of name,age,role — no header"
+    content: |
+      alice,30,engineer
+      bob,25,designer
+      carol,35,manager
 sections:
   - title: "Basic substitution"
     intro: "The s/// command, first match vs every match."
@@ -154,7 +180,7 @@ sections:
     intro: "-i rewrites the file directly, optionally keeping a backup."
     examples:
       - title: "Edit a file in place, keeping a backup"
-        code: sed -i.bak "s/8080/9090/" config.conf
+        code: sed -i.bak "s/8080/9090/" config.conf && cat config.conf
         description: "`-i.bak` writes the change directly to `config.conf` and saves the pre-edit version as `config.conf.bak`. Always do this before `-i` with no suffix, until you fully trust the script."
         output: |
           # Server configuration
