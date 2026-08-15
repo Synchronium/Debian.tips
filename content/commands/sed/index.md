@@ -6,7 +6,7 @@ category: commands
 tags: [text-processing, regex]
 updated: 2026-07-05
 tier: flagship
-related: [grep, exit-codes-and-error-handling]
+related: [grep, awk, tr, pipes-and-redirection, exit-codes-and-error-handling]
 ---
 
 `sed` (**s**tream **ed**itor) reads input one line at a time, applies a script of editing
@@ -77,8 +77,8 @@ keeps a backup of the original with `.bak` appended to the name first.
 other way), and `x` (swap the two) let a script remember something from an earlier line and use
 it later (reversing a file, joining consecutive lines, printing a line before a match). It's
 a small toolkit, but it's the reason `sed` can do more than pure per-line substitution. Reach
-for it when a single-pass `awk` script starts feeling more natural than a `sed` one-liner, since
-that's usually the sign the hold space is what you actually need.
+for it when a single-pass [`awk`](/commands/awk/) script starts feeling more natural than a
+`sed` one-liner, since that's usually the sign the hold space is what you actually need.
 
 ## Chaining multiple commands
 

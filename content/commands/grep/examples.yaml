@@ -42,15 +42,31 @@ fixtures:
       198.51.100.7 - - [05/Jul/2026:09:14:15 +0000] "GET /dashboard HTTP/1.1" 200 2048
   - name: "allowed-users.txt / current-users.txt"
     note: "two lists, for the -vFf set-difference example"
+    from: "tail -n +1 allowed-users.txt current-users.txt"
     content: |
-      allowed-users.txt:  bob  dave
-      current-users.txt:  alice  bob  carol  dave
+      ==> allowed-users.txt <==
+      bob
+      dave
+
+      ==> current-users.txt <==
+      alice
+      bob
+      carol
+      dave
   - name: "projects/"
-    note: "a small tree for the recursive examples"
+    note: "a small tree for the recursive examples — two of the three files contain a TODO"
+    from: "tail -n +1 projects/app/README.md projects/app/src/main.ts projects/app/src/util.ts"
     content: |
-      projects/app/README.md      line 2 is "TODO: write docs"
-      projects/app/src/main.ts    line 1 is "// TODO: refactor this"
-      projects/app/src/util.ts    no TODO
+      ==> projects/app/README.md <==
+      # App
+      TODO: write docs
+
+      ==> projects/app/src/main.ts <==
+      // TODO: refactor this
+      export const main = () => {};
+
+      ==> projects/app/src/util.ts <==
+      export const util = () => {};
 sections:
   - title: "Basic matching"
     intro: "Plain-text searches, the bread and butter."

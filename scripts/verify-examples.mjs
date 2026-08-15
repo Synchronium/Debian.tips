@@ -48,6 +48,13 @@ for (const section of doc.sections) {
   }
 }
 
+// The `fixtures:` block is what a reader is shown as the sample data, so it has to agree
+// with the setup script that actually creates it. Nothing forced that before: the replay
+// proved a fixture right only indirectly, and only where some example's output happened
+// to depend on it. Each fixture is re-read from the sandbox — `cat <name>` by default, or
+// its `from:` command where the block isn't one file's contents — and diffed.
+const fixtures = doc.fixtures ?? [];
+
 // Each page gets its own empty directory. Sharing one working directory across pages
 // silently corrupts any example that globs (`ls *.txt | wc -l`) or walks the tree
 // (`find . -name '*.csv'`), because another page's fixtures show up in the results.
@@ -64,10 +71,13 @@ const MARK = "@@EX@@";
 // input (`sort -u -o file file`, `sed -i`), and a reader picking any single example off
 // the page expects the documented fixtures — not whatever an earlier example left behind.
 const restore = setupPath ? `find ${WORKDIR} -mindepth 1 -not -name ".setup.sh" -delete 2>/dev/null; bash ${WORKDIR}/.setup.sh >/dev/null 2>&1` : "true";
+// Fixtures are checked in the same batch as the examples, after them, so their indices
+// continue the same marker sequence rather than needing a second pass over the sandbox.
+const fixtureCommands = fixtures.map((f) => f.from ?? `cat ${shellQuote(f.name)}`);
 const script = [
   `cd ${WORKDIR}`,
-  ...examples.map(
-    (ex, i) => `${restore}\ncd ${WORKDIR}\nprintf '\\n${MARK}${i}\\n'\ntimeout 5 bash -c ${shellQuote(ex.code)} 2>&1`,
+  ...[...examples.map((ex) => ex.code), ...fixtureCommands].map(
+    (code, i) => `${restore}\ncd ${WORKDIR}\nprintf '\\n${MARK}${i}\\n'\ntimeout 5 bash -c ${shellQuote(code)} 2>&1`,
   ),
 ].join("\n");
 
@@ -114,12 +124,31 @@ examples.forEach((ex, i) => {
   else differ.push({ i, ex, got, want });
 });
 
+let fixtureMatch = 0;
+const fixturesDiffer = [];
+fixtures.forEach((f, n) => {
+  const i = examples.length + n;
+  const got = norm(actual.get(i) ?? "");
+  const want = norm(f.content);
+  if (got === want) fixtureMatch++;
+  else fixturesDiffer.push({ i, name: f.name, cmd: fixtureCommands[n], got, want });
+});
+
 const skipNote = skipped.length ? ` (${skipped.length} not replayable in batch, see .skip file)` : "";
-console.log(`\n${command}: ${match}/${examples.length} documented outputs reproduce exactly${skipNote}\n`);
+const fixtureNote = fixtures.length ? `, ${fixtureMatch}/${fixtures.length} fixtures` : "";
+console.log(
+  `\n${command}: ${match}/${examples.length} documented outputs reproduce exactly${fixtureNote}${skipNote}\n`,
+);
 for (const d of differ) {
   console.log(`--- [${d.i}] ${d.ex.title}`);
   console.log(`    $ ${d.ex.code.split("\n")[0]}`);
   console.log(`    want: ${JSON.stringify(d.want.slice(0, 160))}`);
   console.log(`    got : ${JSON.stringify(d.got.slice(0, 160))}`);
 }
-process.exit(differ.length === 0 ? 0 : 1);
+for (const d of fixturesDiffer) {
+  console.log(`--- fixture "${d.name}" does not match what the setup script creates`);
+  console.log(`    $ ${d.cmd}`);
+  console.log(`    want: ${JSON.stringify(d.want.slice(0, 160))}`);
+  console.log(`    got : ${JSON.stringify(d.got.slice(0, 160))}`);
+}
+process.exit(differ.length + fixturesDiffer.length === 0 ? 0 : 1);

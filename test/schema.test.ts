@@ -196,4 +196,32 @@ describe("examplesFileSchema", () => {
     });
     expect(result.success).toBe(false);
   });
+
+  const withFixture = (fixture: unknown) => ({
+    command: "grep",
+    fixtures: [fixture],
+    sections: [
+      {
+        title: "Basics",
+        examples: [{ title: "Search", code: "grep foo", description: "Finds foo.", level: "basic" }],
+      },
+    ],
+  });
+
+  it("accepts a fixture without `from` — it defaults to cat <name> at replay time", () => {
+    const result = examplesFileSchema.safeParse(withFixture({ name: "app.log", content: "error\n" }));
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts a fixture whose block is reproduced by a command rather than being a file", () => {
+    const result = examplesFileSchema.safeParse(
+      withFixture({ name: "projects/", content: "projects:\n", from: "ls -lAR projects" }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a fixture with no content", () => {
+    const result = examplesFileSchema.safeParse(withFixture({ name: "app.log", content: "" }));
+    expect(result.success).toBe(false);
+  });
 });

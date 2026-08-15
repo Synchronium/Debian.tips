@@ -67,7 +67,8 @@ collapsed "Sample files used on this page" block — otherwise output like `wc -
 can't be checked by a reader who's never seen `report.txt`.
 
 That declaration is only worth anything if it's true, so it's machine-checked: every example on a
-page is replayed against freshly-restored fixtures and diffed against the output the page claims.
+page is replayed against freshly-restored fixtures and diffed against the output the page claims,
+and the sample-file blocks are re-read from the sandbox and diffed as well.
 
 ```sh
 name=$(scripts/sandbox.sh start)
@@ -75,8 +76,9 @@ node scripts/verify-examples.mjs "$name" wc scripts/fixtures/wc.sh   # -> "wc: 2
 scripts/sandbox.sh stop "$name"
 ```
 
-Eleven pages currently replay at 100% — 357 documented outputs across `wc`, `sort`, `uniq`, `cut`,
-`tr`, `head`, `diff`, `grep`, `sed`, `awk` and `find`. A handful of examples can't run in a batch (they
+Eleven pages currently replay at 100% — 357 documented outputs and 52 sample-file blocks across
+`wc`, `sort`, `uniq`, `cut`, `tr`, `head`, `diff`, `grep`, `sed`, `awk` and `find`. A handful of
+examples can't run in a batch (they
 need a concurrent writer, like `tail -f`); those are listed in a `.skip` file alongside a note on
 how they were verified, rather than being quietly dropped.
 

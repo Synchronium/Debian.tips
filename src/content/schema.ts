@@ -100,6 +100,13 @@ export const fixtureSchema = z.object({
   /** One-line orientation, e.g. "40 numbered lines". Optional. */
   note: z.string().optional(),
   content: z.string().min(1),
+  /** The command that reproduces `content` inside the sandbox, defaulting to
+   * `cat <name>`. Set it when the block isn't one file's contents — a directory tree
+   * shown as `ls -lAR projects`, or a placeholder standing in for a duplicate file.
+   * `scripts/verify-examples.mjs` runs it and diffs, so a fixture that has drifted from
+   * its setup script fails the replay instead of quietly misleading a reader. Never
+   * rendered: it exists only to keep the rendered block honest. */
+  from: z.string().optional(),
 });
 export type Fixture = z.infer<typeof fixtureSchema>;
 

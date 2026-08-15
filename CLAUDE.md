@@ -65,6 +65,15 @@ Each page's sample data lives twice, deliberately: as a `fixtures:` block in `ex
 the sandbox). The replay is what keeps the two honest. Fixtures are restored before *every*
 example, because some legitimately mutate their input (`sed -i`, `sort -o`).
 
+The replay checks the `fixtures:` blocks themselves too, not just the `output:` blocks: each one
+is re-read from the sandbox and diffed, so a block that has drifted from its setup script fails
+rather than quietly misleading a reader. By default that read is `cat <name>`. A block that isn't
+one file's literal contents sets `from:` to the command that reproduces it — a directory shown as
+`ls -lAR projects`, a 40-line file deliberately abridged to `head -3; echo …; tail -1`, control
+bytes made visible with `sed "s/\r/␍/"`, or several files shown together with `tail -n +1 a b`.
+The rule is that every rendered block is something a reader could actually produce; `from:` is
+never rendered, it only keeps the block honest.
+
 Eleven pages currently replay at 100% (wc, sort, uniq, cut, tr, head, diff, grep, sed, awk, find —
 357 outputs). `tar`, `chmod`, `crontab`, `ssh` and `curl` have no fixtures yet. If you touch a
 covered page, re-run its replay; if you add examples to an uncovered one, consider adding them.

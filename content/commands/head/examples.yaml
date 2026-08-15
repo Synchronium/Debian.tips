@@ -2,6 +2,7 @@ command: head
 fixtures:
   - name: report.txt
     note: "40 numbered lines, each 5 words"
+    from: "head -3 report.txt; echo '…'; tail -1 report.txt"
     content: |
       line 1 of the report
       line 2 of the report

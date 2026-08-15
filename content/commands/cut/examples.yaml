@@ -12,6 +12,9 @@ fixtures:
       Frank,31,Engineering
   - name: users2.csv
     note: "an identical copy of users.csv, for the multi-file examples"
+    # A placeholder reads better here than a duplicate of the block above, but it still
+    # has to be true: cmp only echoes it when the two files really are identical.
+    from: "cmp -s users.csv users2.csv && echo '(same as users.csv)'"
     content: |
       (same as users.csv)
   - name: access.log

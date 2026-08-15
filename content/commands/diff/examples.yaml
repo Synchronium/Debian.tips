@@ -33,34 +33,69 @@ fixtures:
       }
   - name: "sp1.txt / sp2.txt"
     note: "differ only in the amount of whitespace, for -w"
+    from: "tail -n +1 sp1.txt sp2.txt"
     content: |
-      sp1.txt:  a  b     (two spaces)
-      sp2.txt:  a b      (one space)
+      ==> sp1.txt <==
+      a  b
+
+      ==> sp2.txt <==
+      a b
   - name: "ws1.txt / ws2.txt"
     note: "same words, different spacing throughout, for -b"
+    from: "tail -n +1 ws1.txt ws2.txt"
     content: |
-      ws1.txt:  a b  c
-      ws2.txt:  a   b c
+      ==> ws1.txt <==
+      a b  c
+
+      ==> ws2.txt <==
+      a   b c
   - name: "c1.txt / c2.txt"
     note: "differ only in case, for -i"
+    from: "tail -n +1 c1.txt c2.txt"
     content: |
-      c1.txt:  Hello
-      c2.txt:  hello
+      ==> c1.txt <==
+      Hello
+
+      ==> c2.txt <==
+      hello
   - name: "bl1.txt / bl2.txt"
-    note: "differ only by an inserted blank line, for -B"
+    note: "differ only by a blank line inserted after the first, for -B"
+    from: "tail -n +1 bl1.txt bl2.txt"
     content: |
-      bl1.txt:  a / b / c
-      bl2.txt:  a / (blank) / b / c
+      ==> bl1.txt <==
+      a
+      b
+      c
+
+      ==> bl2.txt <==
+      a
+
+      b
+      c
   - name: "crlf-a.txt / crlf-b.txt"
     note: "identical text, different line endings, for --strip-trailing-cr"
+    from: 'tail -n +1 crlf-a.txt crlf-b.txt | sed "s/\r/␍/"'
     content: |
-      crlf-a.txt:  line1␍ line2␍   (CRLF)
-      crlf-b.txt:  line1 line2      (LF)
+      ==> crlf-a.txt <==
+      line1␍
+      line2␍
+
+      ==> crlf-b.txt <==
+      line1
+      line2
   - name: "confA/ and confB/"
-    note: "two directory trees for the -r examples"
+    note: "two trees for the -r examples: common.conf is identical in both, nginx.conf is the old/new pair above, and each has one file the other lacks"
+    from: "ls confA confB"
     content: |
-      confA/  nginx.conf (= nginx-old.conf)  common.conf  onlyA.conf
-      confB/  nginx.conf (= nginx-new.conf)  common.conf  onlyB.conf
+      confA:
+      common.conf
+      nginx.conf
+      onlyA.conf
+
+      confB:
+      common.conf
+      nginx.conf
+      onlyB.conf
 sections:
   - title: "Basic comparison and exit codes"
     intro: "diff's exit code is as useful as its output — 0 for identical, 1 for different, 2 for an error."

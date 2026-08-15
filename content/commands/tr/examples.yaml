@@ -12,6 +12,7 @@ fixtures:
       Frank,31,Engineering
   - name: crlf.txt
     note: "two lines with Windows CRLF endings — 14 bytes, not 12"
+    from: 'sed "s/\r/␍/" crlf.txt'
     content: |
       line1␍
       line2␍

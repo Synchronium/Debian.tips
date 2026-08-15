@@ -2,6 +2,7 @@ command: wc
 fixtures:
   - name: report.txt
     note: "40 numbered lines, each 5 words — hence 40 lines / 200 words"
+    from: "head -3 report.txt; echo '…'; tail -1 report.txt"
     content: |
       line 1 of the report
       line 2 of the report
@@ -45,11 +46,13 @@ fixtures:
       192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
   - name: crlf.txt
     note: "two lines with Windows CRLF endings — 14 bytes, not 12"
+    from: 'sed "s/\r/␍/" crlf.txt'
     content: |
       line1␍
       line2␍
   - name: filelist.bin
     note: "two filenames separated by NUL bytes, for --files0-from"
+    from: 'sed "s/\x00/␀/g" filelist.bin'
     content: |
       report.txt␀wordlist.txt␀
 sections:

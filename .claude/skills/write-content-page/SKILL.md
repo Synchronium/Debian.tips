@@ -121,8 +121,20 @@ scripts/sandbox.sh stop "$name"
 ```
 
 It replays every example against freshly restored fixtures and diffs the real result against the
-page. **Aim for N/N.** A fixture that doesn't reproduce the documented output is worse than no
-fixture, because it looks like evidence.
+page, then does the same for the `fixtures:` blocks. **Aim for N/N on both counts.** A fixture that
+doesn't reproduce the documented output is worse than no fixture, because it looks like evidence.
+
+A fixture block is read back with `cat <name>` unless it sets `from:`, the command that reproduces
+it. Set `from:` whenever the block isn't one file's literal contents, and keep the block to
+something a reader could actually produce rather than a hand-written summary:
+
+| the block is | `from:` |
+| --- | --- |
+| a directory tree | `ls -lAR projects` |
+| a long file, abridged | `head -3 report.txt; echo '…'; tail -1 report.txt` |
+| control bytes made visible | `sed "s/\r/␍/" crlf.txt` |
+| two files shown together | `tail -n +1 setA.txt setB.txt` |
+| a duplicate of another fixture | `cmp -s users.csv users2.csv && echo '(same as users.csv)'` |
 
 For examples a batch genuinely can't replay (needing a concurrent writer, like `tail -f`, or a
 network peer), list the title in `scripts/fixtures/<command>.skip` with a comment saying how it

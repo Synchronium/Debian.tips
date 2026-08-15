@@ -71,10 +71,18 @@ fixtures:
       xCCCa
       xBBBz
   - name: setA.txt / setB.txt
-    note: "two overlapping sets, for the comm example"
+    note: "two overlapping sets, for the comm example — b and a are in both"
+    from: "tail -n +1 setA.txt setB.txt"
     content: |
-      setA.txt:  a  c  b
-      setB.txt:  b  d  a
+      ==> setA.txt <==
+      a
+      c
+      b
+
+      ==> setB.txt <==
+      b
+      d
+      a
 sections:
   - title: "Default order: lexicographic, not numeric"
     intro: "With no flags, sort compares lines character by character. That's exactly what you want for words, and almost never what you want for numbers."

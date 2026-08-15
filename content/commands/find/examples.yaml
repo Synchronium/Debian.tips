@@ -2,6 +2,7 @@ command: find
 fixtures:
   - name: "projects/"
     note: "the tree every example below searches — `ls -lAR projects`"
+    from: "ls -lAR projects"
     content: |
       projects:
       total 20
