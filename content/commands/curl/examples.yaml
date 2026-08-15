@@ -5,7 +5,7 @@ fixtures:
     from: "curl -s http://localhost:8080/"
     content: |
       Local test server for the curl and wget pages.
-      
+
       GET  /get                     echo the query string and request headers
       POST /post                    echo the body, as form fields or JSON
       PUT  /put                     echo the body
@@ -20,6 +20,9 @@ fixtures:
       GET  /delay/SECONDS           wait, then answer
       GET  /robots.txt              a small static file
       GET  /page.html               a small static HTML page
+      GET  /site/index.html         a small linked site, for recursive download
+      GET  /top.html                one level above /site/, for --no-parent
+      GET  /large.bin               64KB, supports Range so a download can be resumed
 sections:
   - title: "Basic requests"
     intro: "GET is the default. This section covers what curl shows you by default and how to see more."
@@ -89,7 +92,7 @@ sections:
         description: "`-O` (`--remote-name`) names the local file after the last path segment of the URL: here, `robots.txt`."
         output: |2
           User-agent: *
-          Disallow: /deny
+          Disallow: /site/b.html
         level: intermediate
       - title: "Resume an interrupted download"
         code: curl -C - -o robots.txt http://localhost:8080/robots.txt

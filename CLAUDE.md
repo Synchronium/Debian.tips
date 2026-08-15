@@ -74,7 +74,7 @@ bytes made visible with `sed "s/\r/␍/"`, or several files shown together with 
 The rule is that every rendered block is something a reader could actually produce; `from:` is
 never rendered, it only keeps the block honest.
 
-Every command page replays at 100% — 485 outputs across all sixteen. If you touch a
+Every command page replays at 100% — 535 outputs across all seventeen. If you touch a
 covered page, re-run its replay; if you add examples to an uncovered one, consider adding them.
 
 Examples a batch can't replay (needing a concurrent writer or a network peer) are listed by title
@@ -174,3 +174,20 @@ links resolve to a real `id` in the target page — part of `npm run check`, not
 `.github/workflows/ci.yml`: typecheck + tests + build + linkcheck + pa11y-ci, on every PR and push
 to `main`. `.github/workflows/deploy.yml`: builds and publishes `dist/` to GitHub Pages on push to
 `main`. Both run on GitHub-hosted runners, independent of this repo's devcontainer.
+
+### The local HTTP server
+
+The `curl` and `wget` pages point at `http://localhost:8080`, served by
+`scripts/fixtures/http-mock.py` — thirteen-odd endpoints that echo a request, return a chosen
+status, redirect, delay, set a cookie, demand basic auth, or serve a small linked site with
+`Range` and `If-Modified-Since` support. `verify-examples.mjs` installs any `.py` under
+`scripts/fixtures/` into `/opt/mock/` in the sandbox, and each page's setup script starts it.
+
+Public request-echo services were the obvious alternative and are the reason the curl page's
+outputs were fabricated before this: they answer with a trace id, a live date and the caller's
+public IP, so nothing they return can be printed as exact output. Both pages say in their prose
+how to start the server, because an example that displays a URL the reader can't reach is
+displaying output the shown command didn't produce.
+
+Anything added to the server must stay deterministic: sort JSON keys, keep the fixed indent, and
+never return a value from the clock, the client address, or a random source.

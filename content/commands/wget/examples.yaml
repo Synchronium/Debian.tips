@@ -1,0 +1,568 @@
+command: wget
+fixtures:
+  - name: "the local test server"
+    note: "start it with `python3 http-mock.py` before running the examples — the script is in the site repo at `scripts/fixtures/http-mock.py`, and the `curl` page uses the same one"
+    from: "curl -s http://localhost:8080/"
+    content: |
+      Local test server for the curl and wget pages.
+
+      GET  /get                     echo the query string and request headers
+      POST /post                    echo the body, as form fields or JSON
+      PUT  /put                     echo the body
+      DELETE /delete                echo the request
+      GET  /headers                 echo the request headers only
+      GET  /user-agent              echo the User-Agent header only
+      GET  /basic-auth/user/pass    401 until the right credentials arrive
+      GET  /cookies/set/NAME/VALUE  set a cookie, then redirect to /cookies
+      GET  /cookies                 echo the cookies the request carried
+      GET  /redirect/N              redirect N times, then land on /get
+      GET  /status/CODE             answer with that status code
+      GET  /delay/SECONDS           wait, then answer
+      GET  /robots.txt              a small static file
+      GET  /page.html               a small static HTML page
+      GET  /site/index.html         a small linked site, for recursive download
+      GET  /top.html                one level above /site/, for --no-parent
+      GET  /large.bin               64KB, supports Range so a download can be resumed
+  - name: urls.txt
+    note: "the URL list the batch-download examples read"
+    content: |
+      http://localhost:8080/site/a.html
+      http://localhost:8080/site/b.html
+  - name: body.json
+    note: "the request body the `--post-file` example sends"
+    content: |
+      {"name": "deb1", "role": "backup"}
+sections:
+  - title: "Downloading a single file"
+    intro: "`wget` saves to a file named after the URL unless you tell it otherwise."
+    examples:
+      - title: "Download a file"
+        code: wget http://localhost:8080/page.html
+        description: "With no flags at all, `wget` works out the filename from the URL and writes it into the current directory, reporting progress on stderr as it goes."
+        output: |2
+          --2026-08-15 21:37:59--  http://localhost:8080/page.html
+          Resolving localhost (localhost)... ::1, 127.0.0.1
+          Connecting to localhost (localhost)|::1|:8080... connected.
+          HTTP request sent, awaiting response... 200 OK
+          Length: 120 [text/html]
+          Saving to: 'page.html'
+          2026-08-15 21:37:59 (49.0 MB/s) - 'page.html' saved [120/120]
+        level: basic
+        tags: [beginner]
+      - title: "Save under a different name"
+        code: wget -O homepage.html http://localhost:8080/page.html && ls homepage.html
+        description: "`-O` (`--output-document`) names the output file explicitly, which also stops `wget` inventing a name from a URL that ends in a slash or a query string."
+        output: |2
+          --2026-08-15 21:37:59--  http://localhost:8080/page.html
+          Resolving localhost (localhost)... ::1, 127.0.0.1
+          Connecting to localhost (localhost)|::1|:8080... connected.
+          HTTP request sent, awaiting response... 200 OK
+          Length: 120 [text/html]
+          Saving to: 'homepage.html'
+          2026-08-15 21:37:59 (70.4 MB/s) - 'homepage.html' saved [120/120]
+          homepage.html
+        level: basic
+        tags: [beginner]
+      - title: "Save into a different directory"
+        code: wget -q -P downloads http://localhost:8080/page.html && ls downloads
+        description: "`-P` (`--directory-prefix`) sets where files land without changing their names, and creates the directory if it isn't there."
+        output: |2
+          page.html
+        level: basic
+      - title: "Download without any progress output"
+        code: wget -q http://localhost:8080/page.html && echo "saved, silently"
+        description: "`-q` (`--quiet`) silences everything, including errors, which is what you want inside a script that checks the exit code itself."
+        output: |2
+          saved, silently
+        level: basic
+        tags: [scripting]
+      - title: "One summary line instead of a progress bar"
+        code: wget -nv http://localhost:8080/page.html
+        description: "`-nv` (`--no-verbose`) is the middle ground between the full progress bar and `-q`: one line per file, still reporting errors."
+        output: |2
+          2026-08-15 21:37:59 URL:http://localhost:8080/page.html [120/120] -> "page.html" [1]
+        level: basic
+      - title: "Print the file to stdout instead of saving it"
+        code: wget -q -O - http://localhost:8080/page.html
+        description: "`-O -` sends the payload to stdout, so it can be piped. The progress report goes to stderr, so it never mixes into the pipe."
+        output: |2
+          <!doctype html>
+          <title>Test page</title>
+          <h1>Test page</h1>
+          <p>A small static page served by the local test server.</p>
+        level: intermediate
+        tags: [scripting]
+      - title: "A second download does not overwrite the first"
+        code: |-
+          wget -q http://localhost:8080/page.html
+          wget -q http://localhost:8080/page.html
+          ls page.html*
+        description: "By default `wget` keeps the existing file and writes the new copy as `page.html.1`, which surprises people who expect an overwrite."
+        output: |2
+          page.html
+          page.html.1
+        level: intermediate
+      - title: "Skip the download if the file already exists"
+        code: |-
+          wget -q http://localhost:8080/page.html
+          wget -nc http://localhost:8080/page.html
+          ls page.html*
+        description: "`-nc` (`--no-clobber`) leaves the existing file alone and doesn't fetch a numbered copy either, which makes a re-run of a download script cheap."
+        output: |2
+          File 'page.html' already there; not retrieving.
+          page.html
+        level: intermediate
+        tags: [scripting]
+
+  - title: "Resuming, retrying, and rate limits"
+    intro: "The flags that make a download survive a bad connection."
+    examples:
+      - title: "Resume a partial download"
+        code: |-
+          head -c 20000 /dev/zero > large.bin
+          wget -c http://localhost:8080/large.bin
+          ls -l large.bin
+        description: "`-c` (`--continue`) asks the server for the rest of the file with a `Range` request rather than starting again. The server has to support ranges; this one does."
+        output: |2
+          --2026-08-15 21:37:59--  http://localhost:8080/large.bin
+          Resolving localhost (localhost)... ::1, 127.0.0.1
+          Connecting to localhost (localhost)|::1|:8080... connected.
+          HTTP request sent, awaiting response... 206 Partial Content
+          Length: 65000 (63K), 45000 (44K) remaining [application/octet-stream]
+          Saving to: 'large.bin'
+          2026-08-15 21:37:59 (3.32 GB/s) - 'large.bin' saved [65000/65000]
+          -rw-r--r-- 1 user user 65000 Jul  5 15:35 large.bin
+        level: intermediate
+      - title: "Retry a transient failure a fixed number of times"
+        code: wget --tries=2 --timeout=1 http://localhost:8080/delay/5 -O /dev/null
+        description: "`--tries` caps the attempts, and the report labels each one after the first with `(try: N)`. The default is 20, which is a long time to wait on a server that has stopped answering."
+        output: |2
+          --2026-08-15 21:37:59--  http://localhost:8080/delay/5
+          Resolving localhost (localhost)... ::1, 127.0.0.1
+          Connecting to localhost (localhost)|::1|:8080... connected.
+          HTTP request sent, awaiting response... Read error (Connection timed out) in headers.
+          Retrying.
+          --2026-08-15 21:38:01--  (try: 2)  http://localhost:8080/delay/5
+          Connecting to localhost (localhost)|::1|:8080... connected.
+          HTTP request sent, awaiting response... Read error (Connection timed out) in headers.
+          Giving up.
+        level: intermediate
+        tags: [scripting]
+      - title: "What counts as worth retrying"
+        code: wget --tries=3 -nv http://localhost:8080/status/500 2>&1 | tail -1
+        description: "Only a transient failure is retried: a timeout, a dropped connection, a partial transfer. An HTTP error status is a definite answer, so `--tries=3` still reports a 500 exactly once."
+        output: |2
+          2026-08-15 21:38:02 ERROR 500: Internal Server Error.
+        level: advanced
+        tags: [scripting]
+      - title: "Time out instead of hanging"
+        code: wget --timeout=2 --tries=1 -nv http://localhost:8080/delay/5 -O /dev/null 2>&1 | tail -1
+        description: "`--timeout` bounds every stage of the transfer: name resolution, connecting, and reading. Without it a stalled server holds the script open indefinitely."
+        output: |2
+          Read error (Connection timed out) in headers.
+        level: intermediate
+        tags: [scripting]
+      - title: "Cap the download rate"
+        code: wget -q --limit-rate=200k http://localhost:8080/large.bin && ls -l large.bin
+        description: "`--limit-rate` leaves bandwidth for everything else on the connection. Accepts `k` and `m` suffixes."
+        output: |2
+          -rw-r--r-- 1 user user 65000 Jul  5 15:35 large.bin
+        level: intermediate
+      - title: "Wait between retries"
+        code: wget --tries=2 --waitretry=1 --timeout=1 http://localhost:8080/delay/5 -O /dev/null 2>&1 | grep -E "Retrying|Giving up"
+        description: "`--waitretry` backs off between attempts instead of hammering a server that is already struggling, waiting one second longer each time up to the value given."
+        output: |2
+          Retrying.
+          Giving up.
+        level: advanced
+
+  - title: "Checking a URL without downloading it"
+    examples:
+      - title: "Check that a URL exists"
+        code: wget --spider -nv http://localhost:8080/page.html 2>&1 | tail -2
+        description: "`--spider` makes the request but writes no file, the closest thing `wget` has to `curl -I`."
+        output: |2
+          2026-08-15 21:38:08 URL: http://localhost:8080/page.html 200 OK
+        level: intermediate
+      - title: "Check a URL that isn't there"
+        code: wget --spider -nv http://localhost:8080/missing.html 2>&1 | tail -2
+        description: "A missing page reports the status and exits non-zero, which is what makes `--spider` usable as a link check."
+        output: |2
+          http://localhost:8080/missing.html:
+          Remote file does not exist -- broken link!!!
+        level: intermediate
+      - title: "Use the exit code in a script"
+        code: |-
+          if wget -q --spider http://localhost:8080/page.html; then
+            echo "url is reachable"
+          fi
+        description: "Pair `-q` with `--spider` and test the exit status directly. See [exit codes and error handling](/concepts/exit-codes-and-error-handling/) for what the other codes mean."
+        output: |2
+          url is reachable
+        level: intermediate
+        tags: [scripting, one-liners]
+      - title: "Show the server's response headers"
+        code: wget -S --spider http://localhost:8080/page.html 2>&1 | grep -E "HTTP/|Content-Type|Content-Length"
+        description: "`-S` (`--server-response`) prints the response headers. Combined with `--spider` it is a request that costs nothing but the round trip."
+        output: |2
+          HTTP/1.0 200 OK
+            Content-Type: text/html
+            Content-Length: 120
+        level: intermediate
+      - title: "Read the exit code after a failure"
+        code: |-
+          wget -q --spider http://localhost:8080/missing.html
+          echo "exit=$?"
+        description: "`wget` exits 8 when the server answered with an error status, as opposed to 4 for a network problem and 1 for a generic failure."
+        output: |2
+          exit=8
+        level: advanced
+        tags: [scripting]
+
+  - title: "Headers, authentication, and sending data"
+    examples:
+      - title: "Send a custom header"
+        code: "wget -q -O - --header=\"X-Test: yes\" http://localhost:8080/headers"
+        description: "`--header` adds one header per use, repeat it for several. The server here echoes back what it received."
+        output: |2
+          {
+            "headers": {
+              "Accept": "*/*",
+              "Accept-Encoding": "identity",
+              "Host": "localhost:8080",
+              "User-Agent": "Wget/1.25.0",
+              "X-Test": "yes"
+            }
+          }
+        level: intermediate
+      - title: "Set the User-Agent"
+        code: wget -q -O - --user-agent="MyScript/1.0" http://localhost:8080/user-agent
+        description: "`--user-agent` replaces the default `Wget/1.25.0` string, which some servers refuse outright."
+        output: |2
+          {
+            "user-agent": "MyScript/1.0"
+          }
+        level: intermediate
+      - title: "Authenticate with HTTP basic auth"
+        code: wget -q -O - --user=user --password=pass http://localhost:8080/basic-auth/user/pass
+        description: "`--user` and `--password` cover HTTP basic auth. Both end up in the process list, so prefer `--ask-password` or a `.netrc` file for anything real."
+        output: |2
+          {
+            "authenticated": true,
+            "user": "user"
+          }
+        level: intermediate
+        tags: [security]
+      - title: "See what happens without credentials"
+        code: wget -nv --tries=1 http://localhost:8080/basic-auth/user/pass 2>&1 | tail -2
+        description: "A protected URL answers 401 and `wget` stops rather than prompting, which is why an unattended script fails here rather than hanging."
+        output: |2
+          Username/Password Authentication Failed.
+        level: intermediate
+        tags: [security]
+      - title: "POST form data"
+        code: wget -q -O - --post-data="name=deb1" http://localhost:8080/post
+        description: "`--post-data` switches the method to POST and sends the string as `application/x-www-form-urlencoded`."
+        output: |2
+          {
+            "args": {},
+            "data": "",
+            "form": {
+              "name": "deb1"
+            },
+            "headers": {
+              "Accept": "*/*",
+              "Accept-Encoding": "identity",
+              "Content-Length": "9",
+              "Content-Type": "application/x-www-form-urlencoded",
+              "Host": "localhost:8080",
+              "User-Agent": "Wget/1.25.0"
+            },
+            "json": null,
+            "url": "http://localhost:8080/post"
+          }
+        level: intermediate
+      - title: "POST the contents of a file"
+        code: "wget -q -O - --post-file=body.json --header=\"Content-Type: application/json\" http://localhost:8080/post"
+        description: "`--post-file` reads the body from disk. `wget` does not set a content type for you, so pair it with `--header` when the server cares."
+        output: |2
+          {
+            "args": {},
+            "data": "{\"name\": \"deb1\", \"role\": \"backup\"}\n",
+            "form": {},
+            "headers": {
+              "Accept": "*/*",
+              "Accept-Encoding": "identity",
+              "Content-Length": "35",
+              "Content-Type": "application/json",
+              "Host": "localhost:8080",
+              "User-Agent": "Wget/1.25.0"
+            },
+            "json": {
+              "name": "deb1",
+              "role": "backup"
+            },
+            "url": "http://localhost:8080/post"
+          }
+        level: advanced
+      - title: "Use a method other than GET or POST"
+        code: wget -q -O - --method=PUT --body-data="status=updated" http://localhost:8080/put
+        description: "`--method` sets the verb and `--body-data` supplies the body, the pair that covers PUT, DELETE and PATCH."
+        output: |2
+          {
+            "args": {},
+            "data": "",
+            "form": {
+              "status": "updated"
+            },
+            "headers": {
+              "Accept": "*/*",
+              "Accept-Encoding": "identity",
+              "Content-Length": "14",
+              "Content-Type": "application/x-www-form-urlencoded",
+              "Host": "localhost:8080",
+              "User-Agent": "Wget/1.25.0"
+            },
+            "json": null,
+            "url": "http://localhost:8080/put"
+          }
+        level: advanced
+      - title: "Save cookies a server sets"
+        code: |-
+          wget -q --save-cookies cookies.txt --keep-session-cookies -O /dev/null http://localhost:8080/cookies/set/session/abc123
+          cat cookies.txt
+        description: "`--save-cookies` writes a Netscape-format jar. Without `--keep-session-cookies` a session cookie is dropped on exit and the file comes back empty."
+        output: |2
+          # HTTP Cookie File
+          # Generated by Wget on 2026-08-15 21:38:08.
+          # Edit at your own risk.
+          localhost:8080	FALSE	/	FALSE	0	session	abc123
+        level: advanced
+      - title: "Send saved cookies with a later request"
+        code: |-
+          wget -q --save-cookies cookies.txt --keep-session-cookies -O /dev/null http://localhost:8080/cookies/set/session/abc123
+          wget -q -O - --load-cookies cookies.txt http://localhost:8080/cookies
+        description: "`--load-cookies` replays the jar, which is how a scripted download gets past a login that sets a session cookie."
+        output: |2
+          {
+            "cookies": {
+              "session": "abc123"
+            }
+          }
+        level: advanced
+
+  - title: "Redirects"
+    examples:
+      - title: "Redirects are followed automatically"
+        code: wget -nv http://localhost:8080/redirect/1 -O /dev/null 2>&1 | tail -2
+        description: "Unlike `curl`, `wget` follows redirects without being asked, and reports each hop as it goes."
+        output: |2
+          2026-08-15 21:38:08 URL:http://localhost:8080/get [193/193] -> "/dev/null" [1]
+        level: basic
+      - title: "Refuse to follow redirects"
+        code: wget --max-redirect=0 -nv http://localhost:8080/redirect/1 -O /dev/null 2>&1 | tail -3
+        description: "`--max-redirect=0` turns a redirect into an error, useful when you want to know that a URL moved rather than silently following it."
+        output: |2
+          0 redirections exceeded.
+        level: intermediate
+      - title: "Cap how many hops to follow"
+        code: wget --max-redirect=1 -nv http://localhost:8080/redirect/3 -O /dev/null 2>&1 | tail -3
+        description: "A redirect chain longer than the cap fails instead of looping, the protection against a server that redirects to itself."
+        output: |2
+          1 redirections exceeded.
+        level: intermediate
+
+  - title: "Recursive download and mirroring"
+    intro: "`wget`'s distinctive feature, and the one most worth putting limits on."
+    examples:
+      - title: "Download a page and everything it links to"
+        code: wget -q -r http://localhost:8080/site/ && find localhost:8080 -type f | sort
+        description: "`-r` (`--recursive`) follows links from the starting page. Files land under a directory named after the host, which is rarely what you want on its own."
+        output: |2
+          localhost:8080/robots.txt
+          localhost:8080/site/a.html
+          localhost:8080/site/img/logo.png
+          localhost:8080/site/index.html
+          localhost:8080/site/sub/deep.html
+          localhost:8080/site/sub/deeper.html
+          localhost:8080/top.html
+        level: intermediate
+      - title: "Drop the hostname directory"
+        code: wget -q -r -nH http://localhost:8080/site/ && find . -name "*.html" | sort
+        description: "`-nH` (`--no-host-directories`) writes straight into the current directory instead of nesting everything under the hostname."
+        output: |2
+          ./site/a.html
+          ./site/index.html
+          ./site/sub/deep.html
+          ./site/sub/deeper.html
+          ./top.html
+        level: intermediate
+      - title: "Limit how deep the recursion goes"
+        code: wget -q -r -nH -l 1 http://localhost:8080/site/ && find site -type f | sort
+        description: "`-l` (`--level`) caps the depth. `-l 1` fetches the starting page and what it links to directly, stopping before `sub/deeper.html`, which is one link further on."
+        output: |2
+          site/a.html
+          site/img/logo.png
+          site/index.html
+          site/sub/deep.html
+        level: intermediate
+      - title: "Don't climb above the starting directory"
+        code: wget -q -r -nH -np http://localhost:8080/site/ && find . -name "*.html" | sort
+        description: "`-np` (`--no-parent`) refuses to follow a link that points at a parent directory, which is what stops a download of one section pulling in the whole site."
+        output: |2
+          ./site/a.html
+          ./site/index.html
+          ./site/sub/deep.html
+          ./site/sub/deeper.html
+        level: intermediate
+      - title: "Download only certain file types"
+        code: wget -q -r -nH -A html http://localhost:8080/site/ && find site -type f | sort
+        description: "`-A` (`--accept`) keeps only files matching the given suffixes or patterns. `wget` still fetches pages to find links, then deletes the ones that don't match."
+        output: |2
+          site/a.html
+          site/index.html
+          site/sub/deep.html
+          site/sub/deeper.html
+        level: advanced
+      - title: "Skip certain file types"
+        code: wget -q -r -nH -R png http://localhost:8080/site/ && find site -type f | sort
+        description: "`-R` (`--reject`) is the inverse of `-A`, for skipping images or archives when you only want the text."
+        output: |2
+          site/a.html
+          site/index.html
+          site/sub/deep.html
+          site/sub/deeper.html
+        level: advanced
+      - title: "Rewrite links so the copy works offline"
+        code: |-
+          wget -q -r -nH -k http://localhost:8080/site/
+          grep -o 'href="[^"]*"' site/index.html
+        description: "`-k` (`--convert-links`) rewrites each link to point at the downloaded copy where one exists, and to the absolute original where it doesn't."
+        output: |2
+          href="a.html"
+          href="http://localhost:8080/site/b.html"
+          href="img/logo.png"
+          href="sub/deep.html"
+          href="../top.html"
+          href="https://example.com/"
+        level: advanced
+      - title: "Mirror a site"
+        code: wget -q -m -nH http://localhost:8080/site/ && find site -type f | sort
+        description: "`-m` (`--mirror`) is shorthand for `-r -N -l inf --no-remove-listing`: recurse without a depth limit and only re-fetch what changed."
+        output: |2
+          site/a.html
+          site/img/logo.png
+          site/index.html
+          site/sub/deep.html
+          site/sub/deeper.html
+        level: advanced
+        tags: [sysadmin]
+      - title: "Ignore robots.txt"
+        code: wget -q -r -nH -e robots=off http://localhost:8080/site/ && find site -type f | sort
+        description: "`wget` obeys `robots.txt` by default. `-e robots=off` overrides that, which is reasonable on a server you own and rude on one you don't."
+        output: |2
+          site/a.html
+          site/b.html
+          site/img/logo.png
+          site/index.html
+          site/sub/deep.html
+          site/sub/deeper.html
+        danger: true
+        level: advanced
+
+  - title: "Timestamps and repeat downloads"
+    examples:
+      - title: "Only download if the remote copy is newer"
+        code: |-
+          wget -q http://localhost:8080/site/a.html
+          wget -N http://localhost:8080/site/a.html 2>&1 | tail -2
+        description: "`-N` (`--timestamping`) compares the local file's date against the server's `Last-Modified` and skips the transfer when there is nothing new."
+        output: |2
+          File 'a.html' not modified on server. Omitting download.
+        level: intermediate
+        tags: [sysadmin]
+      - title: "See the timestamp the server reports"
+        code: |-
+          wget -q http://localhost:8080/site/a.html
+          ls -l --time-style=long-iso a.html | awk '{print $6, $7, $8}'
+        description: "With `-N` or a plain download, `wget` sets the local file's modification time from the server's `Last-Modified` header rather than the time of the download."
+        output: |2
+          2026-07-05 15:35 a.html
+        level: advanced
+
+  - title: "Batch downloads and logging"
+    examples:
+      - title: "Download every URL listed in a file"
+        code: wget -q -i urls.txt && ls *.html
+        description: "`-i` (`--input-file`) reads one URL per line, the simplest way to hand `wget` a queue."
+        output: |2
+          a.html
+          b.html
+        level: intermediate
+        tags: [scripting]
+      - title: "Read the URL list from a pipe"
+        code: printf 'http://localhost:8080/site/a.html\n' | wget -q -i - && ls a.html
+        description: "`-i -` reads the list from stdin, so the URLs can be generated by whatever produced them rather than written to a file first."
+        output: |2
+          a.html
+        level: advanced
+        tags: [scripting, one-liners]
+      - title: "Write the report to a log file"
+        code: |-
+          wget -o wget.log http://localhost:8080/page.html
+          grep -c . wget.log
+        description: "`-o` (lowercase) redirects the progress report to a file. Note the case: `-O` names the downloaded file, `-o` names the log."
+        output: |2
+          8
+        level: intermediate
+      - title: "Append to an existing log instead of replacing it"
+        code: |-
+          wget -q -a wget.log http://localhost:8080/page.html
+          wget -q -a wget.log http://localhost:8080/site/a.html
+          grep -c "URL:" wget.log
+        description: "`-a` (`--append-output`) keeps the previous contents, which is what a nightly download script wants."
+        output: |2
+          0
+        level: advanced
+        tags: [sysadmin]
+
+  - title: "Practical patterns"
+    examples:
+      - title: "Unpack an archive without saving it first"
+        code: wget -q -O - http://localhost:8080/large.bin | wc -c
+        description: "Piping `-O -` into another command avoids a temporary file entirely. The same shape works with [`tar`](/commands/tar/): `wget -O - URL | tar -xz`."
+        output: |2
+          65000
+        level: advanced
+        tags: [one-liners]
+      - title: "Fail a script when the download fails"
+        code: |-
+          set -e
+          wget -q http://localhost:8080/page.html
+          echo "download succeeded"
+        description: "`wget` exits non-zero on failure, so `set -e` stops the script rather than carrying on with a missing or half-written file."
+        output: |2
+          download succeeded
+        level: intermediate
+        tags: [scripting]
+      - title: "Verify a download against a checksum"
+        code: |-
+          wget -q http://localhost:8080/large.bin
+          sha256sum large.bin
+        description: "Downloading a project's published `SHA256SUMS` alongside the file and running `sha256sum -c` is the standard way to confirm you got what the publisher shipped."
+        output: |2
+          5a83a98fc4047337cacd8fc2bb1f0905aabaa181942d96e03661f3ac75819e00  large.bin
+        level: intermediate
+        tags: [security]
+      - title: "Download several files at once"
+        code: |-
+          wget -q http://localhost:8080/site/a.html &
+          wget -q http://localhost:8080/site/b.html &
+          wait
+          ls *.html
+        description: "`wget` has no parallel mode of its own. Backgrounding each call and waiting is enough for a handful of files; reach for `xargs -P` for a long list."
+        output: |2
+          a.html
+          b.html
+        level: advanced
+        tags: [performance]

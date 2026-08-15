@@ -18,6 +18,7 @@ Determinism rules for anything added here: sort JSON keys, use a fixed two-space
 and never include a value derived from the clock, the client address, or a random source.
 """
 import json
+import socket
 import sys
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -42,9 +43,12 @@ GET  /status/CODE             answer with that status code
 GET  /delay/SECONDS           wait, then answer
 GET  /robots.txt              a small static file
 GET  /page.html               a small static HTML page
+GET  /site/index.html         a small linked site, for recursive download
+GET  /top.html                one level above /site/, for --no-parent
+GET  /large.bin               64KB, supports Range so a download can be resumed
 """
 
-ROBOTS = "User-agent: *\nDisallow: /deny\n"
+ROBOTS = "User-agent: *\nDisallow: /site/b.html\n"
 
 PAGE = """\
 <!doctype html>
@@ -52,6 +56,42 @@ PAGE = """\
 <h1>Test page</h1>
 <p>A small static page served by the local test server.</p>
 """
+
+# A tiny linked site, so the wget page can show recursive download, link conversion, and
+# --no-parent against something with real structure. Kept small on purpose: a reader
+# should be able to read the whole tree in the fixtures block.
+# Deliberately not flat: -l (depth) and -np (no-parent) can only be demonstrated against a
+# tree that has both a level below the starting point and a document above it.
+#
+#   /top.html                 above the starting directory, linked from the index
+#   /site/index.html          the starting point
+#   /site/{a,b}.html          one level down
+#   /site/img/logo.png        an image, for -A and -R
+#   /site/sub/deep.html       one level down, linking to
+#   /site/sub/deeper.html     two levels down, so -l 1 visibly stops short
+SITE = {
+    "/site/index.html": (
+        "<!doctype html>\n<title>Index</title>\n<h1>Index</h1>\n"
+        '<ul>\n<li><a href="a.html">Page A</a></li>\n<li><a href="b.html">Page B</a></li>\n'
+        '<li><a href="img/logo.png">Logo</a></li>\n'
+        '<li><a href="sub/deep.html">Deeper</a></li>\n'
+        '<li><a href="../top.html">Up a level</a></li>\n'
+        '<li><a href="https://example.com/">External</a></li>\n</ul>\n',
+        "text/html",
+    ),
+    "/site/a.html": ('<!doctype html>\n<title>Page A</title>\n<h1>Page A</h1>\n<p><a href="index.html">Back</a></p>\n', "text/html"),
+    "/site/b.html": ('<!doctype html>\n<title>Page B</title>\n<h1>Page B</h1>\n<p><a href="index.html">Back</a></p>\n', "text/html"),
+    "/site/sub/deep.html": ('<!doctype html>\n<title>Deeper</title>\n<h1>Deeper</h1>\n<p><a href="deeper.html">Deeper still</a></p>\n', "text/html"),
+    "/site/sub/deeper.html": ('<!doctype html>\n<title>Deeper still</title>\n<h1>Deeper still</h1>\n<p>Two levels below the index.</p>\n', "text/html"),
+    "/top.html": ('<!doctype html>\n<title>Top</title>\n<h1>Top</h1>\n<p>Above the site directory.</p>\n', "text/html"),
+    "/site/img/logo.png": ("PNG-PLACEHOLDER-" + "0123456789" * 6 + "\n", "image/png"),
+    # 64KB of deterministic filler, big enough for a partial download to be resumed.
+    "/large.bin": (("0123456789abcdef" * 4 + "\n") * 1000, "application/octet-stream"),
+}
+
+# Fixed so that -N (timestamping) and -S (server response) print the same thing on every
+# run. A real server would send the file's own mtime.
+LAST_MODIFIED = "Sun, 05 Jul 2026 15:35:00 GMT"
 
 
 def body(handler):
@@ -91,6 +131,40 @@ class Handler(BaseHTTPRequestHandler):
         if self.command != "HEAD":
             self.wfile.write(raw)
 
+    def send_static(self, text, content_type):
+        """Serves a file, honouring a Range request so `wget -c` can resume a partial
+        download, and sending a fixed Last-Modified so `wget -N` has something stable to
+        compare against."""
+        # wget -N (and curl -z) ask with If-Modified-Since and expect a 304 when the file
+        # has not changed. Without this the client reports that the server ignored the
+        # header, and timestamping silently turns itself off.
+        if self.headers.get("If-Modified-Since"):
+            self.send_response(304)
+            self.send_header("Last-Modified", LAST_MODIFIED)
+            self.end_headers()
+            return
+
+        raw = text.encode()
+        start = 0
+        rng = self.headers.get("Range", "")
+        if rng.startswith("bytes="):
+            try:
+                start = int(rng.split("=", 1)[1].split("-", 1)[0])
+            except ValueError:
+                start = 0
+        partial = 0 < start < len(raw)
+        chunk = raw[start:] if partial else raw
+        self.send_response(206 if partial else 200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(chunk)))
+        self.send_header("Accept-Ranges", "bytes")
+        self.send_header("Last-Modified", LAST_MODIFIED)
+        if partial:
+            self.send_header("Content-Range", f"bytes {start}-{len(raw) - 1}/{len(raw)}")
+        self.end_headers()
+        if self.command != "HEAD":
+            self.wfile.write(chunk)
+
     def request_headers(self):
         """The headers a caller would recognise, with the hop-by-hop noise dropped."""
         keep = ("Accept", "Accept-Encoding", "Authorization", "Content-Length",
@@ -127,6 +201,12 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_text(ROBOTS)
         if path == "/page.html":
             return self.send_text(PAGE, content_type="text/html")
+        if path in SITE:
+            return self.send_static(*SITE[path])
+        # A directory URL serves its index, the way a real server does — `wget -r` starts
+        # from http://host/site/ rather than naming index.html itself.
+        if path.endswith("/") and path + "index.html" in SITE:
+            return self.send_static(*SITE[path + "index.html"])
         if path in ("/get", "/post", "/put", "/delete"):
             return self.send_json(self.echo(self.path, body(self)))
         if path == "/headers":
@@ -172,5 +252,16 @@ class Handler(BaseHTTPRequestHandler):
     do_GET = do_POST = do_PUT = do_DELETE = do_HEAD = route
 
 
+class DualStackServer(ThreadingHTTPServer):
+    """Listens on IPv6 and, via the dual-stack socket Linux gives us, on IPv4 too.
+
+    Binding IPv4-only makes every client that resolves localhost to ::1 first print a
+    "Connection refused" line before falling back, which lands in the middle of the
+    documented output on both pages.
+    """
+
+    address_family = socket.AF_INET6
+
+
 if __name__ == "__main__":
-    ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
+    DualStackServer(("::", PORT), Handler).serve_forever()

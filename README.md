@@ -76,7 +76,7 @@ node scripts/verify-examples.mjs "$name" wc scripts/fixtures/wc.sh   # -> "wc: 2
 scripts/sandbox.sh stop "$name"
 ```
 
-Every command page replays at 100% — 485 documented outputs and 61 sample-file blocks. A number
+Every command page replays at 100% — 535 documented outputs and 64 sample-file blocks. A number
 of examples can't run in a batch (they
 need a concurrent writer, like `tail -f`); those are listed in a `.skip` file alongside a note on
 how they were verified, rather than being quietly dropped.

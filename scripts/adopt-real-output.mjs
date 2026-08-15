@@ -7,9 +7,9 @@
 // touches examples named explicitly on the command line — never a blanket rewrite. Use it
 // when the documented output was silently abridged and the real output is the truth.
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { parse } from "yaml";
-import { normalise } from "./lib/normalise.mjs";
+import { stripArtifacts } from "./lib/normalise.mjs";
 
 const argv = process.argv.slice(2);
 // Must mirror verify-examples.mjs: capturing as root when the page replays as `user`
@@ -45,9 +45,22 @@ const run = (cmd, opts = {}) =>
   );
 
 run(`rm -rf ${WORKDIR} && mkdir -p ${WORKDIR}${asUser ? ` && chown user:user ${WORKDIR}` : ""}`, { root: true });
+// Mirrors verify-examples.mjs: any Python helper in scripts/fixtures/ is installed into
+// the sandbox before the setup script runs, outside the working directory that is wiped
+// between examples.
+const helpers = readdirSync("scripts/fixtures").filter((f) => f.endsWith(".py"));
+if (helpers.length) {
+  run(`mkdir -p /opt/mock`, { root: true });
+  for (const helper of helpers) {
+    const encoded = Buffer.from(readFileSync(`scripts/fixtures/${helper}`, "utf-8"), "utf-8").toString("base64");
+    run(`echo ${encoded} | base64 -d > /opt/mock/${helper}`, { root: true });
+  }
+}
+
+const SETUP = `/tmp/setup-${command}.sh`;
 const setup64 = Buffer.from(readFileSync(setupPath, "utf-8"), "utf-8").toString("base64");
-run(`cd ${WORKDIR} && echo ${setup64} | base64 -d > .setup.sh; echo ok`);
-const restore = `find ${WORKDIR} -mindepth 1 -not -name ".setup.sh" -delete 2>/dev/null; bash ${WORKDIR}/.setup.sh >/dev/null 2>&1`;
+run(`echo ${setup64} | base64 -d > ${SETUP}; echo ok`);
+const restore = `find ${WORKDIR} -mindepth 1 -delete 2>/dev/null; bash ${SETUP} >/dev/null 2>&1`;
 
 // Exact titles, not substrings: "Find symlinks" is also a prefix of "Find symlinks that
 // point to a regular file", and a loose match silently adopts the wrong example's output
@@ -71,7 +84,7 @@ const script = [
 ].join("\n");
 let raw = "";
 try {
-  raw = run(`echo ${Buffer.from(script, "utf-8").toString("base64")} | base64 -d > /tmp/a.sh && bash /tmp/a.sh`);
+  raw = run(`echo ${Buffer.from(script, "utf-8").toString("base64")} | base64 -d > /tmp/adopt-${command}.sh && bash /tmp/adopt-${command}.sh`);
 } catch (e) {
   raw = `${e.stdout ?? ""}`;
 }
@@ -81,7 +94,7 @@ for (let i = 1; i < parts.length; i += 2) actual.set(Number(parts[i]), parts[i +
 
 let lines = readFileSync(path, "utf-8").split("\n");
 for (const { ex, i } of [...targets].reverse()) {
-  const got = normalise(actual.get(i) ?? "");
+  const got = stripArtifacts(actual.get(i) ?? "");
   if (!got) { console.log(`  SKIP (no output captured): ${ex.title}`); continue; }
   const titleIdx = lines.findIndex((l) => l.includes("- title:") && l.includes(ex.title.slice(0, 40)));
   if (titleIdx === -1) { console.log(`  SKIP (title not found): ${ex.title}`); continue; }

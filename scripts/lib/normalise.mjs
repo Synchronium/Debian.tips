@@ -19,6 +19,7 @@
 const timestamps = (s) =>
   s
     .replace(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)? [+-]\d{4}/g, "<TIMESTAMP>")
+    .replace(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\b/g, "<TIMESTAMP>")
     .replace(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun) [A-Z][a-z]{2} +\d+ \d{2}:\d{2}:\d{2} \d{4}\b/g, "<TIMESTAMP>")
     // Examples that archive a file they just created can only ever stamp it "now".
     .replace(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}\b/g, "<TIMESTAMP>");
@@ -37,6 +38,18 @@ const httpHeaders = (s) =>
     "$1: <VOLATILE>",
   );
 
+/** wget stamps every transfer report with the wall clock and the rate it achieved, and
+ *  draws a progress bar whose width and units depend on the terminal and the machine. */
+const wgetProgress = {
+  // The bar is redrawn with carriage returns and its width depends on the terminal, so it
+  // is an artifact: strip it outright rather than publishing one arbitrary frame.
+  bars: (s) => s.replace(/^\s*\d+K[ .]+[\s\S]*?\d+%[^\n]*$\n?/gm, ""),
+  // The achieved rate and elapsed time are real, and stay on the page; they just cannot be
+  // compared against a later run.
+  rates: (s) =>
+    s.replace(/\(\d+(\.\d+)? [KMGT]?B\/s\)/g, "(<RATE>)").replace(/=\d+(\.\d+)?s\b/g, "=<TIME>"),
+};
+
 /** curl shows a progress meter whenever its output is not a terminal — here, always. */
 const curlProgress = (s) =>
   s
@@ -54,7 +67,17 @@ const shellNoise = (s) =>
     .replace(/^bash: line \d+: /gm, "bash: ")
     .replace(/^Pseudo-terminal will not be allocated because stdin is not a terminal\.\n/gm, "");
 
-export function normalise(text) {
+/** Removes only the artifacts of running under the harness, leaving every real value
+ *  intact. This is what gets written into a page: a reader typing the command sees
+ *  exactly this, minus nothing they would actually have seen. */
+export function stripArtifacts(text) {
   const trimmed = text.replace(/\s+$/gm, "").replace(/\n+$/, "").trim();
-  return rates(curlProgress(shellNoise(httpHeaders(timestamps(trimmed)))));
+  return wgetProgress.bars(curlProgress(shellNoise(trimmed)));
+}
+
+/** stripArtifacts, plus masking of values nothing can pin. Used only to compare a page
+ *  against a fresh run — never to write a page, or the timestamps and rates on it would
+ *  read as literal <TIMESTAMP> and <RATE> placeholders instead of real captured output. */
+export function normalise(text) {
+  return rates(wgetProgress.rates(httpHeaders(timestamps(stripArtifacts(text)))));
 }

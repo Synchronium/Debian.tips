@@ -17,7 +17,7 @@
 // confirm that stays true, and it's what makes a `fixtures:` block trustworthy: if the
 // documented fixture doesn't reproduce the documented output, one of them is wrong.
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { parse } from "yaml";
 import { normalise } from "./lib/normalise.mjs";
 
@@ -83,7 +83,11 @@ const MARK = "@@EX@@";
 // Fixtures are restored before every example. Some examples legitimately mutate their
 // input (`sort -u -o file file`, `sed -i`), and a reader picking any single example off
 // the page expects the documented fixtures — not whatever an earlier example left behind.
-const restore = setupPath ? `find ${WORKDIR} -mindepth 1 -not -name ".setup.sh" -delete 2>/dev/null; bash ${WORKDIR}/.setup.sh >/dev/null 2>&1` : "true";
+// The setup script lives outside the working directory, not in it: an example that
+// lists the directory (`find .`, `ls -a`) would otherwise show .setup.sh, and that
+// harness internal would be adopted straight onto the page.
+const SETUP = `/tmp/setup-${command}.sh`;
+const restore = setupPath ? `find ${WORKDIR} -mindepth 1 -delete 2>/dev/null; bash ${SETUP} >/dev/null 2>&1` : "true";
 // Fixtures are checked in the same batch as the examples, after them, so their indices
 // continue the same marker sequence rather than needing a second pass over the sandbox.
 const fixtureCommands = fixtures.map((f) => f.from ?? `cat ${shellQuote(f.name)}`);
@@ -113,9 +117,22 @@ const run = (cmd, opts = {}) =>
 // The working directory is created as root either way, so hand it over when the examples
 // themselves run as `user` — otherwise the setup script can't write into it.
 run(`rm -rf ${WORKDIR} && mkdir -p ${WORKDIR}${asUser ? ` && chown user:user ${WORKDIR}` : ""}`, { root: true });
+// Any Python helper in scripts/fixtures/ is installed into the sandbox before the setup
+// script runs. http-mock.py is the local HTTP server the curl and wget pages exercise; it
+// lives outside the working directory because that directory is wiped before every single
+// example, and the server has to outlive them.
+const helpers = readdirSync("scripts/fixtures").filter((f) => f.endsWith(".py"));
+if (helpers.length) {
+  run(`mkdir -p /opt/mock`, { root: true });
+  for (const helper of helpers) {
+    const encoded = Buffer.from(readFileSync(`scripts/fixtures/${helper}`, "utf-8"), "utf-8").toString("base64");
+    run(`echo ${encoded} | base64 -d > /opt/mock/${helper}`, { root: true });
+  }
+}
+
 if (setupPath) {
   const setup64 = Buffer.from(readFileSync(setupPath, "utf-8"), "utf-8").toString("base64");
-  run(`cd ${WORKDIR} && echo ${setup64} | base64 -d > .setup.sh; echo setup-done`);
+  run(`echo ${setup64} | base64 -d > ${SETUP}; echo setup-done`);
 }
 
 let raw = "";
