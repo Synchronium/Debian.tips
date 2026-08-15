@@ -76,9 +76,9 @@ node scripts/verify-examples.mjs "$name" wc scripts/fixtures/wc.sh   # -> "wc: 2
 scripts/sandbox.sh stop "$name"
 ```
 
-Eleven pages currently replay at 100% — 357 documented outputs and 52 sample-file blocks across
-`wc`, `sort`, `uniq`, `cut`, `tr`, `head`, `diff`, `grep`, `sed`, `awk` and `find`. A handful of
-examples can't run in a batch (they
+Twelve pages currently replay at 100% — 399 documented outputs and 54 sample-file blocks across
+`wc`, `sort`, `uniq`, `cut`, `tr`, `head`, `diff`, `grep`, `sed`, `awk`, `find` and `chmod`. A
+handful of examples can't run in a batch (they
 need a concurrent writer, like `tail -f`); those are listed in a `.skip` file alongside a note on
 how they were verified, rather than being quietly dropped.
 

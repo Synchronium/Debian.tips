@@ -10,32 +10,61 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { parse } from "yaml";
 
-const [sandbox, command, setupPath, ...titles] = process.argv.slice(2);
+const argv = process.argv.slice(2);
+// Must mirror verify-examples.mjs: capturing as root when the page replays as `user`
+// bakes "root root" into every ls -l on the page.
+const asUser = argv[0] === "--user" ? (argv.shift(), true) : false;
+const [sandbox, command, setupPath, ...titles] = argv;
 if (!sandbox || !command || titles.length === 0) {
-  console.error('usage: adopt-real-output.mjs <sandbox> <command> <setup.sh> "<title>" ...');
+  console.error('usage: adopt-real-output.mjs [--user] <sandbox> <command> <setup.sh> "<title>"|--all');
   process.exit(2);
 }
 
 const path = `content/commands/${command}/examples.yaml`;
 const doc = parse(readFileSync(path, "utf-8"));
+let skipTitles = [];
+try {
+  skipTitles = readFileSync(`scripts/fixtures/${command}.skip`, "utf-8")
+    .split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
+} catch { /* no skip file */ }
+
 const all = [];
-for (const s of doc.sections) for (const ex of s.examples) if (ex.output !== undefined) all.push(ex);
+for (const s of doc.sections)
+  for (const ex of s.examples)
+    if (ex.output !== undefined && !skipTitles.some((t) => ex.title.includes(t))) all.push(ex);
 
 const WORKDIR = `/home/user/adopt-${command}`;
 const MARK = "@@EX@@";
 const q = (s) => `'${s.replace(/'/g, `'\\''`)}'`;
-const run = (cmd) =>
-  execFileSync("scripts/sandbox.sh", ["exec", sandbox, cmd], { encoding: "utf-8", maxBuffer: 64 * 1024 * 1024 });
+const run = (cmd, opts = {}) =>
+  execFileSync(
+    "scripts/sandbox.sh",
+    ["exec", ...(opts.root || !asUser ? [] : ["-u", "user"]), sandbox, cmd],
+    { encoding: "utf-8", maxBuffer: 64 * 1024 * 1024 },
+  );
 
-run(`rm -rf ${WORKDIR} && mkdir -p ${WORKDIR}`);
+run(`rm -rf ${WORKDIR} && mkdir -p ${WORKDIR}${asUser ? ` && chown user:user ${WORKDIR}` : ""}`, { root: true });
 const setup64 = Buffer.from(readFileSync(setupPath, "utf-8"), "utf-8").toString("base64");
 run(`cd ${WORKDIR} && echo ${setup64} | base64 -d > .setup.sh; echo ok`);
 const restore = `find ${WORKDIR} -mindepth 1 -not -name ".setup.sh" -delete 2>/dev/null; bash ${WORKDIR}/.setup.sh >/dev/null 2>&1`;
 
-const targets = all.map((ex, i) => ({ ex, i })).filter(({ ex }) => titles.some((t) => ex.title.includes(t)));
-if (targets.length !== titles.length) console.log(`warning: matched ${targets.length} of ${titles.length} titles`);
+// Exact titles, not substrings: "Find symlinks" is also a prefix of "Find symlinks that
+// point to a regular file", and a loose match silently adopts the wrong example's output
+// into the wrong block. Pass --all to take every example's real output instead.
+const wantAll = titles[0] === "--all";
+const targets = all
+  .map((ex, i) => ({ ex, i }))
+  .filter(({ ex }) => (wantAll ? true : titles.includes(ex.title)));
+if (!wantAll) {
+  const missing = titles.filter((t) => !all.some((ex) => ex.title === t));
+  if (missing.length) {
+    console.error(`no example titled: ${missing.map((t) => JSON.stringify(t)).join(", ")}`);
+    process.exit(2);
+  }
+}
 
 const script = [
+  "umask 0022",
   `cd ${WORKDIR}`,
   ...targets.map(({ ex, i }) => `${restore}\ncd ${WORKDIR}\nprintf '\\n${MARK}${i}\\n'\ntimeout 5 bash -c ${q(ex.code)} 2>&1`),
 ].join("\n");
@@ -51,7 +80,11 @@ for (let i = 1; i < parts.length; i += 2) actual.set(Number(parts[i]), parts[i +
 
 let lines = readFileSync(path, "utf-8").split("\n");
 for (const { ex, i } of [...targets].reverse()) {
-  const got = (actual.get(i) ?? "").replace(/\s+$/gm, "").replace(/^\n+|\n+$/g, "");
+  const got = (actual.get(i) ?? "")
+    .replace(/\s+$/gm, "")
+    .replace(/^\n+|\n+$/g, "")
+    // `bash -c` numbers its diagnostics; an interactive shell does not.
+    .replace(/^bash: line \d+: /gm, "bash: ");
   if (!got) { console.log(`  SKIP (no output captured): ${ex.title}`); continue; }
   const titleIdx = lines.findIndex((l) => l.includes("- title:") && l.includes(ex.title.slice(0, 40)));
   if (titleIdx === -1) { console.log(`  SKIP (title not found): ${ex.title}`); continue; }

@@ -3,7 +3,11 @@
 // real output against what the page documents.
 //
 //   scripts/sandbox.sh start                     # once
-//   node scripts/verify-examples.mjs <sandbox> <command> [setup.sh]
+//   node scripts/verify-examples.mjs [--user] <sandbox> <command> [setup.sh]
+//
+// --user runs everything as the unprivileged `user` instead of root. Pages about
+// permissions need it: root bypasses the checks it documents, so `chmod 600 /etc/shadow`
+// succeeds as root and can never print the "Operation not permitted" the page shows.
 //
 // Examples with no `output:` are skipped (nothing to compare). `setup.sh`, if given, is
 // run first inside the sandbox to create that page's fixture files.
@@ -16,9 +20,11 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { parse } from "yaml";
 
-const [sandbox, command, setupPath] = process.argv.slice(2);
+const argv = process.argv.slice(2);
+const asUser = argv[0] === "--user" ? (argv.shift(), true) : false;
+const [sandbox, command, setupPath] = argv;
 if (!sandbox || !command) {
-  console.error("usage: verify-examples.mjs <sandbox-name> <command> [setup.sh]");
+  console.error("usage: verify-examples.mjs [--user] <sandbox-name> <command> [setup.sh]");
   process.exit(2);
 }
 
@@ -75,6 +81,10 @@ const restore = setupPath ? `find ${WORKDIR} -mindepth 1 -not -name ".setup.sh" 
 // continue the same marker sequence rather than needing a second pass over the sandbox.
 const fixtureCommands = fixtures.map((f) => f.from ?? `cat ${shellQuote(f.name)}`);
 const script = [
+  // The container inherits umask 0000, which a real Debian system never has: a bare mkdir
+  // gives a 777 directory and a bare touch gives 666. Pages that print modes documented
+  // the normal 0022 behaviour, correctly, and failed against the artifact.
+  "umask 0022",
   `cd ${WORKDIR}`,
   ...[...examples.map((ex) => ex.code), ...fixtureCommands].map(
     (code, i) => `${restore}\ncd ${WORKDIR}\nprintf '\\n${MARK}${i}\\n'\ntimeout 5 bash -c ${shellQuote(code)} 2>&1`,
@@ -86,10 +96,16 @@ function shellQuote(s) {
 }
 
 const b64 = Buffer.from(script, "utf-8").toString("base64");
-const run = (cmd) =>
-  execFileSync("scripts/sandbox.sh", ["exec", sandbox, cmd], { encoding: "utf-8", maxBuffer: 64 * 1024 * 1024 });
+const run = (cmd, opts = {}) =>
+  execFileSync(
+    "scripts/sandbox.sh",
+    ["exec", ...(opts.root || !asUser ? [] : ["-u", "user"]), sandbox, cmd],
+    { encoding: "utf-8", maxBuffer: 64 * 1024 * 1024 },
+  );
 
-run(`rm -rf ${WORKDIR} && mkdir -p ${WORKDIR}`);
+// The working directory is created as root either way, so hand it over when the examples
+// themselves run as `user` — otherwise the setup script can't write into it.
+run(`rm -rf ${WORKDIR} && mkdir -p ${WORKDIR}${asUser ? ` && chown user:user ${WORKDIR}` : ""}`, { root: true });
 if (setupPath) {
   const setup64 = Buffer.from(readFileSync(setupPath, "utf-8"), "utf-8").toString("base64");
   run(`cd ${WORKDIR} && echo ${setup64} | base64 -d > .setup.sh; echo setup-done`);
@@ -97,7 +113,7 @@ if (setupPath) {
 
 let raw = "";
 try {
-  raw = run(`echo ${b64} | base64 -d > /tmp/run.sh && bash /tmp/run.sh`);
+  raw = run(`echo ${b64} | base64 -d > /tmp/run-${command}.sh && bash /tmp/run-${command}.sh`);
 } catch (err) {
   raw = `${err.stdout ?? ""}`;
 }
@@ -113,7 +129,11 @@ const normTimestamps = (s) =>
   s
     .replace(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)? [+-]\d{4}/g, "<TIMESTAMP>")
     .replace(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun) [A-Z][a-z]{2} +\d+ \d{2}:\d{2}:\d{2} \d{4}\b/g, "<TIMESTAMP>");
-const norm = (s) => normTimestamps(s.replace(/\s+$/gm, "").replace(/\n+$/, "").trim());
+// Examples run inside `bash -c`, which prefixes its diagnostics with the line number in
+// that script ("bash: line 1: ./backup.sh: Permission denied"). An interactive shell
+// prints no such prefix, so it's an artifact of the harness, not something to publish.
+const normBashLine = (s) => s.replace(/^bash: line \d+: /gm, "bash: ");
+const norm = (s) => normBashLine(normTimestamps(s.replace(/\s+$/gm, "").replace(/\n+$/, "").trim()));
 
 let match = 0;
 const differ = [];

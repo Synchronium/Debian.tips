@@ -74,8 +74,8 @@ bytes made visible with `sed "s/\r/␍/"`, or several files shown together with 
 The rule is that every rendered block is something a reader could actually produce; `from:` is
 never rendered, it only keeps the block honest.
 
-Eleven pages currently replay at 100% (wc, sort, uniq, cut, tr, head, diff, grep, sed, awk, find —
-357 outputs). `tar`, `chmod`, `crontab`, `ssh` and `curl` have no fixtures yet. If you touch a
+Twelve pages currently replay at 100% (wc, sort, uniq, cut, tr, head, diff, grep, sed, awk, find,
+chmod — 399 outputs). `tar`, `crontab`, `ssh` and `curl` have no fixtures yet. If you touch a
 covered page, re-run its replay; if you add examples to an uncovered one, consider adding them.
 
 Examples a batch can't replay (needing a concurrent writer or a network peer) are listed by title

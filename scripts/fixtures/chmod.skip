@@ -1,0 +1,4 @@
+# Which binaries are setuid depends on what is installed: the sandbox has mount, umount,
+# passwd and sudo on top of the five a minimal Debian shows. Verified by hand on a Debian
+# trixie box, where it printed gpasswd, chsh, chfn, newgrp and su.
+Find setuid binaries on the system

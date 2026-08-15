@@ -110,8 +110,10 @@ input. Pages whose output echoes the input (`cut`, `head`) often need none.
   captured `ls -lAR` of the tree — a reader can't evaluate `find projects -mtime +365` printing one
   path without seeing the other nine files and their dates. Capture it from the sandbox rather than
   writing it out: it encodes modes, sizes and mtimes at once, and all three must be set explicitly
-  in the setup script (the sandbox runs `umask 0000`, so a bare `mkdir` gives a 777 directory and
-  every `-perm` example then matches the whole tree).
+  in the setup script. Don't rely on the umask for a mode you assert on: the container's own umask
+  is 0000 (a bare `mkdir` gives a 777 directory), and while the replay forces the normal 0022, a
+  plain `scripts/sandbox.sh exec` does not — so the same command gives different modes depending
+  on how you ran it.
 - Then prove the two agree:
 
 ```sh
@@ -181,3 +183,13 @@ in steps 2 and 6. The gap when parallelizing across many pages at once: agents c
 other's `related:` targets or reuse each other's example ideas, so a consistency pass after the
 batch (voice, duplicate examples across pages, cross-links that should exist but don't) is still
 a separate step, not something this skill covers solo.
+### 4c. Two harness flags worth knowing
+
+`--user` runs the replay as the unprivileged `user` rather than root. Any page about
+permissions needs it: root bypasses the checks such a page documents, so `chmod 600 /etc/shadow`
+succeeds as root and can never print the "Operation not permitted" the page shows. Pass it to
+`adopt-real-output.mjs` too, or every captured `ls -l` says `root root`.
+
+`adopt-real-output.mjs ... --all` takes every example's real output instead of named titles,
+which is the right move after changing a page's fixtures wholesale. It honours the `.skip` file
+and matches titles exactly.
