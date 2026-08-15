@@ -141,8 +141,12 @@ export function layout(opts: LayoutOptions): string {
     },
   };
 
+  // No data-theme attribute: styles/site.css defaults to dark and honours
+  // prefers-color-scheme, so visitors without JS get their OS preference instead of
+  // being pinned to dark. THEME_SCRIPT sets an explicit attribute before paint for
+  // everyone else, which then wins over the media query in both directions.
   return html`<!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />

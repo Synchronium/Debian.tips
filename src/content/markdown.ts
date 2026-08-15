@@ -63,6 +63,19 @@ export async function highlightCode(code: string, lang: string): Promise<string>
   return fixLightThemeContrast(highlighter.codeToHtml(code, { lang: resolveLang(lang), themes: THEMES }));
 }
 
+/* The `any`s below are deliberate and confined to this file's AST plumbing.
+ *
+ * These plugins walk and mutate mdast/hast trees in place — turning code nodes into
+ * raw html nodes, rewriting blockquotes into asides — which the published `Node` types
+ * model as tagged unions that don't narrow usefully across a generic recursive walk.
+ * Typing it properly means taking `@types/mdast` and `@types/hast` as direct
+ * dependencies and rewriting both custom plugins against `unist-util-visit`; that's a
+ * real refactor of working, test-covered logic rather than an annotation pass, so it's
+ * a deliberate deferral, not an oversight. The rest of the codebase is strict
+ * (noUncheckedIndexedAccess, exactOptionalPropertyTypes) and should stay that way —
+ * don't take these as licence to reach for `any` elsewhere.
+ */
+
 function walk(node: any, visit: (n: any) => void): void {
   visit(node);
   if (Array.isArray(node.children)) {

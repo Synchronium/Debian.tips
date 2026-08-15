@@ -2,6 +2,15 @@
    1. Tokens
    ========================================================================== */
 
+/* Theme resolution, in cascade order:
+   1. dark is the base, so a page with no data-theme attribute still renders
+   2. visitors with no explicit choice follow prefers-color-scheme
+   3. an explicit data-theme (set by the toggle, or restored from localStorage
+      by the inline script in layout.ts) overrides both
+   The served HTML deliberately carries no data-theme attribute — hardcoding one
+   meant visitors without JS always got dark regardless of their OS setting,
+   since the script that reads the preference never ran. */
+:root,
 :root[data-theme="dark"] {
   --bg: #101318;
   --bg-surface: #171c24;
@@ -16,6 +25,25 @@
   --danger: #ff8080;
   --card-shadow: none;
 }
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #ffffff;
+    --bg-surface: #f6f7f9;
+    --bg-inset: #f0f1f4;
+    --border: #d8dce3;
+    --text: #1c2430;
+    --text-muted: #5b6572;
+    --accent: #b3134f;
+    --accent-hover: #8f0f3f;
+    --ok: #1a7f43;
+    --warn: #8a6100;
+    --danger: #b42318;
+    --card-shadow: 0 1px 3px rgb(0 0 0 / .08);
+  }
+}
+
+/* Last, so an explicit choice beats the media query above in both directions. */
 :root[data-theme="light"] {
   --bg: #ffffff;
   --bg-surface: #f6f7f9;
@@ -29,6 +57,20 @@
   --warn: #8a6100;
   --danger: #b42318;
   --card-shadow: 0 1px 3px rgb(0 0 0 / .08);
+}
+:root[data-theme="dark"] {
+  --bg: #101318;
+  --bg-surface: #171c24;
+  --bg-inset: #0b0e12;
+  --border: #2a3140;
+  --text: #e6e9ef;
+  --text-muted: #9aa4b2;
+  --accent: #ff7aa2;
+  --accent-hover: #ffa3bf;
+  --ok: #6fd08c;
+  --warn: #f2c14e;
+  --danger: #ff8080;
+  --card-shadow: none;
 }
 
 :root {
@@ -530,9 +572,23 @@ pre {
 pre.shiki {
   background-color: var(--bg-inset) !important;
 }
+/* Shiki writes the light theme into each span's inline `color` and carries the dark
+   theme alongside it as --shiki-dark, so dark is applied by overriding and light is
+   simply "don't override" — there's no way to un-override back to an inline style,
+   which is why these conditions are dark-positive while the token block above is
+   light-positive. (prefers-color-scheme resolves to exactly one of light/dark in
+   every current browser, so the two can't disagree.) Without the media query, a
+   visitor with no JS and a dark OS setting got light syntax colours on dark. */
 :root[data-theme="dark"] pre.shiki,
 :root[data-theme="dark"] pre.shiki span {
   color: var(--shiki-dark) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) pre.shiki,
+  :root:not([data-theme="light"]) pre.shiki span {
+    color: var(--shiki-dark) !important;
+  }
 }
 
 pre[data-prompt] .line::before {

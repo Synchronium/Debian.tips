@@ -67,7 +67,16 @@ export const exampleSchema = z.object({
   code: z.string().min(1),
   description: z.string().min(1),
   output: z.string().optional(),
+  /** Reserved, deliberately: validated and authored on every example, but no template
+   * renders it yet. Kept for a future difficulty badge / filter. Don't "clean up" as
+   * dead data, and keep setting it accurately when authoring — backfilling 600+
+   * examples later would be far more expensive than getting it right up front.
+   * `level` is conceptual difficulty; it is *not* a proxy for the `beginner` tag below
+   * (only 78 of 169 `basic` examples carry it, and 20 `advanced` ones do). */
   level: z.enum(LEVELS),
+  /** Reserved, same as `level` — validated against content/tags.yaml so a typo still
+   * fails the build, but not rendered anywhere yet. Coverage is currently partial
+   * (~47% of examples), so anything built on it needs to handle untagged examples. */
   tags: z.array(z.string()).optional(),
   danger: z.boolean().optional(),
 });

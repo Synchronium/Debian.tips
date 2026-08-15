@@ -32,6 +32,11 @@ function build(): void {
   const start = Date.now();
   try {
     execFileSync("npx", ["tsx", "src/build.ts"], { cwd: ROOT, stdio: "inherit" });
+    // build.ts wipes dist/ wholesale, so the index has to be regenerated alongside
+    // every rebuild or /pagefind/pagefind.js 404s and search silently does nothing
+    // locally. Measured at ~250ms against a ~1.6s rebuild — cheap enough that
+    // keeping search working beats shaving the rebuild.
+    execFileSync("npx", ["pagefind", "--site", "dist"], { cwd: ROOT, stdio: "ignore" });
     console.log(`rebuilt in ${Date.now() - start}ms`);
   } catch (err) {
     console.error("build failed:", (err as Error).message);

@@ -4,12 +4,28 @@ import { pageCard } from "./partials/card.js";
 import { CATEGORY_META, FEATURED_PATHS, NAV_ORDER, SITE } from "../config.js";
 import type { Page } from "../content/loader.js";
 
+/** Homepage ordering, in priority order: flagship command pages first, then most
+ * recently updated. `pages` arrives sorted by slug, so without this the preview would
+ * be the alphabetically-first six forever — new content would never reach the homepage,
+ * and on /commands/ the big reference pages (grep, find, sed) would be crowded out by
+ * whatever happens to sort early. Only categories with more than six pages actually
+ * truncate; for the rest this just reorders. */
+const TIER_RANK: Record<string, number> = { flagship: 0, standard: 1, light: 2 };
+
+function homepageOrder(a: Page, b: Page): number {
+  const rank = (p: Page): number => (p.tier ? (TIER_RANK[p.tier] ?? 3) : 3);
+  return rank(a) - rank(b) || b.updated.getTime() - a.updated.getTime();
+}
+
 export function homePage(pages: Page[], cssHref: string): string {
   const byUrl = new Map(pages.map((p) => [p.url, p]));
   const featured = FEATURED_PATHS.map((u) => byUrl.get(u)).filter((p): p is Page => Boolean(p));
 
   const sections = NAV_ORDER.map((cat) => {
-    const catPages = pages.filter((p) => p.category === cat).slice(0, 6);
+    const catPages = pages
+      .filter((p) => p.category === cat)
+      .sort(homepageOrder)
+      .slice(0, 6);
     if (catPages.length === 0) return "";
     return html`<section class="home-category">
 <h2><a href="${CATEGORY_META[cat].path}">${CATEGORY_META[cat].label}</a></h2>

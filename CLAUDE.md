@@ -72,6 +72,11 @@ examples file's `command:` field against the directory name.
 `dist/`. Category listing pages, tag pages, the homepage, sitemap, and RSS feed are all generated
 from the same loaded content model, not authored separately.
 
+Two fields on each example — `level` and `tags` — are validated but intentionally **not rendered
+by any template yet** (reserved for a future difficulty badge / filter; see the comments on
+`exampleSchema`). They look like dead data and aren't: keep authoring them accurately rather than
+stripping them.
+
 ### Command page grouping is not frontmatter-driven
 
 The `/commands/` listing page groups pages by topic (text processing, files & directories,
