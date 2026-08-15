@@ -71,6 +71,59 @@ nothing behind on the host:
 - Destructive examples (`rm`, `dd`, `mkfs`, `chmod -R`, `curl | sh`, etc.) get `danger: true` and
   the description must state the failure mode. Prefer teaching the safe variant first.
 
+### 4a. Rules that a replay pass has actually caught being broken
+
+Every one of these came from real examples on this site that looked fine and weren't. They're
+cheap to honour while writing and expensive to find later.
+
+- **The command must produce the output exactly as printed.** Not a variant you ran, not the same
+  command with an extra `| tail -n3`, not a different path. `grep -r "TODO" ~/projects` cannot
+  print relative paths — the shell expands `~` before grep sees it — so an example showing
+  `projects/app/main.ts:…` is unreproducible no matter how plausible it reads.
+- **Never abridge an `output:` block silently.** If the real output is 10 lines, show 10 or add a
+  `| head -N` to the command so the shown output is complete for what's shown.
+- **Commands that write to a file print nothing.** `sed -i`, `sort -o`, `crontab file` produce no
+  stdout. Either omit `output:` or make the command show its result (`… && cat file`).
+- **Make non-deterministic output deterministic.** awk array iteration order is unspecified (and
+  differs between mawk and gawk); `grep -r` and glob expansion follow directory order. Pipe
+  through `sort`, or narrow the glob, rather than documenting whatever one run happened to print.
+- **Don't let an example depend on the whole working directory.** `ls *.txt | wc -l` changes
+  answer whenever a fixture is added. Target a stable subset.
+- **Right-aligned output needs `output: |2`.** `wc` and `uniq -c` pad their columns. A plain `|`
+  block takes its indentation from the first line, so any later line indented *less* is silently
+  re-indented (or errors), quietly changing what the page claims the command prints. Use the
+  explicit indicator and keep the real padding.
+
+### 4b. Declare the sample data, then prove it
+
+Any example whose output can't be interpreted without seeing its input needs a `fixtures:` entry
+— above all where output is a summary (`wc -l file` → `40`) rather than a transformation of the
+input. Pages whose output echoes the input (`cut`, `head`) often need none.
+
+- Add a top-level `fixtures:` list to `examples.yaml` (`name`, optional `note`, `content`). It
+  renders as one collapsed block above the examples.
+- Mirror it in a setup script at `scripts/fixtures/<command>.sh` that recreates those files.
+- Then prove the two agree:
+
+```sh
+name=$(scripts/sandbox.sh start)
+node scripts/verify-examples.mjs "$name" <command> scripts/fixtures/<command>.sh
+scripts/sandbox.sh stop "$name"
+```
+
+It replays every example against freshly restored fixtures and diffs the real result against the
+page. **Aim for N/N.** A fixture that doesn't reproduce the documented output is worse than no
+fixture, because it looks like evidence.
+
+For examples a batch genuinely can't replay (needing a concurrent writer, like `tail -f`, or a
+network peer), list the title in `scripts/fixtures/<command>.skip` with a comment saying how it
+*was* verified. Don't leave it silently failing, and don't delete the example.
+
+Two helpers exist for repairs: `scripts/fix-output-whitespace.mjs` (rewrites blocks whose only
+problem is lost padding — it refuses anything differing in substance) and
+`scripts/adopt-real-output.mjs` (replaces named examples' output with the real capture; use when
+output was silently abridged).
+
 ## 5. Style guide (apply to every sentence)
 
 Direct, second person, no fluff, no "In today's fast-paced world." **British English in all
@@ -84,8 +137,13 @@ Avoid common AI tropes — em dashes, "it's not X, it's Y", "here's why that mat
 
 ## 6. Verify before calling it done
 
-Run `npm run check` (typecheck, tests, build, linkcheck). Fix any schema violation, missing tag,
-dead `related` link, or broken cross-link it surfaces — don't hand back a page that fails this.
+Two gates, and a command page needs both:
+
+1. `npm run check` (typecheck, tests, build, linkcheck). Fix any schema violation, missing tag,
+   dead `related` link, or broken cross-link it surfaces — don't hand back a page that fails this.
+2. `node scripts/verify-examples.mjs <sandbox> <command> scripts/fixtures/<command>.sh` for any
+   page with fixtures, and report the score. `npm run check` validates *shape*; only the replay
+   checks whether the outputs are true, which is the site's actual promise.
 
 ## Notes for future parallel/batch use
 

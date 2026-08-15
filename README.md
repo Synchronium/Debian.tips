@@ -62,6 +62,24 @@ standing up a real service (an example for `ssh` needs an actual `sshd` to conne
 machine you keep using. The container is thrown away afterwards regardless of what the example
 did to it. Requires Docker; the project's devcontainer has it out of the box via Docker-in-Docker.
 
+Command pages also declare the sample files their examples run against, shown on the page in a
+collapsed "Sample files used on this page" block — otherwise output like `wc -l report.txt` → `40`
+can't be checked by a reader who's never seen `report.txt`.
+
+That declaration is only worth anything if it's true, so it's machine-checked: every example on a
+page is replayed against freshly-restored fixtures and diffed against the output the page claims.
+
+```sh
+name=$(scripts/sandbox.sh start)
+node scripts/verify-examples.mjs "$name" wc scripts/fixtures/wc.sh   # -> "wc: 25/25 ..."
+scripts/sandbox.sh stop "$name"
+```
+
+Ten pages currently replay at 100% — 330 documented outputs across `wc`, `sort`, `uniq`, `cut`,
+`tr`, `head`, `diff`, `grep`, `sed` and `awk`. A handful of examples can't run in a batch (they
+need a concurrent writer, like `tail -f`); those are listed in a `.skip` file alongside a note on
+how they were verified, rather than being quietly dropped.
+
 ## Deployment
 
 Every push to `main` builds the site and publishes it to GitHub Pages via

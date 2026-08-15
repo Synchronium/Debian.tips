@@ -49,6 +49,34 @@ standing up a real service (an `ssh` example needs a real `sshd`; a `crontab` ex
 actually running) — the sandbox container is thrown away afterward regardless, so none of that
 persists on the devcontainer itself.
 
+### Replaying examples to prove the outputs are real
+
+A page's `output:` blocks are the site's core promise, and `npm run check` can't check them — it
+validates shape, not truth. `scripts/verify-examples.mjs` replays every example on a page inside
+the sandbox and diffs the real result against what the page claims:
+
+```sh
+name=$(scripts/sandbox.sh start)
+node scripts/verify-examples.mjs "$name" wc scripts/fixtures/wc.sh   # -> "wc: 25/25 ..."
+```
+
+Each page's sample data lives twice, deliberately: as a `fixtures:` block in `examples.yaml`
+(rendered on the page, collapsed) and as `scripts/fixtures/<command>.sh` (recreates those files in
+the sandbox). The replay is what keeps the two honest. Fixtures are restored before *every*
+example, because some legitimately mutate their input (`sed -i`, `sort -o`).
+
+Ten pages currently replay at 100% (wc, sort, uniq, cut, tr, head, diff, grep, sed, awk — 330
+outputs). `tar`, `chmod`, `crontab`, `ssh`, `curl` and `find` have no fixtures yet. If you touch a
+covered page, re-run its replay; if you add examples to an uncovered one, consider adding them.
+
+Examples a batch can't replay (needing a concurrent writer or a network peer) are listed by title
+in `scripts/fixtures/<command>.skip` with a note on how they were verified instead — they're
+excluded explicitly rather than quietly failing.
+
+The failure modes this has caught are written up in `.claude/skills/write-content-page/SKILL.md`
+§4a. The most easily-missed: `wc`/`uniq -c` right-align their columns, and a plain YAML `|` block
+silently strips that padding — such outputs need `output: |2`.
+
 ## Architecture
 
 ### Content pipeline
