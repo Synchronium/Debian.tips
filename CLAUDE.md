@@ -65,8 +65,8 @@ Each page's sample data lives twice, deliberately: as a `fixtures:` block in `ex
 the sandbox). The replay is what keeps the two honest. Fixtures are restored before *every*
 example, because some legitimately mutate their input (`sed -i`, `sort -o`).
 
-Ten pages currently replay at 100% (wc, sort, uniq, cut, tr, head, diff, grep, sed, awk — 330
-outputs). `tar`, `chmod`, `crontab`, `ssh`, `curl` and `find` have no fixtures yet. If you touch a
+Eleven pages currently replay at 100% (wc, sort, uniq, cut, tr, head, diff, grep, sed, awk, find —
+357 outputs). `tar`, `chmod`, `crontab`, `ssh` and `curl` have no fixtures yet. If you touch a
 covered page, re-run its replay; if you add examples to an uncovered one, consider adding them.
 
 Examples a batch can't replay (needing a concurrent writer or a network peer) are listed by title

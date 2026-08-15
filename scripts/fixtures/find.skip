@@ -1,0 +1,4 @@
+# Machine-specific by nature: the top-level directories under / are whatever the host
+# has, so no fixture can pin them. Verified by hand on a Debian trixie box, where it
+# printed /, /boot and /tmp as separate mount points.
+Stay on one filesystem

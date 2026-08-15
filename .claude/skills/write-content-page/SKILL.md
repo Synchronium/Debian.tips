@@ -85,8 +85,11 @@ cheap to honour while writing and expensive to find later.
 - **Commands that write to a file print nothing.** `sed -i`, `sort -o`, `crontab file` produce no
   stdout. Either omit `output:` or make the command show its result (`… && cat file`).
 - **Make non-deterministic output deterministic.** awk array iteration order is unspecified (and
-  differs between mawk and gawk); `grep -r` and glob expansion follow directory order. Pipe
-  through `sort`, or narrow the glob, rather than documenting whatever one run happened to print.
+  differs between mawk and gawk); `find`, `grep -r` and glob expansion follow directory order,
+  which is a hash order you cannot influence — four entries created `a,b,c,d` read back as
+  `d,b,c,a`. Pipe through `sort`, or narrow the glob, rather than documenting whatever one run
+  happened to print. Checksums count too: two fixture files with identical bytes produce identical
+  `md5sum` output, which reads on the page as though the fixture were broken.
 - **Don't let an example depend on the whole working directory.** `ls *.txt | wc -l` changes
   answer whenever a fixture is added. Target a stable subset.
 - **Right-aligned output needs `output: |2`.** `wc` and `uniq -c` pad their columns. A plain `|`
@@ -103,6 +106,12 @@ input. Pages whose output echoes the input (`cut`, `head`) often need none.
 - Add a top-level `fixtures:` list to `examples.yaml` (`name`, optional `note`, `content`). It
   renders as one collapsed block above the examples.
 - Mirror it in a setup script at `scripts/fixtures/<command>.sh` that recreates those files.
+- **If the input is a directory rather than a file** (`find`, `tar`, `ls`, `du`), the fixture is a
+  captured `ls -lAR` of the tree — a reader can't evaluate `find projects -mtime +365` printing one
+  path without seeing the other nine files and their dates. Capture it from the sandbox rather than
+  writing it out: it encodes modes, sizes and mtimes at once, and all three must be set explicitly
+  in the setup script (the sandbox runs `umask 0000`, so a bare `mkdir` gives a 777 directory and
+  every `-perm` example then matches the whole tree).
 - Then prove the two agree:
 
 ```sh
