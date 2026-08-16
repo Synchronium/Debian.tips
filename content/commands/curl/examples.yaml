@@ -2,7 +2,7 @@ command: curl
 fixtures:
   - name: "the local test server"
     note: "start it with `python3 http-mock.py` before running the examples — the script is in the site repo at `scripts/fixtures/http-mock.py`"
-    from: "curl -s http://localhost:8080/"
+    from: "curl -s http://127.0.0.1:8080/"
     content: |
       Local test server for the curl and wget pages.
 
@@ -31,7 +31,7 @@ sections:
     intro: "GET is the default. This section covers what curl shows you by default and how to see more."
     examples:
       - title: "Fetch a URL and print the body"
-        code: curl http://localhost:8080/page.html
+        code: curl http://127.0.0.1:8080/page.html
         description: "With no flags, curl sends a GET request and prints the response body to stdout."
         output: |2
           <!doctype html>
@@ -41,7 +41,7 @@ sections:
         level: basic
         tags: [beginner]
       - title: "Fetch only the response headers"
-        code: curl -I http://localhost:8080/page.html
+        code: curl -I http://127.0.0.1:8080/page.html
         description: "`-I` (`--head`) sends a HEAD request, same as GET but the server doesn't send a body, so you get headers only, fast."
         output: |2
           HTTP/1.0 200 OK
@@ -51,7 +51,7 @@ sections:
           Content-Length: 120
         level: basic
       - title: "Print response headers AND body"
-        code: curl -i http://localhost:8080/get
+        code: curl -i http://127.0.0.1:8080/get
         description: "`-i` (`--include`) keeps the GET request but includes the response headers above the body in the output."
         output: |2
           HTTP/1.0 200 OK
@@ -64,18 +64,18 @@ sections:
             "args": {},
             "headers": {
               "Accept": "*/*",
-              "Host": "localhost:8080",
+              "Host": "127.0.0.1:8080",
               "User-Agent": "curl/8.14.1"
             },
-            "url": "http://localhost:8080/get"
+            "url": "http://127.0.0.1:8080/get"
           }
         level: basic
       - title: "Silence the progress meter"
-        code: curl -s http://localhost:8080/page.html -o page.html
+        code: curl -s http://127.0.0.1:8080/page.html -o page.html
         description: "`-s` (`--silent`) suppresses the progress bar, useful in scripts where you don't want that noise in logs."
         level: basic
       - title: "Show both a response and any error, quietly"
-        code: curl -sS http://localhost:8080/page.html -o page.html
+        code: curl -sS http://127.0.0.1:8080/page.html -o page.html
         description: "`-sS` keeps `-s`'s quiet progress but restores error messages `-s` alone would also hide. The combination you want in almost every script."
         level: intermediate
         tags: [scripting]
@@ -83,39 +83,39 @@ sections:
     intro: "Choosing a filename, or letting curl pick one."
     examples:
       - title: "Save the response body to a named file"
-        code: curl -o page.html http://localhost:8080/page.html
+        code: curl -o page.html http://127.0.0.1:8080/page.html
         description: "`-o` (`--output`) writes the body to the filename you give it, instead of stdout."
         level: basic
       - title: "Save using the remote file's own name"
-        code: curl -O http://localhost:8080/robots.txt && cat robots.txt
+        code: curl -O http://127.0.0.1:8080/robots.txt && cat robots.txt
         description: "`-O` (`--remote-name`) names the local file after the last path segment of the URL: here, `robots.txt`."
         output: |2
           User-agent: *
           Disallow: /site/b.html
         level: intermediate
       - title: "Resume an interrupted download"
-        code: curl -C - -o robots.txt http://localhost:8080/robots.txt
+        code: curl -C - -o robots.txt http://127.0.0.1:8080/robots.txt
         description: "`-C -` asks curl to figure out how much of the local file already exists and resume from there, if the server supports range requests. Avoids re-downloading a large file from scratch after a dropped connection."
         level: advanced
   - title: "Status codes and scripting"
     intro: "Making curl's exit code and output actually reflect success or failure."
     examples:
       - title: "Print only the HTTP status code"
-        code: curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/page.html
+        code: curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8080/page.html
         description: "Discard the body (`-o /dev/null`), silence the progress meter (`-s`), print just the status code (`-w`): the standard one-liner for a health check."
         output: |2
           200
         level: intermediate
         tags: [monitoring]
       - title: "Get a 404 for a page that doesn't exist"
-        code: curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/missing.html
+        code: curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8080/missing.html
         description: "Without `--fail`, curl treats a 404 as a successfully completed transfer. It just happens to contain an error page."
         output: |2
           404
         level: intermediate
       - title: "Make curl itself fail on an HTTP error status"
         code: |-
-          curl --fail -s http://localhost:8080/missing.html
+          curl --fail -s http://127.0.0.1:8080/missing.html
           echo "exit=$?"
         description: "`--fail` (`-f`) turns a 4xx/5xx response into a non-zero exit code (`22`) instead of curl reporting success. This is the flag a script's error handling almost always needs."
         output: |2
@@ -133,22 +133,22 @@ sections:
     intro: "curl doesn't follow redirects unless you tell it to."
     examples:
       - title: "See a redirect without following it"
-        code: curl -s http://localhost:8080/redirect/1 -o /dev/null -w "%{http_code}\n"
+        code: curl -s http://127.0.0.1:8080/redirect/1 -o /dev/null -w "%{http_code}\n"
         description: "Without `-L`, curl reports the redirect's own status code (`302`) and doesn't request the new location."
         output: |2
           302
         level: intermediate
       - title: "Follow redirects to the final destination"
-        code: curl -Ls http://localhost:8080/redirect/1 -o /dev/null -w "%{http_code} %{url_effective}\n"
+        code: curl -Ls http://127.0.0.1:8080/redirect/1 -o /dev/null -w "%{http_code} %{url_effective}\n"
         description: "`-L` (`--location`) follows the `Location` header automatically; `%{url_effective}` shows where curl actually ended up."
         output: |2
-          200 http://localhost:8080/get
+          200 http://127.0.0.1:8080/get
         level: intermediate
   - title: "Sending data: POST, PUT, DELETE"
     intro: "GET is implicit; a request body usually switches curl to POST automatically."
     examples:
       - title: "Send form data with POST"
-        code: curl -X POST http://localhost:8080/post -d "name=deb1"
+        code: curl -X POST http://127.0.0.1:8080/post -d "name=deb1"
         description: "`-d` sends `application/x-www-form-urlencoded` data; `-X POST` is technically redundant here since `-d` already implies POST, but it's clearer to read."
         output: |2
           {
@@ -161,16 +161,16 @@ sections:
               "Accept": "*/*",
               "Content-Length": "9",
               "Content-Type": "application/x-www-form-urlencoded",
-              "Host": "localhost:8080",
+              "Host": "127.0.0.1:8080",
               "User-Agent": "curl/8.14.1"
             },
             "json": null,
-            "url": "http://localhost:8080/post"
+            "url": "http://127.0.0.1:8080/post"
           }
         level: basic
         tags: [beginner]
       - title: "POST without spelling out -X"
-        code: curl http://localhost:8080/post -d "name=deb1"
+        code: curl http://127.0.0.1:8080/post -d "name=deb1"
         description: "Confirms the point above: `-d` alone is enough to make curl send POST instead of GET."
         output: |2
           {
@@ -183,16 +183,16 @@ sections:
               "Accept": "*/*",
               "Content-Length": "9",
               "Content-Type": "application/x-www-form-urlencoded",
-              "Host": "localhost:8080",
+              "Host": "127.0.0.1:8080",
               "User-Agent": "curl/8.14.1"
             },
             "json": null,
-            "url": "http://localhost:8080/post"
+            "url": "http://127.0.0.1:8080/post"
           }
         level: intermediate
       - title: "Send a JSON body"
         code: |-
-          curl -X POST -H "Content-Type: application/json" -d '{"a":1}' http://localhost:8080/post
+          curl -X POST -H "Content-Type: application/json" -d '{"a":1}' http://127.0.0.1:8080/post
         description: "Set `Content-Type` yourself and pass raw JSON to `-d`. curl doesn't validate or reformat it, so make sure it's well-formed."
         output: |2
           {
@@ -203,17 +203,17 @@ sections:
               "Accept": "*/*",
               "Content-Length": "7",
               "Content-Type": "application/json",
-              "Host": "localhost:8080",
+              "Host": "127.0.0.1:8080",
               "User-Agent": "curl/8.14.1"
             },
             "json": {
               "a": 1
             },
-            "url": "http://localhost:8080/post"
+            "url": "http://127.0.0.1:8080/post"
           }
         level: intermediate
       - title: "Send a query string alongside a GET request"
-        code: curl -G --data-urlencode "q=hello world" http://localhost:8080/get
+        code: curl -G --data-urlencode "q=hello world" http://127.0.0.1:8080/get
         description: "`-G` forces curl back to GET while still using `--data-urlencode` to build and properly escape the query string. Otherwise `-d`'s data would go in the request body instead of the URL."
         output: |2
           {
@@ -222,14 +222,14 @@ sections:
             },
             "headers": {
               "Accept": "*/*",
-              "Host": "localhost:8080",
+              "Host": "127.0.0.1:8080",
               "User-Agent": "curl/8.14.1"
             },
-            "url": "http://localhost:8080/get?q=hello+world"
+            "url": "http://127.0.0.1:8080/get?q=hello+world"
           }
         level: advanced
       - title: "Update a resource with PUT"
-        code: curl -X PUT http://localhost:8080/put -d "status=updated"
+        code: curl -X PUT http://127.0.0.1:8080/put -d "status=updated"
         description: "Unlike POST, curl never infers PUT. `-X PUT` is required."
         output: |2
           {
@@ -242,19 +242,19 @@ sections:
               "Accept": "*/*",
               "Content-Length": "14",
               "Content-Type": "application/x-www-form-urlencoded",
-              "Host": "localhost:8080",
+              "Host": "127.0.0.1:8080",
               "User-Agent": "curl/8.14.1"
             },
             "json": null,
-            "url": "http://localhost:8080/put"
+            "url": "http://127.0.0.1:8080/put"
           }
         level: intermediate
       - title: "Remove a resource with DELETE"
-        code: curl -X DELETE http://localhost:8080/delete
+        code: curl -X DELETE http://127.0.0.1:8080/delete
         description: "Same story as PUT: DELETE has to be spelled out with `-X`."
         level: intermediate
       - title: "Upload a file as multipart form data"
-        code: curl -F "file=@robots.txt" http://localhost:8080/post
+        code: curl -F "file=@robots.txt" http://127.0.0.1:8080/post
         description: "`-F` (`--form`) sends `multipart/form-data`, the format needed to actually upload a file. `-d` can't do this. The `@` prefix tells curl to read the named file's contents rather than sending the literal string."
         level: intermediate
         tags: [files]
@@ -263,20 +263,20 @@ sections:
     examples:
       - title: "Add a custom request header"
         code: |-
-          curl -H "X-Test: yes" http://localhost:8080/headers
+          curl -H "X-Test: yes" http://127.0.0.1:8080/headers
         description: "`-H` adds one header per flag; repeat it for multiple headers."
         output: |2
           {
             "headers": {
               "Accept": "*/*",
-              "Host": "localhost:8080",
+              "Host": "127.0.0.1:8080",
               "User-Agent": "curl/8.14.1",
               "X-Test": "yes"
             }
           }
         level: intermediate
       - title: "Set a custom User-Agent"
-        code: curl -A "MyScript/1.0" http://localhost:8080/user-agent
+        code: curl -A "MyScript/1.0" http://127.0.0.1:8080/user-agent
         description: "`-A` (`--user-agent`) is shorthand for `-H \"User-Agent: ...\"`. Some APIs reject requests with curl's default user agent, so this comes up more often than you'd expect."
         output: |2
           {
@@ -287,7 +287,7 @@ sections:
     intro: "Basic auth and session cookies."
     examples:
       - title: "Authenticate with HTTP Basic auth"
-        code: curl -u user:pass http://localhost:8080/basic-auth/user/pass
+        code: curl -u user:pass http://127.0.0.1:8080/basic-auth/user/pass
         description: "`-u user:pass` sends the `Authorization: Basic ...` header curl builds from the credentials. Never hardcode real credentials in a script; read them from an environment variable or a credentials file instead."
         output: |2
           {
@@ -297,23 +297,23 @@ sections:
         level: intermediate
         tags: [security]
       - title: "See what an unauthenticated request gets"
-        code: curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/basic-auth/user/pass
+        code: curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8080/basic-auth/user/pass
         description: "Without `-u`, the same endpoint returns `401 Unauthorized`."
         output: |2
           401
         level: intermediate
       - title: "Save cookies from a response"
-        code: curl -c cookies.txt http://localhost:8080/cookies/set/session/abc123 && cat cookies.txt
+        code: curl -c cookies.txt http://127.0.0.1:8080/cookies/set/session/abc123 && cat cookies.txt
         description: "`-c` (`--cookie-jar`) writes any `Set-Cookie` headers to a file in Netscape cookie-file format."
         output: |2
           # Netscape HTTP Cookie File
           # https://curl.se/docs/http-cookies.html
           # This file was generated by libcurl! Edit at your own risk.
 
-          localhost	FALSE	/	FALSE	0	session	abc123
+          127.0.0.1	FALSE	/	FALSE	0	session	abc123
         level: advanced
       - title: "Send cookies from a saved file"
-        code: curl -b cookies.txt http://localhost:8080/cookies
+        code: curl -b cookies.txt http://127.0.0.1:8080/cookies
         description: "`-b` (`--cookie`) reads a cookie jar and sends its cookies with the request. Pair with `-c` to persist a session across multiple curl calls, the way a browser would."
         output: |2
           {
@@ -325,7 +325,7 @@ sections:
     examples:
       - title: "Give up after a fixed time"
         code: |-
-          curl -m 2 http://localhost:8080/delay/5 -o /dev/null
+          curl -m 2 http://127.0.0.1:8080/delay/5 -o /dev/null
           echo "exit=$?"
         description: "`-m` (`--max-time`) bounds the entire request; curl exits `28` on timeout. A script should treat that distinctly from a clean HTTP error."
         output: |2
@@ -334,7 +334,7 @@ sections:
         level: advanced
         tags: [scripting]
       - title: "Retry a failing request automatically"
-        code: curl --retry 2 --retry-delay 1 -o /dev/null -s -w "%{http_code}\n" http://localhost:8080/status/500
+        code: curl --retry 2 --retry-delay 1 -o /dev/null -s -w "%{http_code}\n" http://127.0.0.1:8080/status/500
         description: "`--retry` retries on transient failures and select 5xx responses, waiting `--retry-delay` seconds between attempts. Useful against flaky upstreams, not a substitute for `--fail` in the exit-code check."
         output: |2
           500
@@ -342,7 +342,7 @@ sections:
         tags: [scripting]
       - title: "What an untrusted certificate looks like"
         code: |-
-          curl -sS https://localhost:8443/page.html -o /dev/null
+          curl -sS https://127.0.0.1:8443/page.html -o /dev/null
           echo "exit=$?"
         description: "Exit `60` is curl declining to trust the certificate, not the server refusing the request. The test server generates a self-signed certificate for `--tls`, which is exactly what a freshly configured internal service looks like."
         output: |2
@@ -356,7 +356,7 @@ sections:
         level: advanced
         tags: [security]
       - title: "Skip TLS certificate verification"
-        code: curl -sk https://localhost:8443/page.html -o /dev/null -w "%{http_code}\n"
+        code: curl -sk https://127.0.0.1:8443/page.html -o /dev/null -w "%{http_code}\n"
         description: "`-k` (`--insecure`) turns that refusal off and the same request succeeds. Fine for a self-signed cert on a box you control during setup, never for anything handling real traffic or credentials — it disables the check that would tell you someone is in the middle."
         output: |2
           200
@@ -378,7 +378,7 @@ sections:
     examples:
       - title: "Check whether a site is up before proceeding"
         code: |-
-          if curl --fail -s -o /dev/null http://localhost:8080/page.html; then
+          if curl --fail -s -o /dev/null http://127.0.0.1:8080/page.html; then
             echo "site is up"
           fi
         description: "`--fail` plus `-s -o /dev/null` reduces the whole request to a plain yes/no exit code, ready for an `if`."
@@ -387,10 +387,10 @@ sections:
         level: intermediate
         tags: [scripting, monitoring]
       - title: "Extract one field from a JSON response"
-        code: curl -s http://localhost:8080/get | python3 -c "import json,sys; print(json.load(sys.stdin)['url'])"
+        code: curl -s http://127.0.0.1:8080/get | python3 -c "import json,sys; print(json.load(sys.stdin)['url'])"
         description: "curl doesn't parse JSON itself. Pipe into `python3 -c` (or `jq` if it's installed) to pull out a specific field."
         output: |2
-          http://localhost:8080/get
+          http://127.0.0.1:8080/get
         level: advanced
         tags: [one-liners]
       - title: "See the public IP a request would come from"

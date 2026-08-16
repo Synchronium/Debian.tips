@@ -12,7 +12,7 @@ Running it locally makes the responses ours, and therefore reproducible. The exa
 those pages point at this server, and the pages say how to start it, so a reader can
 recreate every result rather than take it on trust.
 
-    python3 scripts/fixtures/http-mock.py [port] [bind] [--tls]   # default 8080, loopback
+    python3 scripts/fixtures/http-mock.py [port] [bind] [--tls]   # default 8080, 127.0.0.1
 
 With --tls it serves the same endpoints over HTTPS with a self-signed certificate it
 generates on first use, which is what the curl page's `-k` examples need: against a
@@ -27,14 +27,19 @@ so a page can print a response verbatim instead of masking half of it. (The cert
 freshly generated and therefore different every run. That's fine, and deliberate: nothing
 documented depends on which certificate it is, only on nobody trusting it.)
 
-It listens on loopback only. Readers are told to run this on their own machine, and it is
+It listens on 127.0.0.1 only. Readers are told to run this on their own machine, and it is
 an unauthenticated server that echoes request headers (`Authorization` included) and will
 return any status code asked of it: nothing that should appear on a shared network. Pass
 a bind address explicitly to widen it.
+
+IPv4 rather than `localhost`, and the pages name 127.0.0.1 in their URLs for the same
+reason: what `localhost` resolves to is a property of the reader's machine, not of the
+command being documented. wget prints the address it resolved and connected to, so a page
+captured where localhost means ::1 shows output nobody on an IPv4-only host can reproduce
+— and a container with IPv6 switched off (a CI runner, commonly) can't even bind it.
 """
 import json
 import os
-import socket
 import ssl
 import subprocess
 import sys
@@ -51,7 +56,7 @@ if unknown:
     sys.exit(f"http-mock.py: unknown option {unknown[0]} (only --tls)")
 
 PORT = int(positional[0]) if positional else 8080
-BIND = positional[1] if len(positional) > 1 else "::1"
+BIND = positional[1] if len(positional) > 1 else "127.0.0.1"
 TLS = "--tls" in flags
 
 INDEX = """\
@@ -345,30 +350,14 @@ def self_signed_cert():
     return cert, key
 
 
-class V6Server(ThreadingHTTPServer):
-    """Listens on IPv6, which is what `localhost` resolves to first.
-
-    Binding IPv4-only makes every client that tries ::1 first print a "Connection
-    refused" line before falling back, and that lands in the middle of the documented
-    output on both pages. The default bind is ::1 — loopback — so use `localhost` in a
-    URL rather than 127.0.0.1, which a socket bound to ::1 will not accept.
-    """
-
-    address_family = socket.AF_INET6
-
-
 if __name__ == "__main__":
     try:
-        server = V6Server((BIND, PORT), Handler)
+        server = ThreadingHTTPServer((BIND, PORT), Handler)
     except OSError as err:
-        # Deliberately no fall back to 127.0.0.1. The curl and wget pages document a
-        # connection to ::1 — wget prints the address it connected to — so an IPv4 server
-        # would produce a page's worth of mismatches instead of one clear failure.
-        sys.exit(
-            f"http-mock.py: cannot bind [{BIND}]:{PORT} ({err}).\n"
-            "If this environment has no IPv6 loopback, the curl and wget pages need "
-            "recapturing against IPv4 rather than this server quietly moving."
-        )
+        # No silent fall back to another address: both pages print the address they
+        # connected to, so a server that quietly moves turns one environment difference
+        # into a page's worth of mismatches.
+        sys.exit(f"http-mock.py: cannot bind {BIND}:{PORT} ({err}).")
     if TLS:
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.load_cert_chain(*self_signed_cert())

@@ -208,16 +208,22 @@ to `main`. `.github/workflows/deploy.yml`: builds and publishes `dist/` to GitHu
 
 ### The local HTTP server
 
-The `curl` and `wget` pages point at `http://localhost:8080`, served by
+The `curl` and `wget` pages point at `http://127.0.0.1:8080`, served by
 `scripts/fixtures/http-mock.py` — thirteen-odd endpoints that echo a request, return a chosen
 status, redirect, delay, set a cookie, demand basic auth, or serve a small linked site with
 `Range` and `If-Modified-Since` support. `verify-examples.mjs` installs any `.py` under
 `scripts/fixtures/` into `/opt/mock/` in the sandbox, and each page's setup script starts it.
 
-It binds loopback (`::1`) by default, because readers are told to run it on their own machines and
-it echoes request headers — `Authorization` included — to anyone who asks. Use `localhost` in a
-URL rather than `127.0.0.1`, which an IPv6 loopback socket won't accept; pass a bind address as a
+It binds `127.0.0.1` by default, because readers are told to run it on their own machines and it
+echoes request headers — `Authorization` included — to anyone who asks. Pass a bind address as a
 second argument to widen it deliberately.
+
+The pages name `127.0.0.1` rather than `localhost` on purpose: what `localhost` resolves to is a
+property of the reader's machine. wget prints the address it resolved and connected to, so a page
+captured where `localhost` means `::1` shows two lines nobody on an IPv4-only host can reproduce —
+and a container with IPv6 switched off, which is what a CI runner often is, can't even bind it.
+Naming the address makes the same output true everywhere, and drops a resolution line that was
+never about wget.
 
 Public request-echo services were the obvious alternative and are the reason the curl page's
 outputs were fabricated before this: they answer with a trace id, a live date and the caller's

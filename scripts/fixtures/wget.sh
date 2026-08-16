@@ -18,15 +18,15 @@ start_mock() {  # port [extra http-mock.py args...]
   local scheme=http insecure=()
   if [ "${1:-}" = "--tls" ]; then scheme=https; insecure=(-k); fi
 
-  curl -s "${insecure[@]}" -o /dev/null --max-time 2 "$scheme://localhost:$port/" 2>/dev/null && return 0
+  curl -s "${insecure[@]}" -o /dev/null --max-time 2 "$scheme://127.0.0.1:$port/" 2>/dev/null && return 0
 
   python3 /opt/mock/http-mock.py "$port" "$@" > "/tmp/mock-$port.log" 2>&1 &
   for _ in $(seq 1 40); do
-    curl -s "${insecure[@]}" -o /dev/null --max-time 1 "$scheme://localhost:$port/" 2>/dev/null && return 0
+    curl -s "${insecure[@]}" -o /dev/null --max-time 1 "$scheme://127.0.0.1:$port/" 2>/dev/null && return 0
     sleep 0.1
   done
 
-  echo "fixtures: http-mock.py never answered on $scheme://localhost:$port/" >&2
+  echo "fixtures: http-mock.py never answered on $scheme://127.0.0.1:$port/" >&2
   cat "/tmp/mock-$port.log" >&2
   exit 1
 }
@@ -34,8 +34,8 @@ start_mock() {  # port [extra http-mock.py args...]
 start_mock 8080
 
 cat > urls.txt <<'EOF'
-http://localhost:8080/site/a.html
-http://localhost:8080/site/b.html
+http://127.0.0.1:8080/site/a.html
+http://127.0.0.1:8080/site/b.html
 EOF
 
 cat > body.json <<'EOF'

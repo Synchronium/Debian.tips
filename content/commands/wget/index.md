@@ -41,7 +41,7 @@ you intended. Two flags do most of the work: `-l` caps the depth, and `-np` stop
 climbing above the directory you started in. Add `-A`/`-R` to filter by extension.
 
 > [!NOTE]
-> The examples below run against `http://localhost:8080`, a small test server kept in
+> The examples below run against `http://127.0.0.1:8080`, a small test server kept in
 > this site's repository at `scripts/fixtures/http-mock.py`. Start it with
 > `python3 http-mock.py` and every result on this page is reproducible on your own
 > machine. Three things will differ: the timestamps, the transfer rates, and the progress

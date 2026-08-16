@@ -30,7 +30,7 @@ curl -v https://example.com           # GET, print the whole conversation (conne
 confusion is meaning "make a HEAD request" but reaching for `-i`.
 
 > [!NOTE]
-> Nearly every example below talks to `http://localhost:8080` — a small test server kept
+> Nearly every example below talks to `http://127.0.0.1:8080` — a small test server kept
 > in this site's repository at `scripts/fixtures/http-mock.py`. Start it with
 > `python3 http-mock.py` and each of those results is reproducible on your own machine,
 > byte for byte, because the server answers with a fixed date and no request id. Public
