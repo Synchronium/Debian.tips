@@ -117,9 +117,7 @@ input. Pages whose output echoes the input (`cut`, `head`) often need none.
 - Then prove the two agree:
 
 ```sh
-name=$(scripts/sandbox.sh start)
-node scripts/verify-examples.mjs "$name" <command> scripts/fixtures/<command>.sh
-scripts/sandbox.sh stop "$name"
+npm run replay -- <command>        # starts a sandbox, replays the page, stops it again
 ```
 
 It replays every example against freshly restored fixtures and diffs the real result against the
@@ -180,9 +178,11 @@ Two gates, and a command page needs both:
 
 1. `npm run check` (typecheck, tests, build, linkcheck). Fix any schema violation, missing tag,
    dead `related` link, or broken cross-link it surfaces — don't hand back a page that fails this.
-2. `node scripts/verify-examples.mjs <sandbox> <command> scripts/fixtures/<command>.sh` for any
-   page with fixtures, and report the score. `npm run check` validates *shape*; only the replay
-   checks whether the outputs are true, which is the site's actual promise.
+2. `npm run replay -- <command>` for any page with fixtures, and report the score (it starts and
+   stops its own sandbox; `node scripts/verify-examples.mjs <sandbox> <command>
+   scripts/fixtures/<command>.sh` is the same check against a sandbox you're already holding).
+   `npm run check` validates *shape*; only the replay checks whether the outputs are true, which
+   is the site's actual promise.
 
 ## Notes for future parallel/batch use
 

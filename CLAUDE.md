@@ -17,6 +17,7 @@ npm run dev      # dev server at http://localhost:4321, full rebuild on any file
 npm run build    # one-off production build to dist/
 npm test         # vitest run (unit + fixture-based build tests)
 npm run check    # tsc --noEmit && vitest run && build && pagefind && linkcheck — the full gate
+npm run replay   # replay every command page's examples in a sandbox (needs Docker, ~30s warm)
 ```
 
 Run `npm run check` before treating any change as done — it's also what CI runs (`.github/workflows/ci.yml`), followed by `pa11y-ci` as a separate accessibility gate.
@@ -56,9 +57,19 @@ validates shape, not truth. `scripts/verify-examples.mjs` replays every example 
 the sandbox and diffs the real result against what the page claims:
 
 ```sh
+npm run replay              # every page: starts one sandbox, runs them all, stops it
+npm run replay -- wget curl # just these
+
+# or drive one page directly, which is what the above does per page:
 name=$(scripts/sandbox.sh start)
 node scripts/verify-examples.mjs "$name" wc scripts/fixtures/wc.sh   # -> "wc (as root): 25/25 ..."
 ```
+
+`npm run replay` is **not** part of `npm run check` or CI yet. The reason is Docker rather than
+time: all seventeen pages replay in about 30 seconds once the sandbox image is built, and a cold
+run is dominated by that build. Wiring it in is a decision about what the CI runner provides and
+how much of a PR's wait is spent rebuilding an image, not a one-line change. Until then it's a
+command someone has to remember to run, which is the honest state of it.
 
 That invocation is correct for every page. Some pages have to replay as the unprivileged
 `user` — anything printing file ownership (`tar -tvf`, `ls -l`) or documenting a permission

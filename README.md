@@ -31,7 +31,7 @@ npm run check    # typecheck + tests + build + linkcheck — run before committi
 content/            Markdown + YAML content (commands, concepts, scripting, recipes, debian)
 src/                Generator: content pipeline, templates, dev server, build/linkcheck scripts
 src/templates/      Page templates and shared partials
-scripts/sandbox.sh  Disposable Docker sandbox for testing content examples (see below)
+scripts/            Sandbox, example replay (npm run replay), and content-fixture setup scripts
 styles/site.css     Full design system (single stylesheet, hashed on build)
 public/             Static assets copied as-is into dist/ (favicon, robots.txt, CNAME, search.js)
 test/               Vitest unit + build-pipeline tests, with fixture content
@@ -71,6 +71,10 @@ page is replayed against freshly-restored fixtures and diffed against the output
 and the sample-file blocks are re-read from the sandbox and diffed as well.
 
 ```sh
+npm run replay              # every page, in one throwaway container
+npm run replay -- wget curl # just these
+
+# the same thing one page at a time, if you want to keep the sandbox around
 name=$(scripts/sandbox.sh start)
 node scripts/verify-examples.mjs "$name" wc scripts/fixtures/wc.sh   # -> "wc (as root): 25/25 ..."
 scripts/sandbox.sh stop "$name"
