@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.20.1",
-    "typescript": "^5.7.3",
+    "typescript": "^7.0.2",
     "tsx": "^4.23.12",
     "zod": "^3.24.1",
     "gray-matter": "^4.0.3",
