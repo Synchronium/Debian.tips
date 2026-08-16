@@ -20,7 +20,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # The exact commit CI tested. A `workflow_run` job otherwise checks out the tip
           # of the default branch, which after a quick second push is a commit nothing has
