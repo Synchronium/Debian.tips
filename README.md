@@ -88,8 +88,23 @@ of examples can't run in a batch (they
 need a concurrent writer, like `tail -f`); those are listed in a `.skip` file alongside a note on
 how they were verified, rather than being quietly dropped.
 
-## Deployment
+## CI and deployment
 
-Every push to `main` builds the site and publishes it to GitHub Pages via
-`.github/workflows/deploy.yml`. Draft pages (`draft: true` in frontmatter) are excluded from
-production builds but visible in local dev.
+`.github/workflows/ci.yml` runs on every pull request and push to `main`, as two parallel jobs:
+
+- **check** — typecheck, tests, build, linkcheck, then `pa11y-ci` against the built site.
+- **replay** — every documented `output:` block re-run for real inside a disposable Debian
+  container and diffed against the page. Separate because it needs Docker, and because
+  "the generator is broken" and "a page is lying" are different problems.
+
+`.github/workflows/deploy.yml` then publishes to GitHub Pages, but only for a commit CI passed
+— it triggers on CI completing successfully and checks out that exact commit, so a red build
+can't reach the site. Draft pages (`draft: true` in frontmatter) are excluded from production
+builds but visible in local dev.
+
+Dependency updates come from Dependabot (`.github/dependabot.yml`), covering the npm toolchain,
+the GitHub Actions used above, and the devcontainer image. Updates are grouped into one pull
+request per ecosystem per week, and each goes through the same CI as anything else — which is
+the point: an automated bump is only safe to merge if something checks it. Dependabot has no
+status badge to display; the badges above are the two workflows, which is where a broken
+dependency would actually show up.

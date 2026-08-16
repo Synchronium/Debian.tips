@@ -1,12 +1,36 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for more information:
+# Dependabot opens pull requests when a dependency has a newer version. It has no dashboard
+# and no badge — the only visible sign it's working is the PRs it raises, each of which runs
+# through CI like any other, which is what makes an automated bump safe to merge here.
+#
+# Everything is grouped, so a week's updates arrive as one PR per ecosystem rather than
+# fifteen. Ungrouped, the noise is what stops people reading them.
+#
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
-# https://containers.dev/guide/dependabot
-
 version: 2
 updates:
- - package-ecosystem: "devcontainers"
-   directory: "/"
-   schedule:
-     interval: weekly
+  # The devcontainer base image and features.
+  - package-ecosystem: "devcontainers"
+    directory: "/"
+    schedule:
+      interval: weekly
+
+  # The generator's own toolchain. Every dependency here is a devDependency — nothing in
+  # this repository ships to a visitor's browser — so a bump can break the build or the
+  # tests, and can't introduce a runtime vulnerability in the published site.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      toolchain:
+        patterns: ["*"]
+
+  # The actions used by ci.yml and deploy.yml. Worth tracking: these run with write access
+  # to Pages, and a pinned major version stops receiving fixes silently.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]

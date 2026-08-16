@@ -1,14 +1,31 @@
 name: Deploy
+# Deploys only what CI passed. Previously this ran on every push to main independently, so
+# a red build — a broken link, a failing test, a page whose examples no longer reproduce —
+# went live anyway and the badge and the site disagreed.
+#
+# `workflow_run` fires when CI finishes, and GitHub only honours it from the workflow file
+# on the default branch, so this can't be bypassed from a branch.
 on:
-  push: { branches: [main] }
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
   workflow_dispatch: {}
 permissions: { contents: read, pages: write, id-token: write }
 concurrency: { group: pages, cancel-in-progress: true }
 jobs:
   build:
+    # `completed` includes failure and cancellation; only success should reach the site.
+    # Manual dispatch stays available for a re-deploy that isn't triggered by a push.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The exact commit CI tested. A `workflow_run` job otherwise checks out the tip
+          # of the default branch, which after a quick second push is a commit nothing has
+          # verified — deployed under the previous run's approval.
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci

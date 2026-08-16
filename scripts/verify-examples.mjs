@@ -20,7 +20,7 @@
 // confirm that stays true, and it's what makes a `fixtures:` block trustworthy: if the
 // documented fixture doesn't reproduce the documented output, one of them is wrong.
 import { execFileSync } from "node:child_process";
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { parse } from "yaml";
 import { MASK_TOKENS, normalise } from "./lib/normalise.mjs";
 import { loadSkipTitles, readSetupDirectives, shellQuote } from "./lib/replay.mjs";
@@ -102,6 +102,8 @@ const MARK = "@@EX@@";
 // lists the directory (`find .`, `ls -a`) would otherwise show .setup.sh, and that
 // harness internal would be adopted straight onto the page.
 const SETUP = `/tmp/setup-${command}.sh`;
+const COMMON_SRC = "scripts/fixtures/_common.sh";
+const COMMON = "/tmp/fixtures-common.sh";
 // Quiet for the per-example restores — a setup script that echoes would land in the
 // middle of the next example's output. It is run once, loudly, before the batch instead
 // (see `runSetupOnce` below), because a silently failing setup script produces a page's
@@ -147,6 +149,13 @@ if (helpers.length) {
 }
 
 if (setupPath) {
+  // The fixture bodies several pages share. Installed next to the setup script rather than
+  // in the working directory, which is wiped before every example, and by absolute path
+  // because the sandbox has no copy of this repository to source a relative one from.
+  if (existsSync(COMMON_SRC)) {
+    const common64 = Buffer.from(readFileSync(COMMON_SRC, "utf-8"), "utf-8").toString("base64");
+    run(`echo ${common64} | base64 -d > ${COMMON}`);
+  }
   const setup64 = Buffer.from(readFileSync(setupPath, "utf-8"), "utf-8").toString("base64");
   run(`echo ${setup64} | base64 -d > ${SETUP}`);
   // Run it once with its output visible and its exit status honoured. The per-example

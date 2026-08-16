@@ -7,7 +7,7 @@
 // touches examples named explicitly on the command line — never a blanket rewrite. Use it
 // when the documented output was silently abridged and the real output is the truth.
 import { execFileSync } from "node:child_process";
-import { readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { parse } from "yaml";
 import { stripArtifacts } from "./lib/normalise.mjs";
 import { loadSkipTitles, readSetupDirectives, shellQuote } from "./lib/replay.mjs";
@@ -55,6 +55,13 @@ if (helpers.length) {
 }
 
 const SETUP = `/tmp/setup-${command}.sh`;
+// Mirrors verify-examples.mjs: the shared fixture bodies go in beside the setup script,
+// which sources them by absolute path.
+const COMMON_SRC = "scripts/fixtures/_common.sh";
+if (existsSync(COMMON_SRC)) {
+  const common64 = Buffer.from(readFileSync(COMMON_SRC, "utf-8"), "utf-8").toString("base64");
+  run(`echo ${common64} | base64 -d > /tmp/fixtures-common.sh`);
+}
 const setup64 = Buffer.from(readFileSync(setupPath, "utf-8"), "utf-8").toString("base64");
 run(`echo ${setup64} | base64 -d > ${SETUP}; echo ok`);
 const restore = `find ${WORKDIR} -mindepth 1 -delete 2>/dev/null; bash ${SETUP} >/dev/null 2>&1`;
