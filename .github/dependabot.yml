@@ -2,8 +2,12 @@
 # and no badge — the only visible sign it's working is the PRs it raises, each of which runs
 # through CI like any other, which is what makes an automated bump safe to merge here.
 #
-# Everything is grouped, so a week's updates arrive as one PR per ecosystem rather than
-# fifteen. Ungrouped, the noise is what stops people reading them.
+# Minor and patch updates are grouped, so a week's routine bumps arrive as one PR per
+# ecosystem rather than fifteen; ungrouped, the noise is what stops people reading them.
+# Majors are deliberately left out of the groups and arrive one per PR. Grouping those too
+# produced a single PR carrying TypeScript 5 -> 7, Shiki 1 -> 4, Zod 3 -> 4 and @types/node
+# 22 -> 26 behind one merge button — the riskiest changes bundled into an all-or-nothing
+# review, next to a vitest patch.
 #
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 version: 2
@@ -24,6 +28,7 @@ updates:
     groups:
       toolchain:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   # The actions used by ci.yml and deploy.yml. Worth tracking: these run with write access
   # to Pages, and a pinned major version stops receiving fixes silently.
@@ -34,3 +39,4 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
