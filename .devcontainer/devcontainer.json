@@ -15,7 +15,14 @@
 		// for Debian trixie yet; this makes the feature install real docker-ce instead.
 		"ghcr.io/devcontainers/features/docker-in-docker:2": {
 			"moby": false
-		}
+		},
+		// The GitHub CLI, for reading CI results from in here. A failing `replay` job's log
+		// needs authentication to fetch — the anonymous API returns 403 — so without `gh` the
+		// only way to see why a run failed is to paste it in by hand. It isn't in Debian's
+		// repositories, so this feature (upstream apt repo) rather than postCreateCommand.
+		// Run `gh auth login` once after a rebuild; the credential lands in ~/.config/gh,
+		// which is on the container layer, so that's once per rebuild.
+		"ghcr.io/devcontainers/features/github-cli:1": {}
 	},
 	"privileged": true,
 
