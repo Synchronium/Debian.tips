@@ -1,7 +1,7 @@
 ---
 title: "tr"
 tagline: "Translate, delete, or squeeze characters one at a time"
-description: "36 tested tr examples: case conversion, deleting or squeezing character sets, the [^...] mistake, and real text-cleanup pipelines."
+description: "Tested tr examples: case conversion, deleting or squeezing character sets, the [^...] mistake, and real text-cleanup pipelines."
 category: commands
 tags: [text-processing]
 updated: 2026-08-14

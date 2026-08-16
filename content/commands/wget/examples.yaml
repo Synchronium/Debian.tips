@@ -23,6 +23,9 @@ fixtures:
       GET  /site/index.html         a small linked site, for recursive download
       GET  /top.html                one level above /site/, for --no-parent
       GET  /large.bin               64KB, supports Range so a download can be resumed
+
+      Run a second copy with --tls to serve all of the above over HTTPS, with a self-signed
+      certificate that nothing trusts.
   - name: urls.txt
     note: "the URL list the batch-download examples read"
     content: |

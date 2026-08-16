@@ -1,7 +1,7 @@
 ---
 title: "curl"
 tagline: "Transfer data to and from a server"
-description: "80+ tested curl examples: GET/POST/PUT/DELETE, headers, auth, cookies, uploads, redirects, retries, and scripting."
+description: "Tested curl examples: GET/POST/PUT/DELETE, headers, auth, cookies, uploads, redirects, retries, and scripting."
 category: commands
 tags: [networking, one-liners]
 updated: 2026-08-16
@@ -35,9 +35,11 @@ confusion is meaning "make a HEAD request" but reaching for `-i`.
 > `python3 http-mock.py` and each of those results is reproducible on your own machine,
 > byte for byte, because the server answers with a fixed date and no request id. Public
 > request-echo services drift, go down, and reply with a trace id and your own IP address,
-> none of which can be printed here as exact output. Four examples do reach the real
-> internet, because their subject is the network rather than curl's flags: the TLS
-> handshake, `-k`, the transfer timings, and the one that reports your public IP.
+> none of which can be printed here as exact output. The `-k` examples need HTTPS, so run
+> a second copy with `python3 http-mock.py 8443 --tls`: it generates a certificate nothing
+> trusts, which is the only way `-k` can visibly change anything. Three examples do reach
+> the real internet, because their subject is the network rather than curl's flags: the
+> TLS handshake, the transfer timings, and the one that reports your public IP.
 
 ## GET is implicit; other methods usually aren't
 

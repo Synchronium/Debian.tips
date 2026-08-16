@@ -1,7 +1,7 @@
 ---
 title: "head and tail"
 tagline: "Show the first or last part of a file"
-description: "27 tested head and tail examples: -n and -c, multiple files, negative/plus offsets, and following a growing log with -f vs -F."
+description: "Tested head and tail examples: -n and -c, multiple files, negative/plus offsets, and following a growing log with -f vs -F."
 category: commands
 tags: [text-processing, monitoring]
 updated: 2026-08-14

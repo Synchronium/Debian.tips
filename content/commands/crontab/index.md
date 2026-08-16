@@ -1,7 +1,7 @@
 ---
 title: "crontab"
 tagline: "Schedule recurring commands and manage per-user crontabs"
-description: "50+ tested crontab examples: schedule syntax, @reboot/@daily shortcuts, per-user crontabs, and the PATH gotcha that breaks jobs that work fine in your shell."
+description: "Tested crontab examples: schedule syntax, @reboot/@daily shortcuts, per-user crontabs, and the PATH gotcha that breaks jobs that work fine in your shell."
 category: commands
 tags: [cron, sysadmin, environment]
 updated: 2026-08-13

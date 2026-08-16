@@ -1,7 +1,7 @@
 ---
 title: "sort"
 tagline: "Sort lines: alphabetically, numerically, or by field"
-description: "50+ tested sort examples: numeric vs lexicographic order, sorting by field with -k, human-readable sizes with -h, and checking whether a file is already sorted."
+description: "Tested sort examples: numeric vs lexicographic order, sorting by field with -k, human-readable sizes with -h, and checking whether a file is already sorted."
 category: commands
 tags: [text-processing, one-liners]
 updated: 2026-08-13

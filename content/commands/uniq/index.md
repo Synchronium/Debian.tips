@@ -1,7 +1,7 @@
 ---
 title: "uniq"
 tagline: "Collapse or count adjacent duplicate lines"
-description: "30 tested uniq examples: why input must be sorted first, counting occurrences with -c, and isolating only the duplicates or only the singles."
+description: "Tested uniq examples: why input must be sorted first, counting occurrences with -c, and isolating only the duplicates or only the singles."
 category: commands
 tags: [text-processing, one-liners]
 updated: 2026-08-13

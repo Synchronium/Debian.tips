@@ -1,7 +1,7 @@
 ---
 title: "grep"
 tagline: "Search text with patterns"
-description: "80+ tested grep examples: recursive search, regex flavours, context lines, counting, scripting, and more."
+description: "Tested grep examples: recursive search, regex flavours, context lines, counting, scripting, and more."
 category: commands
 tags: [search, regex, text-processing]
 updated: 2026-07-05

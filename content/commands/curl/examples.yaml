@@ -23,6 +23,9 @@ fixtures:
       GET  /site/index.html         a small linked site, for recursive download
       GET  /top.html                one level above /site/, for --no-parent
       GET  /large.bin               64KB, supports Range so a download can be resumed
+
+      Run a second copy with --tls to serve all of the above over HTTPS, with a self-signed
+      certificate that nothing trusts.
 sections:
   - title: "Basic requests"
     intro: "GET is the default. This section covers what curl shows you by default and how to see more."
@@ -337,9 +340,24 @@ sections:
           500
         level: advanced
         tags: [scripting]
+      - title: "What an untrusted certificate looks like"
+        code: |-
+          curl -sS https://localhost:8443/page.html -o /dev/null
+          echo "exit=$?"
+        description: "Exit `60` is curl declining to trust the certificate, not the server refusing the request. The test server generates a self-signed certificate for `--tls`, which is exactly what a freshly configured internal service looks like."
+        output: |2
+          curl: (60) SSL certificate problem: self-signed certificate
+          More details here: https://curl.se/docs/sslcerts.html
+
+          curl failed to verify the legitimacy of the server and therefore could not
+          establish a secure connection to it. To learn more about this situation and
+          how to fix it, please visit the webpage mentioned above.
+          exit=60
+        level: advanced
+        tags: [security]
       - title: "Skip TLS certificate verification"
-        code: curl -sk https://example.com -o /dev/null -w "%{http_code}\n"
-        description: "`-k` (`--insecure`) disables certificate checks. Fine for a self-signed cert on a box you control during setup, never for anything handling real traffic or credentials."
+        code: curl -sk https://localhost:8443/page.html -o /dev/null -w "%{http_code}\n"
+        description: "`-k` (`--insecure`) turns that refusal off and the same request succeeds. Fine for a self-signed cert on a box you control during setup, never for anything handling real traffic or credentials — it disables the check that would tell you someone is in the middle."
         output: |2
           200
         level: advanced

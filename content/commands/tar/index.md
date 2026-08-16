@@ -1,7 +1,7 @@
 ---
 title: "tar"
 tagline: "Archive and compress files and directories"
-description: "50+ tested tar examples: create, list, and extract archives, back up incrementally, stream over ssh, and verify integrity."
+description: "Tested tar examples: create, list, and extract archives, back up incrementally, stream over ssh, and verify integrity."
 category: commands
 tags: [archives, files]
 updated: 2026-08-12

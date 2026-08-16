@@ -12,12 +12,20 @@ Running it locally makes the responses ours, and therefore reproducible. The exa
 those pages point at this server, and the pages say how to start it, so a reader can
 recreate every result rather than take it on trust.
 
-    python3 scripts/fixtures/http-mock.py [port] [bind]     # default 8080, loopback
+    python3 scripts/fixtures/http-mock.py [port] [bind] [--tls]   # default 8080, loopback
+
+With --tls it serves the same endpoints over HTTPS with a self-signed certificate it
+generates on first use, which is what the curl page's `-k` examples need: against a
+certificate a browser or curl has no reason to trust, `-k` visibly changes the outcome.
+Reaching a real HTTPS host instead would show `200` either way, demonstrating nothing, and
+would put a third party in the path of a check that is supposed to be self-contained.
 
 Determinism rules for anything added here: sort JSON keys, use a fixed two-space indent,
 and never include a value derived from the clock, the client address, or a random source.
 That extends to the framework's own headers — `Date` and `Server` are both pinned below,
-so a page can print a response verbatim instead of masking half of it.
+so a page can print a response verbatim instead of masking half of it. (The certificate is
+freshly generated and therefore different every run. That's fine, and deliberate: nothing
+documented depends on which certificate it is, only on nobody trusting it.)
 
 It listens on loopback only. Readers are told to run this on their own machine, and it is
 an unauthenticated server that echoes request headers (`Authorization` included) and will
@@ -25,15 +33,26 @@ return any status code asked of it: nothing that should appear on a shared netwo
 a bind address explicitly to widen it.
 """
 import json
+import os
 import socket
+import ssl
+import subprocess
 import sys
+import tempfile
 import time
 from email.utils import parsedate_to_datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
-BIND = sys.argv[2] if len(sys.argv) > 2 else "::1"
+flags = [a for a in sys.argv[1:] if a.startswith("-")]
+positional = [a for a in sys.argv[1:] if not a.startswith("-")]
+unknown = [f for f in flags if f != "--tls"]
+if unknown:
+    sys.exit(f"http-mock.py: unknown option {unknown[0]} (only --tls)")
+
+PORT = int(positional[0]) if positional else 8080
+BIND = positional[1] if len(positional) > 1 else "::1"
+TLS = "--tls" in flags
 
 INDEX = """\
 Local test server for the curl and wget pages.
@@ -55,6 +74,9 @@ GET  /page.html               a small static HTML page
 GET  /site/index.html         a small linked site, for recursive download
 GET  /top.html                one level above /site/, for --no-parent
 GET  /large.bin               64KB, supports Range so a download can be resumed
+
+Run a second copy with --tls to serve all of the above over HTTPS, with a self-signed
+certificate that nothing trusts.
 """
 
 ROBOTS = "User-agent: *\nDisallow: /site/b.html\n"
@@ -301,6 +323,28 @@ class Handler(BaseHTTPRequestHandler):
     do_GET = do_POST = do_PUT = do_DELETE = do_HEAD = route
 
 
+def self_signed_cert():
+    """A throwaway localhost certificate, generated once per temp directory.
+
+    Nothing trusts it, which is the entire point: it is what lets the page show curl
+    refusing a connection and then accepting the same one under `-k`. Generated rather
+    than committed, because a private key in a public repository is a bad habit even when
+    the key is worthless.
+    """
+    directory = os.path.join(tempfile.gettempdir(), "http-mock-tls")
+    os.makedirs(directory, exist_ok=True)
+    cert = os.path.join(directory, "cert.pem")
+    key = os.path.join(directory, "key.pem")
+    if not (os.path.exists(cert) and os.path.exists(key)):
+        subprocess.run(
+            ["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes",
+             "-keyout", key, "-out", cert, "-days", "365", "-subj", "/CN=localhost"],
+            check=True,
+            capture_output=True,
+        )
+    return cert, key
+
+
 class V6Server(ThreadingHTTPServer):
     """Listens on IPv6, which is what `localhost` resolves to first.
 
@@ -314,4 +358,9 @@ class V6Server(ThreadingHTTPServer):
 
 
 if __name__ == "__main__":
-    V6Server((BIND, PORT), Handler).serve_forever()
+    server = V6Server((BIND, PORT), Handler)
+    if TLS:
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.load_cert_chain(*self_signed_cert())
+        server.socket = context.wrap_socket(server.socket, server_side=True)
+    server.serve_forever()

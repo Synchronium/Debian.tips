@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     grep sed gawk findutils coreutils diffutils patch \
     curl rsync less man-db procps iproute2 iputils-ping \
     cron python3 wget \
-    sudo ca-certificates \
+    sudo ca-certificates openssl \
     && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -m -s /bin/bash user \

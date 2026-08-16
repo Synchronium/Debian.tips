@@ -1,7 +1,7 @@
 ---
 title: "wc"
 tagline: "Count lines, words, bytes, or characters in text"
-description: "26 tested wc examples: -l/-w/-c/-m, multi-file totals, the no-trailing-newline gotcha that undercounts lines, and pairing with grep for non-blank counts."
+description: "Tested wc examples: -l/-w/-c/-m, multi-file totals, the no-trailing-newline gotcha that undercounts lines, and pairing with grep for non-blank counts."
 category: commands
 tags: [text-processing]
 updated: 2026-08-14

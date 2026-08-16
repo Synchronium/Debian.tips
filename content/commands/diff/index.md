@@ -1,7 +1,7 @@
 ---
 title: "diff"
 tagline: "Compare files or directories and show what changed"
-description: "27 tested diff examples: unified and context formats, directory comparison, ignoring whitespace or case, and generating a patch file with patch to apply it."
+description: "Tested diff examples: unified and context formats, directory comparison, ignoring whitespace or case, and generating a patch file with patch to apply it."
 category: commands
 tags: [text-processing, files]
 updated: 2026-08-14

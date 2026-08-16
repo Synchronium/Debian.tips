@@ -1,7 +1,7 @@
 ---
 title: "ssh"
 tagline: "Log into and run commands on a remote machine securely"
-description: "60+ tested ssh examples: key-based auth, the config file, host key verification, port forwarding, multiplexing, and reading a failed connection."
+description: "Tested ssh examples: key-based auth, the config file, host key verification, port forwarding, multiplexing, and reading a failed connection."
 category: commands
 tags: [ssh, networking, security]
 updated: 2026-08-12

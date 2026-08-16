@@ -1,7 +1,7 @@
 ---
 title: "cut"
 tagline: "Extract columns by field or character position"
-description: "25+ tested cut examples: selecting fields with -f, character ranges with -c, custom delimiters, and the gotchas that push you toward awk instead."
+description: "Tested cut examples: selecting fields with -f, character ranges with -c, custom delimiters, and the gotchas that push you toward awk instead."
 category: commands
 tags: [text-processing]
 updated: 2026-08-14
