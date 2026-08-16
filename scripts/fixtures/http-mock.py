@@ -358,7 +358,17 @@ class V6Server(ThreadingHTTPServer):
 
 
 if __name__ == "__main__":
-    server = V6Server((BIND, PORT), Handler)
+    try:
+        server = V6Server((BIND, PORT), Handler)
+    except OSError as err:
+        # Deliberately no fall back to 127.0.0.1. The curl and wget pages document a
+        # connection to ::1 — wget prints the address it connected to — so an IPv4 server
+        # would produce a page's worth of mismatches instead of one clear failure.
+        sys.exit(
+            f"http-mock.py: cannot bind [{BIND}]:{PORT} ({err}).\n"
+            "If this environment has no IPv6 loopback, the curl and wget pages need "
+            "recapturing against IPv4 rather than this server quietly moving."
+        )
     if TLS:
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.load_cert_chain(*self_signed_cert())

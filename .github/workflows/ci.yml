@@ -22,3 +22,34 @@ jobs:
       - name: Wait for local server
         run: npx wait-on http://localhost:4321
       - run: npx pa11y-ci
+
+  # Runs every documented `output:` block on every command page for real, inside a
+  # disposable Debian container, and diffs the result against what the page claims. The
+  # `check` job above validates shape — schema, links, types — and would pass a page whose
+  # examples print something no command ever produced. This is the job that tests the
+  # site's actual promise, and it's separate because it needs Docker and its own image.
+  #
+  # A separate job rather than a step in `check` so the two run in parallel and a failure
+  # says which kind it is: "the generator is broken" and "a page is lying" want different
+  # people looking at them.
+  replay:
+    runs-on: ubuntu-latest
+    # The replay itself takes well under a minute for all seventeen pages; the budget is
+    # for building the sandbox image on a cold runner, plus room for a hung example that
+    # somehow escapes the per-example timeout.
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # Only the yaml parser is needed, but `npm ci` is what the lockfile guarantees.
+      - run: npm ci
+      # Built here rather than inside the first `sandbox.sh start` so the log shows image
+      # build time and replay time separately — if this job ever gets slow, that says
+      # which half to fix. Caching the image (docker buildx + actions/cache) is the next
+      # lever if the build dominates; it isn't worth the failure modes until it does.
+      - name: Build the sandbox image
+        run: docker build -t debian-tips-sandbox:trixie scripts/sandbox
+      - run: npm run replay

@@ -65,11 +65,12 @@ name=$(scripts/sandbox.sh start)
 node scripts/verify-examples.mjs "$name" wc scripts/fixtures/wc.sh   # -> "wc (as root): 25/25 ..."
 ```
 
-`npm run replay` is **not** part of `npm run check` or CI yet. The reason is Docker rather than
-time: all seventeen pages replay in about 30 seconds once the sandbox image is built, and a cold
-run is dominated by that build. Wiring it in is a decision about what the CI runner provides and
-how much of a PR's wait is spent rebuilding an image, not a one-line change. Until then it's a
-command someone has to remember to run, which is the honest state of it.
+`npm run replay` runs in CI as its own job (`.github/workflows/ci.yml`), in parallel with the
+`check` job, because "the generator is broken" and "a page is lying" want different people looking
+at them. It stays out of `npm run check` so that command needs nothing but Node: the replay needs
+Docker, and a check you can't run without a daemon isn't one to fold into the everyday gate. All
+seventeen pages replay in under 30 seconds; a cold CI run is dominated by building the sandbox
+image, which the workflow does as its own step so the log says which half any slowness is in.
 
 That invocation is correct for every page. Some pages have to replay as the unprivileged
 `user` — anything printing file ownership (`tar -tvf`, `ls -l`) or documenting a permission

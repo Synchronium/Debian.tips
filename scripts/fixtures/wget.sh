@@ -9,13 +9,29 @@
 # file and the page shows `user user`.
 # verify: --user
 
-if ! curl -s -o /dev/null --max-time 2 http://localhost:8080/ 2>/dev/null; then
-  python3 /opt/mock/http-mock.py 8080 >/dev/null 2>&1 &
+# Fails loudly if the server never answers. Every example on this page then reports a
+# mismatch, which reads as forty broken examples rather than one missing process — and the
+# reason (a port in use, no IPv6 loopback in this environment) is in the server's own
+# output, which is why that gets printed here rather than discarded.
+start_mock() {  # port [extra http-mock.py args...]
+  local port=$1; shift
+  local scheme=http insecure=()
+  if [ "${1:-}" = "--tls" ]; then scheme=https; insecure=(-k); fi
+
+  curl -s "${insecure[@]}" -o /dev/null --max-time 2 "$scheme://localhost:$port/" 2>/dev/null && return 0
+
+  python3 /opt/mock/http-mock.py "$port" "$@" > "/tmp/mock-$port.log" 2>&1 &
   for _ in $(seq 1 40); do
-    curl -s -o /dev/null --max-time 1 http://localhost:8080/ 2>/dev/null && break
+    curl -s "${insecure[@]}" -o /dev/null --max-time 1 "$scheme://localhost:$port/" 2>/dev/null && return 0
     sleep 0.1
   done
-fi
+
+  echo "fixtures: http-mock.py never answered on $scheme://localhost:$port/" >&2
+  cat "/tmp/mock-$port.log" >&2
+  exit 1
+}
+
+start_mock 8080
 
 cat > urls.txt <<'EOF'
 http://localhost:8080/site/a.html
