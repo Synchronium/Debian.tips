@@ -12,19 +12,28 @@ Running it locally makes the responses ours, and therefore reproducible. The exa
 those pages point at this server, and the pages say how to start it, so a reader can
 recreate every result rather than take it on trust.
 
-    python3 scripts/fixtures/http-mock.py [port]     # default 8080
+    python3 scripts/fixtures/http-mock.py [port] [bind]     # default 8080, loopback
 
 Determinism rules for anything added here: sort JSON keys, use a fixed two-space indent,
 and never include a value derived from the clock, the client address, or a random source.
+That extends to the framework's own headers — `Date` and `Server` are both pinned below,
+so a page can print a response verbatim instead of masking half of it.
+
+It listens on loopback only. Readers are told to run this on their own machine, and it is
+an unauthenticated server that echoes request headers (`Authorization` included) and will
+return any status code asked of it: nothing that should appear on a shared network. Pass
+a bind address explicitly to widen it.
 """
 import json
 import socket
 import sys
 import time
+from email.utils import parsedate_to_datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
+BIND = sys.argv[2] if len(sys.argv) > 2 else "::1"
 
 INDEX = """\
 Local test server for the curl and wget pages.
@@ -93,6 +102,11 @@ SITE = {
 # run. A real server would send the file's own mtime.
 LAST_MODIFIED = "Sun, 05 Jul 2026 15:35:00 GMT"
 
+# Every response carries a Date header, generated from the clock by the framework. Pinning
+# it is the difference between a page printing `curl -i` output verbatim and a page having
+# to mask a line — and a masked line is one a reader can never check.
+DATE = "Sun, 05 Jul 2026 15:40:00 GMT"
+
 
 def body(handler):
     """Reads the request body, decoded as UTF-8."""
@@ -106,6 +120,16 @@ class Handler(BaseHTTPRequestHandler):
     server_version = "mockhttp/1.0"
     sys_version = ""
 
+    def version_string(self):
+        """`server_version + " " + sys_version`, the default, leaves a trailing space on
+        every Server header when sys_version is empty. Invisible, legal, and enough to
+        make a page that prints the header not quite byte-for-byte true."""
+        return self.server_version
+
+    def date_time_string(self, timestamp=None):
+        """Pinned; see DATE."""
+        return DATE
+
     def log_message(self, *args):
         """Silent: the server runs in the background during a replay."""
 
@@ -118,7 +142,12 @@ class Handler(BaseHTTPRequestHandler):
         for key, value in extra_headers:
             self.send_header(key, value)
         self.end_headers()
-        self.wfile.write(raw)
+        # A HEAD response must not carry a body. It went unnoticed here because HTTP/1.0
+        # closes the connection, so the stray bytes died with the socket — but `wget
+        # --spider` against a JSON endpoint was reading them, and under keep-alive it
+        # would desynchronise every request after it.
+        if self.command != "HEAD":
+            self.wfile.write(raw)
 
     def send_text(self, text, status=200, content_type="text/plain", extra_headers=()):
         raw = text.encode()
@@ -138,11 +167,22 @@ class Handler(BaseHTTPRequestHandler):
         # wget -N (and curl -z) ask with If-Modified-Since and expect a 304 when the file
         # has not changed. Without this the client reports that the server ignored the
         # header, and timestamping silently turns itself off.
-        if self.headers.get("If-Modified-Since"):
-            self.send_response(304)
-            self.send_header("Last-Modified", LAST_MODIFIED)
-            self.end_headers()
-            return
+        #
+        # The date is compared rather than assumed. Answering 304 to any conditional
+        # request at all made the "not modified" branch the only branch this server could
+        # express: a reader who backdated their local copy to see wget fetch it again was
+        # told "not modified" by a server that had not read the question.
+        since = self.headers.get("If-Modified-Since")
+        if since:
+            try:
+                unchanged = parsedate_to_datetime(since) >= parsedate_to_datetime(LAST_MODIFIED)
+            except (TypeError, ValueError):
+                unchanged = False  # an unparseable date is not a claim about anything
+            if unchanged:
+                self.send_response(304)
+                self.send_header("Last-Modified", LAST_MODIFIED)
+                self.end_headers()
+                return
 
         raw = text.encode()
         start = 0
@@ -151,7 +191,16 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 start = int(rng.split("=", 1)[1].split("-", 1)[0])
             except ValueError:
-                start = 0
+                start = -1  # malformed: not a request for the whole file
+            # A range that starts at or past the end is unsatisfiable. Answering 200 with
+            # the whole file instead means `wget -c` on an already-complete download
+            # fetches it all over again rather than reporting that there is nothing to do.
+            if start >= len(raw) or start < 0:
+                self.send_response(416)
+                self.send_header("Content-Range", f"bytes */{len(raw)}")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
         partial = 0 < start < len(raw)
         chunk = raw[start:] if partial else raw
         self.send_response(206 if partial else 200)
@@ -252,16 +301,17 @@ class Handler(BaseHTTPRequestHandler):
     do_GET = do_POST = do_PUT = do_DELETE = do_HEAD = route
 
 
-class DualStackServer(ThreadingHTTPServer):
-    """Listens on IPv6 and, via the dual-stack socket Linux gives us, on IPv4 too.
+class V6Server(ThreadingHTTPServer):
+    """Listens on IPv6, which is what `localhost` resolves to first.
 
-    Binding IPv4-only makes every client that resolves localhost to ::1 first print a
-    "Connection refused" line before falling back, which lands in the middle of the
-    documented output on both pages.
+    Binding IPv4-only makes every client that tries ::1 first print a "Connection
+    refused" line before falling back, and that lands in the middle of the documented
+    output on both pages. The default bind is ::1 — loopback — so use `localhost` in a
+    URL rather than 127.0.0.1, which a socket bound to ::1 will not accept.
     """
 
     address_family = socket.AF_INET6
 
 
 if __name__ == "__main__":
-    DualStackServer(("::", PORT), Handler).serve_forever()
+    V6Server((BIND, PORT), Handler).serve_forever()

@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 # Fixtures for content/commands/chmod/examples.yaml — must match its `fixtures:` block.
 #
-# Run this page with `--user`: root bypasses the permission checks the page documents, so
-# `chmod 600 /etc/shadow` succeeds as root and `ls -l locked/` never reports a denial.
+# This page replays as the unprivileged `user`: root bypasses the permission checks the
+# page documents, so `chmod 600 /etc/shadow` succeeds as root and `ls -l locked/` never
+# reports a denial. The directive below is what makes that happen — verify-examples.mjs
+# and adopt-real-output.mjs both read it, so the documented invocation is correct here
+# without anyone having to remember a flag. Replayed as root, this page scores 9/42.
+# verify: --user
 #
 # Every mode is set explicitly (the sandbox runs with umask 0000, so a bare touch gives
 # 666 and a bare mkdir gives 777), and every mtime is pinned, because `ls -l` output is

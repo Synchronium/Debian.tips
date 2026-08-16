@@ -40,26 +40,29 @@ sections:
         code: wget http://localhost:8080/page.html
         description: "With no flags at all, `wget` works out the filename from the URL and writes it into the current directory, reporting progress on stderr as it goes."
         output: |2
-          --2026-08-15 21:37:59--  http://localhost:8080/page.html
+          --2026-08-16 09:29:30--  http://localhost:8080/page.html
           Resolving localhost (localhost)... ::1, 127.0.0.1
           Connecting to localhost (localhost)|::1|:8080... connected.
           HTTP request sent, awaiting response... 200 OK
           Length: 120 [text/html]
           Saving to: 'page.html'
-          2026-08-15 21:37:59 (49.0 MB/s) - 'page.html' saved [120/120]
+
+          2026-08-16 09:29:30 (32.7 MB/s) - 'page.html' saved [120/120]
         level: basic
         tags: [beginner]
       - title: "Save under a different name"
         code: wget -O homepage.html http://localhost:8080/page.html && ls homepage.html
         description: "`-O` (`--output-document`) names the output file explicitly, which also stops `wget` inventing a name from a URL that ends in a slash or a query string."
         output: |2
-          --2026-08-15 21:37:59--  http://localhost:8080/page.html
+          --2026-08-16 09:29:30--  http://localhost:8080/page.html
           Resolving localhost (localhost)... ::1, 127.0.0.1
           Connecting to localhost (localhost)|::1|:8080... connected.
           HTTP request sent, awaiting response... 200 OK
           Length: 120 [text/html]
           Saving to: 'homepage.html'
-          2026-08-15 21:37:59 (70.4 MB/s) - 'homepage.html' saved [120/120]
+
+          2026-08-16 09:29:30 (38.7 MB/s) - 'homepage.html' saved [120/120]
+
           homepage.html
         level: basic
         tags: [beginner]
@@ -110,6 +113,7 @@ sections:
         description: "`-nc` (`--no-clobber`) leaves the existing file alone and doesn't fetch a numbered copy either, which makes a re-run of a download script cheap."
         output: |2
           File 'page.html' already there; not retrieving.
+
           page.html
         level: intermediate
         tags: [scripting]
@@ -124,25 +128,28 @@ sections:
           ls -l large.bin
         description: "`-c` (`--continue`) asks the server for the rest of the file with a `Range` request rather than starting again. The server has to support ranges; this one does."
         output: |2
-          --2026-08-15 21:37:59--  http://localhost:8080/large.bin
+          --2026-08-16 09:29:30--  http://localhost:8080/large.bin
           Resolving localhost (localhost)... ::1, 127.0.0.1
           Connecting to localhost (localhost)|::1|:8080... connected.
           HTTP request sent, awaiting response... 206 Partial Content
           Length: 65000 (63K), 45000 (44K) remaining [application/octet-stream]
           Saving to: 'large.bin'
-          2026-08-15 21:37:59 (3.32 GB/s) - 'large.bin' saved [65000/65000]
+
+          2026-08-16 09:29:30 (600 MB/s) - 'large.bin' saved [65000/65000]
+
           -rw-r--r-- 1 user user 65000 Jul  5 15:35 large.bin
         level: intermediate
       - title: "Retry a transient failure a fixed number of times"
         code: wget --tries=2 --timeout=1 http://localhost:8080/delay/5 -O /dev/null
         description: "`--tries` caps the attempts, and the report labels each one after the first with `(try: N)`. The default is 20, which is a long time to wait on a server that has stopped answering."
         output: |2
-          --2026-08-15 21:37:59--  http://localhost:8080/delay/5
+          --2026-08-16 09:29:30--  http://localhost:8080/delay/5
           Resolving localhost (localhost)... ::1, 127.0.0.1
           Connecting to localhost (localhost)|::1|:8080... connected.
           HTTP request sent, awaiting response... Read error (Connection timed out) in headers.
           Retrying.
-          --2026-08-15 21:38:01--  (try: 2)  http://localhost:8080/delay/5
+
+          --2026-08-16 09:29:32--  (try: 2)  http://localhost:8080/delay/5
           Connecting to localhost (localhost)|::1|:8080... connected.
           HTTP request sent, awaiting response... Read error (Connection timed out) in headers.
           Giving up.
@@ -205,7 +212,7 @@ sections:
         code: wget -S --spider http://localhost:8080/page.html 2>&1 | grep -E "HTTP/|Content-Type|Content-Length"
         description: "`-S` (`--server-response`) prints the response headers. Combined with `--spider` it is a request that costs nothing but the round trip."
         output: |2
-          HTTP/1.0 200 OK
+            HTTP/1.0 200 OK
             Content-Type: text/html
             Content-Length: 120
         level: intermediate
@@ -334,8 +341,9 @@ sections:
         description: "`--save-cookies` writes a Netscape-format jar. Without `--keep-session-cookies` a session cookie is dropped on exit and the file comes back empty."
         output: |2
           # HTTP Cookie File
-          # Generated by Wget on 2026-08-15 21:38:08.
+          # Generated by Wget on 2026-08-16 09:29:33.
           # Edit at your own risk.
+
           localhost:8080	FALSE	/	FALSE	0	session	abc123
         level: advanced
       - title: "Send saved cookies with a later request"
@@ -517,12 +525,12 @@ sections:
         level: intermediate
       - title: "Append to an existing log instead of replacing it"
         code: |-
-          wget -q -a wget.log http://localhost:8080/page.html
-          wget -q -a wget.log http://localhost:8080/site/a.html
+          wget -nv -a wget.log http://localhost:8080/page.html
+          wget -nv -a wget.log http://localhost:8080/site/a.html
           grep -c "URL:" wget.log
-        description: "`-a` (`--append-output`) keeps the previous contents, which is what a nightly download script wants."
+        description: "`-a` (`--append-output`) keeps the previous contents where `-o` would truncate them, which is what a nightly download script wants. Pair it with `-nv`, not `-q`: `-q` silences the report the log is there to collect, so the file stays empty."
         output: |2
-          0
+          2
         level: advanced
         tags: [sysadmin]
 

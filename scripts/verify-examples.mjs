@@ -8,6 +8,9 @@
 // --user runs everything as the unprivileged `user` instead of root. Pages about
 // permissions need it: root bypasses the checks it documents, so `chmod 600 /etc/shadow`
 // succeeds as root and can never print the "Operation not permitted" the page shows.
+// Pages that need it say so themselves, with a `# verify: --user` line in their setup
+// script, so the command above is correct for every page and the flag is never something
+// you have to know in advance.
 //
 // Examples with no `output:` are skipped (nothing to compare). `setup.sh`, if given, is
 // run first inside the sandbox to create that page's fixture files.
@@ -19,40 +22,52 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 import { parse } from "yaml";
-import { normalise } from "./lib/normalise.mjs";
+import { MASK_TOKENS, normalise } from "./lib/normalise.mjs";
+import { loadSkipTitles, readSetupDirectives, shellQuote } from "./lib/replay.mjs";
 
 const argv = process.argv.slice(2);
-const asUser = argv[0] === "--user" ? (argv.shift(), true) : false;
+const asUserFlag = argv[0] === "--user" ? (argv.shift(), true) : false;
 const [sandbox, command, setupPath] = argv;
 if (!sandbox || !command) {
   console.error("usage: verify-examples.mjs [--user] <sandbox-name> <command> [setup.sh]");
   process.exit(2);
 }
 
+// The page's own setup script says how it has to be replayed; the flag is a manual
+// override for a page that has no setup script yet.
+const asUser = asUserFlag || readSetupDirectives(setupPath).asUser;
+
 const doc = parse(readFileSync(`content/commands/${command}/examples.yaml`, "utf-8"));
+
+const withOutput = [];
+for (const section of doc.sections) {
+  for (const ex of section.examples) {
+    if (ex.output !== undefined) withOutput.push({ section: section.title, ...ex });
+  }
+}
 
 // Some examples genuinely can't be replayed in a batch — they need a concurrent writer
 // (`tail -f`), a live log rotation, or a network peer. Those are listed by title in
-// scripts/fixtures/<command>.skip, one per line, with a comment saying how they were
-// verified instead. Everything not listed there must reproduce exactly.
-let skipTitles = [];
-try {
-  skipTitles = readFileSync(`scripts/fixtures/${command}.skip`, "utf-8")
-    .split("\n")
-    .map((l) => l.trim())
-    .filter((l) => l && !l.startsWith("#"));
-} catch {
-  /* no skip file: nothing is exempt */
-}
+// scripts/fixtures/<command>.skip, with a comment saying how they were verified instead.
+// Everything not listed there must reproduce exactly.
+const skipTitles = loadSkipTitles(command, withOutput.map((ex) => ex.title));
+const examples = withOutput.filter((ex) => !skipTitles.has(ex.title));
+const skipped = withOutput.filter((ex) => skipTitles.has(ex.title));
 
-const examples = [];
-const skipped = [];
-for (const section of doc.sections) {
-  for (const ex of section.examples) {
-    if (ex.output === undefined) continue;
-    if (skipTitles.some((t) => ex.title.includes(t))) skipped.push(ex.title);
-    else examples.push({ section: section.title, ...ex });
-  }
+// A documented output must never contain one of the tokens `normalise()` uses to mask a
+// volatile value. Those tokens are idempotent under masking, so a page carrying one
+// matches *any* real output forever: the example reads as verified, is counted in the
+// score, and can never fail again. Three curl blocks published `<VOLATILE>` to readers
+// this way. Cheaper to refuse them here than to hope the next sweep spots them.
+const masked = [...withOutput, ...(doc.fixtures ?? []).map((f) => ({ title: `fixture "${f.name}"`, output: f.content }))]
+  .filter((ex) => MASK_TOKENS.some((token) => ex.output.includes(token)));
+if (masked.length) {
+  console.error(
+    `${command}: ${masked.length} documented output(s) contain a normalisation mask, so they can never fail:\n` +
+      masked.map((ex) => `  ${JSON.stringify(ex.title)}`).join("\n") +
+      `\nRe-capture them with adopt-real-output.mjs — the mask belongs to the comparison, not to the page.`,
+  );
+  process.exit(2);
 }
 
 // The `fixtures:` block is what a reader is shown as the sample data, so it has to agree
@@ -87,10 +102,15 @@ const MARK = "@@EX@@";
 // lists the directory (`find .`, `ls -a`) would otherwise show .setup.sh, and that
 // harness internal would be adopted straight onto the page.
 const SETUP = `/tmp/setup-${command}.sh`;
+// Quiet for the per-example restores — a setup script that echoes would land in the
+// middle of the next example's output. It is run once, loudly, before the batch instead
+// (see `runSetupOnce` below), because a silently failing setup script produces a page's
+// worth of mismatches with nothing to say that no fixture was ever created.
 const restore = setupPath ? `find ${WORKDIR} -mindepth 1 -delete 2>/dev/null; bash ${SETUP} >/dev/null 2>&1` : "true";
 // Fixtures are checked in the same batch as the examples, after them, so their indices
 // continue the same marker sequence rather than needing a second pass over the sandbox.
 const fixtureCommands = fixtures.map((f) => f.from ?? `cat ${shellQuote(f.name)}`);
+
 const script = [
   // The container inherits umask 0000, which a real Debian system never has: a bare mkdir
   // gives a 777 directory and a bare touch gives 666. Pages that print modes documented
@@ -101,10 +121,6 @@ const script = [
     (code, i) => `${restore}\ncd ${WORKDIR}\nprintf '\\n${MARK}${i}\\n'\ntimeout 5 bash -c ${shellQuote(code)} </dev/null 2>&1 | head -c 100000`,
   ),
 ].join("\n");
-
-function shellQuote(s) {
-  return `'${s.replace(/'/g, `'\\''`)}'`;
-}
 
 const b64 = Buffer.from(script, "utf-8").toString("base64");
 const run = (cmd, opts = {}) =>
@@ -132,7 +148,21 @@ if (helpers.length) {
 
 if (setupPath) {
   const setup64 = Buffer.from(readFileSync(setupPath, "utf-8"), "utf-8").toString("base64");
-  run(`echo ${setup64} | base64 -d > ${SETUP}; echo setup-done`);
+  run(`echo ${setup64} | base64 -d > ${SETUP}`);
+  // Run it once with its output visible and its exit status honoured. The per-example
+  // restores discard both, which is right for them and wrong as the only run: a setup
+  // script that fails — a missing package, a syntax error, a port already taken — is
+  // otherwise indistinguishable from a page where every example is wrong.
+  let setupOut = "";
+  try {
+    setupOut = run(`cd ${WORKDIR} && bash ${SETUP} 2>&1 && echo __SETUP_OK__`);
+  } catch (err) {
+    setupOut = `${err.stdout ?? ""}${err.stderr ?? ""}`;
+  }
+  if (!setupOut.includes("__SETUP_OK__")) {
+    console.error(`${setupPath} failed inside the sandbox — no fixtures were created:\n${setupOut.trim()}`);
+    process.exit(2);
+  }
 }
 
 let raw = "";
@@ -169,19 +199,40 @@ fixtures.forEach((f, n) => {
 
 const skipNote = skipped.length ? ` (${skipped.length} not replayable in batch, see .skip file)` : "";
 const fixtureNote = fixtures.length ? `, ${fixtureMatch}/${fixtures.length} fixtures` : "";
+// The mode is part of the result, not part of the invocation: the same page scores 42/42
+// as `user` and 9/42 as root, so a score quoted without it means nothing.
 console.log(
-  `\n${command}: ${match}/${examples.length} documented outputs reproduce exactly${fixtureNote}${skipNote}\n`,
+  `\n${command} (as ${asUser ? "user" : "root"}): ${match}/${examples.length} documented outputs reproduce exactly${fixtureNote}${skipNote}\n`,
 );
+/** The first line that differs, quoted so whitespace is visible. A fixed-length prefix of
+ *  each side hid every difference that happened past the first 160 characters — which is
+ *  most of them, since a mismatch is usually one line deep in an otherwise-correct
+ *  block. Leading padding is exactly the kind of difference that has to be *visible* in
+ *  the report, not implied. */
+function firstDifference(want, got) {
+  const w = want.split("\n");
+  const g = got.split("\n");
+  const n = Math.max(w.length, g.length);
+  for (let i = 0; i < n; i++) {
+    if (w[i] !== g[i]) {
+      return [
+        `    line ${i + 1} of ${n} differs:`,
+        `      page: ${w[i] === undefined ? "(no such line)" : JSON.stringify(w[i])}`,
+        `      real: ${g[i] === undefined ? "(no such line)" : JSON.stringify(g[i])}`,
+      ].join("\n");
+    }
+  }
+  return "    (identical line by line — a trailing-newline difference)";
+}
+
 for (const d of differ) {
   console.log(`--- [${d.i}] ${d.ex.title}`);
   console.log(`    $ ${d.ex.code.split("\n")[0]}`);
-  console.log(`    want: ${JSON.stringify(d.want.slice(0, 160))}`);
-  console.log(`    got : ${JSON.stringify(d.got.slice(0, 160))}`);
+  console.log(firstDifference(d.want, d.got));
 }
 for (const d of fixturesDiffer) {
   console.log(`--- fixture "${d.name}" does not match what the setup script creates`);
   console.log(`    $ ${d.cmd}`);
-  console.log(`    want: ${JSON.stringify(d.want.slice(0, 160))}`);
-  console.log(`    got : ${JSON.stringify(d.got.slice(0, 160))}`);
+  console.log(firstDifference(d.want, d.got));
 }
 process.exit(differ.length + fixturesDiffer.length === 0 ? 0 : 1);

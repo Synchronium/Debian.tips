@@ -201,8 +201,8 @@ sections:
         code: diff -c nginx-old.conf nginx-new.conf
         description: "Shows both versions of each changed block in full, marked with !, rather than interleaving - and + lines — more verbose than unified, mostly seen in older codebases and some BSD tooling."
         output: |2
-          *** nginx-old.conf	Sat Aug 15 10:09:33 2026
-          --- nginx-new.conf	Sat Aug 15 10:09:33 2026
+          *** nginx-old.conf	Sun Aug 16 09:29:21 2026
+          --- nginx-new.conf	Sun Aug 16 09:29:21 2026
           ***************
           *** 1,10 ****
             server {
@@ -210,6 +210,7 @@ sections:
           !     server_name example.com;
                 root /var/www/html;
                 index index.html;
+
                 location / {
                     try_files $uri $uri/ =404;
                 }
@@ -221,6 +222,7 @@ sections:
           !     server_name example.com www.example.com;
                 root /var/www/html;
                 index index.html;
+
                 location / {
                     try_files $uri $uri/ =404;
                 }
@@ -240,6 +242,7 @@ sections:
           			     >	    server_name example.com
               root /var/www/html;		    root /var/www/html;
               index index.html;		    index index.html;
+
               location / {		    location / {
                   try_files $uri $uri/	        try_files $uri $uri/
           			     >	    }

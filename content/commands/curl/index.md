@@ -4,9 +4,9 @@ tagline: "Transfer data to and from a server"
 description: "80+ tested curl examples: GET/POST/PUT/DELETE, headers, auth, cookies, uploads, redirects, retries, and scripting."
 category: commands
 tags: [networking, one-liners]
-updated: 2026-07-05
+updated: 2026-08-16
 tier: flagship
-related: [tar, exit-codes-and-error-handling]
+related: [wget, tar, exit-codes-and-error-handling]
 ---
 
 `curl` sends an HTTP (or FTP, or a dozen other protocols') request and prints or saves whatever
@@ -30,12 +30,14 @@ curl -v https://example.com           # GET, print the whole conversation (conne
 confusion is meaning "make a HEAD request" but reaching for `-i`.
 
 > [!NOTE]
-> The examples below send their POSTs, redirects, cookies and auth challenges to
-> `http://localhost:8080` — a small test server kept in this site's repository at
-> `scripts/fixtures/http-mock.py`. Start it with `python3 http-mock.py` and every result on
-> this page is reproducible on your own machine. Public request-echo services drift, go
-> down, and answer with a trace id and your own IP address, none of which can be printed
-> here as exact output.
+> Nearly every example below talks to `http://localhost:8080` — a small test server kept
+> in this site's repository at `scripts/fixtures/http-mock.py`. Start it with
+> `python3 http-mock.py` and each of those results is reproducible on your own machine,
+> byte for byte, because the server answers with a fixed date and no request id. Public
+> request-echo services drift, go down, and reply with a trace id and your own IP address,
+> none of which can be printed here as exact output. Four examples do reach the real
+> internet, because their subject is the network rather than curl's flags: the TLS
+> handshake, `-k`, the transfer timings, and the one that reports your public IP.
 
 ## GET is implicit; other methods usually aren't
 

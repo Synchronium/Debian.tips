@@ -5,4 +5,7 @@ Follow a file in real time
 Filter a live-followed log for just the lines you care about
 Plain -f keeps watching the old file after rotation
 -F notices the replacement and follows the new file
-Stop following once a specific process exits
+
+# "Stop following once a specific process exits" belongs with those four and was verified
+# the same way, but it documents no `output:` block, so nothing replays it and listing it
+# here would exempt an example the harness never had. Named in a comment instead.

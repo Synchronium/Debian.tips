@@ -75,8 +75,8 @@ sections:
       - title: "Add text to the start of every line"
         code: sed "s/^/  /" config.conf
         description: "An empty match at `^` (start of line) still counts as a match. This is the standard indent-every-line idiom."
-        output: |
-          # Server configuration
+        output: |2
+            # Server configuration
             host=localhost
             port=8080
             debug=false

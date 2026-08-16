@@ -57,8 +57,16 @@ the sandbox and diffs the real result against what the page claims:
 
 ```sh
 name=$(scripts/sandbox.sh start)
-node scripts/verify-examples.mjs "$name" wc scripts/fixtures/wc.sh   # -> "wc: 25/25 ..."
+node scripts/verify-examples.mjs "$name" wc scripts/fixtures/wc.sh   # -> "wc (as root): 25/25 ..."
 ```
+
+That invocation is correct for every page. Some pages have to replay as the unprivileged
+`user` — anything printing file ownership (`tar -tvf`, `ls -l`) or documenting a permission
+denial, since root simply doesn't get denied — and each of those says so itself, with a
+`# verify: --user` line in its setup script that both `verify-examples.mjs` and
+`adopt-real-output.mjs` read. Replayed as root, `chmod` scores 9/42 and `tar` 32/42 on pages that
+are entirely correct, which reads exactly like a page that has drifted; the mode is part of the
+score, so it's printed alongside it.
 
 Each page's sample data lives twice, deliberately: as a `fixtures:` block in `examples.yaml`
 (rendered on the page, collapsed) and as `scripts/fixtures/<command>.sh` (recreates those files in
@@ -79,7 +87,18 @@ covered page, re-run its replay; if you add examples to an uncovered one, consid
 
 Examples a batch can't replay (needing a concurrent writer or a network peer) are listed by title
 in `scripts/fixtures/<command>.skip` with a note on how they were verified instead — they're
-excluded explicitly rather than quietly failing.
+excluded explicitly rather than quietly failing. Entries are matched exactly and must name a real
+example that documents an `output:` block; one that matches nothing is an error, because it reads
+as an exemption while exempting nothing.
+
+`scripts/lib/normalise.mjs` decides what a page is allowed to claim, and both tools share it:
+adopt writes its `stripArtifacts` output onto the page, verify compares its `normalise` output
+against a fresh run. That shared path is why a bug in it is invisible — it corrupts the page and
+then certifies the corruption — so it's covered by `test/normalise.test.ts`, and every mask is
+anchored to the line shape that produces it rather than applied to the whole output. A documented
+output may never contain a mask token (`<TIMESTAMP>`, `<RATE>`, `<VOLATILE>`, `<ELAPSED>`): the
+masks are idempotent, so a page carrying one would match any real output forever. The replay
+rejects that outright.
 
 The failure modes this has caught are written up in `.claude/skills/write-content-page/SKILL.md`
 §4a. The most easily-missed: `wc`/`uniq -c` right-align their columns, and a plain YAML `|` block
@@ -183,6 +202,11 @@ status, redirect, delay, set a cookie, demand basic auth, or serve a small linke
 `Range` and `If-Modified-Since` support. `verify-examples.mjs` installs any `.py` under
 `scripts/fixtures/` into `/opt/mock/` in the sandbox, and each page's setup script starts it.
 
+It binds loopback (`::1`) by default, because readers are told to run it on their own machines and
+it echoes request headers — `Authorization` included — to anyone who asks. Use `localhost` in a
+URL rather than `127.0.0.1`, which an IPv6 loopback socket won't accept; pass a bind address as a
+second argument to widen it deliberately.
+
 Public request-echo services were the obvious alternative and are the reason the curl page's
 outputs were fabricated before this: they answer with a trace id, a live date and the caller's
 public IP, so nothing they return can be printed as exact output. Both pages say in their prose
@@ -190,4 +214,8 @@ how to start the server, because an example that displays a URL the reader can't
 displaying output the shown command didn't produce.
 
 Anything added to the server must stay deterministic: sort JSON keys, keep the fixed indent, and
-never return a value from the clock, the client address, or a random source.
+never return a value from the clock, the client address, or a random source. That extends to the
+framework's own headers — `Date` and `Server` are both pinned — which is what lets a page print a
+`curl -i` response verbatim instead of masking half of it. Conditional requests compare the date
+they were given rather than assuming it, so `-N`/`-z` can demonstrate both branches, and a range
+past the end of a file gets a 416 rather than the whole file over again.

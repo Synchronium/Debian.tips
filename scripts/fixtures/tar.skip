@@ -1,5 +1,15 @@
-# Need a second machine: there is no sshd peer in the replay sandbox, and the point of
-# these two is the network hop, not tar's own behaviour. Verified by hand between two
-# Debian trixie containers with sshd running, where each transferred site/ intact.
-Stream a directory to another machine over ssh
-Pull an archive from a remote machine
+# No entries: this file is here for the note.
+#
+# Two examples on the tar page need a second machine —
+#
+#   "Send a directory to a remote host without a local archive file"
+#   "Pull a remote directory into a local archive over the same connection"
+#
+# — because the point of both is the network hop, not tar's own behaviour, and there is
+# no sshd peer in the replay sandbox. Neither documents an `output:` block, so neither is
+# replayed and neither needs exempting. They were verified by hand between two Debian
+# trixie containers running sshd, where each transferred site/ intact.
+#
+# Until now this file listed them under their *old* titles, which had been renamed. An
+# entry matching no example exempts nothing while reading as though it does; the harness
+# now rejects one rather than letting it sit here misinforming the next reader.

@@ -94,7 +94,7 @@ sections:
       - title: "Default output: lines, words, and bytes together"
         code: wc report.txt
         description: "With no flags, wc prints all three counts in a fixed order — lines, words, bytes — followed by the filename."
-        output: |
+        output: |2
            40 200 871 report.txt
         level: basic
         tags: [beginner]
@@ -128,7 +128,7 @@ sections:
       - title: "Combine short flags"
         code: wc -lw report.txt
         description: "Bundling `-l` and `-w` prints just those two counts, in that order, instead of all three defaults."
-        output: |
+        output: |2
            40 200 report.txt
         level: intermediate
 
@@ -236,7 +236,7 @@ sections:
       - title: "Bundle lines and bytes together"
         code: wc -lc report.txt
         description: "Any combination of the short flags can be bundled — this prints just lines and bytes, skipping words and the default full trio."
-        output: |
+        output: |2
            40 871 report.txt
         level: intermediate
       - title: "Count how many accounts exist on a system"

@@ -4,7 +4,7 @@ tagline: "Download files and mirror sites from the command line"
 description: "Tested wget examples: downloading, resuming, retries, authentication, recursive mirroring, and scripting with exit codes."
 category: commands
 tags: [networking, files]
-updated: 2026-08-15
+updated: 2026-08-16
 tier: standard
 related: [curl, tar, exit-codes-and-error-handling]
 ---
@@ -44,4 +44,5 @@ climbing above the directory you started in. Add `-A`/`-R` to filter by extensio
 > The examples below run against `http://localhost:8080`, a small test server kept in
 > this site's repository at `scripts/fixtures/http-mock.py`. Start it with
 > `python3 http-mock.py` and every result on this page is reproducible on your own
-> machine, including the timestamps and rates, which are the only parts that will differ.
+> machine. Three things will differ: the timestamps, the transfer rates, and the progress
+> bar, which is left out here because wget redraws it to fit your terminal.

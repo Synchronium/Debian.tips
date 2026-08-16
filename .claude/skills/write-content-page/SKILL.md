@@ -140,7 +140,16 @@ something a reader could actually produce rather than a hand-written summary:
 
 For examples a batch genuinely can't replay (needing a concurrent writer, like `tail -f`, or a
 network peer), list the title in `scripts/fixtures/<command>.skip` with a comment saying how it
-*was* verified. Don't leave it silently failing, and don't delete the example.
+*was* verified. Don't leave it silently failing, and don't delete the example. Titles are matched
+exactly and must name an example that documents an `output:` block — the harness rejects an entry
+that matches nothing, because a renamed title otherwise leaves the file claiming an exemption it
+no longer grants.
+
+If a page's output depends on who ran the command — file ownership in `ls -l` or `tar -tvf`, a
+path under `~`, a permission denial root would never see — put `# verify: --user` in its setup
+script. Both `verify-examples.mjs` and `adopt-real-output.mjs` read it, so the command above stays
+right for every page. Without it, replaying `chmod` as root reports 9/42 on a page that is
+perfectly correct, and that looks exactly like a page that has drifted.
 
 Two helpers exist for repairs: `scripts/fix-output-whitespace.mjs` (rewrites blocks whose only
 problem is lost padding — it refuses anything differing in substance) and
@@ -187,8 +196,10 @@ a separate step, not something this skill covers solo.
 
 `--user` runs the replay as the unprivileged `user` rather than root. Any page about
 permissions needs it: root bypasses the checks such a page documents, so `chmod 600 /etc/shadow`
-succeeds as root and can never print the "Operation not permitted" the page shows. Pass it to
-`adopt-real-output.mjs` too, or every captured `ls -l` says `root root`.
+succeeds as root and can never print the "Operation not permitted" the page shows. Prefer
+recording it as `# verify: --user` in the page's setup script rather than typing the flag —
+both tools read it, which is what stops a page being captured as `user` and later checked as
+root, or the reverse. The flag remains for a page that has no setup script yet.
 
 `adopt-real-output.mjs ... --all` takes every example's real output instead of named titles,
 which is the right move after changing a page's fixtures wholesale. It honours the `.skip` file

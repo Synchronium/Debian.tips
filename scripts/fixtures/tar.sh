@@ -8,6 +8,10 @@
 # earlier example, since fixtures are restored before every example. They are built with
 # --sort=name so the member order — and therefore every listing on the page — is fixed;
 # tar otherwise stores entries in directory order, which is a hash order here.
+#
+# Replays as the unprivileged `user`, because `tar -tvf` prints an owner/group column for
+# every member. As root the same page scores 32/42, all of them `root/root`.
+# verify: --user
 
 mkdir -p site/img site/css restore restore2 backups
 

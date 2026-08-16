@@ -72,11 +72,14 @@ and the sample-file blocks are re-read from the sandbox and diffed as well.
 
 ```sh
 name=$(scripts/sandbox.sh start)
-node scripts/verify-examples.mjs "$name" wc scripts/fixtures/wc.sh   # -> "wc: 25/25 ..."
+node scripts/verify-examples.mjs "$name" wc scripts/fixtures/wc.sh   # -> "wc (as root): 25/25 ..."
 scripts/sandbox.sh stop "$name"
 ```
 
-Every command page replays at 100% — 535 documented outputs and 64 sample-file blocks. A number
+Every command page replays at 100% — 535 documented outputs and 64 sample-file blocks. Pages
+whose output depends on who ran the command (file ownership, a `~` path, a permission denial) say
+so with a `# verify: --user` line in their setup script, which both tools read; the mode is
+printed with the score, since the same page scores differently under each. A number
 of examples can't run in a batch (they
 need a concurrent writer, like `tail -f`); those are listed in a `.skip` file alongside a note on
 how they were verified, rather than being quietly dropped.
