@@ -20,8 +20,8 @@
 		// needs authentication to fetch — the anonymous API returns 403 — so without `gh` the
 		// only way to see why a run failed is to paste it in by hand. It isn't in Debian's
 		// repositories, so this feature (upstream apt repo) rather than postCreateCommand.
-		// Run `gh auth login` once after a rebuild; the credential lands in ~/.config/gh,
-		// which is on the container layer, so that's once per rebuild.
+		// `gh auth login` is a one-off, not once per rebuild — the credential lives in
+		// ~/.config/gh, which is mounted as a volume below for exactly that reason.
 		"ghcr.io/devcontainers/features/github-cli:1": {}
 	},
 	"privileged": true,
@@ -29,8 +29,13 @@
 	// Persists Claude Code session transcripts, memory, and config across container rebuilds.
 	// Without this, ~/.claude lives on the container's own writable layer and is discarded on
 	// every rebuild along with everything in it.
+	//
+	// The gh volume is the same problem: `gh auth login` writes ~/.config/gh/hosts.yml, which
+	// a rebuild discards, and the symptom is a CI log that can't be read at the moment you
+	// want it — the anonymous API returns 403 for job logs. One mount, one login, for good.
 	"mounts": [
-		"source=debiantips-claude-home,target=/home/node/.claude,type=volume"
+		"source=debiantips-claude-home,target=/home/node/.claude,type=volume",
+		"source=debiantips-gh-config,target=/home/node/.config/gh,type=volume"
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
@@ -46,10 +51,10 @@
 	// below points Puppeteer at it and skips its own download. CI (.github/workflows/ci.yml) runs
 	// outside this devcontainer on GitHub's runners and is unaffected — it still uses Puppeteer's
 	// own downloaded Chrome, which already works fine there.
-	// The debiantips-claude-home volume above is created and owned by root on first mount, which
-	// blocks the node user (and thus the Claude Code extension / CLI) from writing to
-	// ~/.claude — chown it back to node before anything else touches it.
-	"postCreateCommand": "sudo mkdir -p /home/node/.claude && sudo chown -R node:node /home/node/.claude && sudo apt-get update && sudo apt-get install -y chromium",
+	// Both volumes above are created and owned by root on first mount, which blocks the node
+	// user from writing to them — ~/.claude for the Claude Code extension / CLI, ~/.config/gh
+	// for `gh auth login`. chown them back to node before anything else touches them.
+	"postCreateCommand": "sudo mkdir -p /home/node/.claude /home/node/.config/gh && sudo chown -R node:node /home/node/.claude /home/node/.config/gh && sudo apt-get update && sudo apt-get install -y chromium",
 
 	"containerEnv": {
 		"PUPPETEER_SKIP_DOWNLOAD": "true",
