@@ -13,7 +13,7 @@
 		// Needs "privileged": true below — nested Docker won't start without it.
 		// moby:false because the default moby-cli/moby-engine packages aren't published
 		// for Debian trixie yet; this makes the feature install real docker-ce instead.
-		"ghcr.io/devcontainers/features/docker-in-docker:2": {
+		"ghcr.io/devcontainers/features/docker-in-docker:4": {
 			"moby": false
 		},
 		// The GitHub CLI, for reading CI results from in here. A failing `replay` job's log
