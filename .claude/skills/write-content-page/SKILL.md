@@ -110,10 +110,10 @@ input. Pages whose output echoes the input (`cut`, `head`) often need none.
   captured `ls -lAR` of the tree — a reader can't evaluate `find projects -mtime +365` printing one
   path without seeing the other nine files and their dates. Capture it from the sandbox rather than
   writing it out: it encodes modes, sizes and mtimes at once, and all three must be set explicitly
-  in the setup script. Don't rely on the umask for a mode you assert on: the container's own umask
-  is 0000 (a bare `mkdir` gives a 777 directory), and while the replay forces the normal 0022, a
-  plain `scripts/sandbox.sh exec` does not — so the same command gives different modes depending
-  on how you ran it.
+  in the setup script. Don't rely on the umask for a mode you assert on: the umask a `docker exec`
+  inherits belongs to the host, not to the image — 0000 on this project's devcontainer, 0022 on a
+  GitHub runner — and while the replay pins it to 0022, a plain `scripts/sandbox.sh exec` does
+  not. The same command gives different modes depending on where and how you ran it.
 - Then prove the two agree:
 
 ```sh

@@ -56,11 +56,12 @@ if (helpers.length) {
 
 const SETUP = `/tmp/setup-${command}.sh`;
 // Mirrors verify-examples.mjs: the shared fixture bodies go in beside the setup script,
-// which sources them by absolute path.
+// which sources them by absolute path — as root and world-readable, so a page capturing
+// as `user` never has to overwrite a file an earlier root run left behind.
 const COMMON_SRC = "scripts/fixtures/_common.sh";
 if (existsSync(COMMON_SRC)) {
   const common64 = Buffer.from(readFileSync(COMMON_SRC, "utf-8"), "utf-8").toString("base64");
-  run(`echo ${common64} | base64 -d > /tmp/fixtures-common.sh`);
+  run(`echo ${common64} | base64 -d > /tmp/fixtures-common.sh && chmod 644 /tmp/fixtures-common.sh`, { root: true });
 }
 const setup64 = Buffer.from(readFileSync(setupPath, "utf-8"), "utf-8").toString("base64");
 run(`echo ${setup64} | base64 -d > ${SETUP}; echo ok`);

@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Fixtures for content/commands/find/examples.yaml — must match its `fixtures:` block.
 #
-# Modes are set explicitly on everything. The sandbox runs with umask 0000, so a bare
-# mkdir produces a 777 directory and every -perm example on the page matches the entire
-# tree. Never rely on the inherited umask here.
+# Modes are set explicitly on everything, never left to the umask. That umask belongs to
+# the host rather than the image — 0000 on this project's devcontainer, 0022 on a CI
+# runner — so an inherited one gives a different tree in each place. Under 0000 a bare
+# mkdir produces a 777 directory, and every -perm example on the page then matches the
+# entire tree.
 #
 # Ownership is set to user:user because the page's `ls -lh` example prints an owner
 # column, and the site's convention is deb1/user rather than root.

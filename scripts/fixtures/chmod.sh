@@ -8,9 +8,10 @@
 # without anyone having to remember a flag. Replayed as root, this page scores 9/42.
 # verify: --user
 #
-# Every mode is set explicitly (the sandbox runs with umask 0000, so a bare touch gives
-# 666 and a bare mkdir gives 777), and every mtime is pinned, because `ls -l` output is
-# what almost every example on this page prints.
+# Every mode is set explicitly, never left to the umask, and every mtime is pinned,
+# because `ls -l` output is what almost every example on this page prints. The umask
+# belongs to the host rather than the image — 0000 on this project's devcontainer, 0022 on
+# a CI runner — so anything left to it would be documented differently in each place.
 
 # --- single files, each starting from a known mode --------------------------------
 : > notes.txt

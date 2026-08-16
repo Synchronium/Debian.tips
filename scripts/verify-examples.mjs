@@ -114,9 +114,10 @@ const restore = setupPath ? `find ${WORKDIR} -mindepth 1 -delete 2>/dev/null; ba
 const fixtureCommands = fixtures.map((f) => f.from ?? `cat ${shellQuote(f.name)}`);
 
 const script = [
-  // The container inherits umask 0000, which a real Debian system never has: a bare mkdir
-  // gives a 777 directory and a bare touch gives 666. Pages that print modes documented
-  // the normal 0022 behaviour, correctly, and failed against the artifact.
+  // Pinned, because the umask a `docker exec` inherits is a property of the host: 0000 on
+  // this project's devcontainer, 0022 on a GitHub runner. A real Debian system has neither
+  // by accident, and pages that print modes documented the normal 0022 behaviour correctly
+  // and failed against the artifact.
   "umask 0022",
   `cd ${WORKDIR}`,
   ...[...examples.map((ex) => ex.code), ...fixtureCommands].map(
@@ -152,9 +153,15 @@ if (setupPath) {
   // The fixture bodies several pages share. Installed next to the setup script rather than
   // in the working directory, which is wiped before every example, and by absolute path
   // because the sandbox has no copy of this repository to source a relative one from.
+  //
+  // Written as root and world-readable, once, because every page installs the identical
+  // file: a page replaying as `user` must never need to overwrite what an earlier root
+  // page wrote. Whether it *can* comes down to the umask `docker exec` happens to use,
+  // which is 0000 on this devcontainer and 0022 on a GitHub runner — so the same command
+  // passed locally and failed in CI on exactly the six pages that replay as `user`.
   if (existsSync(COMMON_SRC)) {
     const common64 = Buffer.from(readFileSync(COMMON_SRC, "utf-8"), "utf-8").toString("base64");
-    run(`echo ${common64} | base64 -d > ${COMMON}`);
+    run(`echo ${common64} | base64 -d > ${COMMON} && chmod 644 ${COMMON}`, { root: true });
   }
   const setup64 = Buffer.from(readFileSync(setupPath, "utf-8"), "utf-8").toString("base64");
   run(`echo ${setup64} | base64 -d > ${SETUP}`);
