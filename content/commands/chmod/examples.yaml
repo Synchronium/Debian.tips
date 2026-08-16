@@ -402,7 +402,7 @@ sections:
         level: advanced
         tags: [security]
       - title: "Find setuid binaries on the system"
-        code: find /usr/bin -maxdepth 1 -perm -4000
+        code: find /usr/bin -maxdepth 1 -perm -4000 | sort
         description: >-
           `-perm -4000` matches the setuid bit specifically. A short, expected list on a stock
           Debian install (`su`, `passwd`, and a handful of others); an unfamiliar entry here is

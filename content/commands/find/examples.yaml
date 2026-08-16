@@ -71,7 +71,7 @@ sections:
         description: >-
           A leading `.` isn't special to `find` the way it is to the shell's
           globbing. `-name ".*"` matches dotfiles like a normal pattern.
-        output: |
+        output: |2
           projects/.hidden/.env
         level: intermediate
       - title: "Match against the full path, not just the filename"
@@ -124,7 +124,7 @@ sections:
           projects/src/vendor
         level: basic
       - title: "Find symlinks"
-        code: find projects -type l
+        code: find projects -type l | sort
         description: "`-type l` matches the symlink itself, not whatever it points to."
         output: |2
           projects/logs/main-link.js
@@ -154,7 +154,7 @@ sections:
       - title: "Find files larger than a given size"
         code: find projects -size +1M
         description: "`+1M` means strictly greater than 1 megabyte. Suffixes: `c` bytes, `k` kilobytes, `M` megabytes, `G` gigabytes."
-        output: |
+        output: |2
           projects/logs/big.log
         level: basic
         tags: [disk]
@@ -166,7 +166,7 @@ sections:
       - title: "Find files within a size range"
         code: find projects -size +1M -size -10M
         description: "Two `-size` tests combine with the implicit AND, giving you a range."
-        output: |
+        output: |2
           projects/logs/big.log
         level: intermediate
         tags: [disk]
@@ -175,7 +175,7 @@ sections:
         description: >-
           `-printf "%s %p\n"` prints size in bytes then path; piping through
           `sort -rn` ranks by size numerically, largest first.
-        output: |
+        output: |2
           6291456 projects/logs/big.log
           10240 projects/logs/app.log
           5120 projects/backups/site-2026-06-01.tar.gz
@@ -211,7 +211,7 @@ sections:
       - title: "Find files not modified in over a year"
         code: find projects -type f -mtime +365
         description: "A common first step before archiving or deleting old backups. See the danger note below before adding `-delete`."
-        output: |
+        output: |2
           projects/backups/site-2026-01-01.tar.gz
         level: intermediate
         tags: [disk]
@@ -273,7 +273,7 @@ sections:
           projects/src/util.js
         level: advanced
       - title: "Stay on one filesystem"
-        code: find / -xdev -maxdepth 1 -type d
+        code: find / -xdev -maxdepth 1 -type d | sort
         description: >-
           `-xdev` (a.k.a. `-mount`) prevents find from crossing into mounted
           filesystems (network shares, other drives, `/proc`) when searching
@@ -401,7 +401,7 @@ sections:
       - title: "Combine a name filter with an age filter"
         code: find projects -type f -name "*.tar.gz" -mtime +365
         description: "Multiple tests chained with no explicit operator are ANDed together. This narrows straight to old, matching backups."
-        output: |
+        output: |2
           projects/backups/site-2026-01-01.tar.gz
         level: intermediate
   - title: "Practical one-liners"
@@ -410,7 +410,7 @@ sections:
       - title: "Count files by type"
         code: find projects -type f | wc -l
         description: "A quick sanity check before a bulk operation: how many files am I actually about to touch?"
-        output: |
+        output: |2
           8
         level: basic
         tags: [one-liners]
@@ -422,14 +422,14 @@ sections:
       - title: "Find the single largest file under a path"
         code: find projects -type f -printf "%s %p\n" | sort -rn | head -1
         description: "The one-result version of the size-ranking example above, handy inline in a script."
-        output: |
+        output: |2
           6291456 projects/logs/big.log
         level: intermediate
         tags: [disk, one-liners]
       - title: "Count matches across two patterns"
         code: find projects \( -name "*.log" -o -name "*.tar.gz" \) | wc -l
         description: "Group an OR expression, then pipe the whole result through `wc -l` for a total count instead of a list."
-        output: |
+        output: |2
           4
         level: intermediate
         tags: [one-liners]

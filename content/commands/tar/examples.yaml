@@ -67,13 +67,13 @@ sections:
           extracted into, with no wrapper folder.
         level: intermediate
       - title: "Exclude files matching a pattern"
-        code: tar --exclude="*.png" -czvf site-noimg.tar.gz site/
+        code: tar --exclude="*.png" --sort=name -czvf site-noimg.tar.gz site/
         description: "`--exclude` takes a glob and skips any matching path. Repeat the flag for multiple patterns."
         output: |2
           site/
-          site/img/
           site/css/
           site/css/style.css
+          site/img/
           site/index.html
         level: intermediate
       - title: "Exclude version control metadata"
@@ -83,16 +83,16 @@ sections:
       - title: "Exclude a list of patterns from a file"
         code: |-
           echo "*.png" > excludes.txt
-          tar --exclude-from=excludes.txt -czvf site-ex.tar.gz site/
+          tar --exclude-from=excludes.txt --sort=name -czvf site-ex.tar.gz site/
         description: >-
           `--exclude-from` reads one glob per line from a file, easier to
           maintain than a long list of repeated `--exclude` flags once you have
           more than a couple of patterns.
         output: |2
           site/
-          site/img/
           site/css/
           site/css/style.css
+          site/img/
           site/index.html
         level: advanced
       - title: "Archive an explicit list of files from a text file"
@@ -401,7 +401,7 @@ sections:
           separately. The throughput figure is specific to the machine it ran
           on and will differ every time.
         output: |2
-          Total bytes written: 30720 (30KiB, 305MiB/s)
+          Total bytes written: 30720 (30KiB, 260MiB/s)
         level: intermediate
       - title: "Verify each file immediately after writing it"
         code: "tar -cWvf verify-write.tar site/ | sort"
@@ -431,7 +431,7 @@ sections:
     examples:
       - title: "Create a full (level 0) backup with a snapshot file"
         code: |-
-          tar -czg site.snar -f level0.tar.gz site/
+          tar -czg site.snar --sort=name -f level0.tar.gz site/
           tar -tzf level0.tar.gz
         description: >-
           `-g site.snar` (`--listed-incremental`) writes a snapshot file
@@ -449,11 +449,11 @@ sections:
         tags: [sysadmin]
       - title: "Create an incremental backup containing only what changed"
         code: |-
-          tar -czg site.snar -f level0.tar.gz site/
+          tar -czg site.snar --sort=name -f level0.tar.gz site/
           sleep 1
           echo "v2" > site/index.html
           echo "draft" > site/new.txt
-          tar -czg site.snar -f level1.tar.gz site/
+          tar -czg site.snar --sort=name -f level1.tar.gz site/
           tar -tzvf level1.tar.gz
         description: >-
           Reusing the same `site.snar` snapshot file, `tar` compares the
@@ -464,19 +464,19 @@ sections:
           unchanged, so only `index.html` and the new `new.txt` were actually
           written.
         output: |2
-          drwxr-xr-x user/user        32 2026-08-15 18:21 site/
+          drwxr-xr-x user/user        32 2026-08-16 13:11 site/
           drwxr-xr-x user/user        12 2026-07-05 15:35 site/css/
           drwxr-xr-x user/user        11 2026-07-05 15:35 site/img/
-          -rw-r--r-- user/user         3 2026-08-15 18:21 site/index.html
-          -rw-r--r-- user/user         6 2026-08-15 18:21 site/new.txt
+          -rw-r--r-- user/user         3 2026-08-16 13:11 site/index.html
+          -rw-r--r-- user/user         6 2026-08-16 13:11 site/new.txt
         level: advanced
         tags: [sysadmin]
       - title: "Restore a full backup plus its incremental layers in order"
         code: |-
-          tar -czg site.snar -f level0.tar.gz site/
+          tar -czg site.snar --sort=name -f level0.tar.gz site/
           sleep 1
           echo "draft" > site/new.txt
-          tar -czg site.snar -f level1.tar.gz site/
+          tar -czg site.snar --sort=name -f level1.tar.gz site/
           tar -xzf level0.tar.gz -C restore/
           tar -xzf level1.tar.gz -C restore/
           cat restore/site/new.txt
@@ -492,16 +492,16 @@ sections:
         tags: [sysadmin]
       - title: "Apply file deletions recorded in an incremental backup"
         code: |-
-          tar -czg site.snar -f level0.tar.gz site/
+          tar -czg site.snar --sort=name -f level0.tar.gz site/
           sleep 1
           echo "draft" > site/new.txt
-          tar -czg site.snar -f level1.tar.gz site/
+          tar -czg site.snar --sort=name -f level1.tar.gz site/
           tar -xzf level0.tar.gz -C restore/
           tar -xzf level1.tar.gz -C restore/
           rm site/new.txt site/css/style.css
-          tar -czg site.snar -f level2.tar.gz site/
+          tar -czg site.snar --sort=name -f level2.tar.gz site/
           tar --incremental -xzf level2.tar.gz -C restore/
-          find restore/site -type f
+          find restore/site -type f | sort
         description: >-
           A plain `-x` never deletes anything; it only adds or overwrites
           files. `--incremental` on extract replays the deletion records too,
@@ -569,14 +569,14 @@ sections:
     intro: "How much did compression actually buy you?"
     examples:
       - title: "Stream an archive to stdout instead of a file"
-        code: tar -czf - site/ | wc -c
+        code: tar --sort=name -czf - site/ | wc -c
         description: >-
           A single `-` as the filename means stdout (for `-c`) or stdin (for
           `-x`), the basis for streaming an archive straight over the network,
           e.g. `tar -czf - site/ | ssh deb1 'tar -xzf - -C /srv/backups'`,
           without ever writing the archive to disk on either end.
         output: |2
-          9914
+          9915
         level: advanced
         tags: [networking]
       - title: "Compare a directory's size to its compressed archive"
@@ -683,13 +683,13 @@ sections:
           recreates the same symlink, which only resolves correctly if
           `index.html` is also present relative to it.
         output: |2
-          drwxr-xr-x user/user         0 2026-08-15 18:21 site/
+          drwxr-xr-x user/user         0 2026-08-16 13:11 site/
           drwxr-xr-x user/user         0 2026-07-05 15:35 site/css/
           -rw-r--r-- user/user        20 2026-07-05 15:35 site/css/style.css
           drwxr-xr-x user/user         0 2026-07-05 15:35 site/img/
           -rw-r--r-- user/user     20480 2026-07-05 15:35 site/img/logo.png
           -rw-r--r-- user/user        14 2026-07-05 15:35 site/index.html
-          lrwxrwxrwx user/user         0 2026-08-15 18:21 site/latest.html -> index.html
+          lrwxrwxrwx user/user         0 2026-08-16 13:11 site/latest.html -> index.html
         level: intermediate
         tags: [files]
       - title: "Follow symlinks and archive their targets instead"
@@ -705,7 +705,7 @@ sections:
           first instead of a duplicate copy, visible below as `site/index.html
           link to site/latest.html`.
         output: |2
-          drwxr-xr-x user/user         0 2026-08-15 18:21 site/
+          drwxr-xr-x user/user         0 2026-08-16 13:11 site/
           drwxr-xr-x user/user         0 2026-07-05 15:35 site/css/
           -rw-r--r-- user/user        20 2026-07-05 15:35 site/css/style.css
           drwxr-xr-x user/user         0 2026-07-05 15:35 site/img/
