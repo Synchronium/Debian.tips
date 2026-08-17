@@ -1,4 +1,4 @@
-// Shared by scripts/verify-examples.mjs and scripts/adopt-real-output.mjs.
+// Shared by scripts/verify-examples.ts and scripts/adopt-real-output.ts.
 //
 // Anything both scripts need to agree on lives here rather than in each of them. They
 // have drifted apart twice — once over normalisation, once over how a title is matched —
@@ -16,7 +16,7 @@ import { readFileSync } from "node:fs";
  *  Every entry must name a real example carrying an `output:` block, because the file
  *  reads as a record of why specific examples are exempt. Two entries in tar.skip named
  *  examples that had been renamed months earlier and exempted nothing at all. */
-export function loadSkipTitles(command, titlesWithOutput) {
+export function loadSkipTitles(command: string, titlesWithOutput: string[]): Set<string> {
   let entries = [];
   try {
     entries = readFileSync(`scripts/fixtures/${command}.skip`, "utf-8")
@@ -56,10 +56,20 @@ export function loadSkipTitles(command, titlesWithOutput) {
  *  "System has not been booted with systemd as init system (PID 1). Can't operate." That
  *  sandbox runs --privileged with the host's cgroup tree, which is a stronger grant than
  *  the default one, so a page asks for it in writing rather than it applying everywhere. */
-const KNOWN_DIRECTIVES = ["--user", "--systemd"];
+/** How a page has to be replayed. Both tools read this and must agree: when the shape
+ *  gained `needsSystemd`, a consumer still reading the old shape would have routed a
+ *  systemd page to the default sandbox and got a page of identical errors. */
+export interface SetupDirectives {
+  /** Run the examples as the unprivileged `user` rather than root. */
+  asUser: boolean;
+  /** Requires a sandbox booted with systemd as PID 1. */
+  needsSystemd: boolean;
+}
 
-export function readSetupDirectives(setupPath) {
-  const none = { asUser: false, needsSystemd: false };
+const KNOWN_DIRECTIVES = ["--user", "--systemd"] as const;
+
+export function readSetupDirectives(setupPath: string | undefined): SetupDirectives {
+  const none: SetupDirectives = { asUser: false, needsSystemd: false };
   if (!setupPath) return none;
   let source = "";
   try {
@@ -67,8 +77,8 @@ export function readSetupDirectives(setupPath) {
   } catch {
     return none;
   }
-  const directives = [...source.matchAll(/^#\s*verify:\s*(.+)$/gm)].flatMap((m) => m[1].trim().split(/\s+/));
-  const unknown = directives.filter((d) => !KNOWN_DIRECTIVES.includes(d));
+  const directives = [...source.matchAll(/^#\s*verify:\s*(.+)$/gm)].flatMap((m) => (m[1] ?? "").trim().split(/\s+/));
+  const unknown = directives.filter((d) => !(KNOWN_DIRECTIVES as readonly string[]).includes(d));
   if (unknown.length) {
     console.error(
       `${setupPath}: unknown "# verify:" directive(s): ${unknown.join(" ")} (understood: ${KNOWN_DIRECTIVES.join(", ")})`,
@@ -79,6 +89,6 @@ export function readSetupDirectives(setupPath) {
 }
 
 /** Single-quotes a string for `bash -c`. */
-export function shellQuote(s) {
+export function shellQuote(s: string): string {
   return `'${s.replace(/'/g, `'\\''`)}'`;
 }

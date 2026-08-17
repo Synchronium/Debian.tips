@@ -1,7 +1,6 @@
-#!/usr/bin/env node
 // Repairs `output:` blocks whose leading whitespace was lost.
 //
-//   node scripts/fix-output-whitespace.mjs <sandbox> <command> [setup.sh]
+//   npx tsx scripts/fix-output-whitespace.ts <sandbox> <command> [setup.sh]
 //
 // Commands that right-align columns (`wc`, `uniq -c`, `sort | uniq -c | sort -rn`) emit
 // leading spaces that a plain YAML `|` block scalar silently strips: the block's
@@ -16,6 +15,9 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { parse } from "yaml";
+import type { Example, ExamplesFile } from "../src/content/schema.js";
+import { findOutputBlock, replaceOutputBlock } from "./lib/yamlBlock.js";
+import { shellQuote } from "./lib/replay.js";
 
 const [sandbox, command, setupPath] = process.argv.slice(2);
 if (!sandbox || !command) {
@@ -24,17 +26,16 @@ if (!sandbox || !command) {
 }
 
 const path = `content/commands/${command}/examples.yaml`;
-const doc = parse(readFileSync(path, "utf-8"));
-const examples = [];
+const doc = parse(readFileSync(path, "utf-8")) as ExamplesFile;
+const examples: Example[] = [];
 for (const section of doc.sections) {
   for (const ex of section.examples) if (ex.output !== undefined) examples.push(ex);
 }
 
 const WORKDIR = `/home/user/fix-${command}`;
 const MARK = "@@EX@@";
-const run = (cmd) =>
+const run = (cmd: string): string =>
   execFileSync("scripts/sandbox.sh", ["exec", sandbox, cmd], { encoding: "utf-8", maxBuffer: 64 * 1024 * 1024 });
-const q = (s) => `'${s.replace(/'/g, `'\\''`)}'`;
 
 run(`rm -rf ${WORKDIR} && mkdir -p ${WORKDIR}`);
 if (setupPath) {
@@ -43,55 +44,46 @@ if (setupPath) {
 }
 const script = [
   `cd ${WORKDIR}`,
-  ...examples.map((ex, i) => `printf '\\n${MARK}${i}\\n'\ntimeout 5 bash -c ${q(ex.code)} 2>&1`),
+  ...examples.map((ex, i) => `printf '\\n${MARK}${i}\\n'\ntimeout 5 bash -c ${shellQuote(ex.code)} 2>&1`),
 ].join("\n");
 let raw = "";
 try {
   raw = run(`echo ${Buffer.from(script, "utf-8").toString("base64")} | base64 -d > /tmp/r.sh && bash /tmp/r.sh`);
-} catch (e) {
-  raw = `${e.stdout ?? ""}`;
+} catch (err) {
+  raw = `${(err as { stdout?: string }).stdout ?? ""}`;
 }
 const parts = raw.split(new RegExp(`^${MARK}(\\d+)$`, "m"));
-const actual = new Map();
+const actual = new Map<number, string>();
 for (let i = 1; i < parts.length; i += 2) actual.set(Number(parts[i]), parts[i + 1] ?? "");
 
-const stripTrailing = (s) => s.replace(/\s+$/gm, "").replace(/^\n+|\n+$/g, "");
-const ignoreLeading = (s) => stripTrailing(s).split("\n").map((l) => l.trimStart()).join("\n");
+const stripTrailing = (s: string): string => s.replace(/\s+$/gm, "").replace(/^\n+|\n+$/g, "");
+const ignoreLeading = (s: string): string =>
+  stripTrailing(s)
+    .split("\n")
+    .map((line) => line.trimStart())
+    .join("\n");
 
 let lines = readFileSync(path, "utf-8").split("\n");
 let fixed = 0;
-const skipped = [];
+const skipped: { title: string; code: string }[] = [];
 
 for (let i = examples.length - 1; i >= 0; i--) {
-  const ex = examples[i];
+  const ex = examples[i] as Example;
   const got = stripTrailing(actual.get(i) ?? "");
-  const want = stripTrailing(ex.output);
+  const want = stripTrailing(ex.output ?? "");
   if (got === want) continue;
   if (ignoreLeading(got) !== ignoreLeading(want)) {
-    skipped.push({ title: ex.title, code: ex.code.split("\n")[0] });
+    skipped.push({ title: ex.title, code: ex.code.split("\n")[0] ?? "" });
     continue;
   }
 
-  // Locate this example's `output:` block: find its title line, then the next `output:`.
-  const titleIdx = lines.findIndex((l) => l.includes("- title:") && l.includes(ex.title.slice(0, 40)));
-  if (titleIdx === -1) {
-    skipped.push({ title: ex.title, code: "(title not found in source)" });
+  const lookup = findOutputBlock(lines, ex.title);
+  if (!lookup.found) {
+    const why = lookup.reason === "no-output-block" ? "(output block not found)" : `(title matches ${lookup.count} lines)`;
+    skipped.push({ title: ex.title, code: why });
     continue;
   }
-  let outIdx = -1;
-  for (let j = titleIdx; j < Math.min(titleIdx + 25, lines.length); j++) {
-    if (/^\s+output: \|/.test(lines[j])) { outIdx = j; break; }
-    if (j > titleIdx && lines[j].includes("- title:")) break;
-  }
-  if (outIdx === -1) { skipped.push({ title: ex.title, code: "(output block not found)" }); continue; }
-
-  const keyIndent = lines[outIdx].match(/^(\s*)/)[1].length;
-  let end = outIdx + 1;
-  while (end < lines.length && (lines[end].trim() === "" || lines[end].search(/\S/) > keyIndent)) end++;
-
-  const contentIndent = " ".repeat(keyIndent + 2);
-  const body = got.split("\n").map((l) => (l === "" ? "" : contentIndent + l));
-  lines.splice(outIdx, end - outIdx, `${" ".repeat(keyIndent)}output: |2`, ...body);
+  lines = replaceOutputBlock(lines, lookup.block, got);
   fixed++;
 }
 

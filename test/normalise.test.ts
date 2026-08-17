@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-// @ts-expect-error — plain .mjs shared with scripts/, no types
-import { MASK_TOKENS, normalise, stripArtifacts } from "../scripts/lib/normalise.mjs";
+import { MASK_TOKENS, normalise, stripArtifacts } from "../scripts/lib/normalise.js";
 
 /* This module decides what every command page is allowed to claim a command printed:
  * `adopt-real-output.mjs` writes `stripArtifacts` output straight onto a page, and

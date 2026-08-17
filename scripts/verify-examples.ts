@@ -1,9 +1,8 @@
-#!/usr/bin/env node
 // Replays every example on a command page inside the disposable sandbox and diffs the
 // real output against what the page documents.
 //
 //   scripts/sandbox.sh start                     # once
-//   node scripts/verify-examples.mjs [--user] <sandbox> <command> [setup.sh]
+//   npx tsx scripts/verify-examples.ts [--user] <sandbox> <command> [setup.sh]
 //
 // --user runs everything as the unprivileged `user` instead of root. Pages about
 // permissions need it: root bypasses the checks it documents, so `chmod 600 /etc/shadow`
@@ -22,14 +21,15 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { parse } from "yaml";
-import { MASK_TOKENS, normalise } from "./lib/normalise.mjs";
-import { loadSkipTitles, readSetupDirectives, shellQuote } from "./lib/replay.mjs";
+import type { Example, ExamplesFile, Fixture } from "../src/content/schema.js";
+import { MASK_TOKENS, normalise } from "./lib/normalise.js";
+import { loadSkipTitles, readSetupDirectives, shellQuote } from "./lib/replay.js";
 
 const argv = process.argv.slice(2);
 const asUserFlag = argv[0] === "--user" ? (argv.shift(), true) : false;
 const [sandbox, command, setupPath] = argv;
 if (!sandbox || !command) {
-  console.error("usage: verify-examples.mjs [--user] <sandbox-name> <command> [setup.sh]");
+  console.error("usage: verify-examples.ts [--user] <sandbox-name> <command> [setup.sh]");
   process.exit(2);
 }
 
@@ -39,9 +39,12 @@ const directives = readSetupDirectives(setupPath);
 const asUser = asUserFlag || directives.asUser;
 const needsSystemd = directives.needsSystemd;
 
-const doc = parse(readFileSync(`content/commands/${command}/examples.yaml`, "utf-8"));
+const doc = parse(readFileSync(`content/commands/${command}/examples.yaml`, "utf-8")) as ExamplesFile;
 
-const withOutput = [];
+interface Replayed extends Example {
+  section: string;
+}
+const withOutput: Replayed[] = [];
 for (const section of doc.sections) {
   for (const ex of section.examples) {
     if (ex.output !== undefined) withOutput.push({ section: section.title, ...ex });
@@ -61,12 +64,15 @@ const skipped = withOutput.filter((ex) => skipTitles.has(ex.title));
 // matches *any* real output forever: the example reads as verified, is counted in the
 // score, and can never fail again. Three curl blocks published `<VOLATILE>` to readers
 // this way. Cheaper to refuse them here than to hope the next sweep spots them.
-const masked = [...withOutput, ...(doc.fixtures ?? []).map((f) => ({ title: `fixture "${f.name}"`, output: f.content }))]
-  .filter((ex) => MASK_TOKENS.some((token) => ex.output.includes(token)));
+const documented: { title: string; text: string }[] = [
+  ...withOutput.map((ex) => ({ title: ex.title, text: ex.output ?? "" })),
+  ...(doc.fixtures ?? []).map((f) => ({ title: `fixture "${f.name}"`, text: f.content })),
+];
+const masked = documented.filter((entry) => MASK_TOKENS.some((token) => entry.text.includes(token)));
 if (masked.length) {
   console.error(
     `${command}: ${masked.length} documented output(s) contain a normalisation mask, so they can never fail:\n` +
-      masked.map((ex) => `  ${JSON.stringify(ex.title)}`).join("\n") +
+      masked.map((entry) => `  ${JSON.stringify(entry.title)}`).join("\n") +
       `\nRe-capture them with adopt-real-output.mjs — the mask belongs to the comparison, not to the page.`,
   );
   process.exit(2);
@@ -128,7 +134,7 @@ const script = [
 ].join("\n");
 
 const b64 = Buffer.from(script, "utf-8").toString("base64");
-const run = (cmd, opts = {}) =>
+const run = (cmd: string, opts: { root?: boolean } = {}): string =>
   execFileSync(
     "scripts/sandbox.sh",
     ["exec", ...(opts.root || !asUser ? [] : ["-u", "user"]), sandbox, cmd],
@@ -190,7 +196,8 @@ if (setupPath) {
   try {
     setupOut = run(`cd ${WORKDIR} && bash ${SETUP} 2>&1 && echo __SETUP_OK__`);
   } catch (err) {
-    setupOut = `${err.stdout ?? ""}${err.stderr ?? ""}`;
+    const failure = err as { stdout?: string; stderr?: string };
+    setupOut = `${failure.stdout ?? ""}${failure.stderr ?? ""}`;
   }
   if (!setupOut.includes("__SETUP_OK__")) {
     console.error(`${setupPath} failed inside the sandbox — no fixtures were created:\n${setupOut.trim()}`);
@@ -202,32 +209,46 @@ let raw = "";
 try {
   raw = run(`echo ${b64} | base64 -d > /tmp/run-${command}.sh && bash /tmp/run-${command}.sh`);
 } catch (err) {
-  raw = `${err.stdout ?? ""}`;
+  raw = `${(err as { stdout?: string }).stdout ?? ""}`;
 }
 
 const chunks = raw.split(new RegExp(`^${MARK}(\\d+)$`, "m"));
-const actual = new Map();
+const actual = new Map<number, string>();
 for (let i = 1; i < chunks.length; i += 2) actual.set(Number(chunks[i]), (chunks[i + 1] ?? "").replace(/^\n/, ""));
 
 const norm = normalise;
 
+interface Mismatch {
+  i: number;
+  ex: Replayed;
+  got: string;
+  want: string;
+}
+interface FixtureMismatch {
+  i: number;
+  name: string;
+  cmd: string;
+  got: string;
+  want: string;
+}
+
 let match = 0;
-const differ = [];
+const differ: Mismatch[] = [];
 examples.forEach((ex, i) => {
   const got = norm(actual.get(i) ?? "");
-  const want = norm(ex.output);
+  const want = norm(ex.output ?? "");
   if (got === want) match++;
   else differ.push({ i, ex, got, want });
 });
 
 let fixtureMatch = 0;
-const fixturesDiffer = [];
-fixtures.forEach((f, n) => {
+const fixturesDiffer: FixtureMismatch[] = [];
+fixtures.forEach((f: Fixture, n) => {
   const i = examples.length + n;
   const got = norm(actual.get(i) ?? "");
   const want = norm(f.content);
   if (got === want) fixtureMatch++;
-  else fixturesDiffer.push({ i, name: f.name, cmd: fixtureCommands[n], got, want });
+  else fixturesDiffer.push({ i, name: f.name, cmd: fixtureCommands[n] ?? "", got, want });
 });
 
 const skipNote = skipped.length ? ` (${skipped.length} not replayable in batch, see .skip file)` : "";
@@ -242,7 +263,7 @@ console.log(
  *  most of them, since a mismatch is usually one line deep in an otherwise-correct
  *  block. Leading padding is exactly the kind of difference that has to be *visible* in
  *  the report, not implied. */
-function firstDifference(want, got) {
+function firstDifference(want: string, got: string): string {
   const w = want.split("\n");
   const g = got.split("\n");
   const n = Math.max(w.length, g.length);

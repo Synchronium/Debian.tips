@@ -30,7 +30,9 @@ Accessibility check locally (matches CI): build, serve `dist/`, then run pa11y-c
 
 There is no lint script/config in this repo — `tsc --noEmit` (strict mode, plus
 `noUncheckedIndexedAccess`/`exactOptionalPropertyTypes`/`noImplicitOverride`) is the only static
-check beyond tests.
+check beyond tests. It covers `src/`, `test/` and `scripts/`: the replay harness is TypeScript
+too, run through `tsx`, and imports the content types from `src/content/schema.ts` rather than
+keeping its own idea of what an `examples.yaml` contains.
 
 ### Testing content examples for real
 
@@ -53,7 +55,7 @@ persists on the devcontainer itself.
 ### Replaying examples to prove the outputs are real
 
 A page's `output:` blocks are the site's core promise, and `npm run check` can't check them — it
-validates shape, not truth. `scripts/verify-examples.mjs` replays every example on a page inside
+validates shape, not truth. `scripts/verify-examples.ts` replays every example on a page inside
 the sandbox and diffs the real result against what the page claims:
 
 ```sh
@@ -62,7 +64,7 @@ npm run replay -- wget curl # just these
 
 # or drive one page directly, which is what the above does per page:
 name=$(scripts/sandbox.sh start)
-node scripts/verify-examples.mjs "$name" wc scripts/fixtures/wc.sh   # -> "wc (as root): 25/25 ..."
+npx tsx scripts/verify-examples.ts "$name" wc scripts/fixtures/wc.sh   # -> "wc (as root): 25/25 ..."
 ```
 
 `npm run replay` runs in CI as its own job (`.github/workflows/ci.yml`), in parallel with the
@@ -75,8 +77,8 @@ image, which the workflow does as its own step so the log says which half any sl
 That invocation is correct for every page. Some pages have to replay as the unprivileged
 `user` — anything printing file ownership (`tar -tvf`, `ls -l`) or documenting a permission
 denial, since root simply doesn't get denied — and each of those says so itself, with a
-`# verify: --user` line in its setup script that both `verify-examples.mjs` and
-`adopt-real-output.mjs` read.
+`# verify: --user` line in its setup script that both `verify-examples.ts` and
+`adopt-real-output.ts` read.
 
 A second directive, `# verify: --systemd`, asks for a sandbox booted with systemd as PID 1
 (`scripts/sandbox.sh start --systemd`). The `systemctl` and `journalctl` pages need it: the
@@ -84,7 +86,7 @@ default sandbox runs `sleep` as PID 1, where every such example prints "System h
 booted with systemd as init system (PID 1). Can't operate." It is the same image — systemd is
 already installed — but a different runtime, costing `--privileged` and the host's cgroup tree,
 which is why it is opt-in per page rather than the default. `npm run replay` starts only the
-flavours the selected pages ask for, and `verify-examples.mjs` refuses to replay a `--systemd`
+flavours the selected pages ask for, and `verify-examples.ts` refuses to replay a `--systemd`
 page in a sandbox whose PID 1 isn't systemd rather than producing a page of identical errors. Replayed as root, `chmod` scores 9/42 and `tar` 32/42 on pages that
 are entirely correct, which reads exactly like a page that has drifted; the mode is part of the
 score, so it's printed alongside it.
@@ -112,7 +114,7 @@ excluded explicitly rather than quietly failing. Entries are matched exactly and
 example that documents an `output:` block; one that matches nothing is an error, because it reads
 as an exemption while exempting nothing.
 
-`scripts/lib/normalise.mjs` decides what a page is allowed to claim, and both tools share it:
+`scripts/lib/normalise.ts` decides what a page is allowed to claim, and both tools share it:
 adopt writes its `stripArtifacts` output onto the page, verify compares its `normalise` output
 against a fresh run. That shared path is why a bug in it is invisible — it corrupts the page and
 then certifies the corruption — so it's covered by `test/normalise.test.ts`, and every mask is
@@ -220,7 +222,7 @@ to `main`. `.github/workflows/deploy.yml`: builds and publishes `dist/` to GitHu
 The `curl` and `wget` pages point at `http://127.0.0.1:8080`, served by
 `scripts/fixtures/http-mock.py` — thirteen-odd endpoints that echo a request, return a chosen
 status, redirect, delay, set a cookie, demand basic auth, or serve a small linked site with
-`Range` and `If-Modified-Since` support. `verify-examples.mjs` installs any `.py` under
+`Range` and `If-Modified-Since` support. `verify-examples.ts` installs any `.py` under
 `scripts/fixtures/` into `/opt/mock/` in the sandbox, and each page's setup script starts it.
 
 It binds `127.0.0.1` by default, because readers are told to run it on their own machines and it

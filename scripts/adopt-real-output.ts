@@ -9,8 +9,10 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { parse } from "yaml";
-import { stripArtifacts } from "./lib/normalise.mjs";
-import { loadSkipTitles, readSetupDirectives, shellQuote } from "./lib/replay.mjs";
+import type { Example, ExamplesFile } from "../src/content/schema.js";
+import { stripArtifacts } from "./lib/normalise.js";
+import { loadSkipTitles, readSetupDirectives, shellQuote } from "./lib/replay.js";
+import { findOutputBlock, replaceOutputBlock } from "./lib/yamlBlock.js";
 
 const argv = process.argv.slice(2);
 // Must mirror verify-examples.mjs: capturing as root when the page replays as `user`
@@ -18,8 +20,12 @@ const argv = process.argv.slice(2);
 // its setup script (`# verify: --user`), so both tools read it from the same place.
 const asUserFlag = argv[0] === "--user" ? (argv.shift(), true) : false;
 const [sandbox, command, setupPath, ...titles] = argv;
-if (!sandbox || !command || titles.length === 0) {
-  console.error('usage: adopt-real-output.mjs [--user] <sandbox> <command> <setup.sh> "<title>"|--all');
+// setupPath is not optional here, unlike in verify-examples: adopt restores the fixtures
+// before every example it captures, so without one it would record output produced against
+// an empty directory. It used to fail on `undefined` with an ENOENT deep inside readFileSync
+// rather than saying which argument was missing.
+if (!sandbox || !command || !setupPath || titles.length === 0) {
+  console.error('usage: adopt-real-output.ts [--user] <sandbox> <command> <setup.sh> "<title>"|--all');
   process.exit(2);
 }
 const directives = readSetupDirectives(setupPath);
@@ -27,7 +33,7 @@ const asUser = asUserFlag || directives.asUser;
 const needsSystemd = directives.needsSystemd;
 
 const path = `content/commands/${command}/examples.yaml`;
-const doc = parse(readFileSync(path, "utf-8"));
+const doc = parse(readFileSync(path, "utf-8")) as ExamplesFile;
 
 const withOutput = [];
 for (const s of doc.sections) for (const ex of s.examples) if (ex.output !== undefined) withOutput.push(ex);
@@ -36,7 +42,7 @@ const all = withOutput.filter((ex) => !skipTitles.has(ex.title));
 
 const WORKDIR = `/home/user/adopt-${command}`;
 const MARK = "@@EX@@";
-const run = (cmd, opts = {}) =>
+const run = (cmd: string, opts: { root?: boolean } = {}): string =>
   execFileSync(
     "scripts/sandbox.sh",
     ["exec", ...(opts.root || !asUser ? [] : ["-u", "user"]), sandbox, cmd],
@@ -110,59 +116,37 @@ const script = [
 let raw = "";
 try {
   raw = run(`echo ${Buffer.from(script, "utf-8").toString("base64")} | base64 -d > /tmp/adopt-${command}.sh && bash /tmp/adopt-${command}.sh`);
-} catch (e) {
-  raw = `${e.stdout ?? ""}`;
+} catch (err) {
+  raw = `${(err as { stdout?: string }).stdout ?? ""}`;
 }
 const parts = raw.split(new RegExp(`^${MARK}(\\d+)$`, "m"));
-const actual = new Map();
+const actual = new Map<number, string>();
 for (let i = 1; i < parts.length; i += 2) actual.set(Number(parts[i]), parts[i + 1] ?? "");
 
 let lines = readFileSync(path, "utf-8").split("\n");
 
-/** The title a `- title:` line declares, or null for any other line. Parsed as YAML
- *  rather than string-matched, so quoting and escapes are the file's business.
- *
- *  Selecting *which* examples to adopt was fixed to exact matching long before this was:
- *  finding the line to write to still took the first line containing the title's first
- *  40 characters, which on the grep page resolved "Count matches per file" to the block
- *  belonging to "Count matches per file across a whole tree" — overwriting one example's
- *  real capture with another's. */
-const titleAt = (line) => {
-  const m = /^\s*- title:\s*(.*\S)\s*$/.exec(line);
-  if (!m) return null;
-  try {
-    return parse(m[1]);
-  } catch {
-    return null;
-  }
-};
-
-const claimed = new Set();
+const claimed = new Set<number>();
 for (const { ex, i } of [...targets].reverse()) {
   const got = stripArtifacts(actual.get(i) ?? "");
-  if (!got) { console.log(`  SKIP (no output captured): ${ex.title}`); continue; }
-  const matches = lines.map((l, n) => (titleAt(l) === ex.title ? n : -1)).filter((n) => n !== -1);
-  if (matches.length !== 1) {
-    console.error(`  ABORT: ${JSON.stringify(ex.title)} matches ${matches.length} title lines in ${path}`);
+  if (!got) {
+    console.log(`  SKIP (no output captured): ${ex.title}`);
+    continue;
+  }
+  const lookup = findOutputBlock(lines, ex.title);
+  if (!lookup.found) {
+    if (lookup.reason === "no-output-block") {
+      console.log(`  SKIP (no output block): ${ex.title}`);
+      continue;
+    }
+    console.error(`  ABORT: ${JSON.stringify(ex.title)} matches ${lookup.count} title lines in ${path}`);
     process.exit(2);
   }
-  const titleIdx = matches[0];
-  if (claimed.has(titleIdx)) {
-    console.error(`  ABORT: two targets resolve to line ${titleIdx + 1} of ${path}`);
+  if (claimed.has(lookup.block.keyLine)) {
+    console.error(`  ABORT: two targets resolve to line ${lookup.block.keyLine + 1} of ${path}`);
     process.exit(2);
   }
-  claimed.add(titleIdx);
-  let outIdx = -1;
-  for (let j = titleIdx; j < Math.min(titleIdx + 30, lines.length); j++) {
-    if (/^\s+output: \|/.test(lines[j])) { outIdx = j; break; }
-    if (j > titleIdx && lines[j].includes("- title:")) break;
-  }
-  if (outIdx === -1) { console.log(`  SKIP (no output block): ${ex.title}`); continue; }
-  const keyIndent = lines[outIdx].match(/^(\s*)/)[1].length;
-  let end = outIdx + 1;
-  while (end < lines.length && (lines[end].trim() === "" || lines[end].search(/\S/) > keyIndent)) end++;
-  const ind = " ".repeat(keyIndent + 2);
-  lines.splice(outIdx, end - outIdx, `${" ".repeat(keyIndent)}output: |2`, ...got.split("\n").map((l) => (l === "" ? "" : ind + l)));
+  claimed.add(lookup.block.keyLine);
+  lines = replaceOutputBlock(lines, lookup.block, got);
   console.log(`  adopted real output: ${ex.title}`);
 }
 writeFileSync(path, lines.join("\n"), "utf-8");

@@ -1,4 +1,4 @@
-// Shared by scripts/verify-examples.mjs and scripts/adopt-real-output.mjs.
+// Shared by scripts/verify-examples.ts and scripts/adopt-real-output.ts.
 //
 // Both have to agree exactly: verify compares the page against normalised output, and
 // adopt writes stripped output into the page. When they drifted apart, adopt baked
@@ -22,10 +22,10 @@
 //
 // Covered by test/normalise.test.ts. Add a case there for anything added here.
 
-/** The tokens a mask can introduce. verify-examples.mjs rejects a page whose documented
+/** The tokens a mask can introduce. verify-examples.ts rejects a page whose documented
  *  output contains one: they exist for the duration of a comparison and must never be
  *  written to a page, where they would read as literal placeholders to a reader. */
-export const MASK_TOKENS = ["<TIMESTAMP>", "<RATE>", "<VOLATILE>", "<ELAPSED>"];
+export const MASK_TOKENS: readonly string[] = ["<TIMESTAMP>", "<RATE>", "<VOLATILE>", "<ELAPSED>"];
 
 /** Timestamps, each anchored to the column of the command that emits it.
  *
@@ -40,7 +40,7 @@ export const MASK_TOKENS = ["<TIMESTAMP>", "<RATE>", "<VOLATILE>", "<ELAPSED>"];
  *  Deliberately *not* masked: an `ls -l --time-style=long-iso` column, which on these
  *  pages shows a server-set mtime the fixtures pin exactly, and any date appearing in
  *  file content. Both are things a page should be held to. */
-const timestamps = (s) =>
+const timestamps = (s: string): string =>
   s
     // diff headers: three markers, a filename, a tab, then the mtime.
     .replace(/^([-+*]{3} \S+\t)\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)?( [+-]\d{4})?$/gm, "$1<TIMESTAMP>")
@@ -58,7 +58,7 @@ const timestamps = (s) =>
  *  wget's summary  ->  `<TIMESTAMP> (49.0 MB/s) - 'page.html' saved [120/120]`
  *  curl -m         ->  `curl: (28) Operation timed out after 2001 milliseconds ...`
  *  curl -w         ->  `time_total=0.230857s` */
-const rates = (s) =>
+const rates = (s: string): string =>
   s
     .replace(/^(Total bytes written: \d+ \([0-9.]+[KMG]?i?B, )\d+(\.\d+)?[KMG]iB\/s\)$/gm, "$1<RATE>)")
     .replace(/^(<TIMESTAMP> )\(\d+(\.\d+)? [KMGT]?B\/s\)(?= - )/gm, "$1(<RATE>)")
@@ -88,13 +88,13 @@ const rates = (s) =>
  *      2026-08-15 21:37:59 (49.0 MB/s) - 'page.html' saved [120/120]
  *
  *  rather than two consecutive blank lines around a hole. */
-const wgetBars = (s) => s.replace(/^[ \t]*\d+K[ .]+.*?\d+%.*\n?(?:[ \t]*\n)*/gm, "");
+const wgetBars = (s: string): string => s.replace(/^[ \t]*\d+K[ .]+.*?\d+%.*\n?(?:[ \t]*\n)*/gm, "");
 
 /** curl shows a progress meter whenever its output is not a terminal — here, always.
  *  Successive updates are separated by carriage returns, so the whole meter arrives as
  *  one physical line. Matching on "--:--:--" rather than the column layout keeps this
  *  working whatever suffixes the sizes and rates pick up (120, 163k, 1.2M). */
-const curlMeter = (s) =>
+const curlMeter = (s: string): string =>
   s
     .replace(/^\s*% Total\s+% Received.*$\n?/gm, "")
     .replace(/^\s*Dload\s+Upload.*$\n?/gm, "")
@@ -102,7 +102,7 @@ const curlMeter = (s) =>
 
 /** `bash -c` numbers its diagnostics; an interactive shell does not. ssh warns about the
  *  missing terminal for the same reason. */
-const shellNoise = (s) =>
+const shellNoise = (s: string): string =>
   s
     .replace(/^bash: line \d+: /gm, "bash: ")
     .replace(/^Pseudo-terminal will not be allocated because stdin is not a terminal\.\n/gm, "");
@@ -116,7 +116,7 @@ const shellNoise = (s) =>
  *  lines, but leading spaces on a content line never do: `wc` and `uniq -c` right-align
  *  their first column, and a plain `.trim()` here silently unpicked the first line's
  *  padding on every page it touched — the exact defect `output: |2` exists to prevent. */
-export function stripArtifacts(text) {
+export function stripArtifacts(text: string): string {
   const trimmed = text
     // Per line, and never `\s`, which matches `\n` and would eat the blank line that
     // follows any line with a trailing space. `\r` is in the set because HTTP is a
@@ -135,6 +135,6 @@ export function stripArtifacts(text) {
  *
  *  Order matters: `rates` matches wget's summary line after `timestamps` has replaced
  *  the stamp that opens it. */
-export function normalise(text) {
+export function normalise(text: string): string {
   return rates(timestamps(stripArtifacts(text)));
 }

@@ -76,7 +76,7 @@ npm run replay -- wget curl # just these
 
 # the same thing one page at a time, if you want to keep the sandbox around
 name=$(scripts/sandbox.sh start)
-node scripts/verify-examples.mjs "$name" wc scripts/fixtures/wc.sh   # -> "wc (as root): 25/25 ..."
+npx tsx scripts/verify-examples.ts "$name" wc scripts/fixtures/wc.sh   # -> "wc (as root): 25/25 ..."
 scripts/sandbox.sh stop "$name"
 ```
 

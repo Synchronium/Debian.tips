@@ -10,7 +10,7 @@
     "build": "tsx src/build.ts && pagefind --site dist",
     "dev": "tsx src/server.ts",
     "test": "vitest run",
-    "replay": "node scripts/replay-all.mjs",
+    "replay": "tsx scripts/replay-all.ts",
     "check": "tsc --noEmit && vitest run && tsx src/build.ts && pagefind --site dist && tsx src/linkcheck.ts"
   },
   "devDependencies": {

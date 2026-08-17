@@ -145,13 +145,13 @@ no longer grants.
 
 If a page's output depends on who ran the command — file ownership in `ls -l` or `tar -tvf`, a
 path under `~`, a permission denial root would never see — put `# verify: --user` in its setup
-script. Both `verify-examples.mjs` and `adopt-real-output.mjs` read it, so the command above stays
+script. Both `verify-examples.ts` and `adopt-real-output.ts` read it, so the command above stays
 right for every page. Without it, replaying `chmod` as root reports 9/42 on a page that is
 perfectly correct, and that looks exactly like a page that has drifted.
 
-Two helpers exist for repairs: `scripts/fix-output-whitespace.mjs` (rewrites blocks whose only
+Two helpers exist for repairs: `scripts/fix-output-whitespace.ts` (rewrites blocks whose only
 problem is lost padding — it refuses anything differing in substance) and
-`scripts/adopt-real-output.mjs` (replaces named examples' output with the real capture; use when
+`scripts/adopt-real-output.ts` (replaces named examples' output with the real capture; use when
 output was silently abridged).
 
 ## 5. Style guide (apply to every sentence)
@@ -179,7 +179,7 @@ Two gates, and a command page needs both:
 1. `npm run check` (typecheck, tests, build, linkcheck). Fix any schema violation, missing tag,
    dead `related` link, or broken cross-link it surfaces — don't hand back a page that fails this.
 2. `npm run replay -- <command>` for any page with fixtures, and report the score (it starts and
-   stops its own sandbox; `node scripts/verify-examples.mjs <sandbox> <command>
+   stops its own sandbox; `npx tsx scripts/verify-examples.ts <sandbox> <command>
    scripts/fixtures/<command>.sh` is the same check against a sandbox you're already holding).
    `npm run check` validates *shape*; only the replay checks whether the outputs are true, which
    is the site's actual promise.
@@ -201,6 +201,6 @@ recording it as `# verify: --user` in the page's setup script rather than typing
 both tools read it, which is what stops a page being captured as `user` and later checked as
 root, or the reverse. The flag remains for a page that has no setup script yet.
 
-`adopt-real-output.mjs ... --all` takes every example's real output instead of named titles,
+`adopt-real-output.ts ... --all` takes every example's real output instead of named titles,
 which is the right move after changing a page's fixtures wholesale. It honours the `.skip` file
 and matches titles exactly.

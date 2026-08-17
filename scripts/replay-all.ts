@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // Replays every command page's documented output inside one disposable sandbox.
 //
 //   npm run replay              # every page
@@ -15,7 +14,7 @@
 // dominated by building that image.
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
-import { readSetupDirectives } from "./lib/replay.mjs";
+import { readSetupDirectives } from "./lib/replay.js";
 
 const only = process.argv.slice(2).filter((a) => !a.startsWith("-"));
 
@@ -48,13 +47,14 @@ try {
 // which the default one deliberately isn't — it costs --privileged and the host cgroup
 // tree. Each flavour is started only if some page asks for it, so a run that touches no
 // systemd page grants nothing extra.
-const flavourOf = (name) =>
+type Flavour = "default" | "systemd";
+const flavourOf = (name: string): Flavour =>
   readSetupDirectives(`scripts/fixtures/${name}.sh`).needsSystemd ? "systemd" : "default";
 const needed = [...new Set(runnable.map(flavourOf))].sort();
 
 // Registered before the first container starts. One left behind holds its name, its image
 // layer and port 8080, and the next run inherits whatever state it was in.
-const sandboxes = new Map();
+const sandboxes = new Map<Flavour, string>();
 let stopped = false;
 const stop = () => {
   if (stopped) return;
@@ -87,8 +87,9 @@ const failed = [];
 const started = Date.now();
 for (const name of runnable) {
   const result = spawnSync(
-    "node",
-    ["scripts/verify-examples.mjs", sandboxes.get(flavourOf(name)), name, `scripts/fixtures/${name}.sh`],
+    "npx",
+    // tsx, because these are TypeScript now; `npm run replay` guarantees it is installed.
+    ["tsx", "scripts/verify-examples.ts", sandboxes.get(flavourOf(name)) ?? "", name, `scripts/fixtures/${name}.sh`],
     { stdio: "inherit" },
   );
   if (result.status !== 0) failed.push(name);
@@ -102,6 +103,6 @@ if (unfixtured.length) {
 if (failed.length) {
   console.log(`\nfailing: ${failed.join(", ")}`);
   console.log("Each mismatch above names the first line that differs. The real output is the truth:");
-  console.log("re-capture with scripts/adopt-real-output.mjs once you've confirmed the command is right.");
+  console.log("re-capture with scripts/adopt-real-output.ts once you've confirmed the command is right.");
 }
 process.exit(failed.length === 0 ? 0 : 1);
