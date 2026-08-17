@@ -15,6 +15,7 @@ Description=Deploy agent
 After=network.target
 
 [Service]
+Type=notify
 ExecStart=/usr/local/bin/deploy-agent
 Restart=on-failure
 
@@ -33,10 +34,30 @@ Type=oneshot
 ExecStart=/usr/local/bin/backup-sync
 EOF
 
+# Stands in for a real agent: runs until stopped, and handles SIGHUP as "reload your
+# configuration" the way a daemon does rather than dying on it.
+#
+# Both halves are what make the `systemctl kill -s SIGHUP` example reproducible, and each
+# fixes a different failure:
+#
+#   trap        `sleep` installs no SIGHUP handler, so the default disposition kills it,
+#               Restart=on-failure then restarts it, and `is-active` reports whichever of
+#               active/inactive/failed that race lands on. Sleeping in the background and
+#               waiting is what lets the trap run at all — a foreground `sleep infinity`
+#               holds the signal until it returns, which is never.
+#
+#   --ready     with the default Type=simple, `systemctl start` returns once systemd has
+#               forked the process, not once the process has done anything. The signal
+#               then arrives before the trap is installed and kills it anyway, roughly
+#               twice in ten runs. Type=notify makes `start` wait for the line below.
 cat > /usr/local/bin/deploy-agent <<'EOF'
 #!/bin/sh
-# Stands in for a real agent: runs until stopped.
-exec sleep infinity
+trap 'echo "deploy-agent: reloading configuration"' HUP
+systemd-notify --ready
+while :; do
+  sleep 3600 &
+  wait $!
+done
 EOF
 
 cat > /usr/local/bin/backup-sync <<'EOF'

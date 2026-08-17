@@ -130,6 +130,8 @@ export function normalise(text: string): string {
  *    quantity   288K, 1.7M, 261ms, 2min   a number and its unit move together — a service
  *                                         up for 261ms today is up for 2min tomorrow, and
  *                                         masking only the digits would leave ms vs min
+ *    duration   2min 30s → one quantity   a span systemd spells with as many units as it
+ *                                         needs, so the count of them is itself volatile
  *    weekday    Mon, Tue                  clock-derived, and not digits
  *    month      Jan, Feb                  the same
  *    identifier 59fc699d36de4013          an invocation or container id
@@ -141,6 +143,10 @@ export function normalise(text: string): string {
 export function shapeOf(text: string): string {
   return stripArtifacts(text)
     .replace(/\b\d+(\.\d+)?\s?(ms|s|min|h|d|us|ns|B|K|M|G|T|KB|MB|GB|TB|KiB|MiB|GiB|TiB)\b/g, "Q")
+    // Adjacent quantities are one value: systemd prints "9ms ago" on a machine that just
+    // booted and "1min 30s ago" on the same machine a minute later. Without this the shape
+    // of a status block depends on how long the sandbox has been up.
+    .replace(/Q( Q)+/g, "Q")
     .replace(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/g, "D")
     .replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/g, "M")
     .replace(/\b[0-9a-f]{8,}\b/gi, "x")

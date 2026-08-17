@@ -220,8 +220,24 @@ describe("shapeOf", () => {
     );
   });
 
+  it("treats a multi-unit duration as one quantity, so 9ms and 1min 30s agree", () => {
+    // systemd spells a span with as many units as it needs, so the *number* of quantities
+    // in an uptime depends on how long the machine has been up. Comparing a status block by
+    // shape failed against a sandbox a few minutes old and passed against a fresh one.
+    expect(shapeOf("Active: active (running) since Mon 2026-08-17 11:01:48 UTC; 9ms ago")).toBe(
+      shapeOf("Active: active (running) since Tue 2026-09-01 04:12:07 UTC; 1min 30s ago"),
+    );
+  });
+
   it("holds a memory figure and its unit together", () => {
     expect(shapeOf("Memory: 288K (peak: 1.7M)")).toBe(shapeOf("Memory: 4.1M (peak: 12G)"));
+  });
+
+  it("still separates a collapsed duration from the words around it", () => {
+    // The collapse is anchored to the mask token, so it can't swallow a changed field name.
+    expect(shapeOf("Active: active since; 1min 30s ago")).not.toBe(
+      shapeOf("Active: failed since; 1min 30s ago"),
+    );
   });
 
   it("masks a long hex identifier as a whole, not digit by digit", () => {
