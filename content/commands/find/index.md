@@ -6,7 +6,7 @@ category: commands
 tags: [search, files]
 updated: 2026-07-05
 tier: flagship
-related: [grep, file-permissions-explained, sort, wc]
+related: [grep, file-permissions-explained, bulk-rename-files, sort, wc]
 ---
 
 `find` walks a directory tree and prints, or acts on, every file that matches a set of tests
@@ -69,7 +69,8 @@ Piping `find`'s default newline-separated output into a loop or `xargs` breaks t
 filename contains a space or newline. `-print0` separates matches with a NUL byte instead, which
 can't appear in a filename; pair it with `xargs -0` or `while IFS= read -r -d '' f`. This isn't
 a hypothetical edge case. It bites the first time your script meets a file like `Meeting Notes
-(final).docx`.
+(final).docx`. [Bulk rename a batch of files](/recipes/bulk-rename-files/) is that pairing
+written out in full, for a job where getting it wrong renames the wrong thing.
 
 ## Permission tests are exact-match by default
 

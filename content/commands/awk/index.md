@@ -84,7 +84,8 @@ needs a fixed number of decimal places.
 
 Debian's `awk` is a symlink managed by `update-alternatives`, and on a fresh install it usually
 points at `mawk`, a smaller and faster implementation that covers the POSIX language well
-(everything on this page runs under it). `apt install gawk` pulls in the GNU implementation,
+(everything on this page runs under it).
+[`apt install gawk`](/debian/apt-essentials/) pulls in the GNU implementation,
 which adds extensions such as `gensub()`, `asort()`, and in-place editing (`-i inplace`). If a
 script you find online uses one of those and errors out with "calling undefined function," that's
 almost certainly a `gawk`-only extension running under `mawk`.

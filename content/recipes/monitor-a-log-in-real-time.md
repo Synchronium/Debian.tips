@@ -4,7 +4,7 @@ description: "Watch a log file as new lines are written, filter it live, and kee
 category: recipes
 tags: [monitoring, sysadmin]
 updated: 2026-07-05
-related: [grep, exit-codes-and-error-handling, head]
+related: [grep, journalctl, exit-codes-and-error-handling, head]
 ---
 
 **Problem:** You need to watch a log file as new entries arrive, instead of repeatedly reopening
@@ -58,6 +58,6 @@ writing the new one. See [head and tail](/commands/head/) for more on that disti
 > `--retry`, so it keeps trying periodically if the file is missing at startup, useful for
 > watching a log that a service hasn't created yet.
 
-For a service managed by systemd, `journalctl -u servicename -f` is the equivalent for its
-journal entries rather than a plain file, and doesn't need `-F`'s rotation handling since the
-journal manages that itself.
+For a service managed by systemd, [`journalctl -u servicename -f`](/commands/journalctl/) is the
+equivalent for its journal entries rather than a plain file, and doesn't need `-F`'s rotation
+handling since the journal manages that itself.

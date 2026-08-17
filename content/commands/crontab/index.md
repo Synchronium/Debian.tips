@@ -4,9 +4,9 @@ tagline: "Schedule recurring commands and manage per-user crontabs"
 description: "Tested crontab examples: schedule syntax, @reboot/@daily shortcuts, per-user crontabs, and the PATH gotcha that breaks jobs that work fine in your shell."
 category: commands
 tags: [cron, sysadmin, environment]
-updated: 2026-08-13
+updated: 2026-08-17
 tier: standard
-related: [chmod, find, exit-codes-and-error-handling]
+related: [chmod, find, systemctl, journalctl, exit-codes-and-error-handling]
 ---
 
 `crontab` edits and lists the scheduled jobs — the **crontab** — belonging to a user. `cron`,
@@ -41,3 +41,24 @@ By default `crontab` edits your own crontab. Root can manage anyone's with `-u <
 else gets `must be privileged to use -u`. System-wide jobs that need to run as a specific user
 live in `/etc/crontab` and `/etc/cron.d/` instead, which carry an extra username field the
 per-user crontab doesn't have.
+
+## Finding out whether a job ran
+
+Cron mails a job's output to the owning user, and on a machine with no mail transfer agent
+installed — which most servers now are — that output is discarded. What survives is cron's own
+record of starting the job, which goes to the journal:
+
+```bash
+journalctl -u cron --since today    # every job cron started today
+```
+
+That tells you a job fired and when, not what it printed, so a job you need to debug should
+redirect its own output somewhere you can read it. See
+[`journalctl`](/commands/journalctl/) for filtering that log down.
+
+## Or use a systemd timer instead
+
+A timer unit does the same job as a crontab entry, with a real log, a recorded exit status, and
+`systemctl list-timers` to show what is scheduled and when it next runs. The cost is two unit
+files instead of one line. Cron is still the faster thing to reach for, but for anything whose
+failure you would want to notice, [`systemctl`](/commands/systemctl/) covers the alternative.

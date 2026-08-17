@@ -6,7 +6,7 @@ category: commands
 tags: [systemd, sysadmin, processes]
 updated: 2026-08-17
 tier: flagship
-related: [crontab, ssh, exit-codes-and-error-handling]
+related: [journalctl, crontab, kill-whatever-is-using-a-port, ssh, exit-codes-and-error-handling]
 ---
 
 `systemctl` is how you talk to systemd, which has been Debian's init system since jessie. It
@@ -49,7 +49,8 @@ stops. When you mean both, say both.
 The leading glyph is a quick health check: `●` for active or failed, `○` for stopped. `Loaded:`
 gives the unit file's path and whether it is enabled — that one line answers both state questions
 at once. `Active:` gives the current state and how long it has held it. Below that come the main
-PID, resource use, the process tree, and the last few journal lines for the unit.
+PID, resource use, the process tree, and the last few journal lines for the unit —
+[`journalctl -u`](/commands/journalctl/) is how you read the rest of them.
 
 Because the timestamps, PIDs and memory figures differ on every machine and every run, the
 examples on this page show the parts that don't, and use `is-active`, `is-enabled` and
@@ -77,8 +78,8 @@ old settings until you restart it too.
 
 Three locations, in increasing order of authority:
 
-- `/usr/lib/systemd/system/` — units shipped by Debian packages. Don't edit these; an upgrade
-  overwrites them.
+- `/usr/lib/systemd/system/` — units shipped by [Debian packages](/debian/apt-essentials/). Don't
+  edit these; an upgrade overwrites them.
 - `/etc/systemd/system/` — units you write, and overrides. Wins over the package copy.
 - `/etc/systemd/system/<unit>.d/*.conf` — drop-ins, which change individual settings while
   leaving the rest of the package's unit intact. Usually what you want.

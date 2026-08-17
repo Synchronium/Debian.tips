@@ -11,7 +11,8 @@
     "dev": "tsx src/server.ts",
     "test": "vitest run",
     "replay": "tsx scripts/replay-all.ts",
-    "check": "tsc --noEmit && vitest run && tsx src/build.ts && pagefind --site dist && tsx src/linkcheck.ts"
+    "audit:links": "tsx scripts/link-audit.ts",
+    "check": "tsc --noEmit && vitest run && tsx src/build.ts && pagefind --site dist && tsx src/linkcheck.ts && tsx scripts/link-audit.ts"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

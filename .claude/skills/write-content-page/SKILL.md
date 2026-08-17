@@ -194,13 +194,19 @@ Avoid common AI tropes — em dashes, "it's not X, it's Y", "here's why that mat
 
 Two gates, and a command page needs both:
 
-1. `npm run check` (typecheck, tests, build, linkcheck). Fix any schema violation, missing tag,
-   dead `related` link, or broken cross-link it surfaces — don't hand back a page that fails this.
+1. `npm run check` (typecheck, tests, build, linkcheck, link audit). Fix any schema violation,
+   missing tag, dead `related` link, or broken cross-link it surfaces — don't hand back a page
+   that fails this.
 2. `npm run replay -- <command>` for any page with fixtures, and report the score (it starts and
    stops its own sandbox; `npx tsx scripts/verify-examples.ts <sandbox> <command>
    scripts/fixtures/<command>.sh` is the same check against a sandbox you're already holding).
    `npm run check` validates *shape*; only the replay checks whether the outputs are true, which
    is the site's actual promise.
+
+A new page arrives orphaned — its own `related:` list points outward, and nothing points back at
+it. `npm run check` now fails on that, and the `cross-link-pages` skill is the pass that fixes it:
+the useful link is usually an inline one on a sentence in an existing page that already raises the
+question this page answers, not another `related:` entry.
 
 ## Notes for future parallel/batch use
 

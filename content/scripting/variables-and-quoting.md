@@ -5,7 +5,7 @@ category: scripting
 tags: [scripting, beginner]
 updated: 2026-07-05
 order: 2
-related: [your-first-script, exit-codes-and-error-handling]
+related: [your-first-script, conditionals-and-test, exit-codes-and-error-handling]
 ---
 
 This is the single biggest source of bash bugs, and the fix is one habit: **quote your
@@ -154,4 +154,6 @@ environment variable that works whether or not the caller provided one.
 
 ## What's next
 
-The next lesson covers `[` vs `[[` and how bash actually evaluates conditions.
+[Conditionals and test](/scripting/conditionals-and-test/) covers `[` vs `[[` and how bash
+actually evaluates conditions — including what happens to an unquoted variable inside a test,
+which is this lesson's rule with sharper consequences.

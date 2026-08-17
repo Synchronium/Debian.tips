@@ -6,7 +6,7 @@ category: commands
 tags: [systemd, sysadmin, monitoring]
 updated: 2026-08-17
 tier: standard
-related: [systemctl, crontab, grep]
+related: [systemctl, crontab, monitor-a-log-in-real-time, grep]
 ---
 
 `journalctl` reads the log that systemd collects. Anything a service writes to stdout or

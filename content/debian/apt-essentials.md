@@ -3,7 +3,8 @@ title: "APT essentials"
 description: "The apt, apt-get, and dpkg commands that cover almost everything you'll do to manage packages on Debian, and how remove differs from purge."
 category: debian
 tags: [apt, debian, sysadmin]
-updated: 2026-07-05
+updated: 2026-08-17
+related: [systemctl, grep, exit-codes-and-error-handling]
 ---
 
 `apt` is the command-line front end for Debian's package management system: installing,
@@ -34,6 +35,10 @@ sudo apt purge cowsay        # uninstall it AND delete its configuration files
 sudo apt autoremove          # clean up dependencies nothing else needs any more
 ```
 
+A package that ships a service usually starts it for you and enables it at boot, which is a
+Debian convention rather than something `apt` does universally. Check rather than assume:
+[`systemctl is-enabled <name>`](/commands/systemctl/) answers it in one word.
+
 `remove` and `purge` look interchangeable for a package with no configuration to speak of, but
 the distinction is real and `dpkg -l` shows it directly. After removing (not purging) a package
 that ships actual config files:
@@ -59,6 +64,10 @@ apt show curl                   # show a package's description, version, and dep
 apt list --installed            # list every package currently installed
 apt list --upgradable            # list packages with a newer version available
 ```
+
+`apt list --installed` on a real system prints thousands of lines, so it is nearly always worth
+narrowing with [`grep`](/commands/grep/) — `apt list --installed | grep -i python` answers "is
+this here, and which version" faster than `apt show` and a guess at the package name.
 
 Beyond `apt` itself, `dpkg` answers questions about packages already on your system without
 touching the network at all:
@@ -125,3 +134,8 @@ digging through `/etc/apt/sources.list.d/` by hand.
 > explicit warning that its output format isn't guaranteed stable between versions. Scripts
 > should prefer `apt-get`/`apt-cache`, whose plain-text output is considered a stable interface
 > `apt` deliberately isn't.
+
+A script installing packages also needs `-y`, or `apt-get` stops at a prompt nobody is there to
+answer, and needs to check that the install actually succeeded rather than carrying on with a
+missing binary. See [Exit codes and error handling](/concepts/exit-codes-and-error-handling/)
+for the pattern.

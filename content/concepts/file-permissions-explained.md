@@ -4,11 +4,12 @@ description: "The rwx/owner-group-other model, numeric vs symbolic chmod, umask,
 category: concepts
 tags: [permissions, beginner, sysadmin]
 updated: 2026-07-05
-related: [find, exit-codes-and-error-handling]
+related: [chmod, find, exit-codes-and-error-handling]
 ---
 
 You've typed `chmod 755` a hundred times. Here's what those three digits actually mean, and a
 genuine surprise waiting in `chmod`'s handling of directories that even experienced admins miss.
+For the flags themselves rather than the model behind them, see [`chmod`](/commands/chmod/).
 
 ## The model: three actors, three permissions
 

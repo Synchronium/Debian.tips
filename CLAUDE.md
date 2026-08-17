@@ -16,8 +16,9 @@ npm install
 npm run dev      # dev server at http://localhost:4321, full rebuild on any file change
 npm run build    # one-off production build to dist/
 npm test         # vitest run (unit + fixture-based build tests)
-npm run check    # tsc --noEmit && vitest run && build && pagefind && linkcheck — the full gate
+npm run check    # tsc --noEmit && vitest run && build && pagefind && linkcheck && link-audit — the full gate
 npm run replay   # replay every command page's examples in a sandbox (needs Docker, ~30s warm)
+npm run audit:links -- --verbose   # the link graph on its own, advisory findings included
 ```
 
 Run `npm run check` before treating any change as done — it's also what CI runs (`.github/workflows/ci.yml`), followed by `pa11y-ci` as a separate accessibility gate.
@@ -222,9 +223,33 @@ is a separate post-build static check (not a vitest test) that walks every emitt
 extracts `href`/`src` attributes, and verifies internal links resolve to real files and `#fragment`
 links resolve to a real `id` in the target page — part of `npm run check`, not `npm test`.
 
+### The link audit
+
+`scripts/link-audit.ts` asks the question linkcheck doesn't: not whether the links that exist
+resolve, but whether the ones that should exist do. It builds a graph from `related:` frontmatter
+plus every root-relative link in prose, example descriptions, section intros and fixture notes,
+then reports pages nothing links to (**orphaned**), pages linking to fewer than two others
+(**thin**), and pages reachable from exactly one (**weakly linked**). The first two fail the
+build; the third prints as a count unless you pass `--verbose`, since the gate runs this on every
+push and an advisory list nobody reads is worse than no list.
+
+A new page is an orphan by construction — nothing knew it was coming — and until this existed
+nothing in the repo noticed. Drafts are exempt from both defect checks, because the loader already
+rejects a published page linking to a draft, so a draft could never be anything but an orphan.
+
+The graph itself lives in `scripts/lib/linkGraph.ts` and is covered by `test/linkGraph.test.ts`,
+on the same reasoning as `normalise.ts`: a missing edge invents an orphan, which is noisy but
+visible, while an invented edge hides a real one behind a clean report. Heading anchors
+(`href="#flags"`, which rehype-autolink-headings puts on every `##`) and self-links are the two
+that would do it, and both are pinned by a test.
+
+`.claude/skills/cross-link-pages/SKILL.md` is the editorial half — what to do with the report,
+and why the fix is almost always an inline link on the sentence that raises the question rather
+than another `related:` entry.
+
 ### CI/deploy
 
-`.github/workflows/ci.yml`: typecheck + tests + build + linkcheck + pa11y-ci, on every PR and push
+`.github/workflows/ci.yml`: typecheck + tests + build + linkcheck + link-audit + pa11y-ci, on every PR and push
 to `main`. `.github/workflows/deploy.yml`: builds and publishes `dist/` to GitHub Pages on push to
 `main`. Both run on GitHub-hosted runners, independent of this repo's devcontainer.
 

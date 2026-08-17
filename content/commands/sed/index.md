@@ -4,9 +4,9 @@ tagline: "Edit text streams with a single pass, line by line"
 description: "Tested sed examples: substitution, addressing, deletion, in-place editing, and multi-command scripts."
 category: commands
 tags: [text-processing, regex]
-updated: 2026-07-05
+updated: 2026-08-17
 tier: flagship
-related: [grep, awk, tr, pipes-and-redirection, exit-codes-and-error-handling]
+related: [grep, awk, tr, diff, pipes-and-redirection, exit-codes-and-error-handling]
 ---
 
 `sed` (**s**tream **ed**itor) reads input one line at a time, applies a script of editing
@@ -69,6 +69,10 @@ keeps a backup of the original with `.bak` appended to the name first.
 > [!WARNING]
 > `-i` with no suffix overwrites the original with no backup at all. Test your script with
 > `-i.bak` (or no `-i`, just reading the printed output) before dropping the safety net.
+
+To see what an edit would change rather than reading the whole file, pipe the result into
+[`diff`](/commands/diff/) against the original: `sed "s/ERROR/CRITICAL/g" app.log | diff app.log -`
+prints only the lines that differ, and prints nothing at all when the script matched nothing.
 
 ## Beyond one line: the hold space
 

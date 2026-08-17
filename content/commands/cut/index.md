@@ -6,7 +6,7 @@ category: commands
 tags: [text-processing]
 updated: 2026-08-14
 tier: light
-related: [sort, tr]
+related: [sort, tr, awk]
 ---
 
 `cut` extracts columns from each line of input — either by **field** (`-f`, split on a
@@ -21,5 +21,5 @@ so it returns an empty field, not `b`. Second, `cut` always prints selected fiel
 1 before field 3.
 
 Multiple consecutive delimiters (like the padded columns in `ps` or `ls -l` output) create empty
-fields the same way — `tr -s` to squeeze repeated spaces into one first, or reach for `awk`,
-which handles both of these cases without the workaround.
+fields the same way — `tr -s` to squeeze repeated spaces into one first, or reach for
+[`awk`](/commands/awk/), which handles both of these cases without the workaround.
