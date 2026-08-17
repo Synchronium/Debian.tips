@@ -3,36 +3,34 @@
 //   npm run replay              # every page
 //   npm run replay -- wget curl # just these
 //
-// This is the check `npm run check` can't make. That gate validates *shape* — schema,
-// links, types — and every page it passes could still claim output no command ever
-// produced. Replaying is the only thing that tests the site's actual promise, and until
-// now it meant knowing to start a sandbox, knowing which pages exist, and remembering to
-// stop the container afterwards.
+// The check `npm run check` can't make: that gate validates shape — schema, links, types —
+// and would pass a page claiming output no command ever produced.
 //
-// Kept separate from `npm run check` because it needs Docker, not because it is slow: all
-// seventeen pages replay in about 30 seconds once the sandbox image exists. A cold run is
-// dominated by building that image.
+// Separate from `npm run check` because it needs Docker: the whole run takes about half a
+// minute once the sandbox image exists, and a cold run is dominated by building that image.
+//
+// Exit status: 0 when every page reproduces, 1 if any page fails, 2 if Docker is
+// unavailable or an argument names no page.
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
 import { readSetupDirectives } from "./lib/replay.js";
 
-const only = process.argv.slice(2).filter((a) => !a.startsWith("-"));
+const requestedPages = process.argv.slice(2).filter((arg) => !arg.startsWith("-"));
 
 const pages = readdirSync("content/commands", { withFileTypes: true })
-  .filter((e) => e.isDirectory())
-  .map((e) => e.name)
-  .filter((name) => (only.length ? only.includes(name) : true))
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name)
+  .filter((name) => (requestedPages.length ? requestedPages.includes(name) : true))
   .sort();
 
-const missing = only.filter((name) => !pages.includes(name));
+const missing = requestedPages.filter((name) => !pages.includes(name));
 if (missing.length) {
   console.error(`no such command page: ${missing.join(", ")}`);
   process.exit(2);
 }
 
-// A page with no setup script is reported rather than skipped in silence: "17/17 pages
-// replayed" and "14 pages replayed, 3 have no fixtures" are very different claims about
-// how much of the site is actually checked.
+// Pages with no setup script are reported rather than passed over: "17/17 replayed" and
+// "14 replayed, 3 have no fixtures" are different claims about how much is checked.
 const runnable = pages.filter((name) => existsSync(`scripts/fixtures/${name}.sh`));
 const unfixtured = pages.filter((name) => !runnable.includes(name));
 
@@ -43,17 +41,16 @@ try {
   process.exit(2);
 }
 
-// Pages that declare `# verify: --systemd` need a sandbox booted with systemd as PID 1,
-// which the default one deliberately isn't — it costs --privileged and the host cgroup
-// tree. Each flavour is started only if some page asks for it, so a run that touches no
-// systemd page grants nothing extra.
+// A page declaring `# verify: --systemd` needs a sandbox booted with systemd as PID 1,
+// which costs --privileged and the host's cgroup tree. Each flavour is started only if a
+// page in this run asks for it.
 type Flavour = "default" | "systemd";
 const flavourOf = (name: string): Flavour =>
   readSetupDirectives(`scripts/fixtures/${name}.sh`).needsSystemd ? "systemd" : "default";
-const needed = [...new Set(runnable.map(flavourOf))].sort();
+const neededFlavours = [...new Set(runnable.map(flavourOf))].sort();
 
-// Registered before the first container starts. One left behind holds its name, its image
-// layer and port 8080, and the next run inherits whatever state it was in.
+// Registered before the first container starts: one left behind holds its name and its
+// ports, and the next run would inherit whatever state it was left in.
 const sandboxes = new Map<Flavour, string>();
 let stopped = false;
 const stop = () => {
@@ -75,20 +72,19 @@ for (const signal of ["SIGINT", "SIGTERM"]) {
   });
 }
 
-for (const flavour of needed) {
+for (const flavour of neededFlavours) {
   const args = flavour === "systemd" ? ["start", "--systemd"] : ["start"];
   sandboxes.set(flavour, execFileSync("scripts/sandbox.sh", args, { encoding: "utf-8" }).trim());
 }
 
-const describe = [...sandboxes].map(([flavour, name]) => `${name} (${flavour})`).join(", ");
-console.log(`replaying ${runnable.length} page(s) in ${describe}\n`);
+const sandboxSummary = [...sandboxes].map(([flavour, name]) => `${name} (${flavour})`).join(", ");
+console.log(`replaying ${runnable.length} page(s) in ${sandboxSummary}\n`);
 
-const failed = [];
+const failed: string[] = [];
 const started = Date.now();
 for (const name of runnable) {
   const result = spawnSync(
     "npx",
-    // tsx, because these are TypeScript now; `npm run replay` guarantees it is installed.
     ["tsx", "scripts/verify-examples.ts", sandboxes.get(flavourOf(name)) ?? "", name, `scripts/fixtures/${name}.sh`],
     { stdio: "inherit" },
   );

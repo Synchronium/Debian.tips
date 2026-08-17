@@ -1,21 +1,15 @@
-// Shared by scripts/verify-examples.ts and scripts/adopt-real-output.ts.
-//
-// Anything both scripts need to agree on lives here rather than in each of them. They
-// have drifted apart twice — once over normalisation, once over how a title is matched —
-// and each time the symptom was a page that one tool wrote and the other rejected.
+// Reading a page's replay metadata: which examples are exempt from the batch, and how the
+// page has to be run.
 import { readFileSync } from "node:fs";
 
-/** Examples a batch replay genuinely can't reproduce, listed by title in
- *  scripts/fixtures/<command>.skip with a comment saying how each was verified instead.
+/** Titles listed in scripts/fixtures/<command>.skip: examples a batch can't reproduce,
+ *  because they need a concurrent writer, a live log rotation or a network peer. Each is
+ *  accompanied there by a comment saying how it was verified instead.
  *
- *  Matched exactly, never as a substring: a skip entry that is a prefix of a longer
- *  title ("Find symlinks" / "Find symlinks that point to a regular file") would quietly
- *  exempt the longer example too, and the page would keep reporting a clean N/N while
- *  covering less than it claims.
- *
- *  Every entry must name a real example carrying an `output:` block, because the file
- *  reads as a record of why specific examples are exempt. Two entries in tar.skip named
- *  examples that had been renamed months earlier and exempted nothing at all. */
+ *  Matched whole, never as a prefix, so an entry can't quietly exempt a longer title
+ *  alongside the one it names. Every entry must name a real example that documents an
+ *  `output:` block: one matching nothing reads as an exemption while exempting nothing,
+ *  and is an error. */
 export function loadSkipTitles(command: string, titlesWithOutput: string[]): Set<string> {
   let entries = [];
   try {
@@ -40,25 +34,21 @@ export function loadSkipTitles(command: string, titlesWithOutput: string[]): Set
   return new Set(entries);
 }
 
-/** How a page has to be replayed, read from a `# verify:` line in its setup script:
+/** Reads the `# verify:` lines from a setup script:
  *
  *      # verify: --user
+ *      # verify: --systemd
  *
- *  Four pages (chmod, find, tar, wget) document output containing file ownership, so
- *  they only reproduce when the examples run as the unprivileged `user`. Replaying chmod
- *  as root reports 9/42 on a page that is entirely correct, and the obvious reading of
- *  that is "the page drifted" — an afternoon's debugging for a flag nothing recorded.
- *  Keeping the mode next to the fixtures makes the documented command right for every
- *  page, and makes a transcript self-describing.
+ *  `--user` runs the examples as the unprivileged `user`. Pages printing file ownership or
+ *  a permission denial need it, since root is never denied and every `ls -l` would say
+ *  `root root`.
  *
- *  `--systemd` asks for a sandbox booted with systemd as PID 1 instead of the default
- *  `sleep`. The systemctl and journalctl pages need it: without it every example prints
- *  "System has not been booted with systemd as init system (PID 1). Can't operate." That
- *  sandbox runs --privileged with the host's cgroup tree, which is a stronger grant than
- *  the default one, so a page asks for it in writing rather than it applying everywhere. */
-/** How a page has to be replayed. Both tools read this and must agree: when the shape
- *  gained `needsSystemd`, a consumer still reading the old shape would have routed a
- *  systemd page to the default sandbox and got a page of identical errors. */
+ *  `--systemd` requires a sandbox booted with systemd as PID 1, which `systemctl` and
+ *  `journalctl` examples need and which costs --privileged and the host's cgroup tree.
+ *
+ *  Keeping both beside the fixtures means the documented invocation is correct for every
+ *  page, and a score is reproducible without knowing a flag in advance. */
+/** How a page has to be replayed, as declared by its own setup script. */
 export interface SetupDirectives {
   /** Run the examples as the unprivileged `user` rather than root. */
   asUser: boolean;
@@ -86,9 +76,4 @@ export function readSetupDirectives(setupPath: string | undefined): SetupDirecti
     process.exit(2);
   }
   return { asUser: directives.includes("--user"), needsSystemd: directives.includes("--systemd") };
-}
-
-/** Single-quotes a string for `bash -c`. */
-export function shellQuote(s: string): string {
-  return `'${s.replace(/'/g, `'\\''`)}'`;
 }
