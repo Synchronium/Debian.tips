@@ -15,6 +15,7 @@
 // dominated by building that image.
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
+import { readSetupDirectives } from "./lib/replay.mjs";
 
 const only = process.argv.slice(2).filter((a) => !a.startsWith("-"));
 
@@ -43,17 +44,27 @@ try {
   process.exit(2);
 }
 
-const sandbox = execFileSync("scripts/sandbox.sh", ["start"], { encoding: "utf-8" }).trim();
-// Registered before the first page runs. A container left behind holds its name, its
-// image layer and port 8080, and the next run inherits whatever state it was in.
+// Pages that declare `# verify: --systemd` need a sandbox booted with systemd as PID 1,
+// which the default one deliberately isn't — it costs --privileged and the host cgroup
+// tree. Each flavour is started only if some page asks for it, so a run that touches no
+// systemd page grants nothing extra.
+const flavourOf = (name) =>
+  readSetupDirectives(`scripts/fixtures/${name}.sh`).needsSystemd ? "systemd" : "default";
+const needed = [...new Set(runnable.map(flavourOf))].sort();
+
+// Registered before the first container starts. One left behind holds its name, its image
+// layer and port 8080, and the next run inherits whatever state it was in.
+const sandboxes = new Map();
 let stopped = false;
 const stop = () => {
   if (stopped) return;
   stopped = true;
-  try {
-    execFileSync("scripts/sandbox.sh", ["stop", sandbox], { stdio: "ignore" });
-  } catch {
-    console.error(`could not stop ${sandbox} — remove it with: docker stop ${sandbox}`);
+  for (const name of sandboxes.values()) {
+    try {
+      execFileSync("scripts/sandbox.sh", ["stop", name], { stdio: "ignore" });
+    } catch {
+      console.error(`could not stop ${name} — remove it with: docker stop ${name}`);
+    }
   }
 };
 process.on("exit", stop);
@@ -64,14 +75,20 @@ for (const signal of ["SIGINT", "SIGTERM"]) {
   });
 }
 
-console.log(`replaying ${runnable.length} page(s) in ${sandbox}\n`);
+for (const flavour of needed) {
+  const args = flavour === "systemd" ? ["start", "--systemd"] : ["start"];
+  sandboxes.set(flavour, execFileSync("scripts/sandbox.sh", args, { encoding: "utf-8" }).trim());
+}
+
+const describe = [...sandboxes].map(([flavour, name]) => `${name} (${flavour})`).join(", ");
+console.log(`replaying ${runnable.length} page(s) in ${describe}\n`);
 
 const failed = [];
 const started = Date.now();
 for (const name of runnable) {
   const result = spawnSync(
     "node",
-    ["scripts/verify-examples.mjs", sandbox, name, `scripts/fixtures/${name}.sh`],
+    ["scripts/verify-examples.mjs", sandboxes.get(flavourOf(name)), name, `scripts/fixtures/${name}.sh`],
     { stdio: "inherit" },
   );
   if (result.status !== 0) failed.push(name);

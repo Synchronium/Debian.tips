@@ -49,22 +49,33 @@ export function loadSkipTitles(command, titlesWithOutput) {
  *  as root reports 9/42 on a page that is entirely correct, and the obvious reading of
  *  that is "the page drifted" — an afternoon's debugging for a flag nothing recorded.
  *  Keeping the mode next to the fixtures makes the documented command right for every
- *  page, and makes a transcript self-describing. */
+ *  page, and makes a transcript self-describing.
+ *
+ *  `--systemd` asks for a sandbox booted with systemd as PID 1 instead of the default
+ *  `sleep`. The systemctl and journalctl pages need it: without it every example prints
+ *  "System has not been booted with systemd as init system (PID 1). Can't operate." That
+ *  sandbox runs --privileged with the host's cgroup tree, which is a stronger grant than
+ *  the default one, so a page asks for it in writing rather than it applying everywhere. */
+const KNOWN_DIRECTIVES = ["--user", "--systemd"];
+
 export function readSetupDirectives(setupPath) {
-  if (!setupPath) return { asUser: false };
+  const none = { asUser: false, needsSystemd: false };
+  if (!setupPath) return none;
   let source = "";
   try {
     source = readFileSync(setupPath, "utf-8");
   } catch {
-    return { asUser: false };
+    return none;
   }
   const directives = [...source.matchAll(/^#\s*verify:\s*(.+)$/gm)].flatMap((m) => m[1].trim().split(/\s+/));
-  const unknown = directives.filter((d) => d !== "--user");
+  const unknown = directives.filter((d) => !KNOWN_DIRECTIVES.includes(d));
   if (unknown.length) {
-    console.error(`${setupPath}: unknown "# verify:" directive(s): ${unknown.join(" ")} (only --user is understood)`);
+    console.error(
+      `${setupPath}: unknown "# verify:" directive(s): ${unknown.join(" ")} (understood: ${KNOWN_DIRECTIVES.join(", ")})`,
+    );
     process.exit(2);
   }
-  return { asUser: directives.includes("--user") };
+  return { asUser: directives.includes("--user"), needsSystemd: directives.includes("--systemd") };
 }
 
 /** Single-quotes a string for `bash -c`. */

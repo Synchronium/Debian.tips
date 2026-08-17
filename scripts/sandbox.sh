@@ -42,7 +42,7 @@ require_sandbox_name() {
 usage() {
   cat >&2 <<EOF
 Usage:
-  $0 start [name]                        start a disposable sandbox, prints its name
+  $0 start [--systemd] [name]            start a disposable sandbox, prints its name
   $0 exec [-u user] <name> <command...>  run a command inside the sandbox (bash -c)
   $0 stop <name>                         stop and remove the sandbox
   $0 list                                list running sandboxes
@@ -55,9 +55,46 @@ cmd="${1:-}"; shift || true
 case "$cmd" in
   start)
     ensure_image
+    systemd=0
+    if [[ "${1:-}" == "--systemd" ]]; then systemd=1; shift; fi
     name="${1:-${NAME_PREFIX}$$-${RANDOM}}"
     require_sandbox_name "$name"
-    docker run -d --rm --name "$name" "$IMAGE" >/dev/null
+
+    if (( systemd )); then
+      # Same image — systemd is already installed. What the systemctl and journalctl pages
+      # need isn't more packages, it's PID 1: with `sleep` as init, every example on those
+      # pages prints "System has not been booted with systemd as init system (PID 1)".
+      #
+      # This costs more privilege than the default sandbox: --privileged and the host's
+      # cgroup tree, because systemd manages cgroups and refuses to start without them.
+      # That's why it isn't the default. Pages ask for it explicitly with a
+      # `# verify: --systemd` line in their setup script, so the stronger grant is visible
+      # in the page's own fixtures rather than applied to everything.
+      docker run -d --rm --name "$name" --hostname deb1 \
+        --privileged --cgroupns=host \
+        -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
+        "$IMAGE" /lib/systemd/systemd >/dev/null
+
+      # Wait for the boot to finish. Without this, an early example races the units it is
+      # about: `systemctl status cron` answers "activating" or not at all, which reads as
+      # a page that has drifted. `is-system-running` returns non-zero for `degraded`, which
+      # is a normal state for a container (no udev, no network target), so the exit status
+      # is deliberately ignored — `running` and `degraded` are both booted.
+      for _ in $(seq 1 50); do
+        state=$(docker exec "$name" systemctl is-system-running 2>/dev/null || true)
+        case "$state" in
+          running|degraded) break ;;
+        esac
+        sleep 0.2
+      done
+      if [[ "$state" != "running" && "$state" != "degraded" ]]; then
+        echo "error: systemd did not finish booting in $name (last state: ${state:-none})" >&2
+        docker stop "$name" >/dev/null 2>&1 || true
+        exit 1
+      fi
+    else
+      docker run -d --rm --name "$name" --hostname deb1 "$IMAGE" >/dev/null
+    fi
     echo "$name"
     ;;
   exec)

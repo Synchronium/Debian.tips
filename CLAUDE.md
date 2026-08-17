@@ -76,7 +76,16 @@ That invocation is correct for every page. Some pages have to replay as the unpr
 `user` — anything printing file ownership (`tar -tvf`, `ls -l`) or documenting a permission
 denial, since root simply doesn't get denied — and each of those says so itself, with a
 `# verify: --user` line in its setup script that both `verify-examples.mjs` and
-`adopt-real-output.mjs` read. Replayed as root, `chmod` scores 9/42 and `tar` 32/42 on pages that
+`adopt-real-output.mjs` read.
+
+A second directive, `# verify: --systemd`, asks for a sandbox booted with systemd as PID 1
+(`scripts/sandbox.sh start --systemd`). The `systemctl` and `journalctl` pages need it: the
+default sandbox runs `sleep` as PID 1, where every such example prints "System has not been
+booted with systemd as init system (PID 1). Can't operate." It is the same image — systemd is
+already installed — but a different runtime, costing `--privileged` and the host's cgroup tree,
+which is why it is opt-in per page rather than the default. `npm run replay` starts only the
+flavours the selected pages ask for, and `verify-examples.mjs` refuses to replay a `--systemd`
+page in a sandbox whose PID 1 isn't systemd rather than producing a page of identical errors. Replayed as root, `chmod` scores 9/42 and `tar` 32/42 on pages that
 are entirely correct, which reads exactly like a page that has drifted; the mode is part of the
 score, so it's printed alongside it.
 

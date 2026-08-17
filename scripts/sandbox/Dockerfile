@@ -11,6 +11,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     sudo ca-certificates openssl \
     && rm -rf /var/lib/apt/lists/*
 
+# A container cannot load kernel modules — the host owns the kernel — so this unit fails on
+# every boot and leaves `systemctl is-system-running` reporting "degraded" for a reason no
+# reader would ever see on their own machine. Masking it means the systemctl page documents
+# a healthy system rather than a container artifact. Masking is a symlink to /dev/null, so
+# it works at build time with no systemd running.
+RUN systemctl mask systemd-modules-load.service
+
 RUN useradd -m -s /bin/bash user \
     && echo "user:user" | chpasswd \
     && echo "user ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/user

@@ -22,7 +22,9 @@ if (!sandbox || !command || titles.length === 0) {
   console.error('usage: adopt-real-output.mjs [--user] <sandbox> <command> <setup.sh> "<title>"|--all');
   process.exit(2);
 }
-const asUser = asUserFlag || readSetupDirectives(setupPath).asUser;
+const directives = readSetupDirectives(setupPath);
+const asUser = asUserFlag || directives.asUser;
+const needsSystemd = directives.needsSystemd;
 
 const path = `content/commands/${command}/examples.yaml`;
 const doc = parse(readFileSync(path, "utf-8"));
@@ -40,6 +42,21 @@ const run = (cmd, opts = {}) =>
     ["exec", ...(opts.root || !asUser ? [] : ["-u", "user"]), sandbox, cmd],
     { encoding: "utf-8", maxBuffer: 64 * 1024 * 1024 },
   );
+
+// A page that asks for `# verify: --systemd` must actually get a booted sandbox. Handing it
+// the default one produces a page's worth of "System has not been booted with systemd as
+// init system (PID 1)" — real output, reproducing nothing the page is about. Cheaper to
+// refuse than to let the diff explain it fifty times.
+if (needsSystemd) {
+  const init = run("cat /proc/1/comm", { root: true }).trim();
+  if (init !== "systemd") {
+    console.error(
+      `${command} declares "# verify: --systemd" but ${sandbox} is running "${init}" as PID 1.\n` +
+        `Start one with: scripts/sandbox.sh start --systemd`,
+    );
+    process.exit(2);
+  }
+}
 
 run(`rm -rf ${WORKDIR} && mkdir -p ${WORKDIR}${asUser ? ` && chown user:user ${WORKDIR}` : ""}`, { root: true });
 // Mirrors verify-examples.mjs: any Python helper in scripts/fixtures/ is installed into

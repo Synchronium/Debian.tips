@@ -35,7 +35,9 @@ if (!sandbox || !command) {
 
 // The page's own setup script says how it has to be replayed; the flag is a manual
 // override for a page that has no setup script yet.
-const asUser = asUserFlag || readSetupDirectives(setupPath).asUser;
+const directives = readSetupDirectives(setupPath);
+const asUser = asUserFlag || directives.asUser;
+const needsSystemd = directives.needsSystemd;
 
 const doc = parse(readFileSync(`content/commands/${command}/examples.yaml`, "utf-8"));
 
@@ -135,6 +137,21 @@ const run = (cmd, opts = {}) =>
 
 // The working directory is created as root either way, so hand it over when the examples
 // themselves run as `user` — otherwise the setup script can't write into it.
+// A page that asks for `# verify: --systemd` must actually get a booted sandbox. Handing it
+// the default one produces a page's worth of "System has not been booted with systemd as
+// init system (PID 1)" — real output, reproducing nothing the page is about. Cheaper to
+// refuse than to let the diff explain it fifty times.
+if (needsSystemd) {
+  const init = run("cat /proc/1/comm", { root: true }).trim();
+  if (init !== "systemd") {
+    console.error(
+      `${command} declares "# verify: --systemd" but ${sandbox} is running "${init}" as PID 1.\n` +
+        `Start one with: scripts/sandbox.sh start --systemd`,
+    );
+    process.exit(2);
+  }
+}
+
 run(`rm -rf ${WORKDIR} && mkdir -p ${WORKDIR}${asUser ? ` && chown user:user ${WORKDIR}` : ""}`, { root: true });
 // Any Python helper in scripts/fixtures/ is installed into the sandbox before the setup
 // script runs. http-mock.py is the local HTTP server the curl and wget pages exercise; it
