@@ -1,0 +1,571 @@
+command: systemctl
+fixtures:
+  - name: "/etc/systemd/system/deploy-agent.service"
+    note: "a unit that exists only for this page, standing in for whatever service you are working on"
+    from: "cat /etc/systemd/system/deploy-agent.service"
+    content: |
+      [Unit]
+      Description=Deploy agent
+      After=network.target
+
+      [Service]
+      ExecStart=/usr/local/bin/deploy-agent
+      Restart=on-failure
+
+      [Install]
+      WantedBy=multi-user.target
+  - name: "/etc/systemd/system/backup-sync.service"
+    note: "fails on purpose, so the page can show what a failed unit looks like"
+    from: "cat /etc/systemd/system/backup-sync.service"
+    content: |
+      [Unit]
+      Description=Nightly backup sync
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/backup-sync
+
+sections:
+  - title: "Is it running?"
+    intro: "Every one of these is safe to run as any user, and none of them change anything."
+    examples:
+      - title: "Check whether a service is running"
+        code: systemctl is-active cron
+        description: "Prints one word — `active`, `inactive` or `failed` — and exits `0` only when the service is active. The form to reach for in a script."
+        output: |2
+          active
+        level: basic
+        tags: [beginner, monitoring]
+      - title: "Check whether a service starts at boot"
+        code: systemctl is-enabled cron
+        description: "The other half of the question, and independent of the first: a service can be enabled and stopped, or running and disabled."
+        output: |2
+          enabled
+        level: basic
+        tags: [beginner]
+      - title: "See a service's unit file and enabled state in one line"
+        code: systemctl status cron --no-pager | head -2
+        description: "The `Loaded:` line names the unit file systemd is using and whether it is enabled, which answers 'where is this configured?' and 'will it come back after a reboot?' at once."
+        output: |2
+          ● cron.service - Regular background program processing daemon
+               Loaded: loaded (/usr/lib/systemd/system/cron.service; enabled; preset: enabled)
+        level: basic
+        tags: [beginner]
+      - title: "See the state of a stopped service"
+        code: systemctl status deploy-agent --no-pager | head -3
+        description: "`○` rather than `●` marks a unit that isn't running, and `Active: inactive (dead)` confirms it stopped cleanly rather than failing."
+        output: |2
+          ○ deploy-agent.service - Deploy agent
+               Loaded: loaded (/etc/systemd/system/deploy-agent.service; disabled; preset: enabled)
+               Active: inactive (dead)
+        level: basic
+      - title: "Ask for one property exactly"
+        code: systemctl show cron -p ActiveState --value
+        description: "`show` reads systemd's own state, and `--value` prints the value alone. Unlike `status` it is stable enough to compare against in a script."
+        output: |2
+          active
+        level: intermediate
+        tags: [scripting]
+      - title: "Ask for several properties at once"
+        code: systemctl show cron -p ActiveState,SubState,UnitFileState
+        description: "Without `--value` each line is `Property=value`. `SubState` is the fine-grained state (`running`, `exited`, `dead`) behind the coarse `ActiveState`."
+        output: |2
+          ActiveState=active
+          SubState=running
+          UnitFileState=enabled
+        level: intermediate
+      - title: "Find out where a unit file actually lives"
+        code: systemctl show cron -p FragmentPath --value
+        description: "Answers which of the three unit directories won, without guessing from the file system."
+        output: |2
+          /usr/lib/systemd/system/cron.service
+        level: intermediate
+      - title: "Check whether a service has failed"
+        code: systemctl is-failed deploy-agent
+        description: "Exits `0` when the unit *is* failed, which reads backwards until you think of it as a test rather than a report."
+        output: |2
+          inactive
+        level: intermediate
+        tags: [scripting]
+
+  - title: "Starting and stopping"
+    intro: "All of these change system state, so they need root."
+    examples:
+      - title: "Start a service now"
+        code: sudo systemctl start deploy-agent
+        description: "Starts it immediately and says nothing on success. This does not make it start at boot — see the next section."
+        level: basic
+        tags: [beginner]
+      - title: "Confirm a service started"
+        code: |-
+          sudo systemctl start deploy-agent
+          systemctl is-active deploy-agent
+        description: "`start` is silent, so pair it with `is-active` when you want confirmation rather than trust."
+        output: |2
+          active
+        level: basic
+        tags: [beginner]
+      - title: "Stop a service now"
+        code: |-
+          sudo systemctl start deploy-agent
+          sudo systemctl stop deploy-agent
+          systemctl is-active deploy-agent
+        description: "Stops it immediately. It will still start at the next boot if it is enabled, which is the single most common systemd surprise."
+        output: |2
+          inactive
+        level: basic
+        tags: [beginner]
+      - title: "Restart a service"
+        code: |-
+          sudo systemctl start deploy-agent
+          sudo systemctl restart deploy-agent
+          systemctl is-active deploy-agent
+        description: "Stops then starts, in one command. On a stopped service `restart` simply starts it."
+        output: |2
+          active
+        level: basic
+        tags: [beginner]
+      - title: "Restart a service only if it is already running"
+        code: |-
+          sudo systemctl try-restart deploy-agent
+          systemctl is-active deploy-agent
+        description: "`try-restart` does nothing to a stopped service, where `restart` would start it. What a package's post-upgrade script wants: refresh whatever is running, start nothing that isn't."
+        output: |2
+          inactive
+        level: intermediate
+        tags: [sysadmin]
+      - title: "Reload a service's configuration without dropping connections"
+        code: sudo systemctl reload ssh
+        description: "Asks the service to re-read its own config while staying up. Only works where the unit defines `ExecReload`, which long-running network daemons usually do."
+        level: intermediate
+        tags: [sysadmin]
+      - title: "Find out that a service can't be reloaded"
+        code: |-
+          sudo systemctl reload cron
+          echo "exit=$?"
+        description: "A unit with no `ExecReload` refuses rather than silently restarting, and exit `3` distinguishes that from a service that failed to reload."
+        output: |2
+          Failed to reload cron.service: Job type reload is not applicable for unit cron.service.
+          exit=3
+        level: intermediate
+      - title: "Reload if possible, restart if not"
+        code: |-
+          sudo systemctl reload-or-restart deploy-agent
+          systemctl is-active deploy-agent
+        description: "Picks whichever the unit supports. Useful in a script that handles services it doesn't know the details of."
+        output: |2
+          active
+        level: intermediate
+        tags: [scripting]
+      - title: "Send a signal to a service"
+        code: |-
+          sudo systemctl start deploy-agent
+          sudo systemctl kill -s SIGHUP deploy-agent
+          systemctl is-active deploy-agent
+        description: "`kill` signals the service's processes without systemd treating it as a stop request. `-s` picks the signal; the default is `SIGTERM`."
+        output: |2
+          active
+        level: advanced
+        tags: [processes]
+
+  - title: "Running at boot"
+    intro: "`enable` and `disable` write and remove symlinks under `/etc/systemd/system`; neither touches whether the service is running now."
+    examples:
+      - title: "Make a service start at boot"
+        code: sudo systemctl enable deploy-agent
+        description: "Creates the symlink that the unit's `WantedBy=` target looks for. It does not start the service now."
+        output: |2
+          Created symlink '/etc/systemd/system/multi-user.target.wants/deploy-agent.service' → '/etc/systemd/system/deploy-agent.service'.
+        level: basic
+        tags: [beginner, sysadmin]
+      - title: "Enable a service without starting it, and prove it"
+        code: |-
+          sudo systemctl enable deploy-agent 2>/dev/null
+          systemctl is-enabled deploy-agent
+          systemctl is-active deploy-agent
+        description: "The pairing that shows the two states are independent: enabled for next boot, not running now."
+        output: |2
+          enabled
+          inactive
+        level: basic
+      - title: "Enable and start in one command"
+        code: |-
+          sudo systemctl enable --now deploy-agent 2>/dev/null
+          systemctl is-enabled deploy-agent
+          systemctl is-active deploy-agent
+        description: "`--now` is what most people mean by 'turn this service on': running immediately and again after a reboot."
+        output: |2
+          enabled
+          active
+        level: basic
+        tags: [beginner, sysadmin]
+      - title: "Stop a service from starting at boot"
+        code: |-
+          sudo systemctl enable deploy-agent 2>/dev/null
+          sudo systemctl disable deploy-agent
+        description: "Removes the symlink `enable` created. A service that is currently running keeps running until you stop it or reboot."
+        output: |2
+          Removed '/etc/systemd/system/multi-user.target.wants/deploy-agent.service'.
+        level: basic
+        tags: [sysadmin]
+      - title: "Disable and stop in one command"
+        code: |-
+          sudo systemctl enable --now deploy-agent >/dev/null 2>&1
+          sudo systemctl disable --now deploy-agent
+          systemctl is-active deploy-agent
+        description: "The mirror of `enable --now`, and what you want when retiring a service rather than pausing it."
+        output: |2
+          Removed '/etc/systemd/system/multi-user.target.wants/deploy-agent.service'.
+          inactive
+        level: intermediate
+        tags: [sysadmin]
+      - title: "See that stopping a service leaves it enabled"
+        code: |-
+          sudo systemctl enable --now deploy-agent >/dev/null 2>&1
+          sudo systemctl stop deploy-agent
+          systemctl is-active deploy-agent
+          systemctl is-enabled deploy-agent
+        description: "The failure mode behind 'we fixed it yesterday and it came back': stopping is not disabling, and a reboot undoes it."
+        output: |2
+          inactive
+          enabled
+        level: intermediate
+        tags: [sysadmin]
+      - title: "List everything that starts at boot"
+        code: systemctl list-unit-files --type=service --state=enabled --no-pager --no-legend
+        description: "The inventory to review on a server you have inherited. `--no-legend` drops the trailing explanation, leaving one line per unit."
+        output: |2
+          cron.service           enabled enabled
+          getty@.service         enabled enabled
+          ssh.service            enabled enabled
+          sshd-keygen.service    enabled enabled
+          systemd-pstore.service enabled enabled
+        level: intermediate
+        tags: [sysadmin, security]
+      - title: "Prevent a service from being started at all"
+        code: |-
+          sudo systemctl mask apt-daily.service
+          systemctl is-enabled apt-daily.service
+        description: "Masking points the unit at `/dev/null`, so nothing can start it — not `start`, not another unit depending on it. Stronger than `disable`, and the right tool when something keeps starting a service you don't want."
+        output: |2
+          Created symlink '/etc/systemd/system/apt-daily.service' → '/dev/null'.
+          Masking 'apt-daily.service', but its triggering units are still active:
+          apt-daily.timer
+          masked
+        level: advanced
+        tags: [sysadmin]
+      - title: "See a masked service refuse to start"
+        code: |-
+          sudo systemctl mask apt-daily.service >/dev/null 2>&1
+          sudo systemctl start apt-daily.service
+          echo "exit=$?"
+        description: "The refusal is explicit rather than a silent no-op, which is what makes masking safe to rely on."
+        output: |2
+          Failed to start apt-daily.service: Unit apt-daily.service is masked.
+          exit=1
+        level: advanced
+      - title: "Undo a mask"
+        code: |-
+          sudo systemctl mask apt-daily.service >/dev/null 2>&1
+          sudo systemctl unmask apt-daily.service
+        description: "Removes the symlink to `/dev/null` and restores whatever the unit's enabled state was before."
+        output: |2
+          Removed '/etc/systemd/system/apt-daily.service'.
+        level: advanced
+
+  - title: "When a service won't start"
+    intro: "A failed unit stays marked failed until it starts cleanly or you clear it, which is what makes failures visible hours later."
+    examples:
+      - title: "Watch a service fail to start"
+        code: |-
+          sudo systemctl start backup-sync
+          echo "exit=$?"
+        description: "`start` reports the failure and exits non-zero, pointing at the two commands that explain it."
+        output: |2
+          Job for backup-sync.service failed because the control process exited with error code.
+          See "systemctl status backup-sync.service" and "journalctl -xeu backup-sync.service" for details.
+          exit=1
+        level: basic
+        tags: [sysadmin]
+      - title: "Confirm a service is in the failed state"
+        code: |-
+          sudo systemctl start backup-sync 2>/dev/null
+          systemctl is-failed backup-sync
+        description: "`failed` means it tried and didn't make it, as distinct from `inactive`, which means nobody asked it to run."
+        output: |2
+          failed
+        level: basic
+      - title: "List everything that has failed"
+        code: |-
+          sudo systemctl start backup-sync 2>/dev/null
+          systemctl --failed --no-pager --no-legend
+        description: "The first command to run on a machine that is misbehaving for no obvious reason."
+        output: |2
+          ● backup-sync.service loaded failed failed Nightly backup sync
+        level: basic
+        tags: [beginner, sysadmin, monitoring]
+      - title: "See the exit code a service died with"
+        code: |-
+          sudo systemctl start backup-sync 2>/dev/null
+          systemctl show backup-sync -p Result,ExecMainStatus
+        description: "`Result` says how systemd classified the failure and `ExecMainStatus` is the process's own exit code — the number the program chose, which its documentation will explain."
+        output: |2
+          Result=exit-code
+          ExecMainStatus=1
+        level: intermediate
+        tags: [scripting]
+      - title: "Clear a failed state once it is fixed"
+        code: |-
+          sudo systemctl start backup-sync 2>/dev/null
+          sudo systemctl reset-failed backup-sync
+          systemctl is-failed backup-sync
+        description: "Forgets the failure so the unit stops showing in `--failed`. It does not start anything or fix anything, and a service that fails again comes straight back."
+        output: |2
+          inactive
+        level: intermediate
+        tags: [sysadmin]
+      - title: "Clear every failed unit at once"
+        code: |-
+          sudo systemctl start backup-sync 2>/dev/null
+          sudo systemctl reset-failed
+          systemctl --failed --no-pager --no-legend
+          echo "(nothing above)"
+        description: "With no unit named, `reset-failed` clears them all. Worth doing deliberately rather than habitually: it erases the evidence that something went wrong."
+        output: |2
+          (nothing above)
+        level: intermediate
+      - title: "Check a unit file for syntax problems"
+        code: systemd-analyze verify /etc/systemd/system/deploy-agent.service
+        description: "Parses the unit and reports anything systemd would complain about, before you find out by restarting a service at three in the morning. Silence means it is valid."
+        level: advanced
+        tags: [sysadmin]
+
+  - title: "Unit files and changing them"
+    intro: "systemd works from its own parsed copy of a unit file, so editing one on disk is only half the job."
+    examples:
+      - title: "Read a unit file, wherever it lives"
+        code: systemctl cat deploy-agent
+        description: "Prints the unit file with its path as a comment on the first line, plus every drop-in applying to it, in the order systemd reads them. Beats guessing which of the three unit directories is winning."
+        output: |2
+          # /etc/systemd/system/deploy-agent.service
+          [Unit]
+          Description=Deploy agent
+          After=network.target
+
+          [Service]
+          ExecStart=/usr/local/bin/deploy-agent
+          Restart=on-failure
+
+          [Install]
+          WantedBy=multi-user.target
+        level: basic
+        tags: [beginner]
+      - title: "See that an edited unit file has not taken effect yet"
+        code: |-
+          sudo systemctl start deploy-agent
+          sudo sed -i 's/Description=Deploy agent/Description=Deploy agent v2/' /etc/systemd/system/deploy-agent.service
+          systemctl show deploy-agent -p Description --value
+        description: "systemd is still using the copy it parsed when the service started. The file on disk and the running configuration now disagree."
+        output: |2
+          Deploy agent
+        level: intermediate
+        tags: [sysadmin]
+      - title: "Load a changed unit file"
+        code: |-
+          sudo systemctl start deploy-agent
+          sudo sed -i 's/Description=Deploy agent/Description=Deploy agent v2/' /etc/systemd/system/deploy-agent.service
+          sudo systemctl daemon-reload
+          systemctl show deploy-agent -p Description --value
+        description: "`daemon-reload` re-reads every unit file. It changes no running process, so a service also needs a `restart` before new `ExecStart` or environment settings apply."
+        output: |2
+          Deploy agent v2
+        level: basic
+        tags: [beginner, sysadmin]
+      - title: "Notice the warning about a stale unit file"
+        code: |-
+          sudo systemctl start deploy-agent
+          sudo sed -i 's/Description=Deploy agent/Description=Deploy agent v2/' /etc/systemd/system/deploy-agent.service
+          systemctl status deploy-agent --no-pager 2>&1 | head -1
+        description: "systemd notices the file changed and says so at the top of `status`. This line is the answer to 'why is it ignoring my config?' most of the time it is asked."
+        output: |2
+          Warning: The unit file, source configuration file or drop-ins of deploy-agent.service changed on disk. Run 'systemctl daemon-reload' to reload units.
+        level: intermediate
+        tags: [sysadmin]
+      - title: "Override one setting without touching the package's unit file"
+        code: |-
+          sudo mkdir -p /etc/systemd/system/deploy-agent.service.d
+          printf '[Service]\nRestart=always\n' | sudo tee /etc/systemd/system/deploy-agent.service.d/restart.conf >/dev/null
+          sudo systemctl daemon-reload
+          systemctl show deploy-agent -p Restart --value
+        description: "A drop-in changes the settings it names and leaves the rest of the unit alone, so a package upgrade can replace the original without discarding your change. `systemctl edit deploy-agent` creates the same file interactively."
+        output: |2
+          always
+        level: advanced
+        tags: [sysadmin]
+      - title: "See which drop-ins are applying"
+        code: |-
+          sudo mkdir -p /etc/systemd/system/deploy-agent.service.d
+          printf '[Service]\nRestart=always\n' | sudo tee /etc/systemd/system/deploy-agent.service.d/restart.conf >/dev/null
+          sudo systemctl daemon-reload
+          systemctl cat deploy-agent | tail -4
+        description: "`cat` appends each drop-in after the main unit, with its path, so the file that is overriding a setting names itself."
+        output: |2
+          # /etc/systemd/system/deploy-agent.service.d/restart.conf
+          [Service]
+          Restart=always
+        level: advanced
+      - title: "Check the resulting configuration rather than the files"
+        code: systemctl show deploy-agent -p Restart,ExecStart --value
+        description: "`show` reports what systemd will actually do, after the unit file, every drop-in and every default have been combined. The last word on 'what is this service configured to do?'"
+        output: |2
+          on-failure
+          { path=/usr/local/bin/deploy-agent ; argv[]=/usr/local/bin/deploy-agent ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }
+        level: advanced
+      - title: "Reload systemd's own configuration after writing a new unit"
+        code: |-
+          printf '[Unit]\nDescription=Report disk usage\n\n[Service]\nType=oneshot\nExecStart=/usr/bin/df -h /\n' | sudo tee /etc/systemd/system/disk-report.service >/dev/null
+          sudo systemctl daemon-reload
+          systemctl is-enabled disk-report.service
+        description: "A brand-new unit file is invisible to systemd until `daemon-reload`. `static` means the unit has no `[Install]` section, so it cannot be enabled — only started, or pulled in by something else."
+        output: |2
+          static
+        level: intermediate
+        tags: [sysadmin]
+
+  - title: "Looking at the whole system"
+    intro: "The commands for orienting yourself on a machine you did not set up."
+    examples:
+      - title: "Check whether the system booted cleanly"
+        code: systemctl is-system-running
+        description: "`running` means everything systemd was asked to start did start. `degraded` means at least one unit failed and is worth investigating with `--failed`."
+        output: |2
+          running
+        level: basic
+        tags: [beginner, monitoring]
+      - title: "List the services that are running"
+        code: systemctl list-units --type=service --state=running --no-pager --no-legend | head -4
+        description: "`list-units` reports what systemd has loaded, filtered here to services that are actually up. Add `--all` to include units that are loaded but inactive."
+        output: |2
+            cron.service             loaded active running Regular background program processing daemon
+            getty@tty1.service       loaded active running Getty on tty1
+            getty@tty2.service       loaded active running Getty on tty2
+            getty@tty3.service       loaded active running Getty on tty3
+        level: basic
+        tags: [beginner, monitoring]
+      - title: "Find a service when you only know part of its name"
+        code: systemctl list-unit-files --type=service --no-pager --no-legend 'ssh*'
+        description: "A glob pattern narrows the list, which beats scrolling when you can't remember whether the unit is `ssh`, `sshd` or `openssh-server`. On Debian it is `ssh`."
+        output: |2
+          ssh.service              enabled  enabled
+          sshd-keygen.service      enabled  enabled
+          sshd-unix-local@.service alias    -
+          sshd.service             alias    -
+          sshd@.service            indirect enabled
+        level: intermediate
+        tags: [beginner]
+      - title: "See what a unit depends on"
+        code: systemctl list-dependencies deploy-agent --no-pager | head -3
+        description: "Prints the tree of units that must be active first. `●` and `○` mark which of them currently are."
+        output: |2
+          deploy-agent.service
+          ● ├─system.slice
+          ● └─sysinit.target
+        level: intermediate
+      - title: "See what depends on a unit"
+        code: systemctl list-dependencies cron --reverse --no-pager | head -2
+        description: "`--reverse` answers the question that matters before stopping something: what else breaks if this goes away."
+        output: |2
+          cron.service
+          ● └─multi-user.target
+        level: advanced
+        tags: [sysadmin]
+      - title: "List the timers that will fire"
+        code: systemctl list-unit-files --type=timer --state=enabled --no-pager --no-legend
+        description: "systemd timers are the modern alternative to cron entries, and a package may install one without saying so. This lists them without the volatile next-run times of `list-timers`."
+        output: |2
+          apt-daily-upgrade.timer enabled enabled
+          apt-daily.timer         enabled enabled
+          dpkg-db-backup.timer    enabled enabled
+          fstrim.timer            enabled enabled
+          man-db.timer            enabled enabled
+        level: intermediate
+        tags: [cron, sysadmin]
+      - title: "See which target the system boots into"
+        code: systemctl get-default
+        description: "`graphical.target` pulls in a display manager; `multi-user.target` is the text-console target a server install usually settles on. `sudo systemctl set-default multi-user.target` changes it."
+        output: |2
+          graphical.target
+        level: intermediate
+
+  - title: "In scripts"
+    intro: "`systemctl` sets exit codes precisely, which is what makes it usable in a script rather than something to parse."
+    examples:
+      - title: "Act on whether a service is running"
+        code: |-
+          if systemctl is-active --quiet cron; then
+            echo "cron is up"
+          fi
+        description: "`--quiet` suppresses the printed word and leaves only the exit code, which is what a conditional needs."
+        output: |2
+          cron is up
+        level: intermediate
+        tags: [scripting]
+      - title: "Act on whether a service is enabled"
+        code: |-
+          if systemctl is-enabled --quiet deploy-agent; then
+            echo "starts at boot"
+          else
+            echo "will not survive a reboot"
+          fi
+        description: "The check worth putting in a provisioning script, where 'it is running' is the easy half to get right."
+        output: |2
+          will not survive a reboot
+        level: intermediate
+        tags: [scripting, sysadmin]
+      - title: "Fail a health check when a service is down"
+        code: |-
+          systemctl is-active --quiet deploy-agent || echo "deploy-agent is not running"
+          echo "exit=$?"
+        description: "The one-liner form for a monitoring check or a cron job: no output while everything is fine."
+        output: |2
+          deploy-agent is not running
+          exit=0
+        level: intermediate
+        tags: [scripting, monitoring]
+      - title: "Check several services in one loop"
+        code: |-
+          for unit in cron ssh deploy-agent; do
+            printf '%-14s %s\n' "$unit" "$(systemctl is-active "$unit")"
+          done
+        description: "`is-active` prints exactly one word per unit, so it lines up into a report without any parsing."
+        output: |2
+          cron           active
+          ssh            active
+          deploy-agent   inactive
+        level: intermediate
+        tags: [scripting, monitoring]
+      - title: "Wait for a service to come up"
+        code: |-
+          sudo systemctl start deploy-agent
+          for _ in $(seq 1 10); do
+            systemctl is-active --quiet deploy-agent && break
+            sleep 0.2
+          done
+          systemctl is-active deploy-agent
+        description: "`start` returns once systemd has finished its part, which is not always the moment the service is ready to serve. A bounded wait beats a fixed `sleep`."
+        output: |2
+          active
+        level: advanced
+        tags: [scripting]
+      - title: "Restart a service only when its config changed"
+        code: |-
+          sudo systemctl start deploy-agent
+          if ! systemctl show deploy-agent -p Description --value | grep -q v2; then
+            sudo systemctl restart deploy-agent
+            echo "restarted"
+          fi
+        description: "Comparing systemd's loaded configuration against what you expect avoids the blanket restart that a configuration-management run otherwise performs on every pass."
+        output: |2
+          restarted
+        level: advanced
+        tags: [scripting, sysadmin]
