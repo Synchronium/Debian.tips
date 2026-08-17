@@ -94,6 +94,7 @@ function footerHtml(): string {
 <div class="footer-inner">
 <nav aria-label="Explore"><h2>Explore</h2><ul>${exploreItems}</ul></nav>
 <nav aria-label="Meta"><h2>Meta</h2><ul>
+<li><a href="/about/">How this site is tested</a></li>
 <li><a href="/feed.xml">RSS</a></li>
 <li><a href="https://github.com/Synchronium/Debian.tips">GitHub</a></li>
 </ul></nav>

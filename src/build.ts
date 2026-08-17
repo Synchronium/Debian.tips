@@ -1,15 +1,19 @@
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { copyPublic, writeHashedCss } from "./assets.js";
 import { CATEGORY_META, NAV_ORDER } from "./config.js";
 import { loadContent, type Page } from "./content/loader.js";
+import { renderMarkdown } from "./content/markdown.js";
+import { fillStats, verificationStats } from "./content/stats.js";
+import matter from "gray-matter";
 import { feedXml, sitemapXml } from "./feeds.js";
 import { articlePage } from "./templates/article.js";
 import { commandPage } from "./templates/command.js";
 import { homePage } from "./templates/home.js";
 import { listingPage } from "./templates/listing.js";
 import { notFoundPage } from "./templates/notFound.js";
+import { standalonePage } from "./templates/standalone.js";
 import { tagPage, tagsIndexPage } from "./templates/tags.js";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
@@ -68,6 +72,28 @@ export async function build(
   for (const { tag, taggedPages } of populatedTags) {
     writePage(distDir, `/tags/${tag.name}/`, tagPage(tag, taggedPages, cssHref));
   }
+
+  // /about/ belongs to no category, so it is built here rather than through the loader.
+  // Its figures are `{{token}}` placeholders in the Markdown, filled from a count of the
+  // content: a page about verification is the last place a hand-typed number should live.
+  const aboutSource = readFileSync(join(contentDir, "about.md"), "utf-8");
+  const about = matter(aboutSource);
+  const aboutBody = fillStats(about.content, verificationStats(pages, ROOT));
+  const aboutRendered = await renderMarkdown(aboutBody);
+  writePage(
+    distDir,
+    "/about/",
+    standalonePage(
+      {
+        title: String(about.data.title),
+        description: String(about.data.description),
+        path: "/about/",
+        html: aboutRendered.html,
+        toc: aboutRendered.toc,
+      },
+      cssHref,
+    ),
+  );
 
   writeFileSync(join(distDir, "404.html"), notFoundPage(cssHref), "utf-8");
   writeFileSync(

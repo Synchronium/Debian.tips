@@ -5,6 +5,11 @@
 
 Practical Linux and Debian tips, tricks, and command references — tested on Debian stable.
 
+Every command example is run inside a throwaway Debian container and the output on the page is
+what it printed; they are re-run on every push, and a page whose output no longer matches fails
+the build. The site explains this at [debian.tips/about](https://debian.tips/about/), with the
+figures counted from the content at build time.
+
 **[debian.tips](https://debian.tips)**
 
 ## What this is

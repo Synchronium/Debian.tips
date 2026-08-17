@@ -650,6 +650,18 @@ pre[data-prompt] .line::before {
 /* Sits above a volatile example's output: the block is a real capture, but the reader's
    own run will differ in the ways the note describes. Distinguished from the output itself
    rather than styled as a warning — nothing is wrong, it just isn't byte-for-byte. */
+/* The homepage's claim about verification. Set apart from the category sections above it,
+   since it is the site's argument for itself rather than more content to browse. */
+.tested {
+  margin: var(--space-6) 0 var(--space-4);
+  padding: var(--space-4);
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+}
+.tested h2 { margin-top: 0; }
+.tested p:last-child { margin-bottom: 0; }
+
 .output-varies {
   margin: 0 0 var(--space-2);
   padding: var(--space-2) var(--space-3);

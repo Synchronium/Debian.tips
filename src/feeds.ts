@@ -28,6 +28,9 @@ export function sitemapXml(pages: Page[], tags: TagInfo[]): string {
       lastmod: newestUpdate(pages.filter((p) => p.category === c)),
     })),
     { path: "/tags/", lastmod: newestUpdate(pages) },
+    // Belongs to no category and so isn't in `pages`, but it is a real page that should be
+    // findable. Its content changes whenever any page does, since its figures are counted.
+    { path: "/about/", lastmod: newestUpdate(pages) },
     ...tags.map((t) => ({
       path: `/tags/${t.name}/`,
       lastmod: newestUpdate(pages.filter((p) => p.tags.includes(t.name))),

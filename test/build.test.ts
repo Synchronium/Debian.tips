@@ -71,3 +71,22 @@ describe("loadContent (fixtures) — scripting prev/next ordering", () => {
     expect(greet.url).toBe("/commands/greet/");
   });
 });
+
+describe("the about page", () => {
+  it("is built, with its figures counted from the content", async () => {
+    const html = readFileSync(join(distDir, "about", "index.html"), "utf-8");
+    expect(html).toContain("How this site is tested");
+    // The fixture tree has two command pages; the figures are counted, never typed.
+    expect(html).toMatch(/outputs across \d+\ncommand pages|outputs across \d+ command pages/);
+  });
+
+  it("never ships an unfilled placeholder to a reader", async () => {
+    const html = readFileSync(join(distDir, "about", "index.html"), "utf-8");
+    expect(html).not.toContain("{{");
+  });
+
+  it("is listed in the sitemap", async () => {
+    const sitemap = readFileSync(join(distDir, "sitemap.xml"), "utf-8");
+    expect(sitemap).toContain("/about/");
+  });
+});

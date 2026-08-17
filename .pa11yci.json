@@ -22,6 +22,7 @@
     "http://localhost:4321/concepts/",
     "http://localhost:4321/tags/",
     "http://localhost:4321/tags/search/",
+    "http://localhost:4321/about/",
     "http://localhost:4321/404.html"
   ]
 }

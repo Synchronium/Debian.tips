@@ -48,6 +48,14 @@ ${
     : ""
 }
 ${sections.map((s) => raw(s))}
+<section class="tested">
+<h2>Every example here was run, not remembered</h2>
+<p>Command references drift: the distribution moves on, output changes, and prose written from
+memory quietly stops being true. Every example on this site is run inside a throwaway Debian
+container, and what you see is what it printed. They are re-run on every change, and a page whose
+output no longer matches fails the build.</p>
+<p><a href="/about/">How this site is tested</a></p>
+</section>
 `;
 
   return layout({ title: SITE.title, description: SITE.description, path: "/", bodyHtml: raw(body), cssHref });
