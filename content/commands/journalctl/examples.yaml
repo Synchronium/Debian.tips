@@ -1,0 +1,331 @@
+command: journalctl
+fixtures:
+  - name: "what is in the journal for these examples"
+    note: "a failing `backup-sync.service`, plus three entries tagged `deploy-agent` at different priorities — written fresh before each example, so they are always the most recent entries"
+    from: "journalctl -t deploy-agent -n 3 --no-pager -o cat; journalctl -u backup-sync -n 3 --no-pager -o cat"
+    content: |
+      deploy 4a91c2 finished in 4.2s
+      retrying upload, attempt 2 of 3
+      upload failed: no space left on device
+      backup-sync.service: Main process exited, code=exited, status=1/FAILURE
+      backup-sync.service: Failed with result 'exit-code'.
+      Failed to start backup-sync.service - Nightly backup sync.
+
+sections:
+  - title: "Reading the journal"
+    intro: "`journalctl` opens a pager by default. `--no-pager` is what you want in a script or when piping, and every example here uses it."
+    examples:
+      - title: "Show the most recent entries"
+        code: journalctl -n 3 --no-pager -o cat
+        description: "`-n` limits how many entries you get, newest last. Without it you start at the oldest entry the journal still holds, which on a busy machine is a lot of scrolling."
+        output: |2
+          deploy 4a91c2 finished in 4.2s
+          retrying upload, attempt 2 of 3
+          upload failed: no space left on device
+        level: basic
+        tags: [beginner]
+      - title: "See the timestamps and which program logged each line"
+        code: journalctl -n 3 --no-pager
+        description: "The default format: time, hostname, the program's name and process id, then the message. This is what you get without `-o cat`."
+        volatile: "the date, time and process ids are from the machine that produced this"
+        compare: shape
+        output: |2
+          Aug 17 12:45:28 deb1 deploy-agent[1993]: deploy 4a91c2 finished in 4.2s
+          Aug 17 12:45:28 deb1 deploy-agent[1996]: retrying upload, attempt 2 of 3
+          Aug 17 12:45:28 deb1 deploy-agent[1999]: upload failed: no space left on device
+        level: basic
+        tags: [beginner]
+      - title: "Show the newest entries first"
+        code: journalctl -n 3 -r --no-pager -o cat
+        description: "`-r` (`--reverse`) puts the most recent line at the top, which is what you want when checking whether something just failed."
+        output: |2
+          upload failed: no space left on device
+          retrying upload, attempt 2 of 3
+          deploy 4a91c2 finished in 4.2s
+        level: basic
+        tags: [beginner]
+      - title: "Print just the messages, without any metadata"
+        code: journalctl -n 2 --no-pager -o cat
+        description: "`-o cat` drops the timestamp, hostname and program name. Useful when piping into another tool, and when a log line is long enough that the metadata pushes it off the screen."
+        output: |2
+          retrying upload, attempt 2 of 3
+          upload failed: no space left on device
+        level: intermediate
+        tags: [scripting]
+      - title: "Count how many entries match"
+        code: journalctl -t deploy-agent -n 3 --no-pager -o cat | wc -l
+        description: "`journalctl` has no counting flag of its own, so pipe it. Bound the query with `-n` first, or you count the whole journal."
+        output: |2
+          3
+        level: intermediate
+
+  - title: "Filtering by unit and by program"
+    intro: "The filter you will use most: everything a single service logged, without the rest of the machine's noise."
+    examples:
+      - title: "Show one service's log"
+        code: journalctl -u backup-sync -n 3 --no-pager -o cat
+        description: "`-u` takes a unit name, with or without the `.service` suffix. This is the command to reach for the moment a service misbehaves."
+        output: |2
+          backup-sync.service: Main process exited, code=exited, status=1/FAILURE
+          backup-sync.service: Failed with result 'exit-code'.
+          Failed to start backup-sync.service - Nightly backup sync.
+        level: basic
+        tags: [beginner, sysadmin]
+      - title: "See what a service printed, not just what systemd said about it"
+        code: journalctl -u backup-sync -n 5 --no-pager -o cat | head -2
+        description: "A unit's log mixes systemd's own notices with whatever the program wrote to stdout and stderr. The program's own words are usually the ones that explain the failure."
+        output: |2
+          connecting to backup.example.com
+          cannot reach backup.example.com: connection refused
+        level: basic
+        tags: [sysadmin]
+      - title: "Follow two services at once"
+        code: journalctl -u backup-sync -u cron -n 3 --no-pager -o cat
+        description: "`-u` repeats, and the entries are interleaved in time order. Worth knowing when a failure spans a service and whatever triggered it."
+        output: |2
+          backup-sync.service: Main process exited, code=exited, status=1/FAILURE
+          backup-sync.service: Failed with result 'exit-code'.
+          Failed to start backup-sync.service - Nightly backup sync.
+        level: intermediate
+        tags: [sysadmin]
+      - title: "Filter by the program's name rather than its unit"
+        code: journalctl -t deploy-agent -n 3 --no-pager -o cat
+        description: "`-t` (`--identifier`) matches the syslog identifier — the name the program logged under, which is not always the unit's. Use it for anything logging through `logger` or `systemd-cat`."
+        output: |2
+          deploy 4a91c2 finished in 4.2s
+          retrying upload, attempt 2 of 3
+          upload failed: no space left on device
+        level: intermediate
+      - title: "Search the messages for a pattern"
+        code: journalctl -t deploy-agent -g "no space" -n 3 --no-pager -o cat
+        description: "`-g` (`--grep`) matches the message text with a case-insensitive regular expression, and unlike piping to `grep` it filters before the formatting, so `-n` still counts matches rather than lines."
+        output: |2
+          upload failed: no space left on device
+        level: intermediate
+        tags: [regex]
+      - title: "Show only entries from the current boot"
+        code: journalctl -b -t deploy-agent -n 1 --no-pager -o cat
+        description: "`-b` limits the query to this boot, which is the difference between 'the service failed' and 'the service failed before the last reboot'. `-b -1` is the previous boot."
+        output: |2
+          upload failed: no space left on device
+        level: intermediate
+        tags: [sysadmin]
+
+  - title: "Filtering by priority"
+    intro: "`-p` matches the level you name and everything more severe, so `-p warning` includes errors too."
+    examples:
+      - title: "Show only errors"
+        code: journalctl -p err -t deploy-agent -n 3 --no-pager -o cat
+        description: "`err` and worse. The first filter to apply on a machine you have just been told is broken."
+        output: |2
+          upload failed: no space left on device
+        level: basic
+        tags: [beginner, sysadmin]
+      - title: "Include warnings as well as errors"
+        code: journalctl -p warning -t deploy-agent -n 3 --no-pager -o cat
+        description: "Widening from `err` to `warning` picks up the retry that preceded the failure, which is often where the actual cause is."
+        output: |2
+          retrying upload, attempt 2 of 3
+          upload failed: no space left on device
+        level: basic
+      - title: "Ask for one priority exactly"
+        code: journalctl -p warning..warning -t deploy-agent -n 3 --no-pager -o cat
+        description: "A range with the same level at both ends is the only way to get a single priority: `-p warning` alone would include the errors above it."
+        output: |2
+          retrying upload, attempt 2 of 3
+        level: advanced
+      - title: "Use a numeric priority instead of a name"
+        code: journalctl -p 3 -t deploy-agent -n 3 --no-pager -o cat
+        description: "The syslog numbers, `0` (`emerg`) to `7` (`debug`), work anywhere the names do. `3` is `err`."
+        output: |2
+          upload failed: no space left on device
+        level: intermediate
+      - title: "Find every error on the machine since it booted"
+        code: journalctl -b -p err -n 3 --no-pager -o cat
+        description: "The one-line health check. On a machine that is behaving, this prints nothing at all."
+        output: |2
+          Failed to start backup-sync.service - Nightly backup sync.
+          upload failed: no space left on device
+        level: intermediate
+        tags: [monitoring, sysadmin]
+
+  - title: "Filtering by time"
+    intro: "`--since` and `--until` accept `YYYY-MM-DD HH:MM:SS`, plain English like `yesterday`, and relative offsets like `-2h`."
+    examples:
+      - title: "Show entries from the last few minutes"
+        code: journalctl --since "5 minutes ago" -t deploy-agent -n 3 --no-pager -o cat
+        description: "Relative times are the quickest way to scope a query to whatever just happened."
+        output: |2
+          deploy 4a91c2 finished in 4.2s
+          retrying upload, attempt 2 of 3
+          upload failed: no space left on device
+        level: basic
+        tags: [beginner]
+      - title: "Use a shorthand offset"
+        code: journalctl --since -10m -t deploy-agent -n 2 --no-pager -o cat
+        description: "`-10m` means ten minutes ago; `-2h` and `-1d` work the same way. Quicker to type than the quoted form and identical in effect."
+        output: |2
+          retrying upload, attempt 2 of 3
+          upload failed: no space left on device
+        level: intermediate
+      - title: "Bound a query at both ends"
+        code: journalctl --since "1 hour ago" --until "now" -t deploy-agent -n 1 --no-pager -o cat
+        description: "`--until` closes the window, which matters when you are looking at an incident that ended rather than one still running."
+        output: |2
+          upload failed: no space left on device
+        level: intermediate
+        tags: [sysadmin]
+      - title: "Show everything since yesterday"
+        code: journalctl --since yesterday -p err -n 2 --no-pager -o cat
+        description: "`yesterday`, `today` and `tomorrow` are understood directly. Combined with `-p err`, this is a reasonable morning check on a server you look after."
+        output: |2
+          Failed to start backup-sync.service - Nightly backup sync.
+          upload failed: no space left on device
+        level: intermediate
+        tags: [monitoring]
+
+  - title: "Output formats"
+    intro: "`-o` changes how each entry is printed, from the message alone to every field the journal stored."
+    examples:
+      - title: "Show full ISO timestamps"
+        code: journalctl -t deploy-agent -n 2 --no-pager -o short-iso
+        description: "The default format omits the year and the timezone. `short-iso` includes both, which matters when you are correlating against logs from another machine."
+        volatile: "the date, time and process ids are from the machine that produced this"
+        compare: shape
+        output: |2
+          2026-08-17T12:45:39+00:00 deb1 deploy-agent[2798]: retrying upload, attempt 2 of 3
+          2026-08-17T12:45:39+00:00 deb1 deploy-agent[2801]: upload failed: no space left on device
+        level: intermediate
+        tags: [sysadmin]
+      - title: "Print entries as JSON for another program to read"
+        code: journalctl -t deploy-agent -n 1 --no-pager -o json | grep -o '"MESSAGE":"[^"]*"'
+        description: "`-o json` emits one object per entry with every field the journal holds — cursors, boot ids, the lot. Extract the field you want rather than reading it whole."
+        output: |2
+          "MESSAGE":"upload failed: no space left on device"
+        level: advanced
+        tags: [scripting]
+      - title: "See every field stored with an entry"
+        code: journalctl -t deploy-agent -n 1 --no-pager -o verbose | grep -E "^ +(PRIORITY|SYSLOG_IDENTIFIER|MESSAGE)="
+        description: "`-o verbose` shows the metadata the journal indexed, which is what makes filtering possible. Any of these field names can be matched directly as `FIELD=value`."
+        output: |2
+              PRIORITY=3
+              SYSLOG_IDENTIFIER=deploy-agent
+              MESSAGE=upload failed: no space left on device
+        level: advanced
+      - title: "Match on a field directly"
+        code: journalctl PRIORITY=3 -t deploy-agent -n 2 --no-pager -o cat
+        description: "A bare `FIELD=value` argument filters on the indexed metadata, which is how `-p` and `-u` work underneath. Useful for fields with no flag of their own."
+        output: |2
+          upload failed: no space left on device
+        level: advanced
+        tags: [scripting]
+
+  - title: "Following the log as it happens"
+    intro: "`-f` behaves like `tail -f`, printing new entries until you stop it with Ctrl-C."
+    examples:
+      - title: "Watch new entries arrive"
+        code: journalctl -f
+        description: "Prints the last few entries, then blocks and prints each new one as it is written. The command to leave running in a second terminal while reproducing a problem."
+        level: basic
+        tags: [beginner, monitoring]
+      - title: "Watch one service"
+        code: journalctl -fu backup-sync
+        description: "`-f` and `-u` combine into the single most useful log command on a systemd machine: restart the service in one terminal, watch exactly what it says in the other."
+        level: basic
+        tags: [beginner, sysadmin, monitoring]
+      - title: "Watch for errors across the whole machine"
+        code: journalctl -f -p err
+        description: "Quiet until something goes wrong, which is what you want on a screen you are half-watching during a deployment."
+        level: intermediate
+        tags: [monitoring]
+
+  - title: "Disk usage and cleaning up"
+    intro: "The journal is capped and rotates itself, but the cap is generous and worth checking on a small disk."
+    examples:
+      - title: "See how much disk the journal is using"
+        code: journalctl --disk-usage
+        description: "Counts the active and archived journal files together. On a long-lived server this is often larger than people expect."
+        volatile: "the size depends on how long the machine has been up and how much it logs"
+        compare: shape
+        output: |2
+          Archived and active journals take up 8M in the file system.
+        level: basic
+        tags: [disk, sysadmin]
+      - title: "Trim the journal to a size"
+        code: journalctl --vacuum-size=200M
+        description: "Deletes archived journal files, oldest first, until the total fits. It never touches the active file, so the figure afterwards can still exceed what you asked for."
+        level: intermediate
+        tags: [disk, sysadmin]
+      - title: "Delete entries older than a given age"
+        code: journalctl --vacuum-time=30d
+        description: "The retention policy most people actually want. Set it permanently with `MaxRetentionSec=` in `/etc/systemd/journald.conf` rather than running this by hand."
+        level: intermediate
+        tags: [disk, sysadmin]
+      - title: "Check a journal file for corruption"
+        code: journalctl --verify | tail -1
+        description: "Verifies the checksums journald writes as it goes. Worth running after a machine has lost power mid-write and the logs look truncated."
+        volatile: "the file names contain the machine and boot ids, and the totals depend on your journal"
+        compare: shape
+        output: |2
+          PASS: /var/log/journal/14b8ba58690b4c419b1d03c1ec547919/system.journal
+        level: advanced
+        tags: [disk]
+
+  - title: "Boots and the kernel"
+    intro: "The journal keeps entries across reboots, so it can answer what happened before a machine went down."
+    examples:
+      - title: "List the boots the journal still holds"
+        code: journalctl --list-boots --no-pager
+        description: "Each line is one boot, with the index to pass to `-b`. A machine that reboots unexpectedly leaves its evidence in the boot before the current one."
+        volatile: "the boot id, the dates and how many boots are listed are all yours; a container that has booted once shows a single row"
+        compare: shape
+        output: |2
+          IDX BOOT ID                          FIRST ENTRY                 LAST ENTRY
+            0 44e5960633ed42fc9397fef921bdbe35 Mon 2026-08-17 12:45:42 UTC Mon 2026-08-17 12:45:42 UTC
+        level: intermediate
+        tags: [sysadmin]
+      - title: "Read the previous boot's log"
+        code: journalctl -b -1 -p err --no-pager
+        description: "`-b -1` is the boot before this one, `-b -2` the one before that. The first place to look after an unexplained reboot, and empty here because this machine has only booted once."
+        level: intermediate
+        tags: [sysadmin]
+      - title: "Show kernel messages only"
+        code: journalctl -k -b
+        description: "The equivalent of `dmesg`, but with the journal's filtering and its persistence across reboots. A container has no kernel of its own, so this is a command to run on a real machine."
+        level: intermediate
+        tags: [sysadmin]
+
+  - title: "In scripts"
+    intro: "Bound the query, choose a format without metadata, and `journalctl` composes like any other command."
+    examples:
+      - title: "Fail a check when a service logged an error"
+        code: |-
+          if journalctl -u backup-sync -p err -n 1 --no-pager -o cat | grep -q .; then
+            echo "backup-sync logged an error"
+          fi
+        description: "`-o cat` with `grep -q .` is the readable way to ask 'did anything match?', since `journalctl` exits `0` whether or not it found entries."
+        output: |2
+          backup-sync logged an error
+        level: intermediate
+        tags: [scripting, monitoring]
+      - title: "Group entries by priority"
+        code: |-
+          journalctl -t deploy-agent -n 20 --no-pager -o json |
+            grep -o '"PRIORITY":"[^"]*"' | sort | uniq -c
+        description: "The JSON output gives one object per line, so ordinary text tools can group it. Swap `PRIORITY` for `_SYSTEMD_UNIT` to find which service is responsible for a flood of errors."
+        output: |2
+                1 "PRIORITY":"3"
+                1 "PRIORITY":"4"
+                1 "PRIORITY":"6"
+        level: advanced
+        tags: [scripting, monitoring]
+      - title: "Send a line to the journal from a script"
+        code: |-
+          echo "nightly job finished" | systemd-cat -t nightly-job -p info
+          sleep 0.3
+          journalctl -t nightly-job -n 1 --no-pager -o cat
+        description: "`systemd-cat` pipes a program's output into the journal with a tag of your choosing, so a cron job or a script logs the same way a service does. `logger` does the same for syslog."
+        output: |2
+          nightly job finished
+        level: intermediate
+        tags: [scripting, cron]
