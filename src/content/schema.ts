@@ -79,6 +79,16 @@ export const exampleSchema = z.object({
    * (~47% of examples), so anything built on it needs to handle untagged examples. */
   tags: z.array(z.string()).optional(),
   danger: z.boolean().optional(),
+  /** Set when the output is real but cannot reproduce byte for byte, because it contains a
+   * value from the clock, the machine, or the network — a PID, a memory figure, an elapsed
+   * time. The string says what will differ, and is shown to the reader above the output; a
+   * bare flag would leave them guessing which parts to distrust.
+   *
+   * The replay checks these by shape rather than exactly: digits and long hex runs are
+   * masked on both sides, so a renamed field or a vanished line still fails while the
+   * numbers are free to move. Not a licence to publish output containing something the
+   * reader could never see — an artifact of the harness has to be removed, not declared. */
+  volatile: z.string().min(1).optional(),
 });
 export type Example = z.infer<typeof exampleSchema>;
 

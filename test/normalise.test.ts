@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MASK_TOKENS, normalise, stripArtifacts } from "../scripts/lib/normalise.js";
+import { MASK_TOKENS, normalise, shapeOf, stripArtifacts } from "../scripts/lib/normalise.js";
 
 /* This module decides what every command page is allowed to claim a command printed:
  * `adopt-real-output.mjs` writes `stripArtifacts` output straight onto a page, and
@@ -183,5 +183,56 @@ describe("normalise — what gets compared", () => {
   it("is idempotent, so an already-masked page can never be re-masked into a match", () => {
     const once = normalise("--2026-08-15 21:37:59--  http://localhost:8080/page.html");
     expect(normalise(once)).toBe(once);
+  });
+});
+
+describe("shapeOf", () => {
+  const status = (pid: string, since: string, mem: string) =>
+    [
+      "● cron.service - Regular background program processing daemon",
+      `     Active: active (running) since Mon 2026-08-17 ${since} UTC; 38s ago`,
+      `   Main PID: ${pid} (cron)`,
+      `     Memory: ${mem} (peak: 1.7M)`,
+    ].join("\n");
+
+  it("treats two runs of the same command as the same shape", () => {
+    expect(shapeOf(status("87", "10:24:34", "288K"))).toBe(shapeOf(status("1329", "23:01:02", "512K")));
+  });
+
+  it("still notices a field that changed name", () => {
+    const renamed = status("87", "10:24:34", "288K").replace("Main PID", "Process ID");
+    expect(shapeOf(renamed)).not.toBe(shapeOf(status("87", "10:24:34", "288K")));
+  });
+
+  it("still notices a line that has disappeared", () => {
+    const shorter = status("87", "10:24:34", "288K").split("\n").slice(0, 3).join("\n");
+    expect(shapeOf(shorter)).not.toBe(shapeOf(status("87", "10:24:34", "288K")));
+  });
+
+  it("still notices a state that changed", () => {
+    const failed = status("87", "10:24:34", "288K").replace("active (running)", "failed (Result: exit-code)");
+    expect(shapeOf(failed)).not.toBe(shapeOf(status("87", "10:24:34", "288K")));
+  });
+
+  it("holds a quantity and its unit together, so 261ms and 2min agree", () => {
+    expect(shapeOf("     Active: active (running) since Mon 2026-08-17 11:01:48 UTC; 261ms ago")).toBe(
+      shapeOf("     Active: active (running) since Tue 2026-09-01 04:12:07 UTC; 2min ago"),
+    );
+  });
+
+  it("holds a memory figure and its unit together", () => {
+    expect(shapeOf("Memory: 288K (peak: 1.7M)")).toBe(shapeOf("Memory: 4.1M (peak: 12G)"));
+  });
+
+  it("masks a long hex identifier as a whole, not digit by digit", () => {
+    expect(shapeOf("Invocation: a32b261dab8e4a4a8beafdb50dd0c772")).toBe("Invocation: x");
+  });
+
+  it("tolerates a column's padding moving when its number changes width", () => {
+    expect(shapeOf("  9 running")).toBe(shapeOf(" 123 running"));
+  });
+
+  it("does not collapse a difference in words", () => {
+    expect(shapeOf("Loaded: loaded (enabled)")).not.toBe(shapeOf("Loaded: loaded (disabled)"));
   });
 });

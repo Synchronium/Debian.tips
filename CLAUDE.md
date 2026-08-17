@@ -108,8 +108,19 @@ never rendered, it only keeps the block honest.
 Every command page replays at 100% — 535 outputs across all seventeen. If you touch a
 covered page, re-run its replay; if you add examples to an uncovered one, consider adding them.
 
-Examples a batch can't replay (needing a concurrent writer or a network peer) are listed by title
-in `scripts/fixtures/<command>.skip` with a note on how they were verified instead — they're
+An example whose output is real but can't reproduce byte for byte — it carries a PID, an uptime,
+a memory figure — declares `volatile:` with a note saying what differs. The note renders above the
+output block ("Your output will differ: …") so a reader can tell an expected difference from a
+broken command, and the replay compares that example by *shape* instead: quantities and their
+units, weekday and month names, long hex identifiers, digits and column padding are masked on both
+sides, so the numbers may move while a renamed field, a vanished line or a changed state still
+fails. `volatile:` is for output that varies, not for output a reader could never produce — a
+harness artifact has to be removed, not declared. The score names the two kinds separately
+(`53/53 documented outputs reproduce (52 exactly, 1 by shape)`), because they are different
+claims.
+
+Examples a batch can't replay at all (needing a concurrent writer or a network peer) are listed by
+title in `scripts/fixtures/<command>.skip` with a note on how they were verified instead — they're
 excluded explicitly rather than quietly failing. Entries are matched exactly and must name a real
 example that documents an `output:` block; one that matches nothing is an error, because it reads
 as an exemption while exempting nothing.

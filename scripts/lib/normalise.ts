@@ -120,3 +120,30 @@ export function stripArtifacts(text: string): string {
 export function normalise(text: string): string {
   return rates(timestamps(stripArtifacts(text)));
 }
+
+/** Reduces output to its structure, for an example declared `volatile:` — one whose output
+ *  is real but contains a value from the clock, the machine or the network.
+ *
+ *  What varies is masked; everything else must still match, so a renamed field, a vanished
+ *  line or an error where there was none all change the shape:
+ *
+ *    quantity   288K, 1.7M, 261ms, 2min   a number and its unit move together — a service
+ *                                         up for 261ms today is up for 2min tomorrow, and
+ *                                         masking only the digits would leave ms vs min
+ *    weekday    Mon, Tue                  clock-derived, and not digits
+ *    month      Jan, Feb                  the same
+ *    identifier 59fc699d36de4013          an invocation or container id
+ *    digits     87, 4699                  a pid, a limit, a count
+ *    padding    two spaces vs five        a column shifts when its number changes width
+ *
+ *  Order matters: a quantity is matched before its digits are, and an identifier before the
+ *  digits inside it are broken up. */
+export function shapeOf(text: string): string {
+  return stripArtifacts(text)
+    .replace(/\b\d+(\.\d+)?\s?(ms|s|min|h|d|us|ns|B|K|M|G|T|KB|MB|GB|TB|KiB|MiB|GiB|TiB)\b/g, "Q")
+    .replace(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/g, "D")
+    .replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/g, "M")
+    .replace(/\b[0-9a-f]{8,}\b/gi, "x")
+    .replace(/\d+/g, "0")
+    .replace(/[ \t]+/g, " ");
+}

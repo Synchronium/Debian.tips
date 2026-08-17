@@ -24,6 +24,11 @@ export async function exampleCard(sectionSlug: string, index: number, example: E
     : null;
 
   const descHtml = await renderInline(example.description, `example "${example.title}"`);
+  // A volatile example's output is real, but the reader's will differ. The note says how,
+  // so they can tell an expected difference from a broken command.
+  const volatileHtml = example.volatile
+    ? await renderInline(example.volatile, `example "${example.title}" volatile note`)
+    : "";
 
   return html`<article class="example${example.danger ? " example-danger" : ""}" id="${id}">
 <h3 class="example-title"><a href="#${id}">${example.title}</a></h3>
@@ -32,6 +37,10 @@ ${raw(codeHtml)}
 <button class="copy" type="button" aria-label="Copy command" data-copy="${example.code}">Copy</button>
 </div>
 <p class="example-desc">${raw(descHtml)}</p>
-${outputHtml ? raw(html`<details class="example-output"><summary>Show output</summary>${raw(outputHtml)}</details>`) : ""}
+${outputHtml
+    ? raw(html`<details class="example-output"><summary>Show output</summary>
+${volatileHtml ? raw(html`<p class="output-varies"><strong>Your output will differ:</strong> ${raw(volatileHtml)}</p>`) : ""}
+${raw(outputHtml)}</details>`)
+    : ""}
 </article>`;
 }

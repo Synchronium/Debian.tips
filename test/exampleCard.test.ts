@@ -45,3 +45,27 @@ describe("exampleCard", () => {
     expect(withoutOutput).not.toContain("example-output");
   });
 });
+
+it("tells the reader what will differ on a volatile example", async () => {
+  const html = await exampleCard("status", 1, {
+    title: "Read a service's full status block",
+    code: "systemctl status cron",
+    description: "The whole block.",
+    output: "Main PID: 87 (cron)",
+    volatile: "the PID and memory figures come from your machine",
+    level: "basic",
+  });
+  expect(html).toContain("Your output will differ:");
+  expect(html).toContain("the PID and memory figures come from your machine");
+});
+
+it("says nothing about differing output on an ordinary example", async () => {
+  const html = await exampleCard("count", 1, {
+    title: "Count lines",
+    code: "wc -l report.txt",
+    description: "Counts newlines.",
+    output: "40 report.txt",
+    level: "basic",
+  });
+  expect(html).not.toContain("Your output will differ");
+});

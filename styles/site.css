@@ -647,6 +647,20 @@ pre[data-prompt] .line::before {
 
 /* Sample data the examples were run against — collapsed so it orients a reader who
    needs it without pushing the examples themselves below the fold. */
+/* Sits above a volatile example's output: the block is a real capture, but the reader's
+   own run will differ in the ways the note describes. Distinguished from the output itself
+   rather than styled as a warning — nothing is wrong, it just isn't byte-for-byte. */
+.output-varies {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-inset);
+  border-left: 3px solid var(--border);
+  border-radius: var(--radius-s);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.output-varies strong { color: var(--text); }
+
 .fixtures {
   margin-top: var(--space-5);
   border: 1px solid var(--border);

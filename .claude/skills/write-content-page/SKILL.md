@@ -136,8 +136,26 @@ something a reader could actually produce rather than a hand-written summary:
 | two files shown together | `tail -n +1 setA.txt setB.txt` |
 | a duplicate of another fixture | `cmp -s users.csv users2.csv && echo '(same as users.csv)'` |
 
-For examples a batch genuinely can't replay (needing a concurrent writer, like `tail -f`, or a
-network peer), list the title in `scripts/fixtures/<command>.skip` with a comment saying how it
+If an example's output is genuinely useful but can't reproduce byte for byte — `systemctl status`
+with its PID and uptime, `df -h` on the reader's own disks — don't drop it and don't fake it. Add
+`volatile:` with a note saying what will differ:
+
+```yaml
+- title: "Read a service's full status block"
+  code: systemctl status cron --no-pager | head -9
+  volatile: "the date, uptime, invocation id, PID and memory figures are specific to your machine"
+  output: |2
+    ● cron.service - Regular background program processing daemon
+    ...
+```
+
+The note is shown to the reader above the output, and the replay checks that example by shape:
+numbers, quantities, dates and identifiers are free to differ, everything else must match. It is
+not an escape hatch — output containing something the reader could never see (a container id, a
+path from the harness) still has to be removed rather than declared volatile.
+
+For examples a batch genuinely can't replay *at all* (needing a concurrent writer, like `tail -f`,
+or a network peer), list the title in `scripts/fixtures/<command>.skip` with a comment saying how it
 *was* verified. Don't leave it silently failing, and don't delete the example. Titles are matched
 exactly and must name an example that documents an `output:` block — the harness rejects an entry
 that matches nothing, because a renamed title otherwise leaves the file claiming an exemption it

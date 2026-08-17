@@ -18,7 +18,7 @@
 import { readFileSync } from "node:fs";
 import { parse } from "yaml";
 import type { Example, ExamplesFile } from "../src/content/schema.js";
-import { MASK_TOKENS, normalise } from "./lib/normalise.js";
+import { MASK_TOKENS, normalise, shapeOf } from "./lib/normalise.js";
 import { loadSkipTitles, readSetupDirectives } from "./lib/replay.js";
 import { captureAll, openSandbox, shellQuote } from "./lib/sandbox.js";
 
@@ -99,13 +99,27 @@ interface Mismatch {
   got: string;
 }
 
+// An example declaring `volatile:` is compared by shape: its output is real but carries a
+// value nothing can pin. Everything else must match byte for byte.
 const mismatches: Mismatch[] = [];
 let exampleMatches = 0;
+let shapeMatches = 0;
 examples.forEach((example, index) => {
-  const want = normalise(example.output ?? "");
-  const got = normalise(captured.get(index) ?? "");
-  if (want === got) exampleMatches++;
-  else mismatches.push({ index, title: example.title, command: example.code.split("\n")[0] ?? "", want, got });
+  const compare = example.volatile ? shapeOf : normalise;
+  const want = compare(example.output ?? "");
+  const got = compare(captured.get(index) ?? "");
+  if (want === got) {
+    exampleMatches++;
+    if (example.volatile) shapeMatches++;
+  } else {
+    mismatches.push({
+      index,
+      title: example.volatile ? `${example.title} (compared by shape)` : example.title,
+      command: example.code.split("\n")[0] ?? "",
+      want,
+      got,
+    });
+  }
 });
 
 const fixtureMismatches: Mismatch[] = [];
@@ -145,11 +159,14 @@ function firstDifference(want: string, got: string): string {
 }
 
 const fixtureNote = fixtures.length ? `, ${fixtureMatches}/${fixtures.length} fixtures` : "";
+// "Reproduces exactly" is a stronger claim than "has the same shape", so the two are
+// counted in the same total but never described as the same thing.
+const howNote = shapeMatches ? ` (${exampleMatches - shapeMatches} exactly, ${shapeMatches} by shape)` : " exactly";
 const skipNote = skipped.length ? ` (${skipped.length} not replayable in batch, see .skip file)` : "";
 // The mode is part of the result: the same page scores 42/42 as `user` and 9/42 as root, so
 // a score quoted without it means nothing.
 console.log(
-  `\n${command} (as ${asUser ? "user" : "root"}): ${exampleMatches}/${examples.length} documented outputs reproduce exactly${fixtureNote}${skipNote}\n`,
+  `\n${command} (as ${asUser ? "user" : "root"}): ${exampleMatches}/${examples.length} documented outputs reproduce${howNote}${fixtureNote}${skipNote}\n`,
 );
 
 for (const mismatch of [...mismatches, ...fixtureMismatches]) {

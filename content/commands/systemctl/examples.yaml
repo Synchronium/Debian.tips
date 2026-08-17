@@ -51,6 +51,22 @@ sections:
                Loaded: loaded (/usr/lib/systemd/system/cron.service; enabled; preset: enabled)
         level: basic
         tags: [beginner]
+      - title: "Read a service's full status block"
+        code: systemctl status cron --no-pager | head -9
+        description: "The command everyone reaches for. `head -9` stops before the control-group listing, which on this machine names the container it ran in; on yours it names the slice."
+        volatile: "the date, uptime, invocation id, PID, task count and memory figures are all specific to your machine and the moment you run it"
+        output: |2
+          ● cron.service - Regular background program processing daemon
+               Loaded: loaded (/usr/lib/systemd/system/cron.service; enabled; preset: enabled)
+               Active: active (running) since Mon 2026-08-17 11:01:48 UTC; 261ms ago
+           Invocation: 59fc699d36de401395207715ea765ce8
+                 Docs: man:cron(8)
+             Main PID: 87 (cron)
+                Tasks: 1 (limit: 4699)
+               Memory: 288K (peak: 1.7M)
+                  CPU: 4ms
+        level: basic
+        tags: [beginner, monitoring]
       - title: "See the state of a stopped service"
         code: systemctl status deploy-agent --no-pager | head -3
         description: "`○` rather than `●` marks a unit that isn't running, and `Active: inactive (dead)` confirms it stopped cleanly rather than failing."
@@ -443,13 +459,11 @@ sections:
         level: basic
         tags: [beginner, monitoring]
       - title: "List the services that are running"
-        code: systemctl list-units --type=service --state=running --no-pager --no-legend | head -4
-        description: "`list-units` reports what systemd has loaded, filtered here to services that are actually up. Add `--all` to include units that are loaded but inactive."
+        code: systemctl list-units --type=service --state=running --no-pager --no-legend 'cron*' 'ssh*'
+        description: "`list-units` reports what systemd has loaded, filtered here to services that are actually up. Drop the patterns to list every running service, and add `--all` to include units that are loaded but inactive."
         output: |2
-            cron.service             loaded active running Regular background program processing daemon
-            getty@tty1.service       loaded active running Getty on tty1
-            getty@tty2.service       loaded active running Getty on tty2
-            getty@tty3.service       loaded active running Getty on tty3
+            cron.service loaded active running Regular background program processing daemon
+            ssh.service  loaded active running OpenBSD Secure Shell server
         level: basic
         tags: [beginner, monitoring]
       - title: "Find a service when you only know part of its name"
