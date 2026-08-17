@@ -4,7 +4,7 @@ description: "The apt, apt-get, and dpkg commands that cover almost everything y
 category: debian
 tags: [apt, debian, sysadmin]
 updated: 2026-08-17
-related: [systemctl, grep, exit-codes-and-error-handling]
+related: [systemd-services, systemctl, grep, exit-codes-and-error-handling]
 ---
 
 `apt` is the command-line front end for Debian's package management system: installing,
@@ -38,6 +38,8 @@ sudo apt autoremove          # clean up dependencies nothing else needs any more
 A package that ships a service usually starts it for you and enables it at boot, which is a
 Debian convention rather than something `apt` does universally. Check rather than assume:
 [`systemctl is-enabled <name>`](/commands/systemctl/) answers it in one word.
+[Managing services with systemd](/debian/systemd-services/) covers that convention in full,
+including the enable state Debian remembers across a `remove` but not a `purge`.
 
 `remove` and `purge` look interchangeable for a package with no configuration to speak of, but
 the distinction is real and `dpkg -l` shows it directly. After removing (not purging) a package

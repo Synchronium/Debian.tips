@@ -6,7 +6,7 @@ category: commands
 tags: [systemd, sysadmin, processes]
 updated: 2026-08-17
 tier: flagship
-related: [journalctl, crontab, kill-whatever-is-using-a-port, ssh, exit-codes-and-error-handling]
+related: [journalctl, systemd-services, crontab, kill-whatever-is-using-a-port, exit-codes-and-error-handling]
 ---
 
 `systemctl` is how you talk to systemd, which has been Debian's init system since jessie. It
@@ -86,6 +86,9 @@ Three locations, in increasing order of authority:
 
 `systemctl cat` shows the file and every drop-in applying to it, in the order systemd reads them,
 which beats guessing which of the three is winning.
+[Managing services with systemd](/debian/systemd-services/) covers what Debian's packaging does
+with these directories, and why a drop-in survives an upgrade that an edited package unit does
+not.
 
 ## Root, and reading versus writing
 

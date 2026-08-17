@@ -61,4 +61,6 @@ redirect its own output somewhere you can read it. See
 A timer unit does the same job as a crontab entry, with a real log, a recorded exit status, and
 `systemctl list-timers` to show what is scheduled and when it next runs. The cost is two unit
 files instead of one line. Cron is still the faster thing to reach for, but for anything whose
-failure you would want to notice, [`systemctl`](/commands/systemctl/) covers the alternative.
+failure you would want to notice, [`systemctl`](/commands/systemctl/) covers the alternative, and
+[Managing services with systemd](/debian/systemd-services/) shows the timers Debian already runs
+on your machine without a crontab anywhere.
