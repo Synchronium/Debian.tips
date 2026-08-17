@@ -51,10 +51,10 @@ versions with different output. A container is not a full system: no systemd unl
 asks for it, no real hardware, no other users.
 
 Where an example needs something a container cannot provide, the page says so rather than
-inventing output. Those {{exemptions}} exempt examples are — a `tail -f` needing a second process writing to the file, an `ssh` example whose
-output would require committing a private key, a request whose answer is your own public IP
-address. Each is listed by name in the repository with a note on how it was checked by hand
-instead.
+inventing output. The {{exemptions}} exempt examples are ones a batch run cannot supply: a
+`tail -f` needing a second process writing to the file, an `ssh` example whose output would
+require committing a private key, a request whose answer is your own public IP address. Each
+is listed by name in the repository with a note on how it was checked by hand instead.
 
 ## Output that cannot be identical
 
