@@ -55,6 +55,7 @@ sections:
         code: systemctl status cron --no-pager | head -9
         description: "The command everyone reaches for. `head -9` stops before the control-group listing, which on this machine names the container it ran in; on yours it names the slice."
         volatile: "the date, uptime, invocation id, PID, task count and memory figures are all specific to your machine and the moment you run it"
+        compare: shape
         output: |2
           ● cron.service - Regular background program processing daemon
                Loaded: loaded (/usr/lib/systemd/system/cron.service; enabled; preset: enabled)

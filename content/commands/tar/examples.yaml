@@ -195,6 +195,7 @@ sections:
       - title: "List an archive's contents"
         code: tar -tzvf site-backup.tar.gz
         description: "`-t` lists without extracting; `-v` here shows permissions, owner, size, and date, like `ls -l`."
+        volatile: "the modification times are from when the sample files were created"
         output: |2
           drwxr-xr-x user/user         0 2026-07-05 15:35 site/
           drwxr-xr-x user/user         0 2026-07-05 15:35 site/css/
@@ -341,6 +342,7 @@ sections:
           uses the later (current) copy, but the archive keeps growing every
           time you update it; recreate it from scratch periodically instead
           of updating indefinitely.
+        volatile: "the modification times are from when the sample files were created"
         output: |2
           drwxr-xr-x user/user         0 2026-07-05 15:35 site/
           drwxr-xr-x user/user         0 2026-07-05 15:35 site/css/
@@ -400,6 +402,7 @@ sections:
           useful in a backup script's log without parsing `ls -lh` output
           separately. The throughput figure is specific to the machine it ran
           on and will differ every time.
+        volatile: "the transfer rate depends on your disk"
         output: |2
           Total bytes written: 30720 (30KiB, 260MiB/s)
         level: intermediate
@@ -463,6 +466,7 @@ sections:
           `site/css/style.css` and `site/img/logo.png` are absent: they're
           unchanged, so only `index.html` and the new `new.txt` were actually
           written.
+        volatile: "the modification times are from when the sample files were created"
         output: |2
           drwxr-xr-x user/user        32 2026-08-16 13:11 site/
           drwxr-xr-x user/user        12 2026-07-05 15:35 site/css/
@@ -526,6 +530,7 @@ sections:
           to names, useful when restoring on a machine where those numbers map
           to different accounts, or when the names in the archive don't exist
           locally at all.
+        volatile: "the modification times are from when the sample files were created"
         output: |2
           drwxr-xr-x 1000/1000         0 2026-07-05 15:35 site/
           drwxr-xr-x 1000/1000         0 2026-07-05 15:35 site/css/
@@ -682,6 +687,7 @@ sections:
           entry, not a second copy of `index.html`'s content. Extracting it
           recreates the same symlink, which only resolves correctly if
           `index.html` is also present relative to it.
+        volatile: "the modification times are from when the sample files were created"
         output: |2
           drwxr-xr-x user/user         0 2026-08-16 13:11 site/
           drwxr-xr-x user/user         0 2026-07-05 15:35 site/css/
@@ -704,6 +710,7 @@ sections:
           whichever one `tar` stores second gets recorded as a hardlink to the
           first instead of a duplicate copy, visible below as `site/index.html
           link to site/latest.html`.
+        volatile: "the modification times are from when the sample files were created"
         output: |2
           drwxr-xr-x user/user         0 2026-08-16 13:11 site/
           drwxr-xr-x user/user         0 2026-07-05 15:35 site/css/

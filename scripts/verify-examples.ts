@@ -99,22 +99,23 @@ interface Mismatch {
   got: string;
 }
 
-// An example declaring `volatile:` is compared by shape: its output is real but carries a
-// value nothing can pin. Everything else must match byte for byte.
+// `compare: shape` relaxes the comparison for output carrying values no anchored mask
+// covers. Everything else — including most output declared `volatile:` — is compared
+// exactly, after the anchored masks in normalise.
 const mismatches: Mismatch[] = [];
 let exampleMatches = 0;
 let shapeMatches = 0;
 examples.forEach((example, index) => {
-  const compare = example.volatile ? shapeOf : normalise;
+  const compare = example.compare === "shape" ? shapeOf : normalise;
   const want = compare(example.output ?? "");
   const got = compare(captured.get(index) ?? "");
   if (want === got) {
     exampleMatches++;
-    if (example.volatile) shapeMatches++;
+    if (example.compare === "shape") shapeMatches++;
   } else {
     mismatches.push({
       index,
-      title: example.volatile ? `${example.title} (compared by shape)` : example.title,
+      title: example.compare === "shape" ? `${example.title} (compared by shape)` : example.title,
       command: example.code.split("\n")[0] ?? "",
       want,
       got,

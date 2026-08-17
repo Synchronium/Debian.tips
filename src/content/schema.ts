@@ -84,11 +84,28 @@ export const exampleSchema = z.object({
    * time. The string says what will differ, and is shown to the reader above the output; a
    * bare flag would leave them guessing which parts to distrust.
    *
-   * The replay checks these by shape rather than exactly: digits and long hex runs are
-   * masked on both sides, so a renamed field or a vanished line still fails while the
-   * numbers are free to move. Not a licence to publish output containing something the
-   * reader could never see — an artifact of the harness has to be removed, not declared. */
+   * Says what differs; it does not by itself change how the output is checked. Most
+   * volatile output is still compared exactly, because `scripts/lib/normalise.ts` masks the
+   * specific line it appears on — a `diff` header's mtime, a wget transfer rate — and an
+   * anchored mask is stricter than a general one. */
   volatile: z.string().min(1).optional(),
+  /** How the replay compares this example's output. Omitted means exactly, after the
+   * anchored masks in `scripts/lib/normalise.ts`.
+   *
+   * `shape` is for output carrying values no anchored mask covers — a PID, a memory
+   * figure, an invocation id. Digits, quantities, dates and identifiers are masked on both
+   * sides, so the numbers may move while a renamed field, a vanished line or a changed
+   * state still fails. It is weaker than the default, so it is opt-in per example rather
+   * than implied by `volatile`, and it requires `volatile` to be set: a reader looking at
+   * output nobody promises to reproduce should be told. */
+  compare: z.literal("shape").optional(),
+}).superRefine((example, ctx) => {
+  if (example.compare === "shape" && !example.volatile) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'compare: "shape" needs `volatile:` too — say what will differ for the reader',
+    });
+  }
 });
 export type Example = z.infer<typeof exampleSchema>;
 

@@ -1,8 +1,10 @@
+# Examples this page cannot replay in a batch, with how each was verified instead.
+
 # Needs an unprivileged shell, while the rest of this page needs root. Verified by hand as
 # `user` in the sandbox, where it printed exactly this.
 Non-root trying to read someone else's crontab
 
-# The "code" here is a crontab line, not a shell command: it schedules `env` and the output
+# The "code" here is a crontab line, not a shell command: it schedules `env`, and the output
 # compares an interactive environment against the one the job ran under. Verified by hand by
 # installing the line, waiting for it to fire, and diffing /tmp/cron-env.txt against `env`.
 See how thin cron's PATH really is
@@ -10,10 +12,6 @@ See how thin cron's PATH really is
 # No syslog daemon runs in a container, so there is no /var/log/syslog to grep. Verified on a
 # Debian trixie VM with rsyslog running.
 Find where cron itself is logging
-
-# Depends on which packages are installed: the sandbox has three entries, a normal install has
-# more. Verified on a Debian trixie VM.
-See what's already scheduled to run daily
 
 # Interactive by definition: with no terminal, crontab -i prompts and then loops on EOF,
 # emitting "Please enter Y or N" until it is killed. Verified by hand in an interactive

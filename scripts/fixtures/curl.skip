@@ -1,13 +1,5 @@
-# Reports how long the transfer took, which is a property of the moment. Verified by hand;
-# the shape is stable, the numbers are not.
-Print several facts about a transfer at once
+# Examples this page cannot replay in a batch, with how each was verified instead.
 
-# The -v transcript carries the negotiated TLS parameters, the resolved IP and per-connection
-# detail, none of which is reproducible. Verified by hand against https://example.com. This is
-# the only example left that needs a real HTTPS host: the -k pair moved to the local server's
-# --tls mode, where a self-signed certificate makes the flag actually change the outcome.
-Watch the full TLS handshake and request
-
-# Returns the caller's own public IP, which differs for every reader by definition. Verified
-# by hand from a networked Debian trixie box.
+# Returns the caller's own public IP, which differs for every reader by definition, and needs
+# the public internet to get it. Verified by hand from a networked Debian trixie box.
 See the public IP a request would come from

@@ -331,8 +331,11 @@ sections:
       - title: "See what's already scheduled to run daily"
         code: ls /etc/cron.daily/
         description: "Package installs commonly drop their own maintenance scripts here — log rotation, package index updates, man-db's search index."
-        output: |
-          apt-compat  dpkg  exim4-base  man-db
+        volatile: "which jobs are here depends on what you have installed"
+        output: |2
+          apt-compat
+          dpkg
+          man-db
         level: basic
 
   - title: "Troubleshooting"

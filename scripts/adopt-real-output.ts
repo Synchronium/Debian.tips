@@ -97,8 +97,8 @@ for (const { example, index } of [...targets].reverse()) {
 
   claimed.add(lookup.block.keyLine);
   lines = replaceOutputBlock(lines, lookup.block, output);
-  // A volatile example is checked by shape, so the numbers written here are one machine's.
-  // Flagged rather than silent: the `volatile:` note has to keep describing what varies.
+  // The numbers written for a volatile example are one machine's. Flagged rather than
+  // silent: the `volatile:` note has to keep describing what actually varies.
   const note = example.volatile ? " (volatile — check the note still describes what varies)" : "";
   console.log(`  adopted real output: ${example.title}${note}`);
 }

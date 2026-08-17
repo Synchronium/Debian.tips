@@ -273,19 +273,10 @@ sections:
           projects/src/util.js
         level: advanced
       - title: "Stay on one filesystem"
-        code: find / -xdev -maxdepth 1 -type d | sort
-        description: >-
-          `-xdev` (a.k.a. `-mount`) prevents find from crossing into mounted
-          filesystems (network shares, other drives, `/proc`) when searching
-          from a high-level directory like `/`.
-        output: |
-          /
-          /tmp
-          /boot
-        level: advanced
-  - title: "Permissions and ownership"
-    intro: "Exact-match vs at-least-these-bits: see the note in the intro."
-    examples:
+        code: sudo find / -xdev -name "*.log" -size +100M
+        description: "`-xdev` stops `find` descending into anything mounted elsewhere, so a search of `/` doesn't wander into `/proc`, a network share or an external disk. Essential when searching from the root of a machine with mounts you don't want to walk, and the reason a whole-system search can otherwise take minutes."
+        level: intermediate
+        tags: [disk, sysadmin]
       - title: "Find files with an exact permission mode"
         code: find projects -perm 777 | sort
         description: >-

@@ -155,6 +155,7 @@ sections:
       - title: "Unified format — the one everyone actually uses"
         code: diff -u nginx-old.conf nginx-new.conf
         description: "A few lines of shared context (unmarked), then - for removed lines and + for added ones. This is also exactly what patch expects as input, and the format git diff itself is built on."
+        volatile: "the timestamps in the `---` and `+++` header lines are when the sample files were created"
         output: |
           --- nginx-old.conf	2026-08-14 09:15:00.000000000 +0000
           +++ nginx-new.conf	2026-08-14 09:15:05.000000000 +0000
@@ -180,6 +181,7 @@ sections:
       - title: "Control how many context lines unified format shows"
         code: diff -U1 nginx-old.conf nginx-new.conf
         description: "`-U` takes a number — fewer context lines than the default 3, for a tighter diff when you only care about the exact change, not its surroundings."
+        volatile: "the timestamps in the `---` and `+++` header lines are when the sample files were created"
         output: |2
           --- nginx-old.conf	2026-08-15 10:09:33.149381006 +0000
           +++ nginx-new.conf	2026-08-15 10:09:33.149381006 +0000
@@ -200,6 +202,7 @@ sections:
       - title: "Context format — the older alternative to unified"
         code: diff -c nginx-old.conf nginx-new.conf
         description: "Shows both versions of each changed block in full, marked with !, rather than interleaving - and + lines — more verbose than unified, mostly seen in older codebases and some BSD tooling."
+        volatile: "the timestamps in the `***` and `---` header lines are when the sample files were created"
         output: |2
           *** nginx-old.conf	Sun Aug 16 09:29:21 2026
           --- nginx-new.conf	Sun Aug 16 09:29:21 2026
