@@ -17,15 +17,30 @@ import { readSetupDirectives } from "./lib/replay.js";
 
 const requestedPages = process.argv.slice(2).filter((arg) => !arg.startsWith("-"));
 
-const pages = readdirSync("content/commands", { withFileTypes: true })
+/** Prose pages state their claims as Markdown fences rather than YAML, so they run through
+ *  verify-prose.ts. Only those with a setup script are replayed; the rest are reported. */
+const PROSE_CATEGORIES = ["concepts", "scripting", "recipes", "debian"];
+
+const commandPages = readdirSync("content/commands", { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
-  .map((entry) => entry.name)
+  .map((entry) => entry.name);
+
+const prosePages = PROSE_CATEGORIES.flatMap((category) =>
+  existsSync(`content/${category}`)
+    ? readdirSync(`content/${category}`)
+        .filter((file) => file.endsWith(".md"))
+        .map((file) => file.replace(/\.md$/, ""))
+    : [],
+);
+
+const isProse = (name: string): boolean => prosePages.includes(name);
+const pages = [...commandPages, ...prosePages]
   .filter((name) => (requestedPages.length ? requestedPages.includes(name) : true))
   .sort();
 
 const missing = requestedPages.filter((name) => !pages.includes(name));
 if (missing.length) {
-  console.error(`no such command page: ${missing.join(", ")}`);
+  console.error(`no such page: ${missing.join(", ")}`);
   process.exit(2);
 }
 
@@ -83,9 +98,10 @@ console.log(`replaying ${runnable.length} page(s) in ${sandboxSummary}\n`);
 const failed: string[] = [];
 const started = Date.now();
 for (const name of runnable) {
+  const runner = isProse(name) ? "scripts/verify-prose.ts" : "scripts/verify-examples.ts";
   const result = spawnSync(
     "npx",
-    ["tsx", "scripts/verify-examples.ts", sandboxes.get(flavourOf(name)) ?? "", name, `scripts/fixtures/${name}.sh`],
+    ["tsx", runner, sandboxes.get(flavourOf(name)) ?? "", name, `scripts/fixtures/${name}.sh`],
     { stdio: "inherit" },
   );
   if (result.status !== 0) failed.push(name);

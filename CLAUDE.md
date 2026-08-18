@@ -139,6 +139,45 @@ The failure modes this has caught are written up in `.claude/skills/write-conten
 §4a. The most easily-missed: `wc`/`uniq -c` right-align their columns, and a plain YAML `|` block
 silently strips that padding — such outputs need `output: |2`.
 
+### Prose pages are replayed too, by a different route
+
+Concepts, scripting lessons, recipes and Debian articles state the same kind of claim as a
+command page, but as Markdown rather than YAML: a ```` ```bash ```` fence followed by the output
+it produced. `scripts/verify-prose.ts` replays those, `scripts/lib/proseBlocks.ts` pairs them up,
+and `npm run replay` runs both kinds. A prose page opts in by having `scripts/fixtures/<slug>.sh`;
+without one it is listed as not replayed rather than passed over silently.
+
+The pairing rule is strict on purpose: an output fence belongs to a command only when it opens on
+the line **immediately** after that command's fence closes. Pairing on document order instead
+matched a block that prose had separated from its command, which on one page attributed a
+simulated install's output to a real one. `test/proseBlocks.test.ts` pins that.
+
+Per-block directives are HTML comments on the line directly above the command fence, since
+Markdown has nowhere else to put them and the pipeline drops HTML before a reader sees it:
+
+```
+<!-- verify: shape the version moves whenever a security update lands -->
+<!-- verify: skip needs a second terminal writing to the file -->
+```
+
+A skip must give a reason or the tool refuses to run — an unexplained exemption reads as verified
+when it is the opposite.
+
+**Never document an architecture.** `arm64` on this devcontainer, `amd64` on a CI runner, and
+emulation is unavailable locally, so any block containing one fails in exactly one of the two
+places. This is why no page prints `dpkg -l` or a bare `apt-cache policy` and why the apt page
+uses `dpkg -s` and `apt-cache policy <pkg> | head -3` instead. It is the same rule the command
+pages have always followed by accident; prose pages have to follow it deliberately.
+
+Bare fences that pair with nothing (a `.sources` stanza, a config snippet) are counted and
+reported as "not checkable" rather than failed. The count is what tells an author which of their
+blocks is a claim nobody checks.
+
+The first page through this, `apt-essentials`, had **four broken output blocks out of four**: two
+silently abridged (`dpkg -l` prints a five-line header; one fence ran three commands and showed
+only the third's output), and two drifted (`13.5` → `13.6`, `deb13u3` → `deb13u4`). It had been
+wrong for months and nothing could have told us.
+
 ## Architecture
 
 ### Content pipeline

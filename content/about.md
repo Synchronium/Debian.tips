@@ -12,9 +12,10 @@ container, and the output on the page is pasted from that run. Then it is run ag
 every push, and the page fails the build if what it prints has changed.
 
 Right now that is **{{replayed}} outputs re-run on every push**, across {{commandPages}}
-command pages, alongside {{fixtures}} blocks of sample data. A further {{exemptions}} are
-documented but cannot be automated, and are listed as such below. The numbers on this page are counted from
-the content when the site is built, so they cannot drift either.
+command pages and {{prosePages}} of the written articles, alongside {{fixtures}} blocks of
+sample data. A further {{exemptions}} are documented but cannot be automated, and are listed as
+such below. The numbers on this page are counted from the content when the site is built, so
+they cannot drift either.
 
 ## What "tested" actually means
 
@@ -49,6 +50,12 @@ printed exactly this.
 will behave identically on your machine. A different Debian release ships different
 versions with different output. A container is not a full system: no systemd unless a page
 asks for it, no real hardware, no other users.
+
+It also does not yet mean every page. Command pages are replayed in full. The written
+articles are being brought into the same check one at a time, each needing a script that puts
+a container into the state the article describes, and until an article has one its output
+blocks are hand-checked like anybody else's. The counts above are of what is genuinely
+automated, never of what is intended.
 
 Where an example needs something a container cannot provide, the page says so rather than
 inventing output. The {{exemptions}} exempt examples are ones a batch run cannot supply: a

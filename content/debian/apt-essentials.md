@@ -47,19 +47,21 @@ Debian convention rather than something `apt` does universally. Check rather tha
 including the enable state Debian remembers across a `remove` but not a `purge`.
 
 `remove` and `purge` look interchangeable for a package with no configuration to speak of, but
-the distinction is real and `dpkg -l` shows it directly. After removing (not purging) a package
+the distinction is real and `dpkg` shows it directly. After removing (not purging) a package
 that ships actual config files:
 
 ```bash
-dpkg -l nano
+dpkg -s nano | head -2
 ```
 ```
-rc  nano           8.4-1+deb13u1 amd64        small, friendly text editor inspired by Pico
+Package: nano
+Status: deinstall ok config-files
 ```
 
-The `rc` in the first column means "removed, config files remain": the package's binaries are
-gone, but `/etc/nanorc` and similar files are still on disk, in case you reinstall later and
-want your settings back. `purge` clears that `rc` state entirely, deleting those leftover files.
+`config-files` is the state: the package's binaries are gone, but `/etc/nanorc` and similar
+files are still on disk, in case you reinstall later and want your settings back. `dpkg -l`
+abbreviates the same thing to `rc` in its first column, which is the form you will see quoted
+most often. `purge` clears that state entirely, deleting those leftover files.
 For a package you're getting rid of for good, `purge` is the more complete cleanup; for one
 you're likely to reinstall, plain `remove` avoids losing configuration you might want back.
 
@@ -82,27 +84,37 @@ touching the network at all:
 ```bash
 dpkg -l curl                       # is it installed, and what version?
 dpkg -L curl                       # what files did it put on disk?
-dpkg -S /usr/bin/curl              # which package owns this file?
+```
+
+`dpkg -S` answers the question the other way round, naming the package a given file came from:
+
+```bash
+dpkg -S /usr/bin/curl
 ```
 ```
 curl: /usr/bin/curl
 ```
 
-`dpkg -S` is the one to reach for when you find an unfamiliar file or command on a system and
-want to know what installed it, without a search engine.
+It is the one to reach for when you find an unfamiliar file or command on a system and want to
+know what installed it, without a search engine.
 
 ## Previewing a change before it happens
 
+`--simulate` prints its plan among the usual progress chatter, so the summary is the part to
+read:
+
+<!-- verify: shape the counts depend on how much of your system is currently out of date -->
 ```bash
-apt-get install --simulate ripgrep
+apt-get install --simulate ripgrep | grep -E "^(The following|  ripgrep|[0-9]+ upgraded)"
 ```
 ```
 The following NEW packages will be installed:
   ripgrep
-0 upgraded, 1 newly installed, 0 to remove and 16 not upgraded.
-Inst ripgrep (14.1.1-1+b4 Debian:13.5/stable [amd64])
-Conf ripgrep (14.1.1-1+b4 Debian:13.5/stable [amd64])
+0 upgraded, 1 newly installed, 0 to remove and 1 not upgraded.
 ```
+
+Run without the `grep`, it also prints an `Inst` and a `Conf` line naming the exact version and
+repository each package would come from.
 
 `--simulate` (or `-s`) shows exactly what an install, remove, or upgrade would do, including
 knock-on dependency changes, without actually doing it. Worth running before any change on a
@@ -120,21 +132,21 @@ A hold is useful when a specific version of a package is known to work with some
 the system and a newer one might not; `upgrade` and `full-upgrade` both skip held packages
 automatically, without needing to remember to exclude them manually each time.
 
+<!-- verify: shape the version moves whenever a security update lands -->
 ```bash
-apt-cache policy curl
+apt-cache policy curl | head -3
 ```
 ```
 curl:
-  Installed: 8.14.1-2+deb13u3
-  Candidate: 8.14.1-2+deb13u3
-  Version table:
- *** 8.14.1-2+deb13u3 500
+  Installed: 8.14.1-2+deb13u4
+  Candidate: 8.14.1-2+deb13u4
 ```
 
 `apt-cache policy` shows the installed version alongside the candidate version `apt` would
-install or upgrade to, plus which repository it would come from. This is the fastest way to
-answer "why isn't this upgrading" or "which repo is this version actually coming from" without
-digging through `/etc/apt/sources.list.d/` by hand. It is also the check to run after adding a
+install or upgrade to. Without the `head -3` it goes on to list every version available and the
+repository each comes from, which is the fastest way to answer "why isn't this upgrading" or
+"which repo is this version actually coming from" without digging through
+`/etc/apt/sources.list.d/` by hand. It is also the check to run after adding a
 vendor's repository, because a repository can offer any package name it likes:
 [Adding a third-party repository safely](/debian/third-party-repositories/) covers what that
 means and how to contain it.

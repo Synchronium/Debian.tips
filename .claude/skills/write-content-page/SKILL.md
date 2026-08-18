@@ -172,6 +172,29 @@ problem is lost padding — it refuses anything differing in substance) and
 `scripts/adopt-real-output.ts` (replaces named examples' output with the real capture; use when
 output was silently abridged).
 
+### 4d. Prose pages: the same rules, in Markdown
+
+A concept, lesson, recipe or Debian article states its claims as a ```` ```bash ```` fence
+followed by a bare fence holding the output. Those pairs are replayed by
+`scripts/verify-prose.ts` when the page has a `scripts/fixtures/<slug>.sh`, so write them to the
+same standard as an `output:` block:
+
+- **The output fence must open on the line immediately after the command fence closes.** Prose in
+  between means the two are not paired, and the claim goes unchecked.
+- **The whole command's output, not a slice of it.** `dpkg -l nano` prints a five-line header;
+  three commands in one fence print three commands' worth. Add `| head -2` to the command, or
+  split the fence, so what is shown is all of what the shown command prints.
+- **Never print an architecture.** `arm64` locally, `amd64` in CI: a block containing either
+  fails in one of the two. Prefer `dpkg -s pkg | head -2` over `dpkg -l pkg`, and
+  `apt-cache policy pkg | head -3` over the full listing.
+- Output that legitimately moves (a package version, a count of pending upgrades) gets
+  `<!-- verify: shape why it moves -->` on the line above the command fence. Output that cannot
+  be replayed at all gets `<!-- verify: skip the reason -->`, and the reason is required.
+- A bare fence that is a config snippet rather than command output pairs with nothing and is
+  reported as "not checkable". That is correct; just make sure it really is not output.
+
+Then `npm run replay -- <slug>` and aim for N/N, exactly as for a command page.
+
 ## 5. Style guide (apply to every sentence)
 
 An example's `description`, a section's `intro` and a fixture's `note` are rendered as **inline

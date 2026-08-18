@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Page } from "./loader.js";
+import { parseProsePage } from "../../scripts/lib/proseBlocks.js";
 
 /** What the site can say about its own verification, counted from the content rather than
  *  written down. A page that boasts about checking its examples is the worst possible place
@@ -23,6 +24,34 @@ export interface VerificationStats {
   /** Examples exempted from the batch in scripts/fixtures/<command>.skip, each with a
    *  comment there saying how it was verified instead. */
   exemptions: number;
+  /** Prose pages — concepts, lessons, recipes, Debian articles — whose documented output is
+   *  replayed too. Counted separately because a prose page opts in by having a setup script,
+   *  and most do not have one yet. */
+  prosePages: number;
+  /** Output blocks replayed on those pages. */
+  proseOutputs: number;
+}
+
+const PROSE_CATEGORIES = ["concepts", "scripting", "recipes", "debian"];
+
+/** Counts the prose pages that actually replay, and their output blocks. A page without a
+ *  setup script is not replayed, so counting its blocks here would overstate what is
+ *  checked — the one thing this page must never do. */
+function countProse(pages: Page[], repoRoot: string): { prosePages: number; proseOutputs: number } {
+  let prosePages = 0;
+  let proseOutputs = 0;
+  for (const page of pages) {
+    if (!PROSE_CATEGORIES.includes(page.category)) continue;
+    if (!existsSync(join(repoRoot, "scripts", "fixtures", `${page.slug}.sh`))) continue;
+    const source = join(repoRoot, "content", page.category, `${page.slug}.md`);
+    if (!existsSync(source)) continue;
+    const { pairs } = parseProsePage(readFileSync(source, "utf-8"));
+    const checked = pairs.filter((pair) => pair.comparison !== "skip").length;
+    if (checked === 0) continue;
+    prosePages++;
+    proseOutputs += checked;
+  }
+  return { prosePages, proseOutputs };
 }
 
 /** Counts entries in the .skip files, which live beside the fixture scripts rather than in
@@ -60,15 +89,18 @@ export function verificationStats(pages: Page[], repoRoot: string): Verification
   }
 
   const exemptions = countExemptions(repoRoot);
+  const { prosePages, proseOutputs } = countProse(pages, repoRoot);
   return {
     pages: pages.length,
     commandPages: commandPages.length,
     examples,
     outputs,
-    replayed: outputs - exemptions,
+    replayed: outputs - exemptions + proseOutputs,
     volatile,
     fixtures,
     exemptions,
+    prosePages,
+    proseOutputs,
   };
 }
 
