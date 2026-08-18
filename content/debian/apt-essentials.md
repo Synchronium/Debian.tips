@@ -4,7 +4,7 @@ description: "The apt, apt-get, and dpkg commands that cover almost everything y
 category: debian
 tags: [apt, debian, sysadmin]
 updated: 2026-08-17
-related: [third-party-repositories, systemd-services, systemctl, grep, exit-codes-and-error-handling]
+related: [release-channels, third-party-repositories, systemd-services, systemctl, exit-codes-and-error-handling]
 ---
 
 `apt` is the command-line front end for Debian's package management system: installing,
@@ -25,6 +25,11 @@ versions from your sources. Nothing on your system actually changes until you ru
 `full-upgrade` (the successor to `dist-upgrade`) is what you want when a security update needs
 to remove an obsolete package or install a new dependency that plain `upgrade` won't touch on
 its own.
+
+Which versions any of this offers you depends on the channel the machine tracks, and on whether
+its sources name a codename or a role: a machine pointed at `stable` rather than `trixie` starts
+upgrading itself to the next Debian release the day that release happens. See
+[Debian's release channels](/debian/release-channels/) for what each one is for.
 
 ## Installing, removing, and the difference between remove and purge
 

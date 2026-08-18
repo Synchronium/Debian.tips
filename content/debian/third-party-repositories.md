@@ -210,6 +210,8 @@ supply the one thing I asked for".
 
 - [APT essentials](/debian/apt-essentials/) — the everyday commands underneath this, including
   `apt-cache policy` for asking where a package would come from
+- [Debian's release channels](/debian/release-channels/) — the same priority machinery as it
+  applies to Debian's own suites, and why backports need asking for in the same way
 - [Managing services with systemd](/debian/systemd-services/) — what happens after you install
   something that ships a service, which on Debian is usually "it is already running"
 - [`curl`](/commands/curl/) — the tested reference for the fetch, including `-f` so a 404 fails
