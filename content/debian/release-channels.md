@@ -38,7 +38,7 @@ Only the codename is permanent. `sid` is unstable forever, but `trixie` is stabl
 was testing until it was released, and will be oldstable when Debian 14 arrives:
 
 ```bash
-cat /etc/os-release
+head -7 /etc/os-release
 ```
 ```
 PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
@@ -78,9 +78,16 @@ URIs: http://deb.debian.org/debian
 Suites: trixie trixie-updates
 Components: main
 Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp
+
+Types: deb
+URIs: http://deb.debian.org/debian-security
+Suites: trixie-security
+Components: main
+Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp
 ```
 
-If you inherit a machine, this file is the first thing to read.
+Two stanzas, because security fixes come from a different archive to everything else. If you
+inherit a machine, this file is the first thing to read.
 
 ## The suites hanging off stable
 
@@ -114,28 +121,32 @@ Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp
 
 With that in place, a package with a backport shows both versions and still prefers stable:
 
+<!-- verify: shape both version numbers move as stable and backports are updated -->
 ```bash
-apt-cache policy golang-go
+apt-cache policy golang-go | grep -E "^ {5}[0-9]"
 ```
 ```
-golang-go:
-  Installed: (none)
-  Candidate: 2:1.24~2
-  Version table:
      2:1.26~1~bpo13+1 100
-        100 http://deb.debian.org/debian trixie-backports/main arm64 Packages
      2:1.24~2 500
-        500 http://deb.debian.org/debian trixie/main arm64 Packages
 ```
 
-The newer version is right there and the candidate is still stable's. Asking for it takes `-t`:
+The newer version is right there at priority 100, and the candidate is still stable's at 500.
+Run without the `grep`, the same command names the repository each version comes from.
+
+Asking for the backport takes `-t`:
 
 ```bash
 sudo apt install -t trixie-backports golang-go
 ```
 
-Simulating both makes the difference explicit:
+Simulating both makes the difference explicit, and `-s` means neither actually installs
+anything:
 
+<!-- verify: skip the Inst lines name the machine's architecture, which differs between the environments this page is checked in -->
+```bash
+apt-get install -s golang-go | grep "^Inst golang-go"
+apt-get install -s -t trixie-backports golang-go | grep "^Inst golang-go"
+```
 ```
 Inst golang-go (2:1.24~2 Debian:13.6/stable [arm64])
 Inst golang-go (2:1.26~1~bpo13+1 Debian Backports:stable-backports [arm64])

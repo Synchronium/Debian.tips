@@ -14,7 +14,7 @@ pipes a key into `apt-key add`. That instruction has been wrong for years and is
 sudo apt-key add vendor-key.asc
 ```
 ```
-bash: apt-key: command not found
+sudo: apt-key: command not found
 ```
 
 `apt-key` carried a deprecation warning for several Debian releases and was removed outright in
@@ -22,7 +22,7 @@ bash: apt-key: command not found
 where a key lives and, more importantly, in what that key is allowed to vouch for.
 
 > [!NOTE]
-> The outputs below come from a signed repository served on `http://127.0.0.1:8080`, so every
+> The outputs below come from a signed repository served on `http://127.0.0.1:8081`, so every
 > command on this page can be run and checked rather than taken on trust. A real vendor's
 > repository differs only in the URL.
 
@@ -34,22 +34,12 @@ version number is higher than Debian's, `apt` will prefer it. Adding one reposit
 `apt install` line grants that vendor the ability to replace any piece of software on the
 machine, at the next `apt upgrade`, without asking again.
 
-Here is a machine before adding anything:
-
-```bash
-apt-cache policy curl
-```
-```
-curl:
-  Installed: 8.14.1-2+deb13u4
-  Candidate: 8.14.1-2+deb13u4
-```
-
-And the same machine, after adding a single third-party repository that happens to publish a
+Here is a machine that has added a single third-party repository, which happens to publish a
 package named `curl` at version `99.0-1`:
 
+<!-- verify: shape the installed version moves whenever Debian ships a security update -->
 ```bash
-apt-cache policy curl
+apt-cache policy curl | head -6
 ```
 ```
 curl:
@@ -57,13 +47,18 @@ curl:
   Candidate: 99.0-1
   Version table:
      99.0-1 500
-        500 http://127.0.0.1:8080 stable/main all Packages
+        500 http://127.0.0.1:8081 stable/main all Packages
 ```
 
-Nothing was installed and nothing warned. The next `apt upgrade` would take it. This is not a
-flaw in `apt` — it is what a repository *is* — and it is the reason the rest of this page exists.
-`apt-key add` was removed because it made this worse: it added the vendor's key to a global
-keyring trusted for every repository, so that key could then validly sign anything at all.
+Read those two lines together. `Installed:` is Debian's `curl`, the one running now.
+`Candidate:` is the version `apt` would move to, and it is the vendor's, from a repository that
+was added to install something else entirely. Nothing was installed and nothing warned; the next
+`apt upgrade` would take it.
+
+That is not a flaw in `apt`. It is what a repository is, and it is the reason the rest of this
+page exists. `apt-key add` was removed because it made the problem worse: it put the vendor's key
+in a keyring trusted for every repository on the machine, so that key could then validly sign
+anything at all.
 
 ## The modern shape of a source
 
@@ -77,6 +72,12 @@ cat /etc/apt/sources.list.d/debian.sources
 Types: deb
 URIs: http://deb.debian.org/debian
 Suites: trixie trixie-updates
+Components: main
+Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp
+
+Types: deb
+URIs: http://deb.debian.org/debian-security
+Suites: trixie-security
 Components: main
 Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp
 ```
@@ -122,13 +123,14 @@ ends `.gpg`; `Signed-By:` accepts either.
 This is the error worth recognising, because the message changed in trixie. `apt` 3.0 verifies
 signatures with Sequoia's `sqv` rather than `gpgv`, so the familiar `NO_PUBKEY` wording is gone:
 
+<!-- verify: skip needs a source deliberately configured without Signed-By, which is the opposite of the state every other example here needs -->
 ```bash
 sudo apt update
 ```
 ```
-Err:1 http://127.0.0.1:8080 stable InRelease
+Err:1 http://127.0.0.1:8081 stable InRelease
   Sub-process /usr/bin/sqv returned an error code (1), error message is: Missing key 7AA298319813EF392C23518252AFAF4A082E547D, which is needed to verify signature.
-E: The repository 'http://127.0.0.1:8080 stable InRelease' is not signed.
+E: The repository 'http://127.0.0.1:8081 stable InRelease' is not signed.
 ```
 
 "Is not signed" overstates it. The repository is signed; you have not told `apt` which key to
@@ -164,8 +166,9 @@ sudo apt update
 A priority below zero means "never install this", so the first stanza closes the door and the
 second opens it for one package. Afterwards, the `curl` from earlier is Debian's again:
 
+<!-- verify: skip needs the pin in place, which is the opposite of the unpinned state the warning above documents -->
 ```bash
-apt-cache policy curl
+apt-cache policy curl | head -3
 ```
 ```
 curl:
@@ -176,7 +179,7 @@ curl:
 while the package you actually wanted is still available:
 
 ```bash
-apt-cache policy hello-tips
+apt-cache policy hello-tips | head -3
 ```
 ```
 hello-tips:

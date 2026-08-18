@@ -10,9 +10,18 @@
 
 export DEBIAN_FRONTEND=noninteractive
 
-# Package lists, fetched once. Without them apt has nothing to plan an install from.
-if [ ! -d /var/lib/apt/lists ] || [ -z "$(ls -A /var/lib/apt/lists 2>/dev/null | grep -v lock)" ]; then
+# Other prose pages' setups also configure apt, and `npm run replay` runs every page in one
+# sandbox, so a source left behind by an earlier page changes what this one sees. Each page
+# normalises the sources and preferences directories to exactly what it needs.
+find /etc/apt/sources.list.d -name '*.sources' ! -name 'debian.sources' -delete 2>/dev/null
+rm -f /etc/apt/preferences.d/*
+
+# Package lists are rebuilt when the previous page left different sources configured, which
+# is once per page rather than once per documented output.
+STATE=/var/lib/apt/.fixture-page
+if [ "$(cat $STATE 2>/dev/null)" != "apt-essentials" ]; then
   apt-get update >/dev/null 2>&1
+  echo apt-essentials > $STATE
 fi
 
 # nano in the `rc` state: binaries gone, configuration still on disk. Installing then

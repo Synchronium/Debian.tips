@@ -22,6 +22,11 @@ without being asked. Install the SSH server and it is already running:
 
 ```bash
 sudo apt install openssh-server
+```
+
+Then, without doing anything else:
+
+```bash
 systemctl is-enabled ssh
 systemctl is-active ssh
 ```
@@ -92,6 +97,7 @@ unit left intact underneath.
 
 `systemctl edit` creates one, opening `$EDITOR` on the right path so you do not have to know it:
 
+<!-- verify: skip opens $EDITOR on a tty, which a batch run has no way to drive -->
 ```bash
 sudo systemctl edit ssh
 ```
@@ -101,12 +107,13 @@ Successfully installed edited file '/etc/systemd/system/ssh.service.d/override.c
 
 Given a fragment setting `Restart=always` and `RestartSec=5`, `systemctl cat` then shows the
 packaged unit and every drop-in applying to it, each labelled with the file it came from, in the
-order systemd reads them:
+order systemd reads them. The drop-in comes last, which is why it wins:
 
 ```bash
-systemctl cat ssh
+systemctl cat ssh | tail -5
 ```
 ```
+
 # /etc/systemd/system/ssh.service.d/override.conf
 [Service]
 Restart=always
@@ -145,6 +152,8 @@ apt-daily.timer         enabled enabled
 dpkg-db-backup.timer    enabled enabled
 fstrim.timer            enabled enabled
 man-db.timer            enabled enabled
+
+5 unit files listed.
 ```
 
 That is Debian refreshing your package lists, backing up the dpkg database, trimming SSDs and
