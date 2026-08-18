@@ -4,7 +4,7 @@
 # Replays as the unprivileged `user`: ssh refuses to use a private key owned by another
 # user, and the config/known_hosts examples all read ~/.ssh — as root, `ssh -G` and
 # `ssh-keygen -R` report /root/.ssh/ where the page documents /home/user/.ssh/. The
-# directive below is what applies it; both verify-examples.mjs and adopt-real-output.mjs
+# directive below is what applies it; both verify-examples.ts and adopt-real-output.ts
 # read it, so nobody has to remember a flag.
 # verify: --user
 #

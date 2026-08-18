@@ -3,8 +3,8 @@
 #
 # This page replays as the unprivileged `user`: root bypasses the permission checks the
 # page documents, so `chmod 600 /etc/shadow` succeeds as root and `ls -l locked/` never
-# reports a denial. The directive below is what makes that happen — verify-examples.mjs
-# and adopt-real-output.mjs both read it, so the documented invocation is correct here
+# reports a denial. The directive below is what makes that happen — verify-examples.ts
+# and adopt-real-output.ts both read it, so the documented invocation is correct here
 # without anyone having to remember a flag. Replayed as root, this page scores 9/42.
 # verify: --user
 #

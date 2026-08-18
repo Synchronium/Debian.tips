@@ -5,7 +5,7 @@
 # definition is what makes that true.
 #
 # A setup script runs inside the sandbox, where the repository isn't mounted, so it can't
-# source a relative path. verify-examples.mjs and adopt-real-output.mjs install this file
+# source a relative path. verify-examples.ts and adopt-real-output.ts install this file
 # alongside the setup script and the page scripts source it by absolute path:
 #
 #     . /tmp/fixtures-common.sh

@@ -1,4 +1,4 @@
-# Reconstructed from the documented outputs, then proven by scripts/verify-examples.mjs.
+# Reconstructed from the documented outputs, then proven by scripts/verify-examples.ts.
 cat > app.log <<'EOF'
 INFO: service starting
 DEBUG: loading config from /etc/app.conf
