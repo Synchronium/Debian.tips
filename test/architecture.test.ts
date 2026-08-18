@@ -4,10 +4,10 @@ import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import type { ExamplesFile } from "../src/content/schema.js";
 import { PROSE_CATEGORIES } from "../src/content/schema.js";
-import { CONTENT_DIR, EXAMPLES_FILE, commandDir, proseSource } from "../src/paths.js";
+import { CONTENT_DIR, EXAMPLES_FILE, FIXTURE_DIR, commandDir, proseSource } from "../src/paths.js";
+import { parseProsePage } from "../scripts/lib/proseBlocks.js";
 
 const COMMANDS_DIR = join(CONTENT_DIR, "commands");
-import { parseProsePage } from "../scripts/lib/proseBlocks.js";
 
 /* An architecture in a documented output is the one defect that cannot fail in both places at
  * once: this devcontainer is arm64, a CI runner is amd64, and emulation isn't available here,
@@ -56,6 +56,40 @@ describe("documented output", () => {
     const offenders = documentedOutputs()
       .filter(({ output }) => PATTERN.test(output))
       .map(({ where, output }) => `${where} — ${PATTERN.exec(output)![0]}`);
+    expect(offenders).toEqual([]);
+  });
+
+  /* An exemption whose stated reason is the architecture is always a defect rather than a
+   * record of how something was checked instead. It silences the replay while leaving the page
+   * showing one machine's architecture to readers on the other — which is what `release-channels`
+   * did from the day it shipped, and what nothing could report, because the exemption was itself
+   * the thing suppressing the signal.
+   *
+   * There is always a fix: choose an `Architecture: all` package, or filter the field out of
+   * the command's output. Both keep the example and remove the claim that cannot be true
+   * everywhere. */
+  it("is never exempted from checking because of the architecture", () => {
+    const reasons: { where: string; reason: string }[] = [];
+
+    for (const file of readdirSync(FIXTURE_DIR).filter((name) => name.endsWith(".skip"))) {
+      for (const [index, line] of readFileSync(join(FIXTURE_DIR, file), "utf-8").split("\n").entries()) {
+        if (line.trim().startsWith("#")) reasons.push({ where: `${file}:${index + 1}`, reason: line });
+      }
+    }
+
+    for (const category of PROSE_CATEGORIES) {
+      for (const filename of readdirSync(join(CONTENT_DIR, category))) {
+        if (!filename.endsWith(".md")) continue;
+        const slug = filename.replace(/\.md$/, "");
+        const { pairs } = parseProsePage(readFileSync(proseSource(category, slug), "utf-8"));
+        for (const pair of pairs) {
+          if (pair.comparison === "skip") reasons.push({ where: `${category}/${slug}:${pair.line}`, reason: pair.note });
+        }
+      }
+    }
+
+    const excuse = /\b(architectures?|arm64|amd64|aarch64|x86_64|i386|armhf|ppc64el|s390x)\b/i;
+    const offenders = reasons.filter(({ reason }) => excuse.test(reason)).map(({ where }) => where);
     expect(offenders).toEqual([]);
   });
 

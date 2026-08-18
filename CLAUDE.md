@@ -172,7 +172,10 @@ when it is the opposite.
 emulation is unavailable locally, so any block containing one fails in exactly one of the two
 places. It is the same rule the command pages have always followed by accident; prose pages have
 to follow it deliberately. `test/architecture.test.ts` enforces it on every documented output, so
-this is a build failure rather than something to remember.
+this is a build failure rather than something to remember. It also rejects any exemption whose
+stated reason is the architecture — a `.skip` entry or a `verify: skip` note that says "differs
+between arm64 and amd64" silences the replay while leaving the page showing one architecture to
+readers on the other, which is the defect rather than a record of how it was checked instead.
 
 The constraint is on the **package, not the command**. A package that is `Architecture: all`
 prints `all` in both places, so `dpkg -l`, `apt list`, `apt search` and `apt show` are all
