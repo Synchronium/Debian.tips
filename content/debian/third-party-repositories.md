@@ -219,3 +219,8 @@ supply the one thing I asked for".
   something that ships a service, which on Debian is usually "it is already running"
 - [`curl`](/commands/curl/) — the tested reference for the fetch, including `-f` so a 404 fails
   loudly instead of saving an error page over your keyring
+
+When apt refuses a repository outright — `NO_PUBKEY`, a missing key, or
+`The repository is not signed` — the key and the signature have disagreed rather than the
+repository being broken. [The repository is not signed](/troubleshooting/repository-is-not-signed/)
+works through the diagnosis.

@@ -140,3 +140,6 @@ for you — it has the same rule about new packages that `apt-get upgrade` does.
   down rather than inherited from whichever command someone typed.
 - Audit holds when you inherit a machine: `apt-mark showhold` takes a second and explains a
   surprising amount.
+
+A different kind of upgrade failure — apt refusing a repository rather than a package — is
+covered in [The repository is not signed](/troubleshooting/repository-is-not-signed/).
