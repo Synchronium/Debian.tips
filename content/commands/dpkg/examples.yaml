@@ -1,0 +1,214 @@
+command: dpkg
+
+sections:
+  - title: Asking what is installed
+    intro: >-
+      All of these read the local package database. No network, no `sudo`, and they keep working
+      on a machine whose apt configuration is broken.
+    examples:
+      - title: Check whether a package is installed
+        code: dpkg -l cowsay
+        description: The first column is the state — `ii` is installed and configured. The table truncates its description column to the terminal width, so treat it as something to read rather than to parse.
+        level: basic
+        output: |2
+          Desired=Unknown/Install/Remove/Purge/Hold
+          | Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend
+          |/ Err?=(none)/Reinst-required (Status,Err: uppercase=bad)
+          ||/ Name           Version      Architecture Description
+          +++-==============-============-============-=================================
+          ii  cowsay         3.03+dfsg2-8 all          configurable talking cow
+      - title: Tell an installed package from a removed one
+        code: dpkg -l cowsay bash-completion | tail -3
+        description: '`rc` means removed but not purged: the programs are gone and the configuration files are still on disk. This is the state that explains a package still affecting a system after you removed it.'
+        level: intermediate
+        output: |2
+          +++-===============-============-============-==========================================
+          rc  bash-completion 1:2.16.0-7   all          programmable completion for the bash shell
+          ii  cowsay          3.03+dfsg2-8 all          configurable talking cow
+      - title: Read everything dpkg knows about a package
+        code: dpkg -s cowsay
+        description: The full database entry — state, version, dependencies and description. Unlike `dpkg -l` this is a stable field-per-line format, and it needs no terminal width to be readable.
+        level: basic
+        output: |2
+          Package: cowsay
+          Status: install ok installed
+          Priority: optional
+          Section: games
+          Installed-Size: 92
+          Maintainer: James McDonald <james@jamesmcdonald.com>
+          Architecture: all
+          Version: 3.03+dfsg2-8
+          Depends: libtext-charwidth-perl, perl:any
+          Suggests: filters, cowsay-off
+          Description: configurable talking cow
+           Cowsay (or cowthink) will turn text into happy ASCII cows, with
+           speech (or thought) balloons. If you don't like cows, ASCII art is
+           available to replace it with some other creatures (Tux, the BSD
+           daemon, dragons, and a plethora of animals, from a turkey to
+           an elephant in a snake).
+          Homepage: https://web.archive.org/web/20120527202447/http://www.nog.net/~tony/warez/cowsay.shtml
+      - title: Check installation state in a script
+        code: dpkg -s cowsay >/dev/null 2>&1 && echo installed || echo missing
+        description: Exit status rather than parsed output, so a formatting change can't break it. See [Exit codes and error handling](/concepts/exit-codes-and-error-handling/).
+        level: intermediate
+        output: |2
+          installed
+      - title: List the files a package installed
+        code: dpkg -L cowsay | head -6
+        description: Every path the package put on disk, directories included. The complete answer to "where did that command come from, and what else came with it".
+        level: basic
+        output: |2
+          /.
+          /usr
+          /usr/games
+          /usr/games/cowsay
+          /usr/share
+          /usr/share/cowsay
+      - title: Find which package owns a file
+        code: dpkg -S /usr/games/cowsay
+        description: The reverse lookup, and the fastest way to identify an unfamiliar file. It only knows about installed packages — for a file you don't have yet, `apt-file search` is the equivalent.
+        level: basic
+        output: |2
+          cowsay: /usr/games/cowsay
+      - title: Find which package owns a command
+        code: dpkg -S "$(command -v gzip)"
+        description: '`command -v` resolves the name on your `PATH` first, so this works without knowing where the binary lives.'
+        level: intermediate
+        output: |2
+          gzip: /usr/bin/gzip
+      - title: List a package's configuration files
+        code: dpkg -s bash-completion | grep -A3 ^Conffiles
+        description: '`Conffiles` are the files dpkg treats as yours to edit — it will not overwrite a changed one on upgrade without asking. Shown here for a package in the `rc` state, whose programs are gone while every one of these files is still on disk.'
+        level: advanced
+        output: |2
+          Conffiles:
+           /etc/bash_completion a81b3f1cb197219b815942f4fc7fa94e
+           /etc/bash_completion.d/000_bash_completion_compat.bash 3834d4b9bcbc9a8bdb847f1a6727ae7a
+           /etc/profile.d/bash_completion.sh 3593c6b58d5ede41aedc83dff04c35f7
+  - title: Inspecting a .deb before installing it
+    intro: >-
+      These read a package file and change nothing, which makes them the right first move for a
+      `.deb` downloaded from somewhere you are not certain about.
+    examples:
+      - title: Read a package file's metadata
+        code: dpkg -I cowsay-off.deb | head -12
+        description: Version, dependencies, maintainer and size, straight out of the file. No installation and no root required.
+        level: basic
+        output: |2
+           new Debian package, version 2.0.
+           size 8392 bytes: control archive=1024 bytes.
+               871 bytes,    21 lines      control
+               500 bytes,     7 lines      md5sums
+           Package: cowsay-off
+           Source: cowsay
+           Version: 3.03+dfsg2-8
+           Architecture: all
+           Maintainer: James McDonald <james@jamesmcdonald.com>
+           Installed-Size: 23
+           Depends: cowsay (>= 3.03+dfsg2-3)
+           Breaks: cowsay (<< 3.03+dfsg2-3)
+      - title: List what a package file would install
+        code: dpkg -c cowsay-off.deb 2>/dev/null | head -6
+        description: Every path in the archive with its mode and owner, before anything is unpacked. The check to run when a third-party `.deb` might write somewhere it shouldn't.
+        level: intermediate
+        output: |2
+          drwxr-xr-x root/root         0 2020-05-11 06:43 ./
+          drwxr-xr-x root/root         0 2020-05-11 06:43 ./usr/
+          drwxr-xr-x root/root         0 2020-05-11 06:43 ./usr/share/
+          drwxr-xr-x root/root         0 2020-05-11 06:43 ./usr/share/cowsay/
+          drwxr-xr-x root/root         0 2020-05-11 06:43 ./usr/share/cowsay/cows/
+          -rw-r--r-- root/root       584 1999-08-14 07:17 ./usr/share/cowsay/cows/beavis.zen.cow
+      - title: Extract a package's files without installing it
+        code: dpkg -x cowsay-off.deb /tmp/unpacked && find /tmp/unpacked -type f | sort | head -3
+        description: Unpacks the file tree into a directory of your choosing. No maintainer scripts run, nothing is registered and nothing is configured — useful for pulling one file out of a package. `find` reports in directory order, so `sort` is what makes the listing the same twice.
+        level: intermediate
+        output: |2
+          /tmp/unpacked/usr/share/cowsay/cows/beavis.zen.cow
+          /tmp/unpacked/usr/share/cowsay/cows/bong.cow
+          /tmp/unpacked/usr/share/cowsay/cows/mutilated.cow
+      - title: Extract a package's control information
+        code: dpkg -e cowsay-off.deb /tmp/control && ls /tmp/control
+        description: Unpacks the maintainer scripts rather than the file tree. This is how to read what a package would run as root before letting it.
+        level: advanced
+        output: |2
+          control
+          md5sums
+  - title: Installing and removing directly
+    intro: >-
+      All of these need root, and none of them resolve dependencies. Their output is a live
+      unpack — progress lines, sizes and your machine's architecture — so it isn't reproduced
+      here. Prefer `sudo apt install ./file.deb`, which does the same unpacking with the
+      dependencies sorted out first.
+    examples:
+      - title: Install a package file
+        code: sudo dpkg -i cowsay-off.deb
+        description: Unpacks and configures a single `.deb`. Succeeds only if every dependency is already present; otherwise it leaves the package unpacked but unconfigured.
+        level: basic
+        danger: true
+      - title: Fix the dependencies dpkg just complained about
+        code: sudo apt install -f
+        description: The standard follow-up to a failed `dpkg -i`. apt finds and installs the missing dependencies, then configures the package dpkg left half-done.
+        level: basic
+      - title: Install a .deb the way you actually should
+        code: sudo apt install ./cowsay-off.deb
+        description: The `./` makes apt treat the argument as a file rather than a package name. Same unpacking, but dependencies are resolved first, so the install either completes or never starts.
+        level: basic
+      - title: Remove a package, keeping its configuration
+        code: sudo dpkg -r cowsay-off
+        description: Takes a package *name*, not a file name — a common slip immediately after installing from a file. Leaves the package in the `rc` state.
+        level: intermediate
+      - title: Remove a package and its configuration
+        code: sudo dpkg -P cowsay-off
+        description: '`-P` is purge: the programs and the configuration files both go.'
+        level: intermediate
+        danger: true
+
+  - title: Repairing a broken install
+    intro: >-
+      What to reach for when an install was interrupted — a killed session, a machine that lost
+      power mid-upgrade, or a full disk.
+    examples:
+      - title: Finish configuring everything left half-done
+        code: sudo dpkg --configure -a
+        description: Configures every package that was unpacked but never configured. Often the entire fix after an interrupted upgrade, and safe to run at any time — on a healthy system it prints nothing and does nothing.
+        level: intermediate
+      - title: Report packages that are installed but broken
+        code: sudo dpkg --audit
+        description: Lists packages in a state that needs attention, with a sentence saying why. Prints nothing when the system is healthy, which is the answer you want.
+        level: intermediate
+      - title: Check what state every package is in
+        code: dpkg -l | awk '$1 != "ii" && NR > 5 {print $1, $2}'
+        description: Anything whose state isn't `ii` — removed-but-not-purged packages and genuinely broken ones both show up here.
+        level: advanced
+        output: |2
+          rc bash-completion
+  - title: Reading the database in scripts
+    intro: >-
+      `dpkg -l` is a table for people. When a script needs a fact, name the field you want and
+      nothing else can shift underneath you.
+    examples:
+      - title: Print exactly one field
+        code: dpkg-query -W -f='${Version}\n' cowsay
+        description: '`-f` takes a template of the fields you want. Nothing else is printed, so no header, column or description change can affect the result.'
+        level: intermediate
+        output: |2
+          3.03+dfsg2-8
+      - title: Print several fields in your own format
+        code: dpkg-query -W -f='${Package} ${Version} ${Status}\n' cowsay ca-certificates
+        description: Any field from the database, in any layout. `${Status}` is the three words behind the two-letter code `dpkg -l` abbreviates.
+        level: advanced
+        output: |2
+          ca-certificates 20250419 install ok installed
+          cowsay 3.03+dfsg2-8 install ok installed
+      - title: Test whether a package is installed, properly
+        code: dpkg-query -W -f='${Status}' cowsay 2>/dev/null | grep -q "^install ok installed" && echo yes || echo no
+        description: More precise than `dpkg -s`, which succeeds for a package in the `rc` state too. This asks specifically whether the package is currently installed.
+        level: advanced
+        output: |2
+          yes
+      - title: List every package marked as held
+        code: dpkg --get-selections | grep hold || echo "nothing held"
+        description: dpkg records holds alongside apt's, so this and `apt-mark showhold` answer the same question from either side.
+        level: advanced
+        output: |2
+          nothing held

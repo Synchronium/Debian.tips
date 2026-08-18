@@ -21,7 +21,7 @@ with nicer defaults. They are shipped by the same package and share a dependency
 they never disagree about what should be installed —
 [apt vs apt-get](/compare/apt-vs-apt-get/) covers the differences that are real.
 
-Underneath sits [`dpkg`](/debian/apt-essentials/), which installs a single `.deb` file and knows
+Underneath sits [`dpkg`](/commands/dpkg/), which installs a single `.deb` file and knows
 nothing about repositories, dependencies or where a package came from. Almost every apt command
 ends in a dpkg run, which is why dpkg's errors surface through apt.
 

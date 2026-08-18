@@ -106,5 +106,5 @@ after an upgrade. Pass `-y` and set `DEBIAN_FRONTEND=noninteractive` while you a
 it is the same resolver. Anything claiming `apt` installs different packages than `apt-get` is
 describing the `upgrade` difference above, not a difference in the underlying decision.
 
-Neither replaces [`dpkg`](/debian/apt-essentials/), which sits underneath both and does not know
+Neither replaces [`dpkg`](/commands/dpkg/), which sits underneath both and does not know
 anything about repositories or dependency resolution.

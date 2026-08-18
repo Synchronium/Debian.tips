@@ -93,7 +93,7 @@ sudo dpkg --configure -a
 ```
 
 That completes any package left half-configured by the interrupted process, which is the actual
-damage. In most stale-lock cases this is the entire fix, and the lock file never needed touching.
+damage — see [`dpkg`](/commands/dpkg/) for reading the states it reports. In most stale-lock cases this is the entire fix, and the lock file never needed touching.
 
 > [!WARNING]
 > `sudo rm /var/lib/dpkg/lock-frontend` is the advice you will find most often and the one to
