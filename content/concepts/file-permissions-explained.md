@@ -88,7 +88,9 @@ Three special bits sit above the normal nine:
 
 - **setuid** (`chmod u+s`, numeric `4000`) on an executable makes it run with the file owner's
   privileges, not the caller's. This is how `passwd` lets an ordinary user change their own
-  password despite the password database being root-owned.
+  password despite the password database being root-owned, and how `sudo` works at all — which
+  is also why [a missing sudo](/troubleshooting/sudo-command-not-found/) cannot be worked around
+  by copying the binary somewhere.
 - **setgid** (`chmod g+s`, numeric `2000`) on a directory makes new files created inside inherit
   the directory's group, instead of the creating user's primary group. Useful for shared team
   directories where everything should stay group-owned consistently.

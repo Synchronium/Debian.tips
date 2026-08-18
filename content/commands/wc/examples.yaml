@@ -242,6 +242,8 @@ sections:
       - title: "Count how many accounts exist on a system"
         code: wc -l < /etc/passwd
         description: "One line per account in /etc/passwd — a quick way to get a headcount without parsing the file's colon-separated fields at all."
+        volatile: "the number of accounts is whatever your machine has; a desktop install has far more than a container"
+        compare: shape
         output: |2
           21
         level: intermediate
