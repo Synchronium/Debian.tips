@@ -4,7 +4,7 @@ description: "The apt, apt-get, and dpkg commands that cover almost everything y
 category: debian
 tags: [apt, debian, sysadmin]
 updated: 2026-08-17
-related: [systemd-services, systemctl, grep, exit-codes-and-error-handling]
+related: [third-party-repositories, systemd-services, systemctl, grep, exit-codes-and-error-handling]
 ---
 
 `apt` is the command-line front end for Debian's package management system: installing,
@@ -129,7 +129,10 @@ curl:
 `apt-cache policy` shows the installed version alongside the candidate version `apt` would
 install or upgrade to, plus which repository it would come from. This is the fastest way to
 answer "why isn't this upgrading" or "which repo is this version actually coming from" without
-digging through `/etc/apt/sources.list.d/` by hand.
+digging through `/etc/apt/sources.list.d/` by hand. It is also the check to run after adding a
+vendor's repository, because a repository can offer any package name it likes:
+[Adding a third-party repository safely](/debian/third-party-repositories/) covers what that
+means and how to contain it.
 
 > [!TIP]
 > `apt` (no suffix) is meant for interactive use: coloured output, a progress bar, and an
