@@ -2,11 +2,8 @@ import { createServer } from "node:http";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { extname, join, sep } from "node:path";
 import { execFileSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import chokidar from "chokidar";
-
-const ROOT = fileURLToPath(new URL("..", import.meta.url));
-const DIST = join(ROOT, "dist");
+import { DIST_DIR as DIST, ROOT } from "./paths.js";
 const PORT = 4321;
 
 const MIME: Record<string, string> = {

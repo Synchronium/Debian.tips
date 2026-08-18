@@ -1,4 +1,4 @@
-import { CATEGORY_META, NAV_ORDER, SITE } from "./config.js";
+import { CATEGORY_META, NAV_ORDER, SITE, STANDALONE_PAGES } from "./config.js";
 import type { Page, TagInfo } from "./content/loader.js";
 
 const XML_ESC: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" };
@@ -28,9 +28,9 @@ export function sitemapXml(pages: Page[], tags: TagInfo[]): string {
       lastmod: newestUpdate(pages.filter((p) => p.category === c)),
     })),
     { path: "/tags/", lastmod: newestUpdate(pages) },
-    // Belongs to no category and so isn't in `pages`, but it is a real page that should be
-    // findable. Its content changes whenever any page does, since its figures are counted.
-    { path: "/about/", lastmod: newestUpdate(pages) },
+    // Belong to no category and so aren't in `pages`, but they are real pages that should be
+    // findable. Their content changes whenever any page does, since their figures are counted.
+    ...STANDALONE_PAGES.map((s) => ({ path: s.path, lastmod: newestUpdate(pages) })),
     ...tags.map((t) => ({
       path: `/tags/${t.name}/`,
       lastmod: newestUpdate(pages.filter((p) => p.tags.includes(t.name))),

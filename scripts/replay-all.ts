@@ -13,21 +13,22 @@
 // unavailable or an argument names no page.
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { readSetupDirectives } from "./lib/replay.js";
+import { PROSE_CATEGORIES } from "../src/content/schema.js";
+import { CONTENT_DIR, fixtureScript } from "../src/paths.js";
 
 const requestedPages = process.argv.slice(2).filter((arg) => !arg.startsWith("-"));
 
-/** Prose pages state their claims as Markdown fences rather than YAML, so they run through
- *  verify-prose.ts rather than verify-examples.ts. */
-const PROSE_CATEGORIES = ["concepts", "scripting", "recipes", "debian"];
-
-const commandPages = readdirSync("content/commands", { withFileTypes: true })
+// Prose pages state their claims as Markdown fences rather than YAML, so they run through
+// verify-prose.ts rather than verify-examples.ts.
+const commandPages = readdirSync(join(CONTENT_DIR, "commands"), { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name);
 
 const prosePages = PROSE_CATEGORIES.flatMap((category) =>
-  existsSync(`content/${category}`)
-    ? readdirSync(`content/${category}`)
+  existsSync(join(CONTENT_DIR, category))
+    ? readdirSync(join(CONTENT_DIR, category))
         .filter((file) => file.endsWith(".md"))
         .map((file) => file.replace(/\.md$/, ""))
     : [],
@@ -50,7 +51,7 @@ if (missing.length) {
 // about how much is checked. A page needing no sample files still gets one, holding only a
 // comment saying so — an explicit "nothing to create here" beats an absence that reads as an
 // oversight, and it keeps this gate meaningful instead of permanently red.
-const runnable = pages.filter((name) => existsSync(`scripts/fixtures/${name}.sh`));
+const runnable = pages.filter((name) => existsSync(fixtureScript(name)));
 const unfixtured = pages.filter((name) => !runnable.includes(name));
 
 try {
@@ -65,7 +66,7 @@ try {
 // page in this run asks for it.
 type Flavour = "default" | "systemd";
 const flavourOf = (name: string): Flavour =>
-  readSetupDirectives(`scripts/fixtures/${name}.sh`).needsSystemd ? "systemd" : "default";
+  readSetupDirectives(fixtureScript(name)).needsSystemd ? "systemd" : "default";
 const neededFlavours = [...new Set(runnable.map(flavourOf))].sort();
 
 // Registered before the first container starts: one left behind holds its name and its
@@ -103,7 +104,7 @@ const failed: string[] = [];
 const started = Date.now();
 for (const name of runnable) {
   const runner = isProse(name) ? "scripts/verify-prose.ts" : "scripts/verify-examples.ts";
-  const setup = `scripts/fixtures/${name}.sh`;
+  const setup = fixtureScript(name);
   const result = spawnSync(
     "npx",
     ["tsx", runner, sandboxes.get(flavourOf(name)) ?? "", name, ...(existsSync(setup) ? [setup] : [])],

@@ -1,5 +1,5 @@
 import { html, raw, type Raw } from "../html.js";
-import { CATEGORY_META, NAV_ORDER, SITE } from "../config.js";
+import { CATEGORY_META, NAV_ORDER, SITE, STANDALONE_PAGES } from "../config.js";
 import type { Category } from "../content/schema.js";
 
 export interface LayoutOptions {
@@ -94,7 +94,7 @@ function footerHtml(): string {
 <div class="footer-inner">
 <nav aria-label="Explore"><h2>Explore</h2><ul>${exploreItems}</ul></nav>
 <nav aria-label="Meta"><h2>Meta</h2><ul>
-<li><a href="/about/">How this site is tested</a></li>
+${STANDALONE_PAGES.map((s) => raw(html`<li><a href="${s.path}">${s.navLabel}</a></li>`))}
 <li><a href="/feed.xml">RSS</a></li>
 <li><a href="https://github.com/Synchronium/Debian.tips">GitHub</a></li>
 </ul></nav>

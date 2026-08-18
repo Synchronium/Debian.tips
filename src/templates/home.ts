@@ -1,7 +1,7 @@
 import { html, raw } from "../html.js";
 import { layout } from "./layout.js";
 import { pageCard } from "./partials/card.js";
-import { CATEGORY_META, FEATURED_PATHS, NAV_ORDER, SITE } from "../config.js";
+import { CATEGORY_META, FEATURED_PATHS, NAV_ORDER, SITE, STANDALONE_PAGES } from "../config.js";
 import type { Page } from "../content/loader.js";
 
 /** Homepage ordering, in priority order: flagship command pages first, then most
@@ -54,7 +54,7 @@ ${sections.map((s) => raw(s))}
 memory quietly stops being true. Every example on this site is run inside a throwaway Debian
 container, and what you see is what it printed. They are re-run on every change, and a page whose
 output no longer matches fails the build.</p>
-<p><a href="/about/">How this site is tested</a></p>
+${STANDALONE_PAGES.map((s) => raw(html`<p><a href="${s.path}">${s.navLabel}</a></p>`))}
 </section>
 `;
 

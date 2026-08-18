@@ -7,6 +7,8 @@
 // same way.
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { FIXTURE_DIR, SANDBOX_SCRIPT } from "../../src/paths.js";
 
 /** Seconds an example may run before `timeout` kills it. Pages document commands that
  *  block for ever (`tail -f`, `journalctl -f`); a timed-out example reports as a mismatch. */
@@ -29,8 +31,6 @@ const MARKER = "@@EX@@";
  *  modes have to see the same value everywhere. 0022 is what a Debian system gives. */
 const UMASK = "0022";
 
-const SANDBOX_SCRIPT = "scripts/sandbox.sh";
-const FIXTURE_DIR = "scripts/fixtures";
 
 /** Python helpers (the local HTTP server the curl and wget pages use) live here rather
  *  than in the working directory, which is wiped before every example. */
@@ -38,7 +38,7 @@ const HELPER_DIR = "/opt/mock";
 
 /** Fixture bodies shared by several pages, sourced by absolute path from a setup script:
  *  the sandbox has no copy of this repository to source a relative one from. */
-const SHARED_FIXTURES_LOCAL = `${FIXTURE_DIR}/_common.sh`;
+const SHARED_FIXTURES_LOCAL = join(FIXTURE_DIR, "_common.sh");
 const SHARED_FIXTURES_IN_SANDBOX = "/tmp/fixtures-common.sh";
 
 /** Printed by a setup script that ran to completion. */
@@ -109,7 +109,7 @@ export function openSandbox(options: OpenOptions): Sandbox {
   if (helpers.length) {
     exec(`mkdir -p ${HELPER_DIR}`, { asRoot: true });
     for (const helper of helpers) {
-      writeFile(exec, `${FIXTURE_DIR}/${helper}`, `${HELPER_DIR}/${helper}`, { asRoot: true });
+      writeFile(exec, join(FIXTURE_DIR, helper), `${HELPER_DIR}/${helper}`, { asRoot: true });
     }
   }
 

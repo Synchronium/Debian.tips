@@ -31,6 +31,7 @@
 // Exit status: 0 when there are no orphans and no thin pages, 1 otherwise, 2 on a bad
 // argument or a content error.
 import { loadContent, type Page } from "../src/content/loader.js";
+import { STANDALONE_PAGES } from "../src/config.js";
 import { adjacency, affinity, collectEdges } from "./lib/linkGraph.js";
 
 /** The style guide's floor: every page links at least this many others. */
@@ -45,8 +46,11 @@ const SUGGESTIONS = 5;
 
 /** Standalone pages reached from the header and the homepage rather than from prose. They
  *  have no category listing to be found on, so site chrome is their route in and an inbound
- *  prose link is a bonus rather than the thing that rescues them. */
-const CHROME_LINKED = new Set(["/about/"]);
+ *  prose link is a bonus rather than the thing that rescues them.
+ *
+ *  Taken from the same list the builder works from, so a new standalone page is exempt the
+ *  moment it exists. Kept as a separate set here only to make the intent explicit. */
+const CHROME_LINKED = new Set(STANDALONE_PAGES.map((page) => page.path));
 
 /** Drafts are held to neither rule. A published page linking to one is a build error, so a
  *  draft can only ever be linked from another draft and would otherwise be reported as an

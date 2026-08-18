@@ -1,6 +1,7 @@
 // Reading a page's replay metadata: which examples are exempt from the batch, and how the
 // page has to be run.
 import { readFileSync } from "node:fs";
+import { skipFile } from "../../src/paths.js";
 
 /** Titles listed in scripts/fixtures/<command>.skip: examples a batch can't reproduce,
  *  because they need a concurrent writer, a live log rotation or a network peer. Each is
@@ -13,7 +14,7 @@ import { readFileSync } from "node:fs";
 export function loadSkipTitles(command: string, titlesWithOutput: string[]): Set<string> {
   let entries = [];
   try {
-    entries = readFileSync(`scripts/fixtures/${command}.skip`, "utf-8")
+    entries = readFileSync(skipFile(command), "utf-8")
       .split("\n")
       .map((l) => l.trim())
       .filter((l) => l && !l.startsWith("#"));

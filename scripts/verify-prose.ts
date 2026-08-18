@@ -11,14 +11,13 @@
 // quietly drifted two Debian point releases out of date.
 //
 // Exit status: 0 when every pair reproduces, 1 on a mismatch, 2 on a bad argument.
-import { existsSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync } from "node:fs";
 import { captureAll, openSandbox } from "./lib/sandbox.js";
+import { PROSE_CATEGORIES } from "../src/content/schema.js";
+import { fixtureScript, proseSource } from "../src/paths.js";
 import { MASK_TOKENS, normalise, shapeOf } from "./lib/normalise.js";
 import { parseProseFile, type ProsePair } from "./lib/proseBlocks.js";
 import { readSetupDirectives } from "./lib/replay.js";
-
-const PROSE_CATEGORIES = ["concepts", "scripting", "recipes", "debian"] as const;
 
 const [sandboxName, slug, setupArg] = process.argv.slice(2);
 if (!sandboxName || !slug) {
@@ -26,14 +25,14 @@ if (!sandboxName || !slug) {
   process.exit(2);
 }
 
-const category = PROSE_CATEGORIES.find((name) => existsSync(join("content", name, `${slug}.md`)));
+const category = PROSE_CATEGORIES.find((name) => existsSync(proseSource(name, slug)));
 if (!category) {
   console.error(`no prose page with slug "${slug}" (looked in ${PROSE_CATEGORIES.join(", ")})`);
   process.exit(2);
 }
-const pagePath = join("content", category, `${slug}.md`);
+const pagePath = proseSource(category, slug);
 
-const setupPath = setupArg ?? (existsSync(`scripts/fixtures/${slug}.sh`) ? `scripts/fixtures/${slug}.sh` : undefined);
+const setupPath = setupArg ?? (existsSync(fixtureScript(slug)) ? fixtureScript(slug) : undefined);
 const directives = setupPath ? readSetupDirectives(setupPath) : { asUser: false, needsSystemd: false };
 
 const { pairs, unpaired } = parseProseFile(pagePath);

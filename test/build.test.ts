@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { build } from "../src/build.js";
 import { loadContent } from "../src/content/loader.js";
+import { STANDALONE_PAGES } from "../src/config.js";
 
 const FIXTURE_CONTENT = join(import.meta.dirname, "fixtures", "content");
 let distDir: string;
@@ -88,5 +89,17 @@ describe("the about page", () => {
   it("is listed in the sitemap", async () => {
     const sitemap = readFileSync(join(distDir, "sitemap.xml"), "utf-8");
     expect(sitemap).toContain("/about/");
+  });
+
+  it("is linked from the footer and the homepage as markup, not as escaped text", async () => {
+    // `html` returns a plain string rather than a Raw, so a nested html`` interpolation is
+    // escaped like any other value. Building the footer's list without wrapping it in raw()
+    // shipped a literal `&lt;li&gt;&lt;a href=...` into every page, and the whole gate passed:
+    // linkcheck sees no link to follow, and the audit does not read site chrome.
+    const home = readFileSync(join(distDir, "index.html"), "utf-8");
+    for (const standalone of STANDALONE_PAGES) {
+      expect(home).toContain(`<a href="${standalone.path}">${standalone.navLabel}</a>`);
+    }
+    expect(home).not.toContain("&lt;a href=");
   });
 });

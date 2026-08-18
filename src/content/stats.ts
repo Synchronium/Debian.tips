@@ -1,6 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Page } from "./loader.js";
+import { PROSE_CATEGORIES } from "./schema.js";
+import { FIXTURE_DIR, fixtureScript, proseSource } from "../paths.js";
 import { parseProsePage } from "../../scripts/lib/proseBlocks.js";
 
 /** What the site can say about its own verification, counted from the content rather than
@@ -32,18 +34,19 @@ export interface VerificationStats {
   proseOutputs: number;
 }
 
-const PROSE_CATEGORIES = ["concepts", "scripting", "recipes", "debian"];
-
 /** Counts the prose pages that actually replay, and their output blocks. A page without a
  *  setup script is not replayed, so counting its blocks here would overstate what is
- *  checked — the one thing this page must never do. */
-function countProse(pages: Page[], repoRoot: string): { prosePages: number; proseOutputs: number } {
+ *  checked — the one thing this page must never do.
+ *
+ *  Setup scripts are looked for in this repository whichever content tree is being built,
+ *  because they belong to the harness; the pages themselves come from `contentDir`. */
+function countProse(pages: Page[], contentDir: string): { prosePages: number; proseOutputs: number } {
   let prosePages = 0;
   let proseOutputs = 0;
   for (const page of pages) {
-    if (!PROSE_CATEGORIES.includes(page.category)) continue;
-    if (!existsSync(join(repoRoot, "scripts", "fixtures", `${page.slug}.sh`))) continue;
-    const source = join(repoRoot, "content", page.category, `${page.slug}.md`);
+    if (!(PROSE_CATEGORIES as readonly string[]).includes(page.category)) continue;
+    if (!existsSync(fixtureScript(page.slug))) continue;
+    const source = proseSource(page.category, page.slug, contentDir);
     if (!existsSync(source)) continue;
     const { pairs } = parseProsePage(readFileSync(source, "utf-8"));
     const checked = pairs.filter((pair) => pair.comparison !== "skip").length;
@@ -56,8 +59,8 @@ function countProse(pages: Page[], repoRoot: string): { prosePages: number; pros
 
 /** Counts entries in the .skip files, which live beside the fixture scripts rather than in
  *  content/ because they belong to the replay rather than to a page. */
-function countExemptions(repoRoot: string): number {
-  const dir = join(repoRoot, "scripts", "fixtures");
+function countExemptions(): number {
+  const dir = FIXTURE_DIR;
   if (!existsSync(dir)) return 0;
   return readdirSync(dir)
     .filter((file) => file.endsWith(".skip"))
@@ -70,7 +73,7 @@ function countExemptions(repoRoot: string): number {
     }, 0);
 }
 
-export function verificationStats(pages: Page[], repoRoot: string): VerificationStats {
+export function verificationStats(pages: Page[], contentDir: string): VerificationStats {
   const commandPages = pages.filter((page) => page.examples);
   let examples = 0;
   let outputs = 0;
@@ -88,8 +91,8 @@ export function verificationStats(pages: Page[], repoRoot: string): Verification
     }
   }
 
-  const exemptions = countExemptions(repoRoot);
-  const { prosePages, proseOutputs } = countProse(pages, repoRoot);
+  const exemptions = countExemptions();
+  const { prosePages, proseOutputs } = countProse(pages, contentDir);
   return {
     pages: pages.length,
     commandPages: commandPages.length,

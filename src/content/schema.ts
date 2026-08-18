@@ -3,6 +3,18 @@ import { z } from "zod";
 export const CATEGORIES = ["commands", "concepts", "scripting", "recipes", "debian"] as const;
 export type Category = (typeof CATEGORIES)[number];
 
+/** Every category except `commands`: the ones whose pages are a single Markdown file, stating
+ *  their examples as fenced blocks rather than in a structured `examples.yaml`. The prose
+ *  replay and the build's statistics both need this set.
+ *
+ *  Derived rather than listed, because a listed copy is one a new category gets left out of —
+ *  and the symptom would be silence: pages in it would simply never be replayed, under a total
+ *  that still looked right. */
+export type ProseCategory = Exclude<Category, "commands">;
+export const PROSE_CATEGORIES: readonly ProseCategory[] = CATEGORIES.filter(
+  (category): category is ProseCategory => category !== "commands",
+);
+
 export const TIERS = ["flagship", "standard", "light"] as const;
 export type Tier = (typeof TIERS)[number];
 

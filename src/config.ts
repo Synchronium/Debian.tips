@@ -55,6 +55,25 @@ export const COMMAND_GROUPS: { title: string; commands: string[] }[] = [
 ];
 export const COMMAND_GROUP_FALLBACK = "More commands";
 
+/** Pages that belong to no category: no listing to appear on, no tags, no prev/next. They are
+ *  built straight from a Markdown file in `content/` and reached from the header and footer.
+ *
+ *  Listed here because a standalone page is otherwise spelled out in five unrelated places —
+ *  the builder, the sitemap, two templates and the link audit's orphan exemption — and missing
+ *  the last of those would report the new page as an orphan for ever, with no way to fix it,
+ *  since nothing in `content/` is meant to link it.
+ *
+ *  `navLabel` is the wording used in links to the page, and is free to differ from the page's
+ *  own title: a footer has less room than a heading. */
+export interface StandalonePage {
+  path: string;
+  source: string;
+  navLabel: string;
+}
+export const STANDALONE_PAGES: StandalonePage[] = [
+  { path: "/about/", source: "about.md", navLabel: "How this site is tested" },
+];
+
 /** Hand-picked homepage "Start here" links, by URL. Missing pages are skipped. */
 export const FEATURED_PATHS: string[] = [
   "/commands/grep/",

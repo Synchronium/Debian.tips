@@ -1,8 +1,8 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { copyPublic, writeHashedCss } from "./assets.js";
-import { CATEGORY_META, NAV_ORDER } from "./config.js";
+import { CATEGORY_META, NAV_ORDER, STANDALONE_PAGES } from "./config.js";
+import { CONTENT_DIR, DIST_DIR } from "./paths.js";
 import { loadContent, type Page } from "./content/loader.js";
 import { renderMarkdown } from "./content/markdown.js";
 import { fillStats, verificationStats } from "./content/stats.js";
@@ -16,15 +16,6 @@ import { notFoundPage } from "./templates/notFound.js";
 import { standalonePage } from "./templates/standalone.js";
 import { tagPage, tagsIndexPage } from "./templates/tags.js";
 
-const ROOT = fileURLToPath(new URL("..", import.meta.url));
-
-function defaultContentDir(): string {
-  return join(ROOT, "content");
-}
-
-function defaultDistDir(): string {
-  return join(ROOT, "dist");
-}
 
 function writePage(distDir: string, urlPath: string, htmlContent: string): void {
   const dir = urlPath === "/" ? distDir : join(distDir, urlPath.replace(/^\//, "").replace(/\/$/, ""));
@@ -38,8 +29,8 @@ export interface BuildResult {
 }
 
 export async function build(
-  contentDir: string = defaultContentDir(),
-  distDir: string = defaultDistDir(),
+  contentDir: string = CONTENT_DIR,
+  distDir: string = DIST_DIR,
 ): Promise<BuildResult> {
   rmSync(distDir, { recursive: true, force: true });
   mkdirSync(distDir, { recursive: true });
@@ -73,27 +64,28 @@ export async function build(
     writePage(distDir, `/tags/${tag.name}/`, tagPage(tag, taggedPages, cssHref));
   }
 
-  // /about/ belongs to no category, so it is built here rather than through the loader.
-  // Its figures are `{{token}}` placeholders in the Markdown, filled from a count of the
-  // content: a page about verification is the last place a hand-typed number should live.
-  const aboutSource = readFileSync(join(contentDir, "about.md"), "utf-8");
-  const about = matter(aboutSource);
-  const aboutBody = fillStats(about.content, verificationStats(pages, ROOT));
-  const aboutRendered = await renderMarkdown(aboutBody);
-  writePage(
-    distDir,
-    "/about/",
-    standalonePage(
-      {
-        title: String(about.data.title),
-        description: String(about.data.description),
-        path: "/about/",
-        html: aboutRendered.html,
-        toc: aboutRendered.toc,
-      },
-      cssHref,
-    ),
-  );
+  // A standalone page belongs to no category, so it is built here rather than through the
+  // loader. Its figures are `{{token}}` placeholders in the Markdown, filled from a count of
+  // the content: a page about verification is the last place a hand-typed number should live.
+  const stats = verificationStats(pages, contentDir);
+  for (const standalone of STANDALONE_PAGES) {
+    const parsed = matter(readFileSync(join(contentDir, standalone.source), "utf-8"));
+    const rendered = await renderMarkdown(fillStats(parsed.content, stats));
+    writePage(
+      distDir,
+      standalone.path,
+      standalonePage(
+        {
+          title: String(parsed.data.title),
+          description: String(parsed.data.description),
+          path: standalone.path,
+          html: rendered.html,
+          toc: rendered.toc,
+        },
+        cssHref,
+      ),
+    );
+  }
 
   writeFileSync(join(distDir, "404.html"), notFoundPage(cssHref), "utf-8");
   writeFileSync(
