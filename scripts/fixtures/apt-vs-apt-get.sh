@@ -9,3 +9,10 @@
 # architecture. `apt-cache policy` and `apt --version` both do, and an architecture is the
 # one thing that cannot pass in both places (arm64 locally, amd64 on the runner). The two
 # --help greps and the CLI warning were chosen because their text carries neither.
+
+# The apt command page's setup installs an apt.conf that suppresses "WARNING: apt does not
+# have a stable CLI interface", because every one of its examples would otherwise carry a line
+# no reader sees. This page documents that warning, so it has to undo that — `npm run replay`
+# runs every page in one sandbox, and whichever ran last would otherwise decide the result.
+# Caught exactly this way: 4/4 alone, failing in the batch.
+rm -f /etc/apt/apt.conf.d/99-replay-no-script-warning

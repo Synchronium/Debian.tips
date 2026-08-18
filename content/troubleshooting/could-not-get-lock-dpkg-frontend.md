@@ -16,7 +16,8 @@ E: Unable to acquire the dpkg frontend lock (/var/lib/dpkg/lock-frontend), is an
 
 ## What it means
 
-Only one thing may change installed packages at a time. Before doing anything, apt takes a lock
+Only one thing may change installed packages at a time — every [`apt`](/commands/apt/) command
+that installs, removes or upgrades included. Before doing anything, apt takes a lock
 on `/var/lib/dpkg/lock-frontend`; if another process already holds it, apt refuses to start
 rather than corrupt the package database.
 

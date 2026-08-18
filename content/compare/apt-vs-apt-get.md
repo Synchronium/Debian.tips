@@ -25,8 +25,9 @@ apt: /usr/bin/apt-get
 ```
 
 Both binaries come out of the `apt` package, built from the same source, linked against the same
-`libapt-pkg`. Anything `apt` can do, it does by calling the same code `apt-get` calls. See
-[`dpkg -S`](/debian/apt-essentials/) for what that query is doing.
+`libapt-pkg` — see [`apt`](/commands/apt/) for what that front end can actually do. Anything
+`apt` can do, it does by calling the same code `apt-get` calls, and
+[`dpkg -S`](/debian/apt-essentials/) is what the query above is doing.
 
 ## What actually differs: who each one is for
 

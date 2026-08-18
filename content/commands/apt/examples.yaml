@@ -1,0 +1,317 @@
+command: apt
+
+sections:
+  - title: Finding a package
+    intro: >-
+      None of these change anything, so none need `sudo`. All of them read the local cache built
+      by `apt update` rather than asking the repositories directly.
+    examples:
+      - title: Search for a package by name and description
+        code: apt search 'talking cow' | head -6
+        description: Full-text search across names *and* descriptions — neither package here is called "talking cow". It matches generously, so pipe it through [`head`](/commands/head/).
+        level: basic
+        output: |2
+          Sorting...
+          Full Text Search...
+          cowsay/stable,now 3.03+dfsg2-8 all [installed]
+            configurable talking cow
+
+          cowsay-off/stable 3.03+dfsg2-8 all
+      - title: Search package names only
+        code: apt search --names-only '^cowsay'
+        description: Restricts the match to the package name, and takes a regular expression — `^` anchors it to the start. See [`grep`](/commands/grep/) for the syntax.
+        level: basic
+        output: |2
+          Sorting...
+          Full Text Search...
+          cowsay/stable,now 3.03+dfsg2-8 all [installed]
+            configurable talking cow
+
+          cowsay-off/stable 3.03+dfsg2-8 all
+            configurable talking cow (offensive cows)
+      - title: Read a package's details
+        code: apt show cowsay | head -12
+        description: Version, size, dependencies and homepage. The full output also ends with the repository it came from and the long description; `-a` shows every available version rather than just the candidate.
+        level: basic
+        output: |2
+          Package: cowsay
+          Version: 3.03+dfsg2-8
+          Priority: optional
+          Section: games
+          Maintainer: James McDonald <james@jamesmcdonald.com>
+          Installed-Size: 94.2 kB
+          Depends: libtext-charwidth-perl, perl:any
+          Suggests: filters, cowsay-off
+          Homepage: https://web.archive.org/web/20120527202447/http://www.nog.net/~tony/warez/cowsay.shtml
+          Tag: game::toys, implemented-in::perl, interface::commandline, role::program,
+           use::entertaining, works-with::text
+          Download-Size: 21.4 kB
+      - title: Check whether a package is installed
+        code: apt list --installed cowsay cowsay-off
+        description: Names several packages at once. Only the installed ones are listed, so a package missing from the output is one that isn't installed.
+        level: basic
+        output: |2
+          Listing...
+          cowsay/stable,now 3.03+dfsg2-8 all [installed]
+      - title: List installed packages matching a pattern
+        code: apt list --installed 'ca-cert*'
+        description: Quote the pattern, or the shell tries to expand it as a filename first and apt never sees it.
+        level: basic
+        volatile: "the ca-certificates version changes with each Debian point release"
+        compare: shape
+        output: |2
+          Listing...
+          ca-certificates/stable,now 20250419 all [installed]
+      - title: See which version apt would install
+        code: apt policy cowsay | head -3
+        description: '`Installed:` is what you have and `Candidate:` is what a plain `apt install` would give you. The rest of the output lists each available version and the repository offering it.'
+        level: intermediate
+        output: |2
+          cowsay:
+            Installed: 3.03+dfsg2-8
+            Candidate: 3.03+dfsg2-8
+      - title: Find which installed package owns a file
+        code: dpkg -S /usr/bin/apt-get
+        description: A [`dpkg`](/debian/apt-essentials/) query rather than an apt one, because it works from the list of files each installed package shipped. For a file you don't have yet, `apt-file search` is the equivalent.
+        level: intermediate
+        output: |2
+          apt: /usr/bin/apt-get
+      - title: Show what a package depends on
+        code: apt depends cowsay
+        description: Direct dependencies only. `Depends:` is required, `Recommends:` is installed by default on Debian, and `Suggests:` never is.
+        level: intermediate
+        output: |2
+          cowsay
+            Depends: libtext-charwidth-perl
+            Depends: <perl:any>
+              perl
+            Suggests: filters
+            Suggests: cowsay-off
+  - title: Seeing what apt will do before it does it
+    intro: >-
+      `-s` (`--simulate`, or `--dry-run`) prints the plan and exits without changing anything. It
+      needs no root, which makes it the safe way to read instructions you don't fully trust.
+    examples:
+      - title: Simulate an install
+        code: apt install -s cowsay-off
+        description: Shows what would be installed, including dependencies pulled in behind the package you named.
+        level: basic
+        volatile: "the point release in `Debian:13.6` and the `Not Upgrading` count move as the archive does"
+        compare: shape
+        output: |2
+          Reading package lists...
+          Building dependency tree...
+          Reading state information...
+          Installing:
+            cowsay-off
+
+          Summary:
+            Upgrading: 0, Installing: 1, Removing: 0, Not Upgrading: 1
+          Inst cowsay-off (3.03+dfsg2-8 Debian:13.6/stable [all])
+          Conf cowsay-off (3.03+dfsg2-8 Debian:13.6/stable [all])
+      - title: Simulate a removal
+        code: apt remove -s cowsay
+        description: The line to read is anything under `REMOVED` — this is where an unexpected cascade shows up before it happens rather than after.
+        level: basic
+        volatile: "the point release in `Debian:13.6` and the `Not Upgrading` count move as the archive does"
+        compare: shape
+        output: |2
+          Reading package lists...
+          Building dependency tree...
+          Reading state information...
+          The following packages were automatically installed and are no longer required:
+            libgdbm-compat4t64  libperl5.40  perl  perl-modules-5.40
+          Use 'apt autoremove' to remove them.
+
+          REMOVING:
+            cowsay
+
+          Summary:
+            Upgrading: 0, Installing: 0, Removing: 1, Not Upgrading: 1
+          Remv cowsay [3.03+dfsg2-8]
+      - title: Simulate an install without the recommended extras
+        code: apt install -s --no-install-recommends cowsay-off
+        description: Debian installs `Recommends:` by default. Comparing this against the plain simulate above shows exactly what that policy adds.
+        level: intermediate
+        volatile: "the point release in `Debian:13.6` and the `Not Upgrading` count move as the archive does"
+        compare: shape
+        output: |2
+          Reading package lists...
+          Building dependency tree...
+          Reading state information...
+          Installing:
+            cowsay-off
+
+          Summary:
+            Upgrading: 0, Installing: 1, Removing: 0, Not Upgrading: 1
+          Inst cowsay-off (3.03+dfsg2-8 Debian:13.6/stable [all])
+          Conf cowsay-off (3.03+dfsg2-8 Debian:13.6/stable [all])
+      - title: See which packages are no longer needed
+        code: apt autoremove -s
+        description: Lists packages installed automatically as dependencies that nothing requires any more. Worth reading before running the real thing.
+        level: intermediate
+        volatile: "the point release in `Debian:13.6` and the `Not Upgrading` count move as the archive does"
+        compare: shape
+        output: |2
+          Reading package lists...
+          Building dependency tree...
+          Reading state information...
+          Summary:
+            Upgrading: 0, Installing: 0, Removing: 0, Not Upgrading: 1
+  - title: Installing packages
+    intro: >-
+      All of these need root. `-y` answers the confirmation prompt in advance, which a script
+      needs and which is worth omitting by hand so you get a chance to read the plan. Their
+      output is a live download — sizes, speeds, and the architecture of your own machine — so
+      it isn't reproduced here.
+    examples:
+      - title: Install a package
+        code: sudo apt install cowsay-off
+        description: Fetches the package and everything it depends on, then configures the lot. Prints the plan and waits for confirmation first.
+        level: basic
+      - title: Install several packages in one transaction
+        code: sudo apt install -y cowsay-off bash-completion
+        description: One transaction rather than several, so dependencies are resolved across the whole set and it either all succeeds or all fails.
+        level: basic
+      - title: Install a specific version
+        code: sudo apt install cowsay-off=3.03+dfsg2-8
+        description: Pins this install to a version `apt policy` lists. apt refuses if another installed package needs a different one.
+        level: intermediate
+      - title: Reinstall a package whose files were damaged
+        code: sudo apt reinstall cowsay
+        description: Unpacks the same version again, restoring files deleted or edited by hand. Configuration files you changed are left alone.
+        level: intermediate
+      - title: Install without the recommended extras
+        code: sudo apt install --no-install-recommends cowsay-off
+        description: Keeps the install minimal — sensible in a container image, and on a desktop often removes something you wanted.
+        level: intermediate
+      - title: Download a package without installing it
+        code: apt download cowsay
+        description: Drops the `.deb` in the current directory and needs no root. Useful for moving a package to a machine with no network, or inspecting it before trusting it.
+        level: intermediate
+      - title: Install a .deb file you already have
+        code: sudo apt install ./cowsay_3.03+dfsg2-8_all.deb
+        description: Prefer this over `dpkg -i`, because apt resolves the file's dependencies from the repositories. The `./` matters — without it, apt looks for a package with that name instead.
+        level: intermediate
+
+  - title: Removing packages
+    intro: >-
+      `remove` and `purge` differ only in what happens to the configuration in `/etc`, and that
+      difference is behind most of the "I removed it but it's still configured" confusion.
+    examples:
+      - title: Remove a package, keeping its configuration
+        code: sudo apt remove cowsay
+        description: Deletes the programs, leaves the configuration files in place, and the package then shows as `rc` rather than gone. Reinstalling later picks your settings back up.
+        level: basic
+      - title: Remove a package and its configuration
+        code: sudo apt purge cowsay
+        description: The complete removal, including the `/etc` files `remove` leaves behind.
+        level: basic
+        danger: true
+      - title: Finish a removal you meant as a purge
+        code: sudo apt purge -y bash-completion
+        description: Acts on a package already in the `rc` state, where the programs are gone but the configuration is not. This is the fix for having run `remove` when you wanted `purge`.
+        level: intermediate
+      - title: Remove packages nothing needs any more
+        code: sudo apt autoremove
+        description: Deletes packages pulled in as dependencies that are now unreferenced. Read `apt autoremove -s` first — it occasionally proposes something you installed deliberately.
+        level: intermediate
+        danger: true
+
+  - title: Keeping the system up to date
+    intro: >-
+      Two separate steps, and conflating them is the most common apt mistake. `update` refreshes
+      the local list of what exists and installs nothing; the `upgrade` commands act on whatever
+      that list currently says. Their output depends on what Debian has published this week, so
+      it isn't reproduced here either.
+    examples:
+      - title: Refresh the package lists
+        code: sudo apt update
+        description: Contacts each configured repository and rebuilds the local cache. Run it before installing on a machine that has been idle, or apt works from stale information.
+        level: basic
+      - title: Upgrade everything that can be upgraded safely
+        code: sudo apt upgrade
+        description: Installs newer versions of what you already have, and new packages where an upgrade needs them. It never removes anything.
+        level: basic
+      - title: Upgrade, allowing packages to be removed
+        code: sudo apt full-upgrade
+        description: The same operation as `apt-get dist-upgrade`. Allowed to remove packages to satisfy a dependency change, which a release upgrade needs and a routine update does not.
+        level: intermediate
+        danger: true
+      - title: List the packages with upgrades waiting
+        code: apt list --upgradable
+        description: Read-only, so no `sudo`. Shows the installed version and the candidate side by side — the quickest way to judge whether an upgrade is worth doing now.
+        level: basic
+      - title: Upgrade one package and nothing else
+        code: sudo apt install --only-upgrade cowsay
+        description: Upgrades just the named package. It often refuses, which is apt telling you the upgrade isn't really a single-package job.
+        level: intermediate
+
+  - title: Holds, marks and disk space
+    examples:
+      - title: Stop a package being upgraded
+        code: sudo apt-mark hold cowsay
+        description: Pins the installed version until you say otherwise. Held packages are skipped by `upgrade` and reported as kept back.
+        level: intermediate
+        output: |2
+          cowsay set on hold.
+      - title: List every held package
+        code: apt-mark showhold
+        description: Worth checking when an upgrade refuses to install something for no visible reason — a forgotten hold is a common cause.
+        level: intermediate
+        output: |2
+          ca-certificates
+      - title: Release a hold
+        code: sudo apt-mark unhold ca-certificates
+        description: Returns the package to normal upgrade handling, and says so only if a hold was really in place.
+        level: intermediate
+        output: |2
+          Canceled hold on ca-certificates.
+      - title: Mark a package as automatically installed
+        code: sudo apt-mark auto cowsay
+        description: Tells apt you didn't ask for this one directly, making it eligible for `autoremove` once nothing depends on it.
+        level: advanced
+        output: |2
+          cowsay set to automatically installed.
+      - title: See how much space the package cache is using
+        code: du -sh /var/cache/apt/archives
+        description: Answers whether `apt clean` is worth running, before you run it. See [finding the largest files](/recipes/find-the-largest-files/) for space elsewhere.
+        level: basic
+      - title: Delete downloaded package files
+        code: sudo apt clean
+        description: Empties `/var/cache/apt/archives`. Frees real space on a long-lived machine, and costs only re-downloading anything you reinstall.
+        level: basic
+      - title: Delete only the downloads that are now obsolete
+        code: sudo apt autoclean
+        description: The conservative `clean` — drops cached `.deb` files that can no longer be downloaded, and keeps the current ones.
+        level: intermediate
+
+  - title: apt in scripts
+    intro: >-
+      Use `apt-get` and `apt-cache` here rather than `apt`: their output is treated as a stable
+      interface and `apt`'s explicitly is not. See [apt vs apt-get](/compare/apt-vs-apt-get/).
+    examples:
+      - title: Install with no prompting at all
+        code: sudo DEBIAN_FRONTEND=noninteractive apt-get install -y cowsay-off
+        description: '`-y` answers apt''s own prompt; `DEBIAN_FRONTEND=noninteractive` stops a package''s configuration script opening a dialogue behind it and hanging for ever.'
+        level: intermediate
+      - title: Wait for the dpkg lock instead of failing
+        code: sudo apt-get -o DPkg::Lock::Timeout=60 install -y cowsay-off
+        description: Waits up to a minute for another apt to finish rather than exiting immediately — the fix for a provisioning script that intermittently fails on a fresh machine. See [Could not get lock](/troubleshooting/could-not-get-lock-dpkg-frontend/).
+        level: advanced
+      - title: Test whether a package is installed, by exit status
+        code: dpkg -s cowsay >/dev/null 2>&1 && echo installed || echo missing
+        description: Exit status rather than parsed output, so no formatting change can break it. See [Exit codes and error handling](/concepts/exit-codes-and-error-handling/).
+        level: intermediate
+        output: |2
+          installed
+      - title: Print just the installed version of a package
+        code: dpkg-query -W -f='${Version}\n' cowsay
+        description: '`dpkg-query -f` is the scriptable way to read package metadata: you name the fields, so nothing else in the output can shift underneath you.'
+        level: advanced
+        output: |2
+          3.03+dfsg2-8
+      - title: Fix a half-finished install
+        code: sudo apt install -f
+        description: Short for `--fix-broken`. Completes dependency work left unfinished by an interrupted run, and is the first thing to try when apt refuses to do anything else.
+        level: advanced

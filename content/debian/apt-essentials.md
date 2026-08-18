@@ -158,6 +158,8 @@ means and how to contain it.
 > `apt` deliberately isn't. [apt vs apt-get](/compare/apt-vs-apt-get/) has the full comparison,
 > including the one place the two genuinely behave differently.
 
+For the full command reference rather than the essentials, see [`apt`](/commands/apt/).
+
 A script installing packages also needs `-y`, or `apt-get` stops at a prompt nobody is there to
 answer, and needs to check that the install actually succeeded rather than carrying on with a
 missing binary. See [Exit codes and error handling](/concepts/exit-codes-and-error-handling/)
