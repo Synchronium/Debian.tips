@@ -5,7 +5,7 @@ category: scripting
 tags: [scripting, beginner]
 updated: 2026-07-05
 order: 3
-related: [variables-and-quoting, exit-codes-and-error-handling]
+related: [variables-and-quoting, loops, exit-codes-and-error-handling]
 ---
 
 `if` in bash doesn't test anything itself. It runs a command and branches on that command's exit
@@ -181,4 +181,5 @@ long `if`/`elif` chain once there are more than two or three branches.
 
 ## What's next
 
-The next lesson covers loops: iterating over lists, files, and command output safely.
+[Loops](/scripting/loops/) come next: iterating over lists, over files without breaking on
+spaces, and the `while read` trap that quietly mangles your data.

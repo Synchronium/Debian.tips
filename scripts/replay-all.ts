@@ -18,7 +18,7 @@ import { readSetupDirectives } from "./lib/replay.js";
 const requestedPages = process.argv.slice(2).filter((arg) => !arg.startsWith("-"));
 
 /** Prose pages state their claims as Markdown fences rather than YAML, so they run through
- *  verify-prose.ts. Only those with a setup script are replayed; the rest are reported. */
+ *  verify-prose.ts rather than verify-examples.ts. */
 const PROSE_CATEGORIES = ["concepts", "scripting", "recipes", "debian"];
 
 const commandPages = readdirSync("content/commands", { withFileTypes: true })
@@ -34,6 +34,7 @@ const prosePages = PROSE_CATEGORIES.flatMap((category) =>
 );
 
 const isProse = (name: string): boolean => prosePages.includes(name);
+
 const pages = [...commandPages, ...prosePages]
   .filter((name) => (requestedPages.length ? requestedPages.includes(name) : true))
   .sort();
@@ -44,8 +45,11 @@ if (missing.length) {
   process.exit(2);
 }
 
-// Pages with no setup script are reported rather than passed over: "17/17 replayed" and
-// "14 replayed, 3 have no fixtures" are different claims about how much is checked.
+// A page opts in to replay by having a setup script, and is otherwise reported rather than
+// passed over: "17/17 replayed" and "14 replayed, 3 have no fixtures" are different claims
+// about how much is checked. A page needing no sample files still gets one, holding only a
+// comment saying so — an explicit "nothing to create here" beats an absence that reads as an
+// oversight, and it keeps this gate meaningful instead of permanently red.
 const runnable = pages.filter((name) => existsSync(`scripts/fixtures/${name}.sh`));
 const unfixtured = pages.filter((name) => !runnable.includes(name));
 
@@ -99,9 +103,10 @@ const failed: string[] = [];
 const started = Date.now();
 for (const name of runnable) {
   const runner = isProse(name) ? "scripts/verify-prose.ts" : "scripts/verify-examples.ts";
+  const setup = `scripts/fixtures/${name}.sh`;
   const result = spawnSync(
     "npx",
-    ["tsx", runner, sandboxes.get(flavourOf(name)) ?? "", name, `scripts/fixtures/${name}.sh`],
+    ["tsx", runner, sandboxes.get(flavourOf(name)) ?? "", name, ...(existsSync(setup) ? [setup] : [])],
     { stdio: "inherit" },
   );
   if (result.status !== 0) failed.push(name);
@@ -110,7 +115,7 @@ for (const name of runnable) {
 const seconds = Math.round((Date.now() - started) / 1000);
 console.log(`\n${runnable.length - failed.length}/${runnable.length} pages replay exactly (${seconds}s)`);
 if (unfixtured.length) {
-  console.log(`not replayed, no scripts/fixtures/<command>.sh: ${unfixtured.join(", ")}`);
+  console.log(`not replayed, no scripts/fixtures/<slug>.sh: ${unfixtured.join(", ")}`);
 }
 if (failed.length) {
   console.log(`\nfailing: ${failed.join(", ")}`);
