@@ -63,7 +63,10 @@ const sandbox = openSandbox({
   setupPath,
 });
 
-const captured = captureAll(sandbox, runnable.map((pair) => pair.command));
+const captured = captureAll(
+  sandbox,
+  runnable.map((pair) => pair.command),
+);
 
 interface Mismatch {
   pair: ProsePair;

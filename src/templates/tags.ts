@@ -11,9 +11,10 @@ export function tagsIndexPage(tags: TagInfo[], pages: Page[], cssHref: string): 
 <nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li aria-current="page">Tags</li></ol></nav>
 <h1>Tags</h1>
 <ul class="tag-index">
-${tags.map(
-  (t) =>
-    raw(html`<li><a href="/tags/${t.name}/">${t.name}</a> <span class="tag-count">(${countByTag.get(t.name) ?? 0})</span> — ${t.description}</li>`),
+${tags.map((t) =>
+  raw(
+    html`<li><a href="/tags/${t.name}/">${t.name}</a> <span class="tag-count">(${countByTag.get(t.name) ?? 0})</span> — ${t.description}</li>`,
+  ),
 )}
 </ul>`;
 

@@ -40,13 +40,18 @@ const doc = parse(readFileSync(examplesPath, "utf-8")) as ExamplesFile;
 const withOutput = doc.sections.flatMap((section) =>
   section.examples.filter((example) => example.output !== undefined),
 );
-const skipTitles = loadSkipTitles(command, withOutput.map((example) => example.title));
+const skipTitles = loadSkipTitles(
+  command,
+  withOutput.map((example) => example.title),
+);
 const adoptable = withOutput.filter((example) => !skipTitles.has(example.title));
 
 // Titles are matched whole. A prefix match takes "Find symlinks" for "Find symlinks that
 // point to a regular file" and writes one example's output into the other's block.
 const wantAll = titles[0] === "--all";
-const targets = adoptable.map((example, index) => ({ example, index })).filter(({ example }) => wantAll || titles.includes(example.title));
+const targets = adoptable
+  .map((example, index) => ({ example, index }))
+  .filter(({ example }) => wantAll || titles.includes(example.title));
 if (!wantAll) {
   const missing = titles.filter((title) => !adoptable.some((example) => example.title === title));
   if (missing.length) {
@@ -87,7 +92,9 @@ for (const { example, index } of [...targets].reverse()) {
       console.log(`  SKIP (no output block): ${example.title}`);
       continue;
     }
-    console.error(`  ABORT: ${JSON.stringify(example.title)} matches ${lookup.count} title lines in ${examplesPath}`);
+    console.error(
+      `  ABORT: ${JSON.stringify(example.title)} matches ${lookup.count} title lines in ${examplesPath}`,
+    );
     process.exit(2);
   }
   if (claimed.has(lookup.block.keyLine)) {

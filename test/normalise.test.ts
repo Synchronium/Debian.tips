@@ -166,14 +166,8 @@ describe("normalise — what gets compared", () => {
   });
 
   it("masks rates and elapsed times", () => {
-    changes(
-      "Total bytes written: 30720 (30KiB, 305MiB/s)",
-      "Total bytes written: 30720 (30KiB, 42MiB/s)",
-    );
-    differs(
-      "Total bytes written: 30720 (30KiB, 305MiB/s)",
-      "Total bytes written: 40960 (40KiB, 305MiB/s)",
-    );
+    changes("Total bytes written: 30720 (30KiB, 305MiB/s)", "Total bytes written: 30720 (30KiB, 42MiB/s)");
+    differs("Total bytes written: 30720 (30KiB, 305MiB/s)", "Total bytes written: 40960 (40KiB, 305MiB/s)");
     changes(
       "curl: (28) Operation timed out after 2001 milliseconds with 0 bytes received",
       "curl: (28) Operation timed out after 2004 milliseconds with 0 bytes received",

@@ -3,8 +3,8 @@ import { layout } from "./layout.js";
 import { CATEGORY_META, NAV_ORDER } from "../config.js";
 
 export function notFoundPage(cssHref: string): string {
-  const categoryLinks = NAV_ORDER.map(
-    (cat) => raw(html`<li><a href="${CATEGORY_META[cat].path}">${CATEGORY_META[cat].label}</a></li>`),
+  const categoryLinks = NAV_ORDER.map((cat) =>
+    raw(html`<li><a href="${CATEGORY_META[cat].path}">${CATEGORY_META[cat].label}</a></li>`),
   );
 
   const body = html`

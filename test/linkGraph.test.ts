@@ -90,12 +90,7 @@ describe("proseLinkTargets", () => {
         },
       }),
     );
-    expect(target).toEqual([
-      "/commands/grep/",
-      "/commands/sort/",
-      "/commands/cut/",
-      "/commands/find/",
-    ]);
+    expect(target).toEqual(["/commands/grep/", "/commands/sort/", "/commands/cut/", "/commands/find/"]);
   });
 });
 

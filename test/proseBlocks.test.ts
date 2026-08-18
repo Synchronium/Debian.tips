@@ -20,7 +20,13 @@ describe("parseProsePage", () => {
     // The bug this rule exists for: a page ran `apt install -t backports golang-go`, then
     // explained itself, then showed the output of two *simulated* installs. Pairing on
     // document order attributed that block to the real command and called the page correct.
-    const source = [fence("bash", "apt install golang-go"), "", "Simulating both:", "", fence("", "Inst golang-go")].join("\n");
+    const source = [
+      fence("bash", "apt install golang-go"),
+      "",
+      "Simulating both:",
+      "",
+      fence("", "Inst golang-go"),
+    ].join("\n");
     const { pairs, unpaired } = parseProsePage(source);
     expect(pairs).toHaveLength(0);
     expect(unpaired).toBe(1);

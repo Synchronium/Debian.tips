@@ -6,7 +6,8 @@ import {
   scriptingFrontmatterSchema,
 } from "../src/content/schema.js";
 
-const validDescription = "A description that is long enough to satisfy the fifty character minimum requirement.";
+const validDescription =
+  "A description that is long enough to satisfy the fifty character minimum requirement.";
 
 describe("frontmatterSchema", () => {
   it("accepts a valid concepts page", () => {

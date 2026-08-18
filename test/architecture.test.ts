@@ -30,7 +30,8 @@ function documentedOutputs(): { where: string; output: string }[] {
     const doc = parse(readFileSync(file, "utf-8")) as ExamplesFile;
     for (const section of doc.sections) {
       for (const example of section.examples) {
-        if (example.output !== undefined) found.push({ where: `${slug}: ${example.title}`, output: example.output });
+        if (example.output !== undefined)
+          found.push({ where: `${slug}: ${example.title}`, output: example.output });
       }
     }
     for (const fixture of doc.fixtures ?? []) {
@@ -44,7 +45,8 @@ function documentedOutputs(): { where: string; output: string }[] {
       if (!filename.endsWith(".md")) continue;
       const slug = filename.replace(/\.md$/, "");
       const { pairs } = parseProsePage(readFileSync(proseSource(category, slug), "utf-8"));
-      for (const pair of pairs) found.push({ where: `${category}/${slug}:${pair.line}`, output: pair.output });
+      for (const pair of pairs)
+        found.push({ where: `${category}/${slug}:${pair.line}`, output: pair.output });
     }
   }
 
@@ -83,7 +85,8 @@ describe("documented output", () => {
         const slug = filename.replace(/\.md$/, "");
         const { pairs } = parseProsePage(readFileSync(proseSource(category, slug), "utf-8"));
         for (const pair of pairs) {
-          if (pair.comparison === "skip") reasons.push({ where: `${category}/${slug}:${pair.line}`, reason: pair.note });
+          if (pair.comparison === "skip")
+            reasons.push({ where: `${category}/${slug}:${pair.line}`, reason: pair.note });
         }
       }
     }

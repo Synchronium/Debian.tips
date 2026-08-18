@@ -1,0 +1,24 @@
+# Build output and dependencies.
+dist/
+node_modules/
+public/
+
+# CONTENT IS NEVER FORMATTED. This is not a style preference — the whitespace in these files
+# is load-bearing, and reformatting them would silently change what the site claims:
+#
+#   * `examples.yaml` uses `output: |2` blocks to preserve the column padding of commands that
+#     right-align their output (`wc`, `uniq -c`). A reformat that re-indents a block changes
+#     the documented output while leaving it looking fine.
+#   * Prose pages pair a ```bash fence with the output fence that opens on the *immediately*
+#     following line. Anything that moves a blank line breaks the pairing, and the page then
+#     reports as having nothing to check rather than as broken.
+#   * `<!-- verify: -->` directives must sit on the line directly above their fence.
+#
+# The replay would re-certify the damage in some of these cases, which is the worst outcome
+# available. Leave content alone.
+content/
+_PLANS/
+
+# Markdown everywhere else is prose written to a hand-managed wrap; reflowing it produces large
+# diffs and no benefit.
+*.md

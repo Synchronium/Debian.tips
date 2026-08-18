@@ -1,7 +1,13 @@
 import { CATEGORY_META, NAV_ORDER, SITE, STANDALONE_PAGES } from "./config.js";
 import type { Page, TagInfo } from "./content/loader.js";
 
-const XML_ESC: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" };
+const XML_ESC: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&apos;",
+};
 function escapeXml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => XML_ESC[c]!);
 }

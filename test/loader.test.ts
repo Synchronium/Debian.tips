@@ -33,21 +33,28 @@ describe("loadContent — validation", () => {
 
   it("rejects frontmatter that fails the schema", async () => {
     const dir = brokenContent((d) =>
-      editFile(join(d, "scripting", "lesson-one.md"), (s) => s.replace(/^description: .*$/m, 'description: "too short"')),
+      editFile(join(d, "scripting", "lesson-one.md"), (s) =>
+        s.replace(/^description: .*$/m, 'description: "too short"'),
+      ),
     );
     await expect(loadContent(dir)).rejects.toThrow(/invalid frontmatter/);
   });
 
   it("rejects a page tag that isn't in the registry", async () => {
     const dir = brokenContent((d) =>
-      editFile(join(d, "scripting", "lesson-one.md"), (s) => s.replace("tags: [demo]", "tags: [not-registered]")),
+      editFile(join(d, "scripting", "lesson-one.md"), (s) =>
+        s.replace("tags: [demo]", "tags: [not-registered]"),
+      ),
     );
     await expect(loadContent(dir)).rejects.toThrow(/unknown tag "not-registered"/);
   });
 
   it("rejects an example-level tag that isn't in the registry", async () => {
     const dir = brokenContent((d) =>
-      editFile(join(d, "commands", "greet", "examples.yaml"), (s) => `${s}\n        tags: [not-registered]\n`),
+      editFile(
+        join(d, "commands", "greet", "examples.yaml"),
+        (s) => `${s}\n        tags: [not-registered]\n`,
+      ),
     );
     await expect(loadContent(dir)).rejects.toThrow(/unknown example tag "not-registered"/);
   });
@@ -76,7 +83,9 @@ describe("loadContent — validation", () => {
 
   it("rejects a related: slug that doesn't exist", async () => {
     const dir = brokenContent((d) =>
-      editFile(join(d, "scripting", "lesson-one.md"), (s) => s.replace("order: 1", "order: 1\nrelated: [nonexistent]")),
+      editFile(join(d, "scripting", "lesson-one.md"), (s) =>
+        s.replace("order: 1", "order: 1\nrelated: [nonexistent]"),
+      ),
     );
     await expect(loadContent(dir)).rejects.toThrow(/related slug "nonexistent" does not exist/);
   });
@@ -84,7 +93,9 @@ describe("loadContent — validation", () => {
   it("rejects a published page linking to a draft page", async () => {
     const dir = brokenContent((d) => {
       editFile(join(d, "scripting", "lesson-two.md"), (s) => s.replace("order: 2", "order: 2\ndraft: true"));
-      editFile(join(d, "scripting", "lesson-one.md"), (s) => s.replace("order: 1", "order: 1\nrelated: [lesson-two]"));
+      editFile(join(d, "scripting", "lesson-one.md"), (s) =>
+        s.replace("order: 1", "order: 1\nrelated: [lesson-two]"),
+      );
     });
     await expect(loadContent(dir)).rejects.toThrow(/related slug "lesson-two" is a draft/);
   });
@@ -107,7 +118,9 @@ describe("loadContent — validation", () => {
 
   it("rejects frontmatter whose category doesn't match its directory", async () => {
     const dir = brokenContent((d) =>
-      editFile(join(d, "scripting", "lesson-one.md"), (s) => s.replace("category: scripting", "category: concepts")),
+      editFile(join(d, "scripting", "lesson-one.md"), (s) =>
+        s.replace("category: scripting", "category: concepts"),
+      ),
     );
     await expect(loadContent(dir)).rejects.toThrow(/does not match directory "scripting"/);
   });
@@ -124,14 +137,18 @@ describe("loadContent — validation", () => {
 
   it("rejects an examples.yaml whose command: doesn't match its directory", async () => {
     const dir = brokenContent((d) =>
-      editFile(join(d, "commands", "greet", "examples.yaml"), (s) => s.replace("command: greet", "command: farewell")),
+      editFile(join(d, "commands", "greet", "examples.yaml"), (s) =>
+        s.replace("command: greet", "command: farewell"),
+      ),
     );
     await expect(loadContent(dir)).rejects.toThrow(/command "farewell" does not match directory "greet"/);
   });
 
   it("rejects an examples.yaml that fails the schema", async () => {
     const dir = brokenContent((d) =>
-      editFile(join(d, "commands", "greet", "examples.yaml"), (s) => s.replace(/^\s+level: .*$/m, "        level: nope")),
+      editFile(join(d, "commands", "greet", "examples.yaml"), (s) =>
+        s.replace(/^\s+level: .*$/m, "        level: nope"),
+      ),
     );
     await expect(loadContent(dir)).rejects.toThrow(ContentError);
   });
@@ -143,7 +160,9 @@ describe("loadContent — validation", () => {
 
   it("throws ContentError specifically, not a bare Error", async () => {
     const dir = brokenContent((d) =>
-      editFile(join(d, "scripting", "lesson-one.md"), (s) => s.replace("tags: [demo]", "tags: [not-registered]")),
+      editFile(join(d, "scripting", "lesson-one.md"), (s) =>
+        s.replace("tags: [demo]", "tags: [not-registered]"),
+      ),
     );
     await expect(loadContent(dir)).rejects.toBeInstanceOf(ContentError);
   });

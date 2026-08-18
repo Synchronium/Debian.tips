@@ -37,7 +37,10 @@ const timestamps = (s: string): string =>
   s
     // diff headers: three markers, a filename, a tab, then the mtime.
     .replace(/^([-+*]{3} \S+\t)\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)?( [+-]\d{4})?$/gm, "$1<TIMESTAMP>")
-    .replace(/^([-+*]{3} \S+\t)(Mon|Tue|Wed|Thu|Fri|Sat|Sun) [A-Z][a-z]{2} +\d+ \d{2}:\d{2}:\d{2} \d{4}$/gm, "$1<TIMESTAMP>")
+    .replace(
+      /^([-+*]{3} \S+\t)(Mon|Tue|Wed|Thu|Fri|Sat|Sun) [A-Z][a-z]{2} +\d+ \d{2}:\d{2}:\d{2} \d{4}$/gm,
+      "$1<TIMESTAMP>",
+    )
     // tar -tvf: mode, owner/group, size, then the mtime, then the member name.
     .replace(/^(\S{10} +\S+\/\S+ +\d+ )\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?= )/gm, "$1<TIMESTAMP>")
     // wget: the line that opens a transfer, and the line that closes one.
@@ -141,15 +144,17 @@ export function normalise(text: string): string {
  *  Order matters: a quantity is matched before its digits are, and an identifier before the
  *  digits inside it are broken up. */
 export function shapeOf(text: string): string {
-  return stripArtifacts(text)
-    .replace(/\b\d+(\.\d+)?\s?(ms|s|min|h|d|us|ns|B|K|M|G|T|KB|MB|GB|TB|KiB|MiB|GiB|TiB)\b/g, "Q")
-    // Adjacent quantities are one value: systemd prints "9ms ago" on a machine that just
-    // booted and "1min 30s ago" on the same machine a minute later. Without this the shape
-    // of a status block depends on how long the sandbox has been up.
-    .replace(/Q( Q)+/g, "Q")
-    .replace(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/g, "D")
-    .replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/g, "M")
-    .replace(/\b[0-9a-f]{8,}\b/gi, "x")
-    .replace(/\d+/g, "0")
-    .replace(/[ \t]+/g, " ");
+  return (
+    stripArtifacts(text)
+      .replace(/\b\d+(\.\d+)?\s?(ms|s|min|h|d|us|ns|B|K|M|G|T|KB|MB|GB|TB|KiB|MiB|GiB|TiB)\b/g, "Q")
+      // Adjacent quantities are one value: systemd prints "9ms ago" on a machine that just
+      // booted and "1min 30s ago" on the same machine a minute later. Without this the shape
+      // of a status block depends on how long the sandbox has been up.
+      .replace(/Q( Q)+/g, "Q")
+      .replace(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/g, "D")
+      .replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/g, "M")
+      .replace(/\b[0-9a-f]{8,}\b/gi, "x")
+      .replace(/\d+/g, "0")
+      .replace(/[ \t]+/g, " ")
+  );
 }

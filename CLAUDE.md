@@ -34,9 +34,22 @@ Single test by name: `npx vitest run -t "accepts a valid command page"`
 Accessibility check locally (matches CI): build, serve `dist/`, then run pa11y-ci against it —
 `npm run build && npx serve -l 4321 dist & npx wait-on http://localhost:4321 && npx pa11y-ci`.
 
-There is no lint script/config in this repo — `tsc --noEmit` (strict mode, plus
-`noUncheckedIndexedAccess`/`exactOptionalPropertyTypes`/`noImplicitOverride`) is the only static
-check beyond tests. It covers `src/`, `test/` and `scripts/`: the replay harness is TypeScript
+Static checks are `npm run format:check` (Prettier) and `tsc --noEmit`, both part of
+`npm run check`. TypeScript runs strict plus `noUncheckedIndexedAccess`,
+`exactOptionalPropertyTypes`, `noImplicitOverride`, `noUnusedLocals`, `noUnusedParameters`,
+`noImplicitReturns` and `noFallthroughCasesInSwitch`, which is doing the work a lint config
+usually would.
+
+**There is no ESLint**, and not for lack of trying: no released `typescript-eslint` supports
+TypeScript 7 (its peer range caps at `<6.1.0`, canary included), and forcing it gives a parser
+that misreads the code and a check that lies. Revisit when that lands.
+
+Prettier is scoped to `src/`, `scripts/`, `test/` and `styles/`, and **never touches `content/`**
+— `.prettierignore` explains why at length, but the short version is that `output: |2` blocks and
+prose fence adjacency are load-bearing, and reformatting them would change what the site claims
+while the replay re-certified the result. `embeddedLanguageFormatting` is `off` for a related
+reason: Prettier recognises the `html` tagged template and will reformat the site's markup
+inside it, which changed every emitted page the first time this was set up. It covers `src/`, `test/` and `scripts/`: the replay harness is TypeScript
 too, run through `tsx`, and imports the content types from `src/content/schema.ts` rather than
 keeping its own idea of what an `examples.yaml` contains.
 

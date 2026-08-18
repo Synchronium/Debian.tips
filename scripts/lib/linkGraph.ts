@@ -65,7 +65,10 @@ export function collectEdges(pages: Page[]): Edge[] {
 
 /** Distinct link targets per page, and distinct sources per page. Both directions are
  *  deduplicated: a page linked twice from the same source has one route in, not two. */
-export function adjacency(pages: Page[], edges: Edge[]): {
+export function adjacency(
+  pages: Page[],
+  edges: Edge[],
+): {
   outbound: Map<string, Set<string>>;
   inbound: Map<string, Set<string>>;
 } {

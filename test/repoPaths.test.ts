@@ -16,7 +16,8 @@ import { ROOT } from "../src/paths.js";
  *  cannot see a file extension reports a clean run either way. Plain `js` is deliberately *not*
  *  here: TypeScript's NodeNext imports spell every neighbour `./thing.js`, and matching those
  *  finds a relative specifier rather than a path from the repository root. */
-const REFERENCE = /(?:\.claude|scripts|src|test|content|styles|public)\/[A-Za-z0-9._/-]+\.(?:ts|mjs|sh|md|py|yaml|yml|css)/g;
+const REFERENCE =
+  /(?:\.claude|scripts|src|test|content|styles|public)\/[A-Za-z0-9._/-]+\.(?:ts|mjs|sh|md|py|yaml|yml|css)/g;
 
 /** Extensions worth scanning: the tools themselves, the setup scripts that carry a lot of
  *  hard-won commentary, and the documentation, whose whole job since CLAUDE.md was split into
@@ -44,14 +45,22 @@ function resolves(path: string): boolean {
 describe("repository paths named in the tools", () => {
   it("all exist", () => {
     const missing: string[] = [];
-    for (const file of [...sourceFiles("src"), ...sourceFiles("scripts"), ...sourceFiles(".claude"), "CLAUDE.md"]) {
+    for (const file of [
+      ...sourceFiles("src"),
+      ...sourceFiles("scripts"),
+      ...sourceFiles(".claude"),
+      "CLAUDE.md",
+    ]) {
       // A setup script's *comments* name real repository paths; its body names paths inside
       // the sandbox, and several fixtures deliberately create files called things like
       // `scripts/deploy.sh` or `src/main.ts` as sample data. Only the commentary is a claim
       // about this repository.
       const raw = readFileSync(join(ROOT, file), "utf-8");
       const source = file.endsWith(".sh")
-        ? raw.split("\n").filter((line) => line.trimStart().startsWith("#")).join("\n")
+        ? raw
+            .split("\n")
+            .filter((line) => line.trimStart().startsWith("#"))
+            .join("\n")
         : raw;
       for (const match of source.match(REFERENCE) ?? []) {
         // Templated paths name a convention, not a file: `scripts/fixtures/${name}.sh`.

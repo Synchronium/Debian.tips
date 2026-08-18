@@ -44,7 +44,9 @@ export function homePage(pages: Page[], cssHref: string): string {
 </section>
 ${
   featured.length > 0
-    ? raw(html`<section class="start-here"><h2>Start here</h2><div class="card-grid">${featured.map((p) => raw(pageCard(p)))}</div></section>`)
+    ? raw(
+        html`<section class="start-here"><h2>Start here</h2><div class="card-grid">${featured.map((p) => raw(pageCard(p)))}</div></section>`,
+      )
     : ""
 }
 ${sections.map((s) => raw(s))}
@@ -58,5 +60,11 @@ ${STANDALONE_PAGES.map((s) => raw(html`<p><a href="${s.path}">${s.navLabel}</a><
 </section>
 `;
 
-  return layout({ title: SITE.title, description: SITE.description, path: "/", bodyHtml: raw(body), cssHref });
+  return layout({
+    title: SITE.title,
+    description: SITE.description,
+    path: "/",
+    bodyHtml: raw(body),
+    cssHref,
+  });
 }

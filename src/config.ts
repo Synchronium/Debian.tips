@@ -69,15 +69,55 @@ export const CATEGORY_META: Record<Category, { label: string; path: string; desc
  * than its logical section. Slugs with no page yet are ignored, so this doubles
  * as a rough roadmap of intended coverage. */
 export const COMMAND_GROUPS: { title: string; commands: string[] }[] = [
-  { title: "Debian packages", commands: ["apt", "dpkg", "apt-cache", "apt-file", "apt-mark", "update-alternatives", "dpkg-reconfigure"] },
-  { title: "Text processing", commands: ["grep", "sed", "awk", "sort", "uniq", "cut", "tr", "head", "tail", "wc", "diff", "column-tools", "tee"] },
-  { title: "Files & directories", commands: ["ls", "find", "cp", "mv", "rm", "make-and-link", "inspect-files", "touch", "du", "df", "tree"] },
+  {
+    title: "Debian packages",
+    commands: ["apt", "dpkg", "apt-cache", "apt-file", "apt-mark", "update-alternatives", "dpkg-reconfigure"],
+  },
+  {
+    title: "Text processing",
+    commands: [
+      "grep",
+      "sed",
+      "awk",
+      "sort",
+      "uniq",
+      "cut",
+      "tr",
+      "head",
+      "tail",
+      "wc",
+      "diff",
+      "column-tools",
+      "tee",
+    ],
+  },
+  {
+    title: "Files & directories",
+    commands: ["ls", "find", "cp", "mv", "rm", "make-and-link", "inspect-files", "touch", "du", "df", "tree"],
+  },
   { title: "Searching", commands: ["locate"] },
   { title: "Archives & compression", commands: ["tar", "compression-tools", "zip"] },
-  { title: "Processes & system", commands: ["ps", "top-htop", "kill-signals", "job-control", "systemctl", "journalctl", "system-at-a-glance"] },
-  { title: "Networking & transfer", commands: ["curl", "wget", "ssh", "rsync", "dig", "ip", "ss", "ping-traceroute", "nc"] },
+  {
+    title: "Processes & system",
+    commands: [
+      "ps",
+      "top-htop",
+      "kill-signals",
+      "job-control",
+      "systemctl",
+      "journalctl",
+      "system-at-a-glance",
+    ],
+  },
+  {
+    title: "Networking & transfer",
+    commands: ["curl", "wget", "ssh", "rsync", "dig", "ip", "ss", "ping-traceroute", "nc"],
+  },
   { title: "Users & permissions", commands: ["chmod", "chown", "sudo", "managing-users"] },
-  { title: "Shell & automation", commands: ["xargs", "watch", "cron", "date", "env-export", "history", "alias"] },
+  {
+    title: "Shell & automation",
+    commands: ["xargs", "watch", "cron", "date", "env-export", "history", "alias"],
+  },
 ];
 export const COMMAND_GROUP_FALLBACK = "More commands";
 

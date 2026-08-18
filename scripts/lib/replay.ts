@@ -68,7 +68,9 @@ export function readSetupDirectives(setupPath: string | undefined): SetupDirecti
   } catch {
     return none;
   }
-  const directives = [...source.matchAll(/^#\s*verify:\s*(.+)$/gm)].flatMap((m) => (m[1] ?? "").trim().split(/\s+/));
+  const directives = [...source.matchAll(/^#\s*verify:\s*(.+)$/gm)].flatMap((m) =>
+    (m[1] ?? "").trim().split(/\s+/),
+  );
   const unknown = directives.filter((d) => !(KNOWN_DIRECTIVES as readonly string[]).includes(d));
   if (unknown.length) {
     console.error(

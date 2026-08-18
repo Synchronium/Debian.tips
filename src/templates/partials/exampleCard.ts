@@ -37,10 +37,12 @@ ${raw(codeHtml)}
 <button class="copy" type="button" aria-label="Copy command" data-copy="${example.code}">Copy</button>
 </div>
 <p class="example-desc">${raw(descHtml)}</p>
-${outputHtml
+${
+  outputHtml
     ? raw(html`<details class="example-output"><summary>Show output</summary>
 ${volatileHtml ? raw(html`<p class="output-varies"><strong>Your output will differ:</strong> ${raw(volatileHtml)}</p>`) : ""}
 ${raw(outputHtml)}</details>`)
-    : ""}
+    : ""
+}
 </article>`;
 }

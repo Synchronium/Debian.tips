@@ -64,7 +64,9 @@ const INTERACTION_SCRIPT =
 function headerHtml(activeCategory: Category | undefined): string {
   const navItems = NAV_ORDER.map((cat) => {
     const current = activeCategory === cat ? ' aria-current="page"' : "";
-    return raw(html`<li><a href="${CATEGORY_META[cat].path}"${raw(current)}>${CATEGORY_META[cat].label}</a></li>`);
+    return raw(
+      html`<li><a href="${CATEGORY_META[cat].path}"${raw(current)}>${CATEGORY_META[cat].label}</a></li>`,
+    );
   });
   return html`<header class="site-header">
 <a class="skip-link" href="#main">Skip to content</a>

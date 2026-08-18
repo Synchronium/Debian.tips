@@ -80,7 +80,9 @@ for (let index = examples.length - 1; index >= 0; index--) {
   const lookup = findOutputBlock(lines, example.title);
   if (!lookup.found) {
     const reason =
-      lookup.reason === "no-output-block" ? "(output block not found)" : `(title matches ${lookup.count} lines)`;
+      lookup.reason === "no-output-block"
+        ? "(output block not found)"
+        : `(title matches ${lookup.count} lines)`;
     leftAlone.push({ title: example.title, reason });
     continue;
   }
@@ -91,4 +93,5 @@ for (let index = examples.length - 1; index >= 0; index--) {
 
 writeFileSync(examplesPath, lines.join("\n"), "utf-8");
 console.log(`${command}: repaired ${repaired} output block(s)`);
-for (const entry of leftAlone) console.log(`  LEFT ALONE (differs in substance): ${entry.title} — ${entry.reason}`);
+for (const entry of leftAlone)
+  console.log(`  LEFT ALONE (differs in substance): ${entry.title} — ${entry.reason}`);

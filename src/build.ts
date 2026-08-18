@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { copyPublic, writeHashedCss } from "./assets.js";
 import { CATEGORY_META, NAV_ORDER, STANDALONE_PAGES } from "./config.js";
 import { CONTENT_DIR, DIST_DIR } from "./paths.js";
-import { loadContent, type Page } from "./content/loader.js";
+import { loadContent } from "./content/loader.js";
 import { renderMarkdown } from "./content/markdown.js";
 import { fillStats, verificationStats } from "./content/stats.js";
 import matter from "gray-matter";
@@ -15,7 +15,6 @@ import { listingPage } from "./templates/listing.js";
 import { notFoundPage } from "./templates/notFound.js";
 import { standalonePage } from "./templates/standalone.js";
 import { tagPage, tagsIndexPage } from "./templates/tags.js";
-
 
 function writePage(distDir: string, urlPath: string, htmlContent: string): void {
   const dir = urlPath === "/" ? distDir : join(distDir, urlPath.replace(/^\//, "").replace(/\/$/, ""));
@@ -59,7 +58,15 @@ export async function build(
     .map((tag) => ({ tag, taggedPages: pages.filter((p) => p.tags.includes(tag.name)) }))
     .filter(({ taggedPages }) => taggedPages.length > 0);
 
-  writePage(distDir, "/tags/", tagsIndexPage(populatedTags.map(({ tag }) => tag), pages, cssHref));
+  writePage(
+    distDir,
+    "/tags/",
+    tagsIndexPage(
+      populatedTags.map(({ tag }) => tag),
+      pages,
+      cssHref,
+    ),
+  );
   for (const { tag, taggedPages } of populatedTags) {
     writePage(distDir, `/tags/${tag.name}/`, tagPage(tag, taggedPages, cssHref));
   }
@@ -90,7 +97,10 @@ export async function build(
   writeFileSync(join(distDir, "404.html"), notFoundPage(cssHref), "utf-8");
   writeFileSync(
     join(distDir, "sitemap.xml"),
-    sitemapXml(pages, populatedTags.map(({ tag }) => tag)),
+    sitemapXml(
+      pages,
+      populatedTags.map(({ tag }) => tag),
+    ),
     "utf-8",
   );
   writeFileSync(join(distDir, "feed.xml"), feedXml(pages), "utf-8");

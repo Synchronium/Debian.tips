@@ -31,7 +31,6 @@ const MARKER = "@@EX@@";
  *  modes have to see the same value everywhere. 0022 is what a Debian system gives. */
 const UMASK = "0022";
 
-
 /** Python helpers (the local HTTP server the curl and wget pages use) live here rather
  *  than in the working directory, which is wiped before every example. */
 const HELPER_DIR = "/opt/mock";
@@ -103,7 +102,9 @@ export function openSandbox(options: OpenOptions): Sandbox {
   }
 
   // Created as root, then handed over when the examples run as `user`.
-  exec(`rm -rf ${workdir} && mkdir -p ${workdir}${asUser ? ` && chown user:user ${workdir}` : ""}`, { asRoot: true });
+  exec(`rm -rf ${workdir} && mkdir -p ${workdir}${asUser ? ` && chown user:user ${workdir}` : ""}`, {
+    asRoot: true,
+  });
 
   const helpers = readdirSync(FIXTURE_DIR).filter((file) => file.endsWith(".py"));
   if (helpers.length) {

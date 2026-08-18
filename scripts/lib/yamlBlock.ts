@@ -74,6 +74,11 @@ export function findOutputBlock(lines: string[], title: string): BlockLookup {
 export function replaceOutputBlock(lines: string[], block: OutputBlock, body: string): string[] {
   const indent = " ".repeat(block.keyIndent + 2);
   const rendered = body.split("\n").map((line) => (line === "" ? "" : indent + line));
-  lines.splice(block.keyLine, block.end - block.keyLine, `${" ".repeat(block.keyIndent)}output: |2`, ...rendered);
+  lines.splice(
+    block.keyLine,
+    block.end - block.keyLine,
+    `${" ".repeat(block.keyIndent)}output: |2`,
+    ...rendered,
+  );
   return lines;
 }

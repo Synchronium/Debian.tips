@@ -13,12 +13,12 @@ describe("exampleCard", () => {
   });
 
   it("omits data-prompt for a piped command", async () => {
-    const html = await exampleCard("sec", 1, example({ code: 'ps aux | grep nginx' }));
+    const html = await exampleCard("sec", 1, example({ code: "ps aux | grep nginx" }));
     expect(html).not.toContain("data-prompt");
   });
 
   it("omits data-prompt for a multi-line command", async () => {
-    const html = await exampleCard("sec", 1, example({ code: "for f in *.txt; do\n  echo \"$f\"\ndone" }));
+    const html = await exampleCard("sec", 1, example({ code: 'for f in *.txt; do\n  echo "$f"\ndone' }));
     expect(html).not.toContain("data-prompt");
   });
 

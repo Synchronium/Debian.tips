@@ -54,7 +54,10 @@ for (const section of doc.sections) {
 // Examples a batch can't reproduce — they need a concurrent writer, a live log rotation or
 // a network peer — are listed by title in scripts/fixtures/<command>.skip. Everything else
 // must reproduce exactly.
-const skipTitles = loadSkipTitles(command, withOutput.map((example) => example.title));
+const skipTitles = loadSkipTitles(
+  command,
+  withOutput.map((example) => example.title),
+);
 const examples = withOutput.filter((example) => !skipTitles.has(example.title));
 const skipped = withOutput.filter((example) => skipTitles.has(example.title));
 
@@ -162,7 +165,9 @@ function firstDifference(want: string, got: string): string {
 const fixtureNote = fixtures.length ? `, ${fixtureMatches}/${fixtures.length} fixtures` : "";
 // "Reproduces exactly" is a stronger claim than "has the same shape", so the two are
 // counted in the same total but never described as the same thing.
-const howNote = shapeMatches ? ` (${exampleMatches - shapeMatches} exactly, ${shapeMatches} by shape)` : " exactly";
+const howNote = shapeMatches
+  ? ` (${exampleMatches - shapeMatches} exactly, ${shapeMatches} by shape)`
+  : " exactly";
 const skipNote = skipped.length ? ` (${skipped.length} not replayable in batch, see .skip file)` : "";
 // The mode is part of the result: the same page scores 42/42 as `user` and 9/42 as root, so
 // a score quoted without it means nothing.

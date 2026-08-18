@@ -1,4 +1,4 @@
-import { html, raw } from "../../html.js";
+import { html } from "../../html.js";
 import { CATEGORY_META } from "../../config.js";
 import type { Category } from "../../content/schema.js";
 

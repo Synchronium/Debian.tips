@@ -73,7 +73,9 @@ export async function commandPage(page: Page, cssHref: string): Promise<string> 
       }
       seenSectionSlugs.add(sectionSlug);
       const cards = await Promise.all(section.examples.map((ex, i) => exampleCard(sectionSlug, i + 1, ex)));
-      const intro = section.intro ? await renderInline(section.intro, `section "${section.title}" intro`) : "";
+      const intro = section.intro
+        ? await renderInline(section.intro, `section "${section.title}" intro`)
+        : "";
       return html`<section class="example-section">
 <h2 id="${sectionSlug}">${section.title}</h2>
 ${intro ? raw(html`<p class="section-intro">${raw(intro)}</p>`) : ""}
