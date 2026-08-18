@@ -170,9 +170,25 @@ when it is the opposite.
 
 **Never document an architecture.** `arm64` on this devcontainer, `amd64` on a CI runner, and
 emulation is unavailable locally, so any block containing one fails in exactly one of the two
-places. This is why no page prints `dpkg -l` or a bare `apt-cache policy` and why the apt page
-uses `dpkg -s` and `apt-cache policy <pkg> | head -3` instead. It is the same rule the command
-pages have always followed by accident; prose pages have to follow it deliberately.
+places. It is the same rule the command pages have always followed by accident; prose pages have
+to follow it deliberately. `test/architecture.test.ts` enforces it on every documented output, so
+this is a build failure rather than something to remember.
+
+The constraint is on the **package, not the command**. A package that is `Architecture: all`
+prints `all` in both places, so `dpkg -l`, `apt list`, `apt search` and `apt show` are all
+documentable as long as every package in the output is arch-independent — which is why the `apt`
+page's examples use `cowsay` and `cowsay-off` rather than something more interesting. Check
+before choosing one:
+
+```sh
+apt-cache show <pkg> | grep ^Architecture:     # "all" is safe, "arm64" is not
+```
+
+Where an arch-dependent package is genuinely the right example, narrow the output instead:
+`apt-essentials` uses `dpkg -s nano | head -2` and `apt-cache policy curl | head -3` because
+`nano` and `curl` are compiled and cannot be shown any other way. A real `apt install` can never
+be documented at all — its output carries download sizes, speeds, the architecture, and dpkg's
+carriage-return progress lines.
 
 Bare fences that pair with nothing (a `.sources` stanza, a config snippet) are counted and
 reported as "not checkable" rather than failed. The count is what tells an author which of their

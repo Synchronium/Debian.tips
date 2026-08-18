@@ -142,14 +142,14 @@ sudo apt install -t trixie-backports golang-go
 Simulating both makes the difference explicit, and `-s` means neither actually installs
 anything:
 
-<!-- verify: skip the Inst lines name the machine's architecture, which differs between the environments this page is checked in -->
+<!-- verify: shape the versions and the point release move whenever either suite publishes -->
 ```bash
-apt-get install -s golang-go | grep "^Inst golang-go"
-apt-get install -s -t trixie-backports golang-go | grep "^Inst golang-go"
+apt-get install -s golang-go | grep "^Inst golang-go" | sed 's/ \[[^]]*\]//'
+apt-get install -s -t trixie-backports golang-go | grep "^Inst golang-go" | sed 's/ \[[^]]*\]//'
 ```
 ```
-Inst golang-go (2:1.24~2 Debian:13.6/stable [arm64])
-Inst golang-go (2:1.26~1~bpo13+1 Debian Backports:stable-backports [arm64])
+Inst golang-go (2:1.24~2 Debian:13.6/stable)
+Inst golang-go (2:1.26~1~bpo13+1 Debian Backports:stable-backports)
 ```
 
 The `~bpo13+1` suffix is deliberate. A tilde sorts *before* an empty string in Debian's version
