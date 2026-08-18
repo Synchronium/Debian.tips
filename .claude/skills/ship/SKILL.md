@@ -1,13 +1,13 @@
 ---
 name: ship
-description: Commit, push and watch a change through CI and deployment on debian.tips — choosing the right gates to run first, waiting on both CI jobs, and confirming the change is live. Use when asked to ship, commit and push, "push it", or to check on a run that is already going. Not for writing the change itself.
+description: Commit and push a change on debian.tips — choosing which gates to run locally first, writing the commit message this repo writes, and pushing without waiting on CI. Use when asked to ship, commit and push, "push it", or to look into a CI failure the user has reported. Not for writing the change itself.
 ---
 
 # Ship a change
 
-Nothing here is exotic, but four things about this repo are easy to get wrong: which gate a
-change actually needs, that the replay cannot run in `npm run check`, that a failed CI shows
-Deploy as *skipped* rather than failed, and that a plain `sleep` is blocked in this harness.
+Nothing here is exotic, but three things about this repo are easy to get wrong: which gate a
+change actually needs, that the replay cannot run in `npm run check`, and that shipping ends at
+the push — CI is the user's to watch, not something to poll.
 
 ## 1. Run the right gates
 
@@ -47,7 +47,7 @@ End with the trailer:
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
 ```
 
-## 3. Push, then watch both jobs
+## 3. Push, and don't wait for CI
 
 `main` is the working branch here and pushing to it directly is normal for this project.
 
@@ -55,20 +55,23 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
 git push origin main
 ```
 
-CI runs two jobs in parallel, `check` and `replay`, and they fail for different reasons on
-purpose: "the generator is broken" and "a page is lying" want different people looking at them.
-Wait for both.
+**Then stop.** Do not poll for the run to finish. The gates in §1 are the same ones CI runs, so
+a green local gate has already told you what CI is going to say, and the user watches CI and
+reports anything that goes red. Waiting adds minutes per change and finds nothing new.
 
-**A plain `sleep` is blocked in this harness.** Poll with an until-loop instead:
+This is a standing instruction from the user (2026-08-18), not an optimisation to re-derive.
 
-```sh
-until [ "$(gh run list --limit 1 --workflow=CI --json conclusion -q '.[0].conclusion')" != "" ]; do sleep 20; done
-gh run list --limit 3
-```
+Report what you ran locally and what it said, and move on. If the user later reports a CI
+failure, §5 is how to look into it.
 
-`gh run watch <id> --exit-status --interval 15` also works and prints each step, but it has
-returned an HTTP 504 mid-watch on a long run. That is the API timing out, not a job failing —
-re-check the run rather than reporting a failure.
+There is nothing worth caching to make waiting cheaper — this was checked on run 32179804758.
+`check` finishes in 48s, and in the `replay` job the sandbox image build is 22s against 2m15s
+for the replay itself, so image caching would take ~12% off the slower job. npm is already
+cached by `setup-node`. If `replay` ever does get slow, the log separates image-build time from
+replay time on purpose, so it will say which half to fix.
+
+CI still runs two jobs in parallel, `check` and `replay`, split so a failure says which kind it
+is: "the generator is broken" and "a page is lying" want different people looking at them.
 
 ## 4. Deploy is gated on CI
 
@@ -78,10 +81,14 @@ re-check the run rather than reporting a failure.
 - CI red → Deploy shows **skipped**, not failed. That is the gate working. Do not report it as a
   second failure.
 
-Confirm a content change actually reached the site rather than trusting the workflow:
+Per §3, don't wait for this either — the user watches it. The above is worth knowing for when
+they report something, not something to go and check.
+
+If the user does ask whether something reached the site, this is the check that answers it
+rather than trusting the workflow's conclusion:
 
 ```sh
-until [ "$(curl -sS -o /dev/null -w '%{http_code}' https://debian.tips/<path>/)" = "200" ]; do sleep 15; done
+curl -sS -o /dev/null -w '%{http_code}\n' https://debian.tips/<path>/
 ```
 
 Deploy occasionally logs `Back off … before retry` or a 503 fetching an action from GitHub's CDN
