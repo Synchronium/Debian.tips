@@ -9,6 +9,11 @@ lives as Markdown + YAML, is validated against a Zod schema, rendered through ha
 template functions, syntax-highlighted with Shiki, and indexed for client-side search with
 Pagefind. Output is plain HTML/CSS/JS deployed to GitHub Pages.
 
+Four skills under `.claude/skills/` cover the recurring jobs, and each carries the traps that
+belong to it rather than repeating this file: `write-content-page` (authoring, verification,
+tiering), `cross-link-pages` (the link graph after a new page), `ship` (gates, CI, deployment)
+and `review-dependency-prs` (what a Dependabot bump can actually break here).
+
 ## Commands
 
 ```sh
