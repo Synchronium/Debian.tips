@@ -40,6 +40,7 @@ echo "grep exited $status"
 Beyond the generic 0/non-zero split, a handful of exit codes are conventional across most Unix
 tools:
 
+<!-- verify: skip captured at an interactive prompt; non-interactive bash prefixes "line 1:" -->
 ```bash
 nonexistent-command-xyz
 echo "exit=$?"
@@ -49,6 +50,7 @@ bash: nonexistent-command-xyz: command not found
 exit=127
 ```
 
+<!-- verify: skip captured at an interactive prompt; non-interactive bash prefixes "line 2:" -->
 ```bash
 chmod 644 noexec.sh
 ./noexec.sh

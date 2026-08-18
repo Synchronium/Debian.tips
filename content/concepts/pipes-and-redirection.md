@@ -66,22 +66,33 @@ redirection changes the outcome entirely:
 
 ```bash
 { echo out; echo err >&2; } > both.log 2>&1
+cat both.log
+```
+```
+out
+err
 ```
 
 Here, `> both.log` runs first (fd 1 now points at the file), then `2>&1` makes fd 2 point at
-*whatever fd 1 points to right now*: the file. Both streams end up in `both.log`.
+*whatever fd 1 points to right now*: the file. Both streams end up in `both.log`, which is why
+`cat` prints both lines back.
 
 ```bash
 { echo out; echo err >&2; } 2>&1 > both.log
+cat both.log
+```
+```
+err
+out
 ```
 
-Reversed, `2>&1` runs first, while fd 1 still points at the terminal, so fd 2 gets pointed at
-the terminal. *Then* `> both.log` redirects fd 1 to the file. The result: `out` goes to the
-file, `err` still goes to your terminal, because fd 2 had already locked in "the terminal" as its
-target before fd 1 moved. Tested on Debian stable, this is exactly what happens. Try both
-forms with `{ echo out; echo err >&2; }` and diff the resulting files to see it for yourself.
-Bash also provides `&>` as a shorthand for "redirect both stdout and stderr to this file,"
-sidestepping the ordering question entirely when that's genuinely what you want.
+Two identical-looking commands, two different results. Reversed, `2>&1` runs first, while fd 1
+still points at the terminal, so fd 2 gets pointed at the terminal. *Then* `> both.log`
+redirects fd 1 to the file. Read the output above in the order it was printed: `err` appeared
+straight away, on the terminal, because fd 2 had already locked in "the terminal" as its target
+before fd 1 moved. `out` appeared only when `cat` read it back out of the file. Bash also
+provides `&>` as a shorthand for "redirect both stdout and stderr to this file," sidestepping
+the ordering question entirely when that's genuinely what you want.
 
 ## Process substitution: `<(...)`
 
@@ -91,10 +102,18 @@ Process substitution runs a command and presents its output as if it were a file
 ```bash
 diff <(echo -e "a\nb\nc") <(echo -e "a\nx\nc")
 ```
+```
+2c2
+< b
+---
+> x
+```
 
 Bash runs each command, connects its output to a temporary file-like path (often
 `/dev/fd/63`-style), and substitutes that path into the command line, so `diff` compares two
-live command outputs without either one ever touching disk as a real file.
+live command outputs without either one ever touching disk as a real file. Neither side was
+ever a file you could have listed with `ls`, yet [`diff`](/commands/diff/) compared them
+without knowing the difference.
 
 ## Heredocs and here-strings
 
@@ -107,6 +126,13 @@ Line one
 Line two: $(whoami)
 EOF
 ```
+```
+Line one
+Line two: user
+```
+
+The `$(whoami)` was expanded by the shell before `cat` ever saw it, which is the difference
+between `<<EOF` and the quoted `<<'EOF'` form that passes every line through untouched.
 
 A here-string (`<<<`) is the single-line version: `cat <<< "some text"` feeds that one string in
 as stdin, without the multi-line `<<EOF ... EOF` ceremony.

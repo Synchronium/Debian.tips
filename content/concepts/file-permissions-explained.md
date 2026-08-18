@@ -17,6 +17,7 @@ Every file and directory has one **owner** (a user) and one **group**, plus a ca
 **everyone else**. Each of those three gets its own set of three permissions: **r**ead,
 **w**rite, and e**x**ecute. `ls -l` shows all nine bits in a row:
 
+<!-- verify: shape the size, timestamp and link count are this file's, not a fixed value -->
 ```bash
 ls -l script.sh
 ```
