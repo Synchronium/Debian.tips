@@ -225,6 +225,9 @@ Two gates, and a command page needs both:
    scripts/fixtures/<command>.sh` is the same check against a sandbox you're already holding).
    `npm run check` validates *shape*; only the replay checks whether the outputs are true, which
    is the site's actual promise.
+3. **`npm run replay` with no arguments**, once the page passes on its own. Every page shares one
+   sandbox, so a fixture that changes system state can break a page you never touched — and that
+   only ever shows up in the full run. See §4d; it has happened six times.
 
 A new page arrives orphaned — its own `related:` list points outward, and nothing points back at
 it. `npm run check` now fails on that, and the `cross-link-pages` skill is the pass that fixes it:
@@ -251,3 +254,49 @@ root, or the reverse. The flag remains for a page that has no setup script yet.
 `adopt-real-output.ts ... --all` takes every example's real output instead of named titles,
 which is the right move after changing a page's fixtures wholesale. It honours the `.skip` file
 and matches titles exactly.
+
+### 4d. What your fixture changes that another page can see
+
+The single most common way a finished page breaks. **`npm run replay` runs every page in one
+sandbox, in sequence.** Your setup script runs before each of your examples — but it only
+restores what *it* creates. Anything it changed elsewhere on the system is still changed when
+the next page starts, and anything an earlier page changed is already true when yours starts.
+
+The tell is unmistakable once you know it: **the page scores N/N on its own and fails in the
+batch**, or fails on a line that has nothing to do with what you just wrote. Six failures here
+have been exactly this, and not one of them was visible in a single-page run.
+
+Every one so far has been shared, mutable system state:
+
+| What leaked | How it surfaced |
+| --- | --- |
+| A **network port** | `third-party-repositories` bound 8080, already held by the curl/wget mock server left running by an earlier page. 4/4 alone, 2/4 in the batch, and the bind failed silently. |
+| **apt sources and pins** | Backports enabled by `release-channels` changed which versions a later page was offered. |
+| **An `apt.conf` fragment** | The `apt` page silences apt's "not a stable CLI interface" warning; `/compare/apt-vs-apt-get/` documents that warning. Whichever ran last decided the result. |
+| **The GPG default key** | `third-party-repositories` signed its repository with `gpg --clearsign` and no `--local-user`, which worked only while exactly one key existed. A second page building a repository made apt report the first as unsigned, naming a key id that appears nowhere on the system. |
+| **`/etc/passwd`** | The `sudo` page creates a user; the `wc` page counts accounts with `wc -l < /etc/passwd`. 21 became 22. |
+| **Package state** | `apt-essentials` leaves `nano` in the `rc` state on purpose; a `dpkg` example listing every package whose state is not `ii` faithfully reported it. |
+
+Two of those leaks exposed a **pre-existing defect on the other page** rather than a fault in the
+new one — `wc` was documenting a machine-specific count as exact, and the signing bug would have
+broken the next page to need a signed repository regardless. A leak is worth reading as evidence
+before assuming it is yours to suppress.
+
+**Writing a fixture, then:**
+
+- **Normalise what you need at the start; don't trust what you find.** The apt pages all begin by
+  deleting foreign `.sources` and `preferences.d` entries and rewriting the `apt.conf` fragment
+  they want, rather than assuming a clean machine. Reset marks and holds the same way — an
+  `apt-mark auto` from three examples earlier is enough to change a later one.
+- **Prefer a page-local name over a shared one.** Your own port, your own package names, your own
+  user. `packages-kept-back` publishes `tips-demo` and `tips-extra` on 8082 precisely so no other
+  page can be affected by it, and so it cannot be affected by them.
+- **Assume nothing about order.** Which page runs first is not something to design around.
+- **Check what you touch outside the working directory.** The working directory is emptied for
+  you. `/etc`, `/var/lib`, the package database, the user database, the GPG keyring and any
+  background process you start are not.
+
+**Then actually run the batch.** `npm run replay -- <slug>` proves your page is right;
+`npm run replay` proves it is right *alongside every other page*, which is what CI runs and the
+only place this class of defect appears. It takes about two and a half minutes. Do it before
+calling a page with a fixture done.
