@@ -155,9 +155,15 @@ means and how to contain it.
 > `apt` (no suffix) is meant for interactive use: coloured output, a progress bar, and an
 > explicit warning that its output format isn't guaranteed stable between versions. Scripts
 > should prefer `apt-get`/`apt-cache`, whose plain-text output is considered a stable interface
-> `apt` deliberately isn't.
+> `apt` deliberately isn't. [apt vs apt-get](/compare/apt-vs-apt-get/) has the full comparison,
+> including the one place the two genuinely behave differently.
 
 A script installing packages also needs `-y`, or `apt-get` stops at a prompt nobody is there to
 answer, and needs to check that the install actually succeeded rather than carrying on with a
 missing binary. See [Exit codes and error handling](/concepts/exit-codes-and-error-handling/)
 for the pattern.
+
+It also needs to cope with not being the only thing installing packages. On a machine running
+automatic updates, an install can fail outright because something else got there first — see
+[Could not get lock /var/lib/dpkg/lock-frontend](/troubleshooting/could-not-get-lock-dpkg-frontend/),
+which is a race worth handling with a timeout rather than a retry loop.

@@ -1,6 +1,38 @@
 import { z } from "zod";
 
-export const CATEGORIES = ["commands", "concepts", "scripting", "recipes", "debian"] as const;
+/** The page *shapes* the site publishes. This is the taxonomy's primary axis and it sorts
+ *  pages by how they are written and read, not by what they are about — subject is the job of
+ *  `content/tags.yaml`, which is many-to-many precisely because `rsync` is a networking command
+ *  and a files command at once.
+ *
+ *  Each category answers to what a reader arrives with:
+ *
+ *    commands         a tool's name        "I know it's `xargs`, I want to use it well."
+ *    concepts         a why                "But how does that actually work?"
+ *    scripting        nothing yet          an ordered course; each lesson assumes the last
+ *    recipes          a goal               "I want to achieve X."
+ *    troubleshooting  an error message     "X broke, and here is what it printed."
+ *    compare          two options          "X or Y, and nobody told me how to choose."
+ *    debian           a why, about Debian  an explainer that would be wrong elsewhere
+ *
+ *  `recipes` and `troubleshooting` split on how the reader arrived rather than on subject:
+ *  "free up disk space" is a recipe, "No space left on device" is troubleshooting, and the two
+ *  are worth having separately even where the knowledge overlaps.
+ *
+ *  `debian` is the one category on the subject axis rather than the shape axis, which is a
+ *  product decision (the site is called debian.tips) rather than a taxonomic one. It is bounded
+ *  to keep it from absorbing everything Debian-flavoured: it is the Debian wing of `concepts`,
+ *  and anything with a Debian subject but another shape files under that shape and takes the
+ *  `debian` tag. So the apt error pages are `troubleshooting`, and `dpkg vs apt` is `compare`. */
+export const CATEGORIES = [
+  "commands",
+  "concepts",
+  "scripting",
+  "recipes",
+  "troubleshooting",
+  "compare",
+  "debian",
+] as const;
 export type Category = (typeof CATEGORIES)[number];
 
 /** Every category except `commands`: the ones whose pages are a single Markdown file, stating
@@ -61,12 +93,19 @@ export const scriptingFrontmatterSchema = z.object({
 export const conceptsFrontmatterSchema = z.object({ ...baseFrontmatter, category: z.literal("concepts") });
 export const recipesFrontmatterSchema = z.object({ ...baseFrontmatter, category: z.literal("recipes") });
 export const debianFrontmatterSchema = z.object({ ...baseFrontmatter, category: z.literal("debian") });
+export const troubleshootingFrontmatterSchema = z.object({
+  ...baseFrontmatter,
+  category: z.literal("troubleshooting"),
+});
+export const compareFrontmatterSchema = z.object({ ...baseFrontmatter, category: z.literal("compare") });
 
 export const frontmatterSchema = z.discriminatedUnion("category", [
   commandFrontmatterSchema,
   scriptingFrontmatterSchema,
   conceptsFrontmatterSchema,
   recipesFrontmatterSchema,
+  troubleshootingFrontmatterSchema,
+  compareFrontmatterSchema,
   debianFrontmatterSchema,
 ]);
 

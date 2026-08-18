@@ -8,7 +8,22 @@ export const SITE = {
   gaMeasurementId: "G-CFE8GTL7E4",
 } as const;
 
-export const NAV_ORDER: Category[] = ["commands", "concepts", "scripting", "recipes", "debian"];
+/** Editorial order for the header, the homepage and the sitemap. Deliberately *not* derived
+ *  from `CATEGORIES`: validation order and reading order are different questions, and this list
+ *  is free to lead with whatever the site most wants read first.
+ *
+ *  Seven entries is already wide for a header. When the eighth lands (a `perl` track is the
+ *  likely one), this is where it gets solved — by promoting five and putting the rest behind a
+ *  "More", or by grouping into Learn / Do / Reference. Not by reshaping the categories. */
+export const NAV_ORDER: Category[] = [
+  "commands",
+  "concepts",
+  "scripting",
+  "recipes",
+  "troubleshooting",
+  "compare",
+  "debian",
+];
 
 export const CATEGORY_META: Record<Category, { label: string; path: string; description: string }> = {
   commands: {
@@ -31,6 +46,16 @@ export const CATEGORY_META: Record<Category, { label: string; path: string; desc
     path: "/recipes/",
     description: "Short, task-oriented how-tos: problem, solution, explanation.",
   },
+  troubleshooting: {
+    label: "Troubleshooting",
+    path: "/troubleshooting/",
+    description: "Named after the error you were given: what it means, and what to do about it.",
+  },
+  compare: {
+    label: "Compare",
+    path: "/compare/",
+    description: "Two tools that overlap, what actually differs, and which one to reach for.",
+  },
   debian: {
     label: "Debian",
     path: "/debian/",
@@ -44,6 +69,7 @@ export const CATEGORY_META: Record<Category, { label: string; path: string; desc
  * than its logical section. Slugs with no page yet are ignored, so this doubles
  * as a rough roadmap of intended coverage. */
 export const COMMAND_GROUPS: { title: string; commands: string[] }[] = [
+  { title: "Debian packages", commands: ["apt", "dpkg", "apt-cache", "apt-file", "apt-mark", "update-alternatives", "dpkg-reconfigure"] },
   { title: "Text processing", commands: ["grep", "sed", "awk", "sort", "uniq", "cut", "tr", "head", "tail", "wc", "diff", "column-tools", "tee"] },
   { title: "Files & directories", commands: ["ls", "find", "cp", "mv", "rm", "make-and-link", "inspect-files", "touch", "du", "df", "tree"] },
   { title: "Searching", commands: ["locate"] },
