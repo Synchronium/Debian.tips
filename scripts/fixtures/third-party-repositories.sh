@@ -67,7 +67,12 @@ if [ ! -f "$REPO/dists/stable/InRelease" ]; then
   gpg --batch --quiet --passphrase "" --pinentry-mode loopback \
     --quick-generate-key "Example Vendor <$KEY_EMAIL>" default default never
   gpg --armor --export "$KEY_EMAIL" > "$REPO/vendor-key.asc"
-  gpg --batch --yes --clearsign -o "$REPO/dists/stable/InRelease" "$REPO/dists/stable/Release"
+  # --local-user, not the keyring default: `npm run replay` runs every page in one sandbox,
+  # and any other page that generates a signing key would otherwise become the default and
+  # sign this repository with the wrong one. apt then reports the repository as unsigned,
+  # naming a key id that appears nowhere. Exactly that happened when packages-kept-back
+  # started building a repository of its own.
+  gpg --batch --yes --local-user "$KEY_EMAIL" --clearsign -o "$REPO/dists/stable/InRelease" "$REPO/dists/stable/Release"
 fi
 
 # Served over HTTP rather than file:// so the URLs the page prints are ones a reader could

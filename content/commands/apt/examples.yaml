@@ -251,7 +251,7 @@ sections:
     examples:
       - title: Stop a package being upgraded
         code: sudo apt-mark hold cowsay
-        description: Pins the installed version until you say otherwise. Held packages are skipped by `upgrade` and reported as kept back.
+        description: Pins the installed version until you say otherwise. Held packages are skipped by `upgrade` and [reported as kept back](/troubleshooting/packages-kept-back/).
         level: intermediate
         output: |2
           cowsay set on hold.

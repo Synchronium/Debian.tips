@@ -86,7 +86,7 @@ everything, and remove packages if that is what it takes. The plain `upgrade` in
 where they genuinely differ — `apt upgrade` will install *new* packages when an upgrade needs
 them, and `apt-get upgrade` will not, holding those packages back instead. That single
 difference is behind most of the "why is apt-get not upgrading this" confusion, and behind
-packages appearing to be stuck.
+[packages appearing to be kept back](/troubleshooting/packages-kept-back/).
 
 `apt` also folds in commands that were never `apt-get`'s at all: `apt search`, `apt show` and
 `apt list` are `apt-cache` operations wearing a friendlier name.

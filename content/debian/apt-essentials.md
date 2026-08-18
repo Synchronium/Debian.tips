@@ -129,7 +129,8 @@ sudo apt-mark unhold ripgrep   # allow it to upgrade again
 ```
 
 A hold is useful when a specific version of a package is known to work with something else on
-the system and a newer one might not; `upgrade` and `full-upgrade` both skip held packages
+the system and a newer one might not — though it is also a common reason for
+[a package being kept back](/troubleshooting/packages-kept-back/) months later; `upgrade` and `full-upgrade` both skip held packages
 automatically, without needing to remember to exclude them manually each time.
 
 <!-- verify: shape the version moves whenever a security update lands -->
