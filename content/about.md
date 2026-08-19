@@ -14,9 +14,10 @@ every push, and the page fails the build if what it prints has changed.
 Right now that is **{{replayed}} outputs re-run on every push**, across {{commandPages}}
 command pages and {{prosePages}} of the written articles, alongside {{fixtures}} blocks of
 sample data. A further {{exemptions}} are documented but cannot be automated, and are listed as
-such below. Command pages that nothing re-runs, because no setup script exists for them yet:
-{{unreplayedCommandPages}}. The numbers on this page are counted from the content when the site
-is built, so they cannot drift either.
+such below. Nothing re-runs a page until a setup script exists for it, and that is still true
+of {{unreplayedCommandPages}} of the command pages and {{unreplayedProsePages}} of the written
+articles. The numbers on this page are counted from the content when the site is built, so they
+cannot drift either.
 
 ## What "tested" actually means
 

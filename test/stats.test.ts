@@ -13,6 +13,8 @@ import { fillStats, verificationStats, type VerificationStats } from "../src/con
 const FIXTURE_CONTENT = join(import.meta.dirname, "fixtures", "content");
 const FIXTURE_HARNESS = join(import.meta.dirname, "fixtures", "harness");
 const NO_HARNESS = join(import.meta.dirname, "fixtures", "harness-none");
+/** A harness whose only setup script belongs to lesson-two, whose one block is `verify: skip`. */
+const FIXTURE_ALL_EXEMPT = join(import.meta.dirname, "fixtures", "harness-all-exempt");
 
 async function statsFor(fixtureDir: string): Promise<VerificationStats> {
   const { pages } = await loadContent(FIXTURE_CONTENT);
@@ -35,6 +37,7 @@ describe("verificationStats", () => {
       exemptions: 1,
       prosePages: 1,
       proseOutputs: 1,
+      unreplayedProsePages: 1, // lesson-two has no setup script
     });
   });
 
@@ -47,6 +50,18 @@ describe("verificationStats", () => {
     expect(stats.outputs).toBe(0);
     expect(stats.replayed).toBe(0);
     expect(stats.prosePages).toBe(0);
+    expect(stats.unreplayedProsePages).toBe(2);
+  });
+
+  it("does not report a page whose blocks are all exempt as one nothing re-runs", async () => {
+    // The distinction the two figures turn on. A page with a setup script opted in: the replay
+    // runs it and reports its exemptions. Counting it alongside the pages with no script at all
+    // would advertise a deliberate, explained exemption as an oversight — and would understate
+    // coverage on exactly the page that exists to state it accurately.
+    const { pages } = await loadContent(FIXTURE_CONTENT);
+    const allExempt = verificationStats(pages, FIXTURE_CONTENT, FIXTURE_ALL_EXEMPT);
+    expect(allExempt.prosePages).toBe(0); // lesson-two opted in and contributes no automated outputs
+    expect(allExempt.unreplayedProsePages).toBe(1); // lesson-one, which has no script here
   });
 });
 
@@ -63,6 +78,7 @@ describe("fillStats", () => {
     exemptions: 1,
     prosePages: 1,
     proseOutputs: 1,
+    unreplayedProsePages: 0,
   };
 
   it("substitutes every token it knows", () => {
@@ -77,9 +93,10 @@ describe("fillStats", () => {
     expect(() => fillStats("{{replayed}}", { ...stats, replayed: 0 })).toThrow(/counted zero/);
   });
 
-  it("allows zero for the one figure where zero is the good answer", () => {
-    // "0 command pages nothing re-runs" is the state the site wants to be in, and saying so is
-    // the point of the figure.
+  it("allows zero for the two figures where zero is the good answer", () => {
+    // "0 pages nothing re-runs" is the state the site wants to be in, and saying so is the
+    // point of both figures.
     expect(fillStats("{{unreplayedCommandPages}}", stats)).toBe("0");
+    expect(fillStats("{{unreplayedProsePages}}", stats)).toBe("0");
   });
 });

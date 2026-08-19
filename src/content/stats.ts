@@ -39,6 +39,14 @@ export interface VerificationStats {
   prosePages: number;
   /** Output blocks replayed on those pages. */
   proseOutputs: number;
+  /** Prose pages with no setup script, whose outputs nothing re-runs — the counterpart to
+   *  `unreplayedCommandPages`, and missing for long enough that a written article could ship
+   *  uncounted and unmentioned while the command-page side of the same gap was being fixed.
+   *
+   *  A page that *has* a script but every one of whose blocks is exempt is in neither figure.
+   *  It opted in, the replay runs it, and it reports its exemptions; it simply contributes no
+   *  automated outputs. Counting it here would report an explicit exemption as an oversight. */
+  unreplayedProsePages: number;
 }
 
 /** Counts the prose pages that actually replay, and their output blocks.
@@ -49,12 +57,16 @@ function countProse(
   pages: Page[],
   contentDir: string,
   fixtureDir: string,
-): { prosePages: number; proseOutputs: number } {
+): { prosePages: number; proseOutputs: number; unreplayedProsePages: number } {
   let prosePages = 0;
   let proseOutputs = 0;
+  let unreplayedProsePages = 0;
   for (const page of pages) {
     if (!(PROSE_CATEGORIES as readonly string[]).includes(page.category)) continue;
-    if (!existsSync(fixtureScript(page.slug, fixtureDir))) continue;
+    if (!existsSync(fixtureScript(page.slug, fixtureDir))) {
+      unreplayedProsePages++;
+      continue;
+    }
     const source = proseSource(page.category, page.slug, contentDir);
     if (!existsSync(source)) continue;
     const { pairs } = parseProsePage(readFileSync(source, "utf-8"));
@@ -63,7 +75,7 @@ function countProse(
     prosePages++;
     proseOutputs += checked;
   }
-  return { prosePages, proseOutputs };
+  return { prosePages, proseOutputs, unreplayedProsePages };
 }
 
 export function verificationStats(
@@ -101,7 +113,7 @@ export function verificationStats(
       .length;
   }
 
-  const { prosePages, proseOutputs } = countProse(pages, contentDir, fixtureDir);
+  const { prosePages, proseOutputs, unreplayedProsePages } = countProse(pages, contentDir, fixtureDir);
   return {
     pages: pages.length,
     commandPages: commandPages.length,
@@ -114,6 +126,7 @@ export function verificationStats(
     exemptions,
     prosePages,
     proseOutputs,
+    unreplayedProsePages,
   };
 }
 
@@ -121,9 +134,12 @@ export function verificationStats(
  *
  *  Throws on a token with no value rather than shipping `{{outputs}}` to a reader, and on a
  *  value of zero, which on this page would always mean the counting broke rather than that
- *  the site genuinely has none of something. `unreplayedCommandPages` is the one figure allowed
- *  to be zero — zero is the state the site wants to be in, and saying so is the point. */
-const ZERO_IS_MEANINGFUL: ReadonlySet<keyof VerificationStats> = new Set(["unreplayedCommandPages"]);
+ *  the site genuinely has none of something. The two "unreplayed" figures are the exception —
+ *  zero is the state the site wants to be in, and saying so is the point. */
+const ZERO_IS_MEANINGFUL: ReadonlySet<keyof VerificationStats> = new Set([
+  "unreplayedCommandPages",
+  "unreplayedProsePages",
+]);
 
 function isStatName(token: string, stats: VerificationStats): token is keyof VerificationStats {
   return Object.hasOwn(stats, token);
