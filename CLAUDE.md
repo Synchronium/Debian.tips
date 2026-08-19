@@ -112,12 +112,15 @@ moving them, and they carry the failure modes that produced each rule.
 
 ## When a change needs a new ADR
 
-`docs/adr/` records decisions, not history — there are no superseded records, so a decision that
-changes is *edited*, and git history is the audit trail. Two things follow.
+`docs/adr/` is the standing record of why things are the way they are, and it only works if
+changes keep it current. Two rules.
 
-**A change that contradicts an existing record updates that record, in the same commit.** A stale
-ADR is worse than a missing one: it is read as current, and it is read precisely by someone about
-to make a decision.
+**A change that contradicts an existing record deals with that record, in the same commit.** A
+stale ADR is worse than a missing one: it is read as current, and it is read precisely by someone
+already mid-decision. Which treatment depends on the size of the change — a reversed or replaced
+decision gets a new record with the old one marked `Superseded by ADR-00NN`, keeping its reasoning
+where the next person can find it; a record that is merely wrong or unclear is edited in place.
+`docs/adr/README.md` has the distinction.
 
 **A change that makes a decision nothing covers should come with a proposed ADR — proposed, not
 merged.** Say what you'd write and let the user decide before adding it, the same way a new tag
