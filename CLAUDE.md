@@ -109,3 +109,24 @@ This file is deliberately short. The detail lives next to the job that needs it:
 
 The two reference documents are where the long-form explanations went; nothing was dropped in
 moving them, and they carry the failure modes that produced each rule.
+
+## When a change needs a new ADR
+
+`docs/adr/` records decisions, not history — there are no superseded records, so a decision that
+changes is *edited*, and git history is the audit trail. Two things follow.
+
+**A change that contradicts an existing record updates that record, in the same commit.** A stale
+ADR is worse than a missing one: it is read as current, and it is read precisely by someone about
+to make a decision.
+
+**A change that makes a decision nothing covers should come with a proposed ADR — proposed, not
+merged.** Say what you'd write and let the user decide before adding it, the same way a new tag
+gets asked about rather than added. The test is whether someone would otherwise re-litigate the
+choice, or undo it by accident without knowing it was a choice: a new gate, a new category, a
+constraint on what content may claim, a dependency the output shape now depends on. Ordinary work
+inside an existing decision is not an ADR, and neither is a preference nobody could break by
+accident.
+
+Keep the shape of the existing records — Context, Decision, Consequences, Revisit when — and name
+what **enforces** it. If the honest answer is "nothing", write that: `docs/adr/README.md` explains
+why the empty field is worth having rather than hiding.
