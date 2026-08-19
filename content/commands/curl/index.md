@@ -6,7 +6,7 @@ category: commands
 tags: [networking, one-liners]
 updated: 2026-08-16
 tier: flagship
-related: [wget, tar, exit-codes-and-error-handling]
+related: [wget, jq, tar, exit-codes-and-error-handling]
 ---
 
 `curl` sends an HTTP (or FTP, or a dozen other protocols') request and prints or saves whatever

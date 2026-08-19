@@ -407,7 +407,7 @@ sections:
         tags: [scripting, monitoring]
       - title: "Extract one field from a JSON response"
         code: curl -s http://127.0.0.1:8080/get | python3 -c "import json,sys; print(json.load(sys.stdin)['url'])"
-        description: "curl doesn't parse JSON itself. Pipe into `python3 -c` (or `jq` if it's installed) to pull out a specific field."
+        description: "curl doesn't parse JSON itself. Pipe into `python3 -c`, or into [jq](/commands/jq/), which is built for exactly this but is not installed by default."
         output: |2
           http://127.0.0.1:8080/get
         level: advanced

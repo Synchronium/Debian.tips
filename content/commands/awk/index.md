@@ -14,7 +14,8 @@ related: [grep, sed, pipes-and-redirection, sort, uniq]
 lines match?" and [`sed`](/commands/sed/) answers "how do I transform matching lines?", `awk`
 answers "how do I pull *fields* out of a line and compute something with them?" It's the tool
 you reach for once a task stops being about lines and starts being about columns: totals,
-averages, tallies, reordering, reformatting.
+averages, tallies, reordering, reformatting. It is not the tool for JSON, which has no columns
+and no fixed idea of where its lines go: [`jq`](/commands/jq/) is the equivalent there.
 
 ## The mental model: pattern { action }
 

@@ -1,0 +1,602 @@
+command: jq
+fixtures:
+  - name: services.json
+    note: "a top-level array, and deliberately not pretty-printed — this is the shape an API hands you, and the reason the first example exists"
+    content: |
+      [{"name":"nginx","state":"running","restarts":0,"memory_mb":42},{"name":"postgres","state":"running","restarts":2,"memory_mb":310},{"name":"redis","state":"stopped","restarts":11,"memory_mb":0},{"name":"worker","state":"running","restarts":1,"memory_mb":128}]
+  - name: api-response.json
+    note: "an object with the array buried inside it — the other shape, and the one that decides whether a filter starts `.users[]` or `.[]`"
+    content: |
+      {
+        "page": 1,
+        "per_page": 3,
+        "total": 7,
+        "users": [
+          {
+            "id": 1,
+            "name": "Alice",
+            "email": "alice@example.com",
+            "active": true,
+            "roles": ["admin", "dev"]
+          },
+          {
+            "id": 2,
+            "name": "Bob",
+            "email": "bob@example.com",
+            "active": false,
+            "roles": ["dev"]
+          },
+          {
+            "id": 3,
+            "name": "Carol",
+            "email": "carol@example.com",
+            "active": true,
+            "roles": []
+          }
+        ]
+      }
+  - name: config.json
+    note: "nested objects, for the path and default-value examples"
+    content: |
+      {
+        "server": {
+          "host": "deb1",
+          "port": 8080,
+          "tls": {
+            "enabled": false
+          }
+        },
+        "logging": {
+          "level": "info",
+          "file": "/var/log/app.log"
+        },
+        "workers": 4
+      }
+  - name: events.jsonl
+    note: "four separate JSON objects, one per line — not an array, which is what `-s` is for"
+    content: |
+      {"ts":"2026-08-19T09:00:00Z","level":"info","msg":"started"}
+      {"ts":"2026-08-19T09:01:12Z","level":"warn","msg":"slow query","ms":420}
+      {"ts":"2026-08-19T09:02:03Z","level":"error","msg":"connection refused"}
+      {"ts":"2026-08-19T09:04:44Z","level":"info","msg":"recovered"}
+  - name: broken.json
+    note: "has a trailing comma, which JSON does not allow — for the example about what jq says when the input is not valid"
+    content: |
+      {"name": "nginx", "state": "running",}
+sections:
+  - title: "Look at the JSON before writing a filter"
+    intro: "`jq .` on its own is the single most useful thing here: it validates the input and prints it in a shape you can read, which is what tells you where your real filter has to start."
+    examples:
+      - title: "Pretty-print a JSON file"
+        code: jq . services.json
+        description: "`.` means 'the input, unchanged'. jq indents and colourises the result on the way out, which is enough to turn an unreadable one-line API response into something you can navigate."
+        output: |
+          [
+            {
+              "name": "nginx",
+              "state": "running",
+              "restarts": 0,
+              "memory_mb": 42
+            },
+            {
+              "name": "postgres",
+              "state": "running",
+              "restarts": 2,
+              "memory_mb": 310
+            },
+            {
+              "name": "redis",
+              "state": "stopped",
+              "restarts": 11,
+              "memory_mb": 0
+            },
+            {
+              "name": "worker",
+              "state": "running",
+              "restarts": 1,
+              "memory_mb": 128
+            }
+          ]
+        level: basic
+        tags: [beginner]
+      - title: "Squash JSON back onto one line"
+        code: jq -c . api-response.json
+        description: "`-c` (`--compact-output`) is the reverse of pretty-printing. Useful when the result is going into a file one record per line, or into a tool that wants a single line."
+        output: |
+          {"page":1,"per_page":3,"total":7,"users":[{"id":1,"name":"Alice","email":"alice@example.com","active":true,"roles":["admin","dev"]},{"id":2,"name":"Bob","email":"bob@example.com","active":false,"roles":["dev"]},{"id":3,"name":"Carol","email":"carol@example.com","active":true,"roles":[]}]}
+        level: basic
+        tags: [beginner]
+      - title: "List the top-level keys"
+        code: jq -r 'keys[]' config.json
+        description: "`keys` returns the object's keys as an array, sorted; `[]` unpacks that array into one output per key. The fastest way to find out what you are actually holding."
+        output: |
+          logging
+          server
+          workers
+        level: basic
+        tags: [beginner]
+      - title: "Check whether a file is valid JSON"
+        code: jq empty config.json
+        description: "`empty` produces no output at all, so this parses the input and prints nothing. Exit status 0 means the file is valid JSON, which is the shape of a precondition check in a script."
+        level: intermediate
+        tags: [scripting]
+      - title: "See what jq says when the input is not valid JSON"
+        code: jq empty broken.json
+        description: "The message names the line and column, which is the fastest route to a stray trailing comma. jq exits 5 on a parse error, distinct from the 1 it uses for 'the filter produced nothing useful'."
+        output: |
+          jq: parse error: Expected another key-value pair at line 1, column 38
+        level: intermediate
+
+  - title: "Reaching into objects"
+    intro: "A path is a chain of keys: `.server.tls.enabled` walks down three levels. Missing keys give `null` rather than an error, which is a feature until it is a surprise."
+    examples:
+      - title: "Read a top-level value"
+        code: jq '.workers' config.json
+        description: "`.workers` reaches into the key of that name. Numbers come out as numbers, ready to use in arithmetic."
+        output: |
+          4
+        level: basic
+        tags: [beginner]
+      - title: "Read a nested value"
+        code: jq '.server.host' config.json
+        description: "Chain keys with dots to walk down. The result is a JSON string, quotes and all, because that is what the value is."
+        output: |
+          "deb1"
+        level: basic
+        tags: [beginner]
+      - title: "Get the string without its quotes"
+        code: jq -r '.server.host' config.json
+        description: "`-r` (`--raw-output`) prints strings unquoted and unescaped. This is the flag you want any time the answer is going into a shell variable or another command rather than into more JSON."
+        output: |
+          deb1
+        level: basic
+        tags: [beginner]
+      - title: "Read a boolean three levels down"
+        code: jq '.server.tls.enabled' config.json
+        description: "`true` and `false` come out as bare JSON booleans, not strings, which is worth remembering when comparing them: `.enabled == \"false\"` is never true."
+        output: |
+          false
+        level: basic
+      - title: "A key that does not exist gives null, not an error"
+        code: jq '.nothing' config.json
+        description: "jq treats a missing key as `null` rather than failing. Convenient when a field is genuinely optional, and the reason a typo in a key name reads as 'the data is empty' instead of 'you spelled it wrong'."
+        output: |
+          null
+        level: intermediate
+      - title: "Supply a default when a key is missing"
+        code: jq '.logging.retention // 7' config.json
+        description: "`//` is the alternative operator: it yields the left side unless that is `null` or `false`, in which case it yields the right. The idiomatic way to give an optional setting a fallback."
+        output: |
+          7
+        level: intermediate
+        tags: [beginner]
+      - title: "List the keys of a nested object"
+        code: jq '.server | keys' config.json
+        description: "`|` chains filters exactly like a shell pipe: reach into `.server` first, then ask that object for its keys."
+        output: |
+          [
+            "host",
+            "port",
+            "tls"
+          ]
+        level: intermediate
+
+  - title: "Arrays: unpacking, indexing, and the mistake everyone makes"
+    intro: "`.[]` turns one array into many separate outputs, which is what lets everything after it work on a single element at a time."
+    examples:
+      - title: "Unpack an array into one object per line"
+        code: jq -c '.[]' services.json
+        description: "`.[]` on a top-level array emits each element as its own output. Note this is four results, not one array of four, and the difference matters as soon as you pipe it somewhere."
+        output: |
+          {"name":"nginx","state":"running","restarts":0,"memory_mb":42}
+          {"name":"postgres","state":"running","restarts":2,"memory_mb":310}
+          {"name":"redis","state":"stopped","restarts":11,"memory_mb":0}
+          {"name":"worker","state":"running","restarts":1,"memory_mb":128}
+        level: basic
+        tags: [beginner]
+      - title: "Take a single element by index"
+        code: jq '.[0]' services.json
+        description: "Array indexing is zero-based. `.[-1]` counts from the end, which is the usual way to get the most recent entry out of an append-only list."
+        output: |
+          {
+            "name": "nginx",
+            "state": "running",
+            "restarts": 0,
+            "memory_mb": 42
+          }
+        level: basic
+        tags: [beginner]
+      - title: "Pull one field out of every element"
+        code: jq -r '.users[].name' api-response.json
+        description: "`.users[]` unpacks the array behind the `users` key, then `.name` applies to each element in turn. The most common jq you will ever write."
+        output: |
+          Alice
+          Bob
+          Carol
+        level: basic
+        tags: [beginner]
+      - title: "Pull two fields out, in order"
+        code: jq -r '.users[] | .name, .email' api-response.json
+        description: "A comma runs both filters against the same input and emits both results, so this interleaves name and email per user rather than listing all the names first."
+        output: |
+          Alice
+          alice@example.com
+          Bob
+          bob@example.com
+          Carol
+          carol@example.com
+        level: intermediate
+      - title: "The mistake: starting at the wrong level"
+        code: jq -c '.users[]' config.json
+        description: >-
+          config.json has no `users` key, so `.users` is `null` and `[]` cannot iterate over it.
+          This error nearly always means the input is a different shape from the one the filter was
+          written for. Run `jq .` on it and look before changing anything else.
+        output: |
+          jq: error (at config.json:14): Cannot iterate over null (null)
+        level: intermediate
+        tags: [beginner]
+      - title: "Ask for a key that might not be there"
+        code: jq -c '.users[]?' config.json
+        description: "The `?` suffix suppresses the error and emits nothing instead. Right when filtering a stream where only some records carry the field; wrong when you would rather be told the field is missing."
+        level: intermediate
+      - title: "Join an array of strings into one"
+        code: "jq -r '.users[0].roles | join(\", \")' api-response.json"
+        description: "`join` collapses an array of strings into a single string with the given separator, which together with `-r` is how you get a comma-separated list out into the shell."
+        output: |
+          admin, dev
+        level: intermediate
+
+  - title: "Filtering with select"
+    intro: "`select(condition)` passes its input through when the condition holds and emits nothing when it does not. Put it after a `.[]` and you have a filter over the whole collection."
+    examples:
+      - title: "Keep only the elements matching a condition"
+        code: "jq -c '.[] | select(.state == \"running\")' services.json"
+        description: "Unpack with `.[]`, then keep the ones where the test holds. Three of the four survive here."
+        output: |
+          {"name":"nginx","state":"running","restarts":0,"memory_mb":42}
+          {"name":"postgres","state":"running","restarts":2,"memory_mb":310}
+          {"name":"worker","state":"running","restarts":1,"memory_mb":128}
+        level: basic
+        tags: [beginner]
+      - title: "Filter, then take one field"
+        code: jq -r '.users[] | select(.active) | .name' api-response.json
+        description: "Three stages: unpack, filter, project. A bare `.active` is enough as a condition when the value is already a boolean."
+        output: |
+          Alice
+          Carol
+        level: basic
+        tags: [beginner]
+      - title: "Filter on a numeric comparison"
+        code: jq -r '.[] | select(.memory_mb > 100) | .name' services.json
+        description: "`>`, `<`, `>=` and `<=` compare numbers directly, with no quoting or conversion needed, because jq already knows the value is a number."
+        output: |
+          postgres
+          worker
+        level: basic
+        tags: [beginner]
+      - title: "Find anything that has restarted at all"
+        code: jq -c '.[] | select(.restarts > 0)' services.json
+        description: "The shape of most monitoring one-liners: unpack a list of things, keep the ones whose counter is non-zero."
+        output: |
+          {"name":"postgres","state":"running","restarts":2,"memory_mb":310}
+          {"name":"redis","state":"stopped","restarts":11,"memory_mb":0}
+          {"name":"worker","state":"running","restarts":1,"memory_mb":128}
+        level: intermediate
+        tags: [monitoring]
+      - title: "Filter on membership in a nested array"
+        code: "jq -r '.users[] | select(.roles | contains([\"admin\"])) | .name' api-response.json"
+        description: "`contains` asks whether one value is contained in another. On arrays it takes an array, so the argument is `[\"admin\"]` rather than a bare string."
+        output: |
+          Alice
+        level: intermediate
+      - title: "Filter on a regular expression"
+        code: "jq -r '.users[] | select(.email | test(\"^a\")) | .email' api-response.json"
+        description: "`test` applies a regex and returns a boolean. The syntax is the same one [grep](/commands/grep/) uses with `-E`, so nothing new to learn."
+        output: |
+          alice@example.com
+        level: intermediate
+        tags: [regex]
+      - title: "Ask whether any element matches"
+        code: "jq 'any(.[]; .state == \"stopped\")' services.json"
+        description: "`any(stream; condition)` reduces the whole collection to a single `true` or `false`, which is the right shape when a script only needs to know whether a problem exists rather than which one."
+        output: |
+          true
+        level: advanced
+        tags: [scripting]
+      - title: "Ask whether every element matches"
+        code: jq 'all(.[]; .restarts == 0)' services.json
+        description: "`all` is the counterpart to `any`, and answers 'is everything healthy' in one call. False here, because three of the four have restarted."
+        output: |
+          false
+        level: advanced
+        tags: [scripting, monitoring]
+
+  - title: "Reshaping: building new objects and arrays"
+    intro: "`{}` builds an object, `[]` collects a stream back into an array, and `map` applies a filter to every element of one. Between them they turn somebody else's JSON into yours."
+    examples:
+      - title: "Keep only the fields you care about"
+        code: jq -c '.users[] | {name, email}' api-response.json
+        description: "`{name, email}` is shorthand for `{name: .name, email: .email}`, the most common reshaping there is, and the reason a forty-field API record becomes readable."
+        output: |
+          {"name":"Alice","email":"alice@example.com"}
+          {"name":"Bob","email":"bob@example.com"}
+          {"name":"Carol","email":"carol@example.com"}
+        level: basic
+        tags: [beginner]
+      - title: "Rename fields and compute new ones"
+        code: "jq -c '.users[] | {user: .name, admin: (.roles | contains([\"admin\"]))}' api-response.json"
+        description: "The long form takes any filter on the right, so a field can be derived rather than copied. Parentheses are needed around anything containing a `|`."
+        output: |
+          {"user":"Alice","admin":true}
+          {"user":"Bob","admin":false}
+          {"user":"Carol","admin":false}
+        level: intermediate
+      - title: "Collect a stream back into a single array"
+        code: jq -c '[.users[].id]' api-response.json
+        description: "Wrapping a filter in `[...]` gathers everything it emits into one array. Without the brackets this prints three separate numbers, which is a different thing entirely."
+        output: |
+          [1,2,3]
+        level: intermediate
+        tags: [beginner]
+      - title: "Transform every element of an array"
+        code: jq -c 'map(.name)' services.json
+        description: "`map(f)` is `[.[] | f]` written more clearly: array in, array out. Use it when the result should stay an array, and `.[] |` when you want separate outputs."
+        output: |
+          ["nginx","postgres","redis","worker"]
+        level: basic
+        tags: [beginner]
+      - title: "Filter and transform in one chain"
+        code: "jq -c 'map(select(.state == \"running\")) | map(.name)' services.json"
+        description: "`map(select(...))` filters an array while keeping it an array, the array-preserving counterpart to `.[] | select(...)`."
+        output: |
+          ["nginx","postgres","worker"]
+        level: intermediate
+      - title: "Turn an object into key/value pairs"
+        code: "jq -r '.logging | to_entries[] | \"\\(.key)=\\(.value)\"' config.json"
+        description: "`to_entries` converts an object into an array of `{key, value}` objects, which is how you iterate over an object whose keys you do not know in advance. `\\(...)` interpolates a value into a string."
+        output: |
+          level=info
+          file=/var/log/app.log
+        level: intermediate
+        tags: [scripting]
+      - title: "Rewrite every key of an object"
+        code: jq -c '.logging | with_entries(.key |= ascii_upcase)' config.json
+        description: "`with_entries(f)` is `to_entries | map(f) | from_entries`, so `f` sees each `{key, value}` pair. `|=` updates one field of that pair rather than replacing the whole thing."
+        output: |
+          {"LEVEL":"info","FILE":"/var/log/app.log"}
+        level: advanced
+      - title: "Drop a field from every record"
+        code: jq -c 'del(.users[].email)' api-response.json
+        description: "`del` takes a path and removes it, keeping the surrounding structure intact. Handy for stripping secrets or noise out of a response before saving or sharing it."
+        output: |
+          {"page":1,"per_page":3,"total":7,"users":[{"id":1,"name":"Alice","active":true,"roles":["admin","dev"]},{"id":2,"name":"Bob","active":false,"roles":["dev"]},{"id":3,"name":"Carol","active":true,"roles":[]}]}
+        level: intermediate
+      - title: "Format each record as a sentence"
+        code: "jq -r '.[] | \"\\(.name) uses \\(.memory_mb)MB\"' services.json"
+        description: "String interpolation plus `-r` turns JSON into human-readable lines. This is usually the last stage of a pipeline, not something to feed back into another jq."
+        output: |
+          nginx uses 42MB
+          postgres uses 310MB
+          redis uses 0MB
+          worker uses 128MB
+        level: intermediate
+        tags: [beginner]
+
+  - title: "Counting and aggregating"
+    intro: "The questions you actually want answered about a collection: how many, how much, which is biggest, how do they group."
+    examples:
+      - title: "Count the elements of an array"
+        code: jq '.users | length' api-response.json
+        description: "`length` counts elements of an array, keys of an object, and characters of a string, one word covering what three different tools would do on text."
+        output: |
+          3
+        level: basic
+        tags: [beginner]
+      - title: "Count the records in a top-level array"
+        code: jq 'length' services.json
+        description: "No path needed when the array is the whole document. The `wc -l` of JSON, and correct where [wc](/commands/wc/) would not be, since this file is a single line."
+        output: |
+          4
+        level: basic
+        tags: [beginner]
+      - title: "Total a numeric field across every record"
+        code: jq '[.[].memory_mb] | add' services.json
+        description: "Collect the field into an array with `[...]`, then `add` sums it. `add` needs an array rather than a stream, which is why the brackets are not optional here."
+        output: |
+          480
+        level: intermediate
+        tags: [beginner]
+      - title: "Average a numeric field"
+        code: jq 'map(.memory_mb) | add / length' services.json
+        description: "There is no `average` builtin; `add / length` is the idiom. Both operate on the same array, so `map` has to come first."
+        output: |
+          120
+        level: intermediate
+      - title: "Get min, max and total in one pass"
+        code: "jq -c 'map(.memory_mb) | {min: min, max: max, total: add}' services.json"
+        description: "Building an object out of several aggregates reads better than running jq three times, and parses the input only once."
+        output: |
+          {"min":0,"max":310,"total":480}
+        level: intermediate
+      - title: "Find the record with the largest value"
+        code: jq -c 'max_by(.memory_mb)' services.json
+        description: "`max_by` returns the whole element rather than just the field, which is what you wanted: 'which service' is the question and 310 is only the evidence. `min_by` is the counterpart."
+        output: |
+          {"name":"postgres","state":"running","restarts":2,"memory_mb":310}
+        level: intermediate
+        tags: [beginner]
+      - title: "Sort records by a field"
+        code: jq -c 'sort_by(.memory_mb) | map(.name)' services.json
+        description: "`sort_by(f)` orders an array by whatever `f` returns. For descending order, negate a numeric key with `sort_by(-.memory_mb)` rather than reaching for `reverse`."
+        output: |
+          ["redis","nginx","worker","postgres"]
+        level: intermediate
+        tags: [beginner]
+      - title: "Group records and count each group"
+        code: "jq -c 'group_by(.state) | map({state: .[0].state, count: length})' services.json"
+        description: "`group_by` returns an array of arrays, one per distinct value, so the `map` afterwards is what turns each group back into a summary. The JSON equivalent of `sort | uniq -c`."
+        output: |
+          [{"state":"running","count":3},{"state":"stopped","count":1}]
+        level: advanced
+        tags: [beginner]
+
+  - title: "jq in shell scripts and pipelines"
+    intro: "`-r` gets values out to the shell, `--arg` gets shell values safely in, and `-e` turns a query into an exit status."
+    examples:
+      - title: "Loop over values in the shell"
+        code: "jq -r '.[] | .name' services.json | while read -r svc; do echo \"checking $svc\"; done"
+        description: "`-r` is what makes this work: without it every value arrives with its quotes still attached, and `$svc` would be `\"nginx\"` rather than `nginx`."
+        output: |
+          checking nginx
+          checking postgres
+          checking redis
+          checking worker
+        level: intermediate
+        tags: [scripting, beginner]
+      - title: "Build a command line from the results"
+        code: "jq -r '.[] | select(.state == \"stopped\") | .name' services.json | xargs -r -I{} echo systemctl start {}"
+        description: "`xargs -r` does nothing at all when the input is empty, which is exactly right when the filter found no problems. Drop the `echo` to actually run it, and see [systemctl](/commands/systemctl/) for what it would do."
+        output: |
+          systemctl start redis
+        level: advanced
+        tags: [scripting, systemd]
+      - title: "Pass a shell variable into a filter safely"
+        code: jq --arg name Bob -c '.users[] | select(.name == $name)' api-response.json
+        description: "`--arg` defines a jq variable from a shell value. Always use it rather than interpolating into the filter string: a value containing a quote would otherwise change what the filter means."
+        output: |
+          {"id":2,"name":"Bob","email":"bob@example.com","active":false,"roles":["dev"]}
+        level: intermediate
+        tags: [scripting, beginner]
+      - title: "Build JSON from shell values, with no input file"
+        code: "jq -n --arg host deb1 --argjson port 8080 -c '{host: $host, port: $port}'"
+        description: "`-n` (`--null-input`) runs the filter with no input at all, so jq becomes a JSON writer rather than a reader. `--arg` always produces a string; `--argjson` parses its value, which is how `port` stays a number."
+        output: |
+          {"host":"deb1","port":8080}
+        level: advanced
+        tags: [scripting]
+      - title: "Use a query as a script's exit status"
+        code: "jq -e '.workers' config.json; echo \"exit $?\""
+        description: "`-e` (`--exit-status`) exits 0 when the last result was neither `null` nor `false`, and 1 otherwise, which is what lets `if jq -e ...; then` test the contents of a JSON file directly."
+        output: |
+          4
+          exit 0
+        level: intermediate
+        tags: [scripting]
+      - title: "A missing key exits 1 under -e"
+        code: "jq -e '.missing' config.json; echo \"exit $?\""
+        description: "The output is still `null`, but the exit status now says so. This pairing is what makes jq usable in a conditional at all. See [exit codes and error handling](/concepts/exit-codes-and-error-handling/) for the rest of that story."
+        output: |
+          null
+          exit 1
+        level: intermediate
+        tags: [scripting]
+      - title: "The -e trap: false and missing look identical"
+        code: "jq -e '.server.tls.enabled' config.json; echo \"exit $?\""
+        description: >-
+          `.enabled` is present and set to `false`, and `-e` reports exactly the same 1 it would for
+          a key that does not exist. When the difference matters, test with `has("enabled")` and
+          ignore the exit status.
+        output: |
+          false
+          exit 1
+        level: advanced
+        tags: [scripting]
+      - title: "Emit CSV, with quoting handled correctly"
+        code: jq -r '.[] | [.name, .state, .memory_mb] | @csv' services.json
+        description: "`@csv` takes an array and formats it as one CSV row, quoting strings and escaping embedded quotes properly. `@tsv` does the same with tabs, which is friendlier to [cut](/commands/cut/) and [awk](/commands/awk/)."
+        output: |
+          "nginx","running",42
+          "postgres","running",310
+          "redis","stopped",0
+          "worker","running",128
+        level: intermediate
+        tags: [scripting]
+      - title: "Query JSON that another command produced"
+        code: ip -j -4 addr show lo | jq -r '.[0].addr_info[0].local'
+        description: "A growing number of system tools speak JSON on request: `ip -j`, `journalctl -o json`, `systemctl --output=json`. That is the point where jq stops being a convenience and becomes the only sane way to read the output."
+        output: |
+          127.0.0.1
+        level: advanced
+        tags: [networking, sysadmin]
+
+  - title: "Streams of JSON, and writing the result back"
+    intro: "A file of one object per line is not an array, and jq treats the two differently. Editing operators change values in place, but getting the result back onto disk needs care."
+    examples:
+      - title: "Filter a file of one JSON object per line"
+        code: "jq -c 'select(.level == \"error\")' events.jsonl"
+        description: "jq reads consecutive JSON values as a stream, so an NDJSON log needs no `.[]` at all: the filter already runs once per record. This is [grep](/commands/grep/) for structured logs."
+        output: |
+          {"ts":"2026-08-19T09:02:03Z","level":"error","msg":"connection refused"}
+        level: intermediate
+        tags: [monitoring, beginner]
+      - title: "Format matching log records as text"
+        code: "jq -r 'select(.level != \"info\") | \"\\(.level): \\(.msg)\"' events.jsonl"
+        description: "Select, then interpolate: the standard shape for turning a structured log into something readable. See [journalctl](/commands/journalctl/) for where JSON logs come from on a Debian system."
+        output: |
+          warn: slow query
+          error: connection refused
+        level: intermediate
+        tags: [monitoring]
+      - title: "Treat a stream as one array instead"
+        code: jq -s 'length' events.jsonl
+        description: "`-s` (`--slurp`) reads every input value into a single array before running the filter. Needed for anything that has to see the whole set at once: counting, sorting, totalling."
+        output: |
+          4
+        level: intermediate
+        tags: [beginner]
+      - title: "Aggregate across a whole NDJSON file"
+        code: "jq -s -c 'group_by(.level) | map({level: .[0].level, n: length})' events.jsonl"
+        description: "The same `group_by` as before, made possible by `-s`. Without the slurp, `group_by` runs once per record and dutifully groups each one on its own."
+        output: |
+          [{"level":"error","n":1},{"level":"info","n":2},{"level":"warn","n":1}]
+        level: advanced
+        tags: [monitoring]
+      - title: "Convert an array file into one object per line"
+        code: jq -c '.[]' services.json > services.jsonl && cat services.jsonl
+        description: "`.[]` plus `-c` is the array-to-NDJSON conversion, and `-s` is the way back. Between them they cover most of the format wrangling JSON tooling asks for."
+        output: |
+          {"name":"nginx","state":"running","restarts":0,"memory_mb":42}
+          {"name":"postgres","state":"running","restarts":2,"memory_mb":310}
+          {"name":"redis","state":"stopped","restarts":11,"memory_mb":0}
+          {"name":"worker","state":"running","restarts":1,"memory_mb":128}
+        level: intermediate
+      - title: "Set a value"
+        code: jq -c '.server.tls.enabled = true | .server' config.json
+        description: "`=` assigns to a path and emits the whole modified document, so the `| .server` afterwards is only there to keep the output short. jq never edits the file itself."
+        output: |
+          {"host":"deb1","port":8080,"tls":{"enabled":true}}
+        level: intermediate
+        tags: [beginner]
+      - title: "Update a value based on what it already was"
+        code: jq -c '.workers |= . * 2 | {workers}' config.json
+        description: "`|=` runs a filter against the current value and stores the result, where `=` needs the new value spelled out. The difference matters as soon as the new value depends on the old one."
+        output: |
+          {"workers":8}
+        level: advanced
+      - title: "Write the edited JSON back to its file"
+        code: "jq '.logging.level = \"debug\"' config.json > config.tmp && mv config.tmp config.json && jq -c .logging config.json"
+        description: "Write to a temporary file and rename it over the original. `mv` within one filesystem is atomic, so a reader sees either the old file or the new one and never a half-written one."
+        output: |
+          {"level":"debug","file":"/var/log/app.log"}
+        level: intermediate
+        tags: [scripting, beginner]
+      - title: "Never redirect jq onto its own input file"
+        code: jq '.workers = 8' config.json > config.json
+        description: >-
+          The shell truncates `config.json` to open the redirect, before jq has read a byte of it.
+          Verified in the sandbox: this leaves the file zero bytes long and the data gone. Use the
+          temporary-file form above instead, and see [pipes and
+          redirection](/concepts/pipes-and-redirection/) for why the shell does this.
+        danger: true
+        level: intermediate
+        tags: [scripting]
+      - title: "Indent with tabs instead of spaces"
+        code: jq --tab . config.json | head -4
+        description: "`--tab` indents with tab characters; `--indent N` sets a different number of spaces, up to 7. Useful when the result has to match a project's existing formatting."
+        output: |
+          {
+          	"server": {
+          		"host": "deb1",
+          		"port": 8080,
+        level: advanced
