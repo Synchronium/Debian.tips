@@ -12,6 +12,7 @@ it to check for updates.
 
 **Solution:**
 
+<!-- verify: skip tail -f never exits and the second line arrives from another terminal; verified by hand in the sandbox with a background writer appending to app.log, which printed exactly these two lines -->
 ```bash
 tail -f app.log
 ```
@@ -31,7 +32,10 @@ error: connection refused
 ```bash
 # Filter the live stream for a specific pattern
 tail -f app.log | grep --line-buffered "error"
+```
 
+<!-- verify: skip needs a concurrent rotation, and tail's inotify path does not fire for a replace on this container's overlay filesystem; verified by hand with `tail -F ---disable-inotify -s 0.2` plus a background rotation, which printed exactly this -->
+```bash
 # Follow a log that gets rotated (renamed and recreated) while you watch
 tail -F app.log
 ```

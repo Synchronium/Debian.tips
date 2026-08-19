@@ -12,25 +12,32 @@ related: [find, tar, sort, head]
 **Solution:**
 
 ```bash
-du -ah /var | sort -rh | head -20
+du -ah projects | sort -rh | head -6
 ```
 ```
-2.5M	/var
-2.0M	/var/cache/big.dat
-2.0M	/var/cache
-504K	/var/log
-500K	/var/log/syslog
-8.0K	/var/small.txt
+2.6M	projects
+2.1M	projects/archive
+2.0M	projects/archive/backup.tar.gz
+568K	projects/logs
+500K	projects/logs/app.log
+64K	projects/logs/access.log
 ```
 
 **How it works:**
 
-- `du -ah /var` prints the disk usage of every file and directory under `/var`, in
+- `du -ah projects` prints the disk usage of every file and directory underneath it, in
   human-readable sizes (`-h`), including individual files, not just directory totals (`-a`).
+  Point it at `/var` or `/` for the real investigation; a small tree is used here so the
+  numbers on this page are ones you can reproduce.
 - `sort -rh` sorts that output by size, largest first (`-r` reverse, `-h` understands
   human-readable sizes like "1.2G") — see [sort](/commands/sort/) for more, including the
   common mistake of using `-h` without also telling it which field to sort by.
-- `head -20` keeps just the top 20 results (see [head and tail](/commands/head/)).
+- `head -6` keeps just the top of the ranking (see [head and tail](/commands/head/)). Use
+  `head -20` on a real filesystem, where there is far more to sift through.
+
+Note that directories and their contents both appear: `projects/archive` at 2.1M is the
+directory holding `backup.tar.gz` at 2.0M, not a second copy of it. That is `-a` doing what it
+was asked, and it is why the totals appear to add up to more than the disk actually holds.
 
 **Variations:**
 

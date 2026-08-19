@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl rsync less man-db procps iproute2 iputils-ping \
     cron python3 wget \
     sudo ca-certificates openssl \
-    jq \
+    jq lsof psmisc \
     && rm -rf /var/lib/apt/lists/*
 
 # A container cannot load kernel modules — the host owns the kernel — so this unit fails on

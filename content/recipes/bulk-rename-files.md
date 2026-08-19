@@ -16,6 +16,7 @@ a shared prefix, and doing it by hand one file at a time isn't practical.
 for f in *.JPG; do
   mv -- "$f" "${f%.JPG}.jpg"
 done
+ls *.jpg
 ```
 ```
 IMG_0001.jpg
@@ -29,6 +30,8 @@ IMG_0003.jpg
   iteration.
 - `${f%.JPG}` strips the literal suffix `.JPG` from the end of `$f` (a bash parameter expansion,
   not a regex), leaving the base name to rebuild with a new extension.
+- `mv` itself prints nothing on success, which is why the loop ends with `ls *.jpg` — the
+  listing above is the proof the rename happened, not output from the loop.
 - `mv -- "$f" "..."` renames the file. The `--` tells `mv` that no more flags follow, which
   matters if a filename happens to start with a `-`. Quoting `"$f"` is what makes this safe for
   filenames containing spaces (see

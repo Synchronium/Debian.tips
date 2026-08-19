@@ -14,12 +14,18 @@ have SSH access to each other but nothing more elaborate set up.
 
 ```bash
 scp report.pdf deb1:/home/user/backups/
+ssh deb1 ls /home/user/backups/
+```
+```
+report.pdf
 ```
 
 **How it works:**
 
 - `scp` copies over the same SSH connection you'd use to log in, so it needs no separate server
-  or setup beyond working SSH access. `deb1` here is a host alias from `~/.ssh/config`, not a
+  or setup beyond working SSH access. It prints a progress meter while a transfer is running and
+  **nothing at all on success** once it finishes in a script or a pipeline, which is why the
+  listing above is the confirmation rather than anything `scp` said. `deb1` here is a host alias from `~/.ssh/config`, not a
   raw hostname — see [ssh](/commands/ssh/) for setting one up along with key-based auth so
   neither `scp` nor `rsync` prompts for a password.
 - `deb1:/home/user/backups/` is `host:path`; the trailing slash means "into this directory,"
@@ -32,7 +38,10 @@ scp report.pdf deb1:/home/user/backups/
 ```bash
 # Copy an entire directory tree
 scp -r project/ deb1:/home/user/
+```
 
+<!-- verify: shape the byte counts, the transfer rate and the speedup ratio depend on the files and the link -->
+```bash
 # rsync: only transfers what's actually changed
 rsync -avz project/ deb1:/home/user/project/
 ```
@@ -40,8 +49,8 @@ rsync -avz project/ deb1:/home/user/project/
 sending incremental file list
 a.txt
 
-sent 190 bytes  received 36 bytes  452.00 bytes/sec
-total size is 23  speedup is 0.10
+sent 140 bytes  received 35 bytes  350.00 bytes/sec
+total size is 18  speedup is 0.10
 ```
 
 `rsync -avz` (`-a` archive mode, preserving permissions and timestamps; `-v` verbose; `-z`

@@ -52,10 +52,10 @@ will behave identically on your machine. A different Debian release ships differ
 versions with different output. A container is not a full system: no systemd unless a page
 asks for it, no real hardware, no other users.
 
-It also does not yet mean every page. Command pages are replayed in full. The written
-articles are being brought into the same check one at a time, each needing a script that puts
-a container into the state the article describes, and until an article has one its output
-blocks are hand-checked like anybody else's. The counts above are of what is genuinely
+It also does not mean every block. A page opts into the replay by having a setup script that
+puts a container into the state it describes, and the counts above are of the pages that do;
+the number of command pages still without one is stated above, and a page whose blocks are
+every one of them exempt is not counted at all. The counts are of what is genuinely
 automated, never of what is intended.
 
 Where an example needs something a container cannot provide, the page says so rather than
