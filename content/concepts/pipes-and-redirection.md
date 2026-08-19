@@ -148,7 +148,8 @@ some-long-command | tee output.log
 ```
 
 `tee` reads stdin, writes an unmodified copy to both stdout and the named file, and the pipeline
-continues from there if there's more after it.
+continues from there if there's more after it. The [tee](/commands/tee/) page covers the rest,
+including why `sudo echo x > /etc/file` fails and `tee` is the fix.
 
 ## Common misconceptions
 

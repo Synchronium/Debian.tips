@@ -33,6 +33,14 @@ The shared-library row matters most. `normalise.ts` is used by both sides of eve
 so a bug there corrupts a page and then certifies the corruption. Never push a change to it on
 the strength of one page's replay.
 
+**Let the replay have the machine to itself.** Backgrounding it and carrying on with
+`npm run check` or `pa11y-ci` is the obvious move and it produces false failures: measured
+2026-08-19, the same commit replayed 41/41 in 158s alone, and reported `packages-kept-back` and
+`release-channels` as failing when run alongside a build and a headless-browser pass that stretched
+it to 413s. Both of those pages stand up a local apt repository and wait for it, which is what
+gives under load. A replay that says a true page is lying is worse than a slow one — it is the one
+result on this project nobody can afford to start discounting.
+
 The replay needs Docker and takes about a minute, which is why it is a separate CI job and not
 part of `check`. A green `check` says the generator works; only the replay says the pages are
 true.

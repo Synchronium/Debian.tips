@@ -320,7 +320,7 @@ sections:
         tags: [sysadmin]
       - title: "Add a system job as a drop-in file"
         code: sudo tee /etc/cron.d/backup-nightly <<< '0 3 * * * root /usr/local/bin/backup.sh'
-        description: "Each file in `/etc/cron.d/` is a mini crontab in its own right — same six fields (five time fields plus user), no need to touch `/etc/crontab` directly. Picked up automatically, no reload required."
+        description: "Each file in `/etc/cron.d/` is a mini crontab in its own right — same six fields (five time fields plus user), no need to touch `/etc/crontab` directly. Picked up automatically, no reload required. [tee](/commands/tee/) is here rather than a redirect because `sudo` does not extend to the shell's `>`."
         level: intermediate
         tags: [sysadmin]
       - title: "Drop a script into the daily run instead of scheduling it yourself"

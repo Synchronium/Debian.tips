@@ -79,6 +79,7 @@ export const COMMAND_GROUPS: { title: string; commands: string[] }[] = [
       "grep",
       "sed",
       "awk",
+      "jq",
       "sort",
       "uniq",
       "cut",
@@ -116,7 +117,7 @@ export const COMMAND_GROUPS: { title: string; commands: string[] }[] = [
   { title: "Users & permissions", commands: ["chmod", "chown", "sudo", "managing-users"] },
   {
     title: "Shell & automation",
-    commands: ["xargs", "watch", "cron", "date", "env-export", "history", "alias"],
+    commands: ["xargs", "watch", "crontab", "date", "env-export", "history", "alias"],
   },
 ];
 export const COMMAND_GROUP_FALLBACK = "More commands";

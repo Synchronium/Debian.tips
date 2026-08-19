@@ -493,7 +493,7 @@ sections:
         tags: [one-liners, beginner]
       - title: "Preview sorted output while also saving it"
         code: sort numbers.txt -n | tee numbers-sorted-final.txt | head -n 2
-        description: "tee writes the full sorted stream to a file and still passes it through to head, so you can sanity-check the first few lines without a second pass over the data."
+        description: "[tee](/commands/tee/) writes the full sorted stream to a file and still passes it through to head, so you can sanity-check the first few lines without a second pass over the data."
         output: |
           2
           4

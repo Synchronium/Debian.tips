@@ -416,7 +416,7 @@ sections:
           printf '[Service]\nRestart=always\n' | sudo tee /etc/systemd/system/deploy-agent.service.d/restart.conf >/dev/null
           sudo systemctl daemon-reload
           systemctl show deploy-agent -p Restart --value
-        description: "A drop-in changes the settings it names and leaves the rest of the unit alone, so a package upgrade can replace the original without discarding your change. `systemctl edit deploy-agent` creates the same file interactively."
+        description: "A drop-in changes the settings it names and leaves the rest of the unit alone, so a package upgrade can replace the original without discarding your change. `systemctl edit deploy-agent` creates the same file interactively. The [tee](/commands/tee/) is what lets an unprivileged shell write into `/etc`."
         output: |2
           always
         level: advanced

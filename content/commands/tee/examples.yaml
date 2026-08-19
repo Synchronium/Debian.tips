@@ -1,0 +1,302 @@
+command: tee
+fixtures:
+  - name: wordlist.txt
+    note: "the same wordlist the [sort](/commands/sort/) and [uniq](/commands/uniq/) pages use — duplicates and mixed case"
+    content: |
+      banana
+      apple
+      Cherry
+      apple
+      date
+      banana
+      apple
+      Elderberry
+      cherry
+  - name: access.log
+    note: "standard combined log format, for the examples that watch a pipeline go past"
+    content: |
+      203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
+      203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
+      198.51.100.7 - - [13/Aug/2026:09:14:22] "GET /index.html HTTP/1.1" 200 512
+      198.51.100.7 - - [13/Aug/2026:09:14:25] "GET /missing.html HTTP/1.1" 404 162
+      203.0.113.5 - - [13/Aug/2026:09:15:47] "GET /index.html HTTP/1.1" 200 512
+      192.0.2.44 - - [13/Aug/2026:09:16:03] "POST /login HTTP/1.1" 302 0
+      192.0.2.44 - - [13/Aug/2026:09:16:04] "GET /dashboard HTTP/1.1" 200 4021
+      198.51.100.7 - - [13/Aug/2026:09:18:51] "GET /index.html HTTP/1.1" 200 512
+      203.0.113.5 - - [13/Aug/2026:09:19:10] "GET /api/status HTTP/1.1" 500 89
+      192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
+sections:
+  - title: "Save a copy without losing the stream"
+    intro: "`>` sends output to a file *instead of* the screen. `tee` sends it to a file *as well as* the screen, and on to the next command in the pipeline if there is one."
+    examples:
+      - title: "Write output to a file and still see it"
+        code: sort wordlist.txt | tee sorted.txt
+        description: "The sorted list appears on screen exactly as it would without `tee`, and `sorted.txt` now holds the same bytes. Compare `sort wordlist.txt > sorted.txt`, which shows you nothing."
+        output: |
+          Cherry
+          Elderberry
+          apple
+          apple
+          apple
+          banana
+          banana
+          cherry
+          date
+        level: basic
+        tags: [beginner]
+      - title: "Keep the file, skip the screen"
+        code: sort -u wordlist.txt | tee unique.txt > /dev/null && cat unique.txt
+        description: "Redirecting `tee`'s own output to `/dev/null` throws away the copy that would have gone to the terminal. Pointless on its own — that is just `>` — but it is the standard shape for `sudo tee`, further down."
+        output: |
+          Cherry
+          Elderberry
+          apple
+          banana
+          cherry
+          date
+        level: intermediate
+      - title: "Put tee in the middle of a pipeline"
+        code: sort wordlist.txt | tee sorted.txt | wc -l
+        description: "`wc` receives the full stream unchanged while `sorted.txt` captures it in passing. This is what `tee` is for: a tap on a pipe, not a fitting on the end of one."
+        output: |
+          9
+        level: basic
+        tags: [beginner]
+      - title: "Prove the tap and the pipeline agree"
+        code: sort -u wordlist.txt | tee unique.txt | wc -l && wc -l unique.txt
+        description: "Six lines counted downstream, six lines in the file. `tee` copies bytes and changes nothing, which is what makes it safe to drop into a pipeline you are debugging."
+        output: |
+          6
+          6 unique.txt
+        level: intermediate
+      - title: "Write the same stream to several files at once"
+        code: head -3 wordlist.txt | tee copy-a.txt copy-b.txt
+        description: "Every filename argument gets its own complete copy. There is no flag for this — extra files are just extra arguments."
+        output: |
+          banana
+          apple
+          Cherry
+        level: basic
+        tags: [beginner]
+      - title: "Confirm every copy is identical"
+        code: head -3 wordlist.txt | tee copy-a.txt copy-b.txt > /dev/null && tail -n +1 copy-a.txt copy-b.txt
+        description: "`tail -n +1` on several files prints each with a header, which is a quick way to show two files side by side without running `diff`."
+        output: |
+          ==> copy-a.txt <==
+          banana
+          apple
+          Cherry
+
+          ==> copy-b.txt <==
+          banana
+          apple
+          Cherry
+        level: intermediate
+      - title: "Use tee with no filenames at all"
+        code: tee < wordlist.txt | head -3
+        description: "With no file arguments `tee` is simply `cat`: stdin to stdout, nothing captured. Occasionally useful when a script builds the argument list and it comes out empty."
+        output: |
+          banana
+          apple
+          Cherry
+        level: advanced
+
+  - title: "Overwriting and appending"
+    examples:
+      - title: "tee overwrites by default"
+        code: printf 'old\n' > notes.txt && printf 'new\n' | tee notes.txt && cat notes.txt
+        description: "Like `>`, `tee` truncates the file before writing. The output appears twice here because `tee` printed it once and `cat` read it back."
+        output: |
+          new
+          new
+        level: basic
+        tags: [beginner]
+      - title: "Append instead, with -a"
+        code: printf 'first run\n' | tee build.log && printf 'second run\n' | tee -a build.log && cat build.log
+        description: "`-a` (`--append`) is `tee`'s equivalent of `>>`. The two `tee` calls print as they go, then `cat` shows the accumulated file."
+        output: |
+          first run
+          second run
+          first run
+          second run
+        level: basic
+        tags: [beginner]
+      - title: "-a creates the file if it is not there yet"
+        code: printf 'a\nb\n' | tee -a fresh.log && cat fresh.log
+        description: "No need to touch the file first. `-a` only means \"do not truncate\", not \"the file must already exist\"."
+        output: |
+          a
+          b
+          a
+          b
+        level: intermediate
+
+  - title: "Writing files your shell cannot"
+    intro: "The reason most people meet `tee`. A redirect is performed by the shell, and the shell is still you even when the command after `sudo` is not."
+    examples:
+      - title: "The problem: a redirect into a file you do not own"
+        code: echo 'vm.swappiness=10' > /etc/sysctl.d/99-swappiness.conf
+        description: "Fails with `Permission denied` as an ordinary user. Verified in the sandbox: nothing is written and the shell reports the failure before `echo` ever runs."
+        level: basic
+        tags: [beginner]
+      - title: "The trap: sudo does not fix it"
+        code: sudo echo 'vm.swappiness=10' > /etc/sysctl.d/99-swappiness.conf
+        description: >-
+          Exactly the same `Permission denied`, which is the surprising part. `sudo` elevates
+          `echo`, but the `>` is carried out by your shell before `sudo` is involved at all — and
+          your shell has no more right to write `/etc` than it did a moment ago. Verified in the
+          sandbox: the file is still not created.
+        danger: true
+        level: intermediate
+        tags: [beginner]
+      - title: "The fix: pipe into sudo tee"
+        code: echo 'vm.swappiness=10' | sudo tee /etc/sysctl.d/99-swappiness.conf
+        description: "Now the process doing the writing is the one that was elevated. `tee` echoes what it wrote, which is why you see the line twice in a terminal — once from `tee`, and it is the only copy."
+        output: |
+          vm.swappiness=10
+        level: basic
+        tags: [beginner, sysadmin]
+      - title: "Silence the echo with > /dev/null"
+        code: echo 'vm.swappiness=10' | sudo tee /etc/sysctl.d/99-swappiness.conf > /dev/null && cat /etc/sysctl.d/99-swappiness.conf
+        description: "The idiomatic form. Without `> /dev/null` every line you write is repeated back at you, which is noise on a multi-line file. The `cat` here just proves the write landed."
+        output: |
+          vm.swappiness=10
+        level: intermediate
+        tags: [sysadmin, beginner]
+      - title: "Write a whole config file from a heredoc"
+        code: |-
+          sudo tee /etc/sysctl.d/99-swappiness.conf > /dev/null <<'EOF'
+          # Reduce swap pressure on a database host.
+          vm.swappiness=10
+          vm.vfs_cache_pressure=50
+          EOF
+          cat /etc/sysctl.d/99-swappiness.conf
+        description: "The pattern for creating a root-owned config file in one step. Quoting the delimiter as `'EOF'` stops the shell expanding `$` and backticks inside the block, which matters for anything containing a variable you meant literally."
+        output: |
+          # Reduce swap pressure on a database host.
+          vm.swappiness=10
+          vm.vfs_cache_pressure=50
+        level: intermediate
+        tags: [sysadmin, scripting]
+      - title: "Check who ends up owning the file"
+        code: echo 'vm.swappiness=10' | sudo tee /etc/sysctl.d/99-swappiness.conf > /dev/null && stat -c '%U %G %a %s' /etc/sysctl.d/99-swappiness.conf
+        description: "Owned by `root`, mode 644, because `tee` created it as the elevated user. `stat -c` is used here rather than `ls -l` because it prints no timestamp — see [chmod](/commands/chmod/) for what the mode means."
+        output: |
+          root root 644 17
+        level: advanced
+        tags: [permissions, sysadmin]
+      - title: "Append to a root-owned file"
+        code: echo 'vm.vfs_cache_pressure=50' | sudo tee -a /etc/sysctl.d/99-swappiness.conf > /dev/null && cat /etc/sysctl.d/99-swappiness.conf
+        description: "`sudo tee -a` is the elevated `>>`. The same trap applies: `sudo echo x >> /etc/file` fails for exactly the reason the plain redirect did."
+        output: |
+          vm.vfs_cache_pressure=50
+        level: intermediate
+        tags: [sysadmin]
+
+  - title: "Watching a pipeline go past"
+    intro: "Dropping `tee` between two stages is the cheapest way to find out which stage broke, because it captures the intermediate result without changing it."
+    examples:
+      - title: "Count matches and keep them"
+        code: grep ' 200 ' access.log | tee matched.log | wc -l
+        description: "Seven successful requests, and `matched.log` holds the lines themselves so you can look at them without re-running [grep](/commands/grep/)."
+        output: |
+          7
+        level: basic
+        tags: [beginner, monitoring]
+      - title: "Capture a full ranking while showing only the top of it"
+        code: sort -k9 -rn access.log | tee ranked.log | head -2
+        description: "`head` closes the pipe after two lines, but `tee` has already written every line it saw to the file. The full ranking is on disk, the interesting part is on screen."
+        output: |
+          192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
+          192.0.2.44 - - [13/Aug/2026:09:16:04] "GET /dashboard HTTP/1.1" 200 4021
+        level: intermediate
+        tags: [monitoring]
+      - title: "See the data and the summary at the same time"
+        code: sort -u wordlist.txt | tee /dev/stderr | wc -l
+        description: "Writing to `/dev/stderr` puts the stream on your terminal while stdout carries on to `wc`. Nothing is captured to disk, which is what you want when you only need to look once."
+        output: |
+          Cherry
+          Elderberry
+          apple
+          banana
+          cherry
+          date
+          6
+        level: advanced
+      - title: "Fan a stream into another command, not a file"
+        code: sort -u wordlist.txt | tee >(wc -l > count.txt) > /dev/null
+        description: "`>(...)` is bash process substitution: it looks like a filename to `tee`, but it is a pipe into the command inside. Handy for running two analyses over one stream. The two branches finish independently, so read `count.txt` in a later step rather than immediately."
+        level: advanced
+        tags: [scripting]
+
+  - title: "Exit status, errors, and one way to lose your file"
+    examples:
+      - title: "tee hides the exit status of the command before it"
+        code: "false | tee out.txt; echo \"exit $?\""
+        description: "`$?` is `tee`'s status, not `false`'s, because the shell reports the last command in a pipeline. A pipeline that failed halfway therefore looks like a success."
+        output: |
+          exit 0
+        level: intermediate
+        tags: [scripting]
+      - title: "Get the real status with pipefail"
+        code: "set -o pipefail; false | tee out.txt; echo \"exit $?\""
+        description: "`set -o pipefail` makes a pipeline report the first non-zero status in it. Worth setting in any script that pipes through `tee` and then checks whether the work succeeded."
+        output: |
+          exit 1
+        level: advanced
+        tags: [scripting]
+      - title: "Or read the status of a specific stage"
+        code: "false | tee out.txt; echo \"pipestatus ${PIPESTATUS[0]}\""
+        description: "`PIPESTATUS` is a bash array holding one status per pipeline stage. `[0]` is the command before the first pipe. See [exit codes and error handling](/concepts/exit-codes-and-error-handling/) for the wider story."
+        output: |
+          pipestatus 1
+        level: advanced
+        tags: [scripting]
+      - title: "tee will not create a missing directory"
+        code: echo hi | tee nodir/file.txt
+        description: "The error goes to stderr and `tee` still writes the stream to stdout, then exits 1. It creates files, never directories — `mkdir -p` first if the path might not exist."
+        output: |
+          tee: nodir/file.txt: No such file or directory
+          hi
+        level: intermediate
+      - title: "What tee does when a write fails"
+        code: "echo hi | tee /dev/full; echo \"exit $?\""
+        description: "`/dev/full` is a device that is always out of space, which is how you test this without filling a disk. `tee` reports the failing file by name and exits non-zero; `--output-error` tunes whether it also gives up on the remaining ones."
+        output: |
+          hi
+          tee: /dev/full: No space left on device
+          exit 1
+        level: advanced
+        tags: [scripting]
+      - title: "Never tee into the file you are reading"
+        code: sort -n big.txt | tee big.txt | wc -l
+        description: >-
+          `tee` truncates its output file as it starts, while the command on the left is still
+          reading the same file, so the input is destroyed underneath it. Measured in the sandbox
+          on a 200,000-line file: this reported **0** lines and left the file empty, and the
+          `cat` version of the same mistake kept 44,176 lines on one run — the amount that
+          survives is a race, which is why it can look harmless on a small file. Write to a
+          temporary file and `mv` it into place instead.
+        danger: true
+        level: intermediate
+      - title: "Discard the copy entirely"
+        code: echo hi | tee /dev/null
+        description: "Writing to `/dev/null` keeps the stream flowing to stdout and captures nothing. Occasionally the right answer when a script's filename variable is legitimately empty."
+        output: |
+          hi
+        level: advanced
+      - title: "Chain tee more than once"
+        code: seq 1 5 | tee a.txt | tee b.txt | tail -2
+        description: "Each `tee` taps the stream and passes it on, so both files get the whole thing. One `tee a.txt b.txt` is the clearer way to write this, but chained taps turn up in pipelines that were built up a stage at a time."
+        output: |
+          4
+          5
+        level: advanced
+      - title: "Ignore Ctrl-C while writing"
+        code: printf 'deploy\n' | tee -i deploy.log && cat deploy.log
+        description: "`-i` (`--ignore-interrupts`) makes `tee` ignore SIGINT, so a Ctrl-C aimed at a long-running command upstream does not also kill the thing recording its output. The log survives the interrupt with everything written up to that point."
+        output: |
+          deploy
+          deploy
+        level: advanced
+        tags: [scripting]
