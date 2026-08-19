@@ -12,7 +12,7 @@ export function notFoundPage(cssHref: string): string {
 <p>The page you're looking for doesn't exist or has moved. Try searching for it, or
 browse a category below.</p>
 <p><button type="button" class="button" data-search-open>Search debian.tips</button></p>
-<ul class="tags">${categoryLinks}</ul>`;
+<ul class="browse-categories">${categoryLinks}</ul>`;
 
   return layout({
     title: "Page not found",

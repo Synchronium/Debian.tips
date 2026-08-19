@@ -2,7 +2,8 @@ import { html, raw } from "../html.js";
 import { layout } from "./layout.js";
 import { pageCard } from "./partials/card.js";
 import { CATEGORY_META, FEATURED_PATHS, NAV_ORDER, SITE, STANDALONE_PAGES } from "../config.js";
-import type { Page } from "../content/loader.js";
+import { type Page, isCommandPage } from "../content/loader.js";
+import type { Tier } from "../content/schema.js";
 
 /** Homepage ordering, in priority order: flagship command pages first, then most
  * recently updated. `pages` arrives sorted by slug, so without this the preview would
@@ -10,12 +11,20 @@ import type { Page } from "../content/loader.js";
  * and on /commands/ the big reference pages (grep, find, sed) would be crowded out by
  * whatever happens to sort early. Only categories with more than six pages actually
  * truncate; for the rest this just reorders. */
-const TIER_RANK: Record<string, number> = { flagship: 0, standard: 1, light: 2 };
+const TIER_RANK: Record<Tier, number> = { flagship: 0, standard: 1, light: 2 };
+
+/** Pages with no tier — everything but a command page — sort after every tiered one, on date. */
+const UNTIERED_RANK = Object.keys(TIER_RANK).length;
 
 function homepageOrder(a: Page, b: Page): number {
-  const rank = (p: Page): number => (p.tier ? (TIER_RANK[p.tier] ?? 3) : 3);
+  const rank = (p: Page): number => (isCommandPage(p) ? TIER_RANK[p.tier] : UNTIERED_RANK);
   return rank(a) - rank(b) || b.updated.getTime() - a.updated.getTime();
 }
+
+/** How many cards each category shows on the homepage before "see all". Small on purpose: the
+ *  homepage is a table of contents, not a listing — `PAGE_SIZE` in partials/pager.ts is the
+ *  number for pages whose job is to list things. */
+const HOME_CARDS_PER_CATEGORY = 6;
 
 export function homePage(pages: Page[], cssHref: string): string {
   const byUrl = new Map(pages.map((p) => [p.url, p]));
@@ -25,7 +34,7 @@ export function homePage(pages: Page[], cssHref: string): string {
     const catPages = pages
       .filter((p) => p.category === cat)
       .sort(homepageOrder)
-      .slice(0, 6);
+      .slice(0, HOME_CARDS_PER_CATEGORY);
     if (catPages.length === 0) return "";
     return html`<section class="home-category">
 <h2><a href="${CATEGORY_META[cat].path}">${CATEGORY_META[cat].label}</a></h2>

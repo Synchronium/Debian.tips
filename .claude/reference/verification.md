@@ -42,7 +42,7 @@ npx tsx scripts/verify-examples.ts "$name" wc scripts/fixtures/wc.sh   # -> "wc 
 `check` job, because "the generator is broken" and "a page is lying" want different people looking
 at them. It stays out of `npm run check` so that command needs nothing but Node: the replay needs
 Docker, and a check you can't run without a daemon isn't one to fold into the everyday gate. All
-seventeen pages replay in under 30 seconds; a cold CI run is dominated by building the sandbox
+the whole site replays in roughly two and a half minutes; a cold CI run adds building the sandbox
 image, which the workflow does as its own step so the log says which half any slowness is in.
 
 That invocation is correct for every page. Some pages have to replay as the unprivileged
@@ -76,8 +76,11 @@ bytes made visible with `sed "s/\r/␍/"`, or several files shown together with 
 The rule is that every rendered block is something a reader could actually produce; `from:` is
 never rendered, it only keeps the block honest.
 
-Every command page replays at 100% — 535 outputs across all seventeen. If you touch a
-covered page, re-run its replay; if you add examples to an uncovered one, consider adding them.
+Every page with a setup script replays at 100%; how many that is, and how many outputs it
+covers, is counted onto the about page at build time rather than written down anywhere. If you
+touch a covered page, re-run its replay; if you add examples to an uncovered one, consider adding
+a setup script — an uncovered command page is also counted, as the number of pages nothing
+re-runs.
 
 An example whose output is real but can't reproduce byte for byte — it carries a PID, an uptime,
 a memory figure — declares `volatile:` with a note saying what differs. The note renders above the
@@ -113,7 +116,7 @@ silently strips that padding — such outputs need `output: |2`.
 
 Concepts, scripting lessons, recipes and Debian articles state the same kind of claim as a
 command page, but as Markdown rather than YAML: a ```` ```bash ```` fence followed by the output
-it produced. `scripts/verify-prose.ts` replays those, `scripts/lib/proseBlocks.ts` pairs them up,
+it produced. `scripts/verify-prose.ts` replays those, `src/content/proseBlocks.ts` pairs them up,
 and `npm run replay` runs both kinds. A prose page opts in by having `scripts/fixtures/<slug>.sh`;
 without one it is listed as not replayed rather than passed over silently.
 

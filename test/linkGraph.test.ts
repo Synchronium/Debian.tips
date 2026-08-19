@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Page } from "../src/content/loader.js";
+import type { ArticlePage, CommandPage } from "../src/content/loader.js";
 import {
   adjacency,
   affinity,
@@ -13,7 +13,9 @@ import {
  * but visible; an invented edge hides a real orphan behind a clean report, which is not.
  * These cases pin the second kind down. */
 
-function page(overrides: Partial<Page> & Pick<Page, "slug">): Page {
+/** A command page, since that is the shape carrying examples — the interesting case for the
+ *  graph, which reads links out of example descriptions as well as out of prose. */
+function page(overrides: Partial<CommandPage> & Pick<CommandPage, "slug">): CommandPage {
   return {
     category: "commands",
     url: `/commands/${overrides.slug}/`,
@@ -26,7 +28,29 @@ function page(overrides: Partial<Page> & Pick<Page, "slug">): Page {
     draft: false,
     html: "",
     toc: [],
+    tagline: "",
+    tier: "standard",
+    examples: { command: overrides.slug, sections: [] },
     ...overrides,
+  };
+}
+
+/** A page in a category other than `commands`, for the cases that care about two pages
+ *  sharing a slug or a category boundary. */
+function article(slug: string, category: ArticlePage["category"], tags: string[] = []): ArticlePage {
+  return {
+    category,
+    slug,
+    url: `/${category}/${slug}/`,
+    title: slug,
+    description: "",
+    tags,
+    updated: new Date("2026-08-17"),
+    related: [],
+    relatedLinks: [],
+    draft: false,
+    html: "",
+    toc: [],
   };
 }
 
@@ -96,35 +120,49 @@ describe("proseLinkTargets", () => {
 
 describe("collectEdges", () => {
   const pages = [
-    page({ slug: "grep", related: ["sed"] }),
+    page({ slug: "grep", relatedLinks: [{ url: "/commands/sed/", title: "sed" }] }),
     page({ slug: "sed", html: '<a href="/commands/grep/">grep</a>' }),
     page({ slug: "wc", html: '<a href="/commands/wc/">self</a> <a href="/tags/search/">tag</a>' }),
   ];
 
   it("records related: and prose links as distinct kinds", () => {
     expect(collectEdges(pages)).toEqual([
-      { from: "grep", to: "sed", kind: "related" },
-      { from: "sed", to: "grep", kind: "prose" },
+      { from: "/commands/grep/", to: "/commands/sed/", kind: "related" },
+      { from: "/commands/sed/", to: "/commands/grep/", kind: "prose" },
     ]);
   });
 
   it("drops a self-link and a link to a page that is not content", () => {
     // /tags/ and /about/ are real URLs with no page in the model; a self-link would give a
     // page an inbound link from itself and quietly rescue it from the orphan list.
-    const wcEdges = collectEdges(pages).filter((edge) => edge.from === "wc");
+    const wcEdges = collectEdges(pages).filter((edge) => edge.from === "/commands/wc/");
     expect(wcEdges).toEqual([]);
+  });
+
+  it("keeps two pages that share a slug apart", () => {
+    // A slug is not a page's identity: `commands/find` and `recipes/find` are different pages,
+    // and a graph keyed by slug would hand one page's inbound links to the other.
+    const shared = [
+      page({ slug: "find", html: '<a href="/recipes/find/">the recipe</a>' }),
+      article("find", "recipes"),
+    ];
+    expect(collectEdges(shared)).toEqual([{ from: "/commands/find/", to: "/recipes/find/", kind: "prose" }]);
   });
 });
 
 describe("adjacency", () => {
   it("counts two links from the same page as one route in", () => {
     const pages = [
-      page({ slug: "wc", related: ["grep"], html: '<a href="/commands/grep/">again</a>' }),
+      page({
+        slug: "wc",
+        relatedLinks: [{ url: "/commands/grep/", title: "grep" }],
+        html: '<a href="/commands/grep/">again</a>',
+      }),
       page({ slug: "grep" }),
     ];
     const edges = collectEdges(pages);
     expect(edges).toHaveLength(2);
-    expect(adjacency(pages, edges).inbound.get("grep")).toEqual(new Set(["wc"]));
+    expect(adjacency(pages, edges).inbound.get("/commands/grep/")).toEqual(new Set(["/commands/wc/"]));
   });
 });
 
@@ -132,13 +170,13 @@ describe("affinity", () => {
   it("ranks shared tags above a shared category", () => {
     const a = page({ slug: "a", tags: ["files", "search"] });
     const sameCategory = page({ slug: "b", tags: ["networking"] });
-    const sharedTag = page({ slug: "c", category: "recipes", url: "/recipes/c/", tags: ["files"] });
+    const sharedTag = article("c", "recipes", ["files"]);
     expect(affinity(a, sharedTag)).toBeGreaterThan(affinity(a, sameCategory));
   });
 
   it("is zero for pages with nothing in common", () => {
     const a = page({ slug: "a", tags: ["files"] });
-    const b = page({ slug: "b", category: "concepts", url: "/concepts/b/", tags: ["networking"] });
+    const b = article("b", "concepts", ["networking"]);
     expect(affinity(a, b)).toBe(0);
   });
 });

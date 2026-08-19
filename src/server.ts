@@ -1,10 +1,14 @@
 import { createServer } from "node:http";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { extname, join, sep } from "node:path";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import chokidar from "chokidar";
-import { DIST_DIR as DIST, ROOT } from "./paths.js";
-const PORT = 4321;
+import { build } from "./build.js";
+import { DIST_DIR as DIST, ROOT, OUTPUT_INDEX } from "./paths.js";
+/** 4321 is what the README, `.pa11yci.json` and the CI accessibility job all expect. `PORT` is
+ *  there for the case that decided it: something else already holding the port, where a dev
+ *  server that refuses to start is less useful than one on a different number. */
+const PORT = Number(process.env["PORT"] ?? 4321);
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -20,7 +24,19 @@ const MIME: Record<string, string> = {
 let building = false;
 let pendingRebuild = false;
 
-function build(): void {
+/** Rebuilds the site in this process.
+ *
+ *  It used to shell out to `npx tsx src/build.ts`, which paid for a Node start and a fresh
+ *  TypeScript transform on every keystroke-save, and threw away Shiki's highlighter — the
+ *  expensive thing to construct — along with the process. In-process, the highlighter is built
+ *  once and every rebuild after the first is markedly faster, which is what decides whether a
+ *  much larger site is still pleasant to edit.
+ *
+ *  The trade is that a change to `src/` itself is not picked up: the module graph is already
+ *  loaded, and re-importing it would leak a new copy of every module per rebuild. The watcher
+ *  below restarts the process for those instead, which is what a change to the generator
+ *  actually needs. */
+async function rebuild(): Promise<void> {
   if (building) {
     pendingRebuild = true;
     return;
@@ -28,20 +44,23 @@ function build(): void {
   building = true;
   const start = Date.now();
   try {
-    execFileSync("npx", ["tsx", "src/build.ts"], { cwd: ROOT, stdio: "inherit" });
+    await build();
     // build.ts wipes dist/ wholesale, so the index has to be regenerated alongside
     // every rebuild or /pagefind/pagefind.js 404s and search silently does nothing
-    // locally. Measured at ~250ms against a ~1.6s rebuild — cheap enough that
-    // keeping search working beats shaving the rebuild.
-    execFileSync("npx", ["pagefind", "--site", "dist"], { cwd: ROOT, stdio: "ignore" });
+    // locally. Run from node_modules/.bin rather than through `npx`, which spends longer
+    // working out where the binary is than the indexing itself takes.
+    execFileSync(join(ROOT, "node_modules", ".bin", "pagefind"), ["--site", "dist"], {
+      cwd: ROOT,
+      stdio: "ignore",
+    });
     console.log(`rebuilt in ${Date.now() - start}ms`);
   } catch (err) {
-    console.error("build failed:", (err as Error).message);
+    console.error("build failed:", err instanceof Error ? err.message : err);
   } finally {
     building = false;
     if (pendingRebuild) {
       pendingRebuild = false;
-      build();
+      void rebuild();
     }
   }
 }
@@ -60,8 +79,8 @@ function resolveFile(urlPath: string): string | null {
 
   const candidates =
     withoutTrailingSlash === "/" || withoutTrailingSlash === ""
-      ? [join(DIST, "index.html")]
-      : [join(DIST, withoutTrailingSlash), join(DIST, withoutTrailingSlash, "index.html")];
+      ? [join(DIST, OUTPUT_INDEX)]
+      : [join(DIST, withoutTrailingSlash), join(DIST, withoutTrailingSlash, OUTPUT_INDEX)];
 
   for (const candidate of candidates) {
     // path.join collapses ".." segments, so a URL like /../package.json can
@@ -101,16 +120,31 @@ const server = createServer((req, res) => {
   }
 });
 
-build();
+void rebuild();
 
-const watcher = chokidar.watch(["content", "src", "styles", "public"], {
+// `scripts/fixtures` is watched because the about page's figures are counted from it: a page
+// opts into the replay by having a setup script there, and adding or removing one changes what
+// the built site claims about itself.
+const watcher = chokidar.watch(["content", "src", "styles", "public", "scripts/fixtures"], {
   cwd: ROOT,
   ignoreInitial: true,
 });
 let debounce: ReturnType<typeof setTimeout> | undefined;
-watcher.on("all", () => {
+watcher.on("all", (_event, changedPath) => {
+  // A change to the generator itself can't be picked up by re-running already-loaded modules,
+  // so the process restarts instead. `tsx watch` would do this too, but only by restarting on
+  // every change — including every content edit, which is the case that has to stay fast.
+  if (changedPath.startsWith(`src${sep}`) && !changedPath.startsWith(join("src", "client"))) {
+    console.log(`${changedPath} changed — restarting the dev server`);
+    watcher.close().then(() => {
+      server.close();
+      spawnSync("npx", ["tsx", "src/server.ts"], { cwd: ROOT, stdio: "inherit" });
+      process.exit(0);
+    });
+    return;
+  }
   clearTimeout(debounce);
-  debounce = setTimeout(build, 150);
+  debounce = setTimeout(() => void rebuild(), 150);
 });
 
 server.listen(PORT, () => {

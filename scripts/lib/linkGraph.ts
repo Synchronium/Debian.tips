@@ -5,10 +5,13 @@
 // the one failure the report can't show you: a missed edge invents an orphan, which is
 // noisy but visible, while an invented edge hides a real one under a clean bill of health.
 // Covered by test/linkGraph.test.ts for that reason.
-import type { Page } from "../../src/content/loader.js";
+import { type Page, isCommandPage } from "../../src/content/loader.js";
 
 export type EdgeKind = "related" | "prose";
 
+/** Both ends are page URLs. A slug is not the identity of a page — two pages in different
+ *  categories may share one — and keying the graph by slug would merge them into a single node,
+ *  handing one page's inbound links to the other. */
 export interface Edge {
   from: string;
   to: string;
@@ -33,38 +36,43 @@ export function linksInMarkdown(text: string): string[] {
  *  resolved to slugs by `collectEdges`. */
 export function proseLinkTargets(page: Page): string[] {
   const found = linksInHtml(page.html);
-  for (const section of page.examples?.sections ?? []) {
+  if (!isCommandPage(page)) return found;
+
+  for (const section of page.examples.sections) {
     if (section.intro) found.push(...linksInMarkdown(section.intro));
     for (const example of section.examples) {
       found.push(...linksInMarkdown(example.description));
     }
   }
-  for (const fixture of page.examples?.fixtures ?? []) {
+  for (const fixture of page.examples.fixtures ?? []) {
     if (fixture.note) found.push(...linksInMarkdown(fixture.note));
   }
   return found;
 }
 
 export function collectEdges(pages: Page[]): Edge[] {
-  const slugByUrl = new Map(pages.map((page) => [page.url, page.slug]));
+  const contentUrls = new Set(pages.map((page) => page.url));
   const edges: Edge[] = [];
 
   for (const page of pages) {
-    for (const target of page.related) {
-      edges.push({ from: page.slug, to: target, kind: "related" });
+    // `relatedLinks`, not `related`: the loader has already resolved each authored reference —
+    // bare slug or `category/slug` — to exactly one page, and re-resolving it here would be a
+    // second implementation of that rule, free to disagree with the first.
+    for (const link of page.relatedLinks) {
+      edges.push({ from: page.url, to: link.url, kind: "related" });
     }
     for (const url of proseLinkTargets(page)) {
       // A listing, a tag page or /about/ resolves to no content page, and a page linking
       // itself is not an edge. Whether these resolve at all is src/linkcheck.ts's job.
-      const target = slugByUrl.get(url);
-      if (target && target !== page.slug) edges.push({ from: page.slug, to: target, kind: "prose" });
+      if (contentUrls.has(url) && url !== page.url) edges.push({ from: page.url, to: url, kind: "prose" });
     }
   }
   return edges;
 }
 
-/** Distinct link targets per page, and distinct sources per page. Both directions are
- *  deduplicated: a page linked twice from the same source has one route in, not two. */
+/** Distinct link targets per page, and distinct sources per page, both keyed by URL. Both
+ *  directions are deduplicated: a page linked twice from the same source has one route in,
+ *  not two. */
 export function adjacency(
   pages: Page[],
   edges: Edge[],
@@ -72,8 +80,8 @@ export function adjacency(
   outbound: Map<string, Set<string>>;
   inbound: Map<string, Set<string>>;
 } {
-  const outbound = new Map(pages.map((page) => [page.slug, new Set<string>()]));
-  const inbound = new Map(pages.map((page) => [page.slug, new Set<string>()]));
+  const outbound = new Map(pages.map((page) => [page.url, new Set<string>()]));
+  const inbound = new Map(pages.map((page) => [page.url, new Set<string>()]));
   for (const edge of edges) {
     outbound.get(edge.from)?.add(edge.to);
     inbound.get(edge.to)?.add(edge.from);

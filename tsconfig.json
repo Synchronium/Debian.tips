@@ -24,6 +24,9 @@
     "isolatedModules": true,
     "noEmit": true
   },
+  "exclude": [
+    "src/client/**"
+  ],
   "include": [
     "src/**/*.ts",
     "test/**/*.ts",

@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { MASK_TOKENS, normalise, shapeOf, stripArtifacts } from "../scripts/lib/normalise.js";
 
 /* This module decides what every command page is allowed to claim a command printed:
- * `adopt-real-output.mjs` writes `stripArtifacts` output straight onto a page, and
- * `verify-examples.mjs` compares `normalise` of the page against `normalise` of a fresh
+ * `scripts/adopt-real-output.ts` writes `stripArtifacts` output straight onto a page, and
+ * `scripts/verify-examples.ts` compares `normalise` of the page against `normalise` of a fresh
  * run. Because both sides go through the same function, a bug here is invisible to the
  * replay — it corrupts the page and then certifies the corruption. Every case below is a
  * regression that actually shipped, or an invariant that keeps one from shipping. */

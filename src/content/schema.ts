@@ -195,9 +195,16 @@ export const examplesFileSchema = z.object({
 });
 export type ExamplesFile = z.infer<typeof examplesFileSchema>;
 
+/** A tag's name is a URL path segment — `/tags/<name>/` is a real directory in `dist/` and a
+ *  real link on every page carrying it — so it is held to what a path segment may contain
+ *  rather than to `min(1)`. A tag called `apt/dpkg` would write outside its own directory and
+ *  link somewhere that never resolves; a tag with a space would ship a link nothing can follow.
+ *  The registry is hand-edited, which is exactly why the constraint belongs in the schema. */
+const tagNameSchema = z
+  .string()
+  .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "a tag name must be lowercase letters, digits and single hyphens");
+
 export const tagRegistrySchema = z.object({
-  tags: z
-    .array(z.object({ name: z.string().min(1), description: z.string().min(1) }))
-    .min(1),
+  tags: z.array(z.object({ name: tagNameSchema, description: z.string().min(1) })).min(1),
 });
 export type TagRegistry = z.infer<typeof tagRegistrySchema>;

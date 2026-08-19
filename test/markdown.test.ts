@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { highlightCode, renderInline, renderMarkdown } from "../src/content/markdown.js";
+import { shikiStyleCss } from "../src/content/shikiStyles.js";
 
 describe("renderMarkdown", () => {
   it("assigns ids to h2/h3 headings and collects them in the toc", async () => {
@@ -42,8 +43,13 @@ describe("renderMarkdown", () => {
   it("highlights fenced code blocks with Shiki dual-theme output", async () => {
     const { html } = await renderMarkdown('```bash\necho "hi"\n```\n');
     expect(html).toContain("shiki");
-    expect(html).toContain("--shiki-dark");
     expect(html).toContain('aria-label="command"');
+    // The dual-theme colours are in the stylesheet now, one class per distinct pair of
+    // declarations — see src/content/shikiStyles.ts and test/shikiStyles.test.ts. The markup
+    // carries the class; the `--shiki-dark` custom property the dark theme reads is on the
+    // rule, not on the element.
+    expect(html).toMatch(/<span class="s[0-9a-f]{6}">/);
+    expect(shikiStyleCss()).toContain("--shiki-dark");
   });
 
   it("falls back to plaintext aria-label for fences with no language", async () => {
@@ -116,6 +122,7 @@ describe("highlightCode", () => {
   it("produces dual-theme Shiki output for a standalone snippet", async () => {
     const out = await highlightCode('grep "x" file', "bash");
     expect(out).toContain("shiki");
-    expect(out).toContain("--shiki-dark");
+    expect(out).toMatch(/<span class="s[0-9a-f]{6}">/);
+    expect(shikiStyleCss()).toContain("--shiki-dark");
   });
 });

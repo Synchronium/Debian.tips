@@ -30,7 +30,7 @@
 //
 // Exit status: 0 when there are no orphans and no thin pages, 1 otherwise, 2 on a bad
 // argument or a content error.
-import { loadContent, type Page } from "../src/content/loader.js";
+import { loadContent, type Page, isCommandPage } from "../src/content/loader.js";
 import { STANDALONE_PAGES } from "../src/config.js";
 import { adjacency, affinity, collectEdges } from "./lib/linkGraph.js";
 
@@ -58,8 +58,14 @@ const CHROME_LINKED = new Set(STANDALONE_PAGES.map((page) => page.path));
  *  ignored. A draft is audited when it is published, which is when it matters. */
 const auditable = (page: Page): boolean => !page.draft;
 
+/** How a page is named in the report: `category/slug`, which is unique where a bare slug is
+ *  no longer guaranteed to be. */
+function name(page: Page): string {
+  return `${page.category}/${page.slug}`;
+}
+
 function describe(page: Page): string {
-  return `${page.slug} (${page.category}${page.tier ? `, ${page.tier}` : ""})`;
+  return `${name(page)}${isCommandPage(page) ? ` (${page.tier})` : ""}`;
 }
 
 async function main(): Promise<void> {
@@ -78,30 +84,35 @@ async function main(): Promise<void> {
   const { outbound, inbound } = adjacency(pages, edges);
 
   /** The pages that could link to `page` and don't: sharing a tag is the cheapest proxy for
-   *  "a reader of that page might want this one". Closest first. */
+   *  "a reader of that page might want this one". Closest first.
+   *
+   *  Affinity is scored once per candidate rather than inside the comparator, which called it
+   *  twice per comparison and re-intersected both tag lists each time. */
   const candidateSources = (page: Page): string[] =>
     pages
       .filter(
-        (other) =>
-          other.slug !== page.slug &&
-          auditable(other) &&
-          !outbound.get(other.slug)?.has(page.slug) &&
-          affinity(other, page) > 0,
+        (other) => other.url !== page.url && auditable(other) && !outbound.get(other.url)?.has(page.url),
       )
-      .sort((a, b) => affinity(b, page) - affinity(a, page))
+      .map((other) => ({ other, score: affinity(other, page) }))
+      .filter(({ score }) => score > 0)
+      .sort((a, b) => b.score - a.score)
       .slice(0, SUGGESTIONS)
-      .map((other) => other.slug);
+      .map(({ other }) => name(other));
 
   const suggest = (page: Page, lead: string): string =>
     `    ${lead}: ${candidateSources(page).join(", ") || "nothing shares a tag"}`;
 
+  /** Nodes are URLs; a report is easier to read as `category/slug`. */
+  const nameByUrl = new Map(pages.map((page) => [page.url, name(page)]));
+  const named = (urls: Iterable<string>): string[] => [...urls].map((url) => nameByUrl.get(url) ?? url);
+
   const audited = pages.filter(auditable);
-  const inboundCount = (page: Page): number => inbound.get(page.slug)?.size ?? 0;
+  const inboundCount = (page: Page): number => inbound.get(page.url)?.size ?? 0;
   const linkable = audited.filter((page) => !CHROME_LINKED.has(page.url));
 
   const orphans = linkable.filter((page) => inboundCount(page) === 0);
   const weak = linkable.filter((page) => inboundCount(page) > 0 && inboundCount(page) < MIN_INBOUND);
-  const thin = audited.filter((page) => (outbound.get(page.slug)?.size ?? 0) < MIN_OUTBOUND);
+  const thin = audited.filter((page) => (outbound.get(page.url)?.size ?? 0) < MIN_OUTBOUND);
 
   const proseEdges = edges.filter((edge) => edge.kind === "prose").length;
   const drafts = pages.length - audited.length;
@@ -122,7 +133,7 @@ async function main(): Promise<void> {
   if (thin.length) {
     console.log(`thin — fewer than ${MIN_OUTBOUND} links out (${thin.length}):`);
     for (const page of thin) {
-      console.log(`  ${describe(page)} → ${[...(outbound.get(page.slug) ?? [])].join(", ") || "nothing"}`);
+      console.log(`  ${describe(page)} → ${named(outbound.get(page.url) ?? []).join(", ") || "nothing"}`);
     }
     console.log("");
   }
@@ -130,7 +141,7 @@ async function main(): Promise<void> {
   if (weak.length && verbose) {
     console.log(`weakly linked — one way in (${weak.length}):`);
     for (const page of weak) {
-      console.log(`  ${describe(page)} ← ${[...(inbound.get(page.slug) ?? [])].join(", ")}`);
+      console.log(`  ${describe(page)} ← ${named(inbound.get(page.url) ?? []).join(", ")}`);
       console.log(suggest(page, "could also link from"));
     }
     console.log("");

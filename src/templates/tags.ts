@@ -1,6 +1,7 @@
 import { html, raw } from "../html.js";
 import { layout } from "./layout.js";
 import { pageCard } from "./partials/card.js";
+import { type PageSlice, paginationNav } from "./partials/pager.js";
 import type { Page, TagInfo } from "../content/loader.js";
 
 export function tagsIndexPage(tags: TagInfo[], pages: Page[], cssHref: string): string {
@@ -27,18 +28,21 @@ ${tags.map((t) =>
   });
 }
 
-export function tagPage(tag: TagInfo, pages: Page[], cssHref: string): string {
+export function tagPage(tag: TagInfo, slice: PageSlice<Page>, cssHref: string): string {
   const body = html`
 <nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><a href="/tags/">Tags</a></li><li aria-current="page">${tag.name}</li></ol></nav>
 <h1>${tag.name}</h1>
 <p class="lede">${tag.description}</p>
-<div class="card-grid">${pages.map((p) => raw(pageCard(p, "h2")))}</div>`;
+<div class="card-grid">${slice.items.map((p) => raw(pageCard(p, "h2")))}</div>
+${raw(paginationNav(slice))}`;
 
   return layout({
-    title: tag.name,
+    title: slice.number === 1 ? tag.name : `${tag.name} — page ${slice.number}`,
     description: `Everything tagged "${tag.name}" on debian.tips.`,
-    path: `/tags/${tag.name}/`,
+    path: slice.path,
     bodyHtml: raw(body),
     cssHref,
+    ...(slice.prevPath ? { prevPath: slice.prevPath } : {}),
+    ...(slice.nextPath ? { nextPath: slice.nextPath } : {}),
   });
 }

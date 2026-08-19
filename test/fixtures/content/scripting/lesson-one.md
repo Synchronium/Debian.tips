@@ -8,3 +8,13 @@ order: 1
 ---
 
 Fixture lesson one body.
+
+A command and the output it produced, paired the way `src/content/proseBlocks.ts` expects — the
+output fence opens on the line immediately after the command fence closes:
+
+```bash
+echo "hello"
+```
+```
+hello
+```

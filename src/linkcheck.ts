@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, posix } from "node:path";
-import { DIST_DIR as DIST } from "./paths.js";
+import { DIST_DIR as DIST, OUTPUT_INDEX } from "./paths.js";
 
 const EXTERNAL = /^([a-z][a-z0-9+.-]*:|\/\/)/i; // has a scheme, or is protocol-relative
 
@@ -29,9 +29,9 @@ function extractLinks(htmlSource: string): string[] {
 
 function resolveDistPath(urlPath: string): string | null {
   const clean = urlPath.split("#")[0]!.split("?")[0]!;
-  if (clean === "" || clean === "/") return join(DIST, "index.html");
+  if (clean === "" || clean === "/") return join(DIST, OUTPUT_INDEX);
   const withoutTrailingSlash = clean.endsWith("/") ? clean.slice(0, -1) : clean;
-  const asDir = join(DIST, withoutTrailingSlash, "index.html");
+  const asDir = join(DIST, withoutTrailingSlash, OUTPUT_INDEX);
   if (existsSync(asDir)) return asDir;
   const asFile = join(DIST, withoutTrailingSlash);
   if (existsSync(asFile) && statSync(asFile).isFile()) return asFile;
@@ -93,7 +93,8 @@ function main(): void {
     }
 
     for (const link of links) {
-      if (EXTERNAL.test(link) || link.startsWith("mailto:") || link.startsWith("tel:")) continue;
+      // `mailto:` and `tel:` are covered by EXTERNAL, which matches anything with a scheme.
+      if (EXTERNAL.test(link)) continue;
 
       const isFragmentOnly = link.startsWith("#");
       const absolutePath = isFragmentOnly ? pageUrl : posix.resolve(posix.dirname(pageUrl), link);

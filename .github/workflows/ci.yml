@@ -11,16 +11,22 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci
+      # `npm run check` sets NODE_ENV=production itself, so this is the same gate that runs
+      # locally. It used to be set here only, which meant drafts were included locally and
+      # excluded in CI — and the link audit, the linkcheck and the about page's figures could
+      # all differ between a clean local run and a red one here.
       - run: npm run check
-        env:
-          NODE_ENV: production
       - name: Serve dist/ for pa11y-ci
         run: npx serve -l 4321 dist &
       - name: Wait for local server
         run: npx wait-on http://localhost:4321
+      # The URL list is generated from the sitemap the build just wrote, so a new category or
+      # page shape is covered the day it exists rather than when someone remembers to add it.
+      - name: Choose the pages to check
+        run: npx tsx scripts/pa11y-urls.ts
       - run: npx pa11y-ci
 
   # Runs every documented `output:` block on every command page for real, inside a
@@ -34,15 +40,19 @@ jobs:
   # people looking at them.
   replay:
     runs-on: ubuntu-latest
-    # The replay itself takes well under a minute for all seventeen pages; the budget is
-    # for building the sandbox image on a cold runner, plus room for a hung example that
-    # somehow escapes the per-example timeout.
+    # The full replay measures ~2.5 minutes for the whole site (39 pages, 2026-08-19); a pull
+    # request replays only what it touched. The budget is for building the sandbox image on a
+    # cold runner, plus room for a hung example that somehow escapes the per-example timeout.
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+        with:
+          # `--changed` diffs this branch against its base, which needs more than the shallow
+          # clone actions/checkout takes by default.
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       # Only the yaml parser is needed, but `npm ci` is what the lockfile guarantees.
       - run: npm ci
@@ -52,4 +62,14 @@ jobs:
       # lever if the build dominates; it isn't worth the failure modes until it does.
       - name: Build the sandbox image
         run: docker build -t debian-tips-sandbox:trixie scripts/sandbox
-      - run: npm run replay
+      # A pull request replays the pages its diff touches — and everything, if it touched the
+      # harness, where one change can move any page's output. A push to main always replays the
+      # whole site, so nothing is deployed on the strength of a partial run.
+      - name: Replay the changed pages
+        if: github.event_name == 'pull_request'
+        run: npm run replay -- --changed
+        env:
+          REPLAY_DIFF_BASE: origin/${{ github.base_ref }}
+      - name: Replay every page
+        if: github.event_name != 'pull_request'
+        run: npm run replay

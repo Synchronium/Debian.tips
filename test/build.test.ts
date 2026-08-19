@@ -3,15 +3,19 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { build } from "../src/build.js";
-import { loadContent } from "../src/content/loader.js";
+import { isScriptingPage, loadContent } from "../src/content/loader.js";
 import { STANDALONE_PAGES } from "../src/config.js";
 
 const FIXTURE_CONTENT = join(import.meta.dirname, "fixtures", "content");
+/** The fixture tree's own setup scripts. A page opts into the replay by having one, and the
+ *  build counts only the pages that do — so the fixture tree needs its own harness directory
+ *  rather than being counted against this repository's. */
+const FIXTURE_HARNESS = join(import.meta.dirname, "fixtures", "harness");
 let distDir: string;
 
 beforeAll(async () => {
   distDir = mkdtempSync(join(tmpdir(), "debian-tips-build-test-"));
-  await build(FIXTURE_CONTENT, distDir);
+  await build(FIXTURE_CONTENT, distDir, FIXTURE_HARNESS);
 });
 
 afterAll(() => {
@@ -57,8 +61,9 @@ describe("build (fixture pipeline)", () => {
 describe("loadContent (fixtures) — scripting prev/next ordering", () => {
   it("orders scripting pages by `order` and links prev/next by title and url", async () => {
     const { pages } = await loadContent(FIXTURE_CONTENT);
-    const lessonOne = pages.find((p) => p.slug === "lesson-one")!;
-    const lessonTwo = pages.find((p) => p.slug === "lesson-two")!;
+    const lessons = pages.filter(isScriptingPage);
+    const lessonOne = lessons.find((p) => p.slug === "lesson-one")!;
+    const lessonTwo = lessons.find((p) => p.slug === "lesson-two")!;
 
     expect(lessonOne.prev).toBeUndefined();
     expect(lessonOne.next).toEqual({ url: "/scripting/lesson-two/", title: "Lesson two" });
@@ -77,8 +82,10 @@ describe("the about page", () => {
   it("is built, with its figures counted from the content", async () => {
     const html = readFileSync(join(distDir, "about", "index.html"), "utf-8");
     expect(html).toContain("How this site is tested");
-    // The fixture tree has two command pages; the figures are counted, never typed.
-    expect(html).toMatch(/outputs across \d+\ncommand pages|outputs across \d+ command pages/);
+    // What the figures *are* is asserted in test/stats.test.ts, against the counting function
+    // itself. Asserting them here meant matching the surrounding sentence, so rewording a line
+    // of prose on the about page failed a build test that has no opinion about the wording.
+    expect(html).toContain("4 outputs, across 1 command pages");
   });
 
   it("never ships an unfilled placeholder to a reader", async () => {

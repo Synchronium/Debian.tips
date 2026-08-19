@@ -50,23 +50,38 @@ interface Fence {
 
 const DIRECTIVE = /^\s*<!--\s*verify:\s*(shape|skip)\b\s*(.*?)\s*-->\s*$/;
 
+/** A fence line: the backticks, then an info string whose first word is the language.
+ *
+ *  Anything after that first word is accepted and ignored. Requiring the line to end after the
+ *  language (`/^```(\S*)\s*$/`) meant a fence written ```` ```bash title="x" ```` was not
+ *  recognised as a fence *at all* — it was read as content, which inverted every open/close
+ *  pairing after it on the page. The page still rendered, the replay reported the block as "not
+ *  checkable", and nothing failed: verification was lost silently, which is the one failure mode
+ *  this harness exists to prevent. */
+const OPEN = /^```([^\s`]*)(?:\s+\S.*)?\s*$/;
+
+/** A closing fence carries no info string, so only a bare ``` closes an open block. Keeping the
+ *  two patterns separate is what lets an info string be accepted on the way in without a line
+ *  like ```` ```bash ```` *inside* an output block closing the block that contains it. */
+const CLOSE = /^```\s*$/;
+
 function fences(source: string): Fence[] {
   const lines = source.split("\n");
   const found: Fence[] = [];
   let open: { lang: string; start: number; body: string[] } | null = null;
 
   for (const [index, line] of lines.entries()) {
-    const fence = /^```(\S*)\s*$/.exec(line);
-    if (!fence) {
-      if (open) open.body.push(line);
+    if (open) {
+      if (CLOSE.test(line)) {
+        found.push({ lang: open.lang, body: open.body.join("\n"), start: open.start, end: index + 1 });
+        open = null;
+      } else {
+        open.body.push(line);
+      }
       continue;
     }
-    if (open) {
-      found.push({ lang: open.lang, body: open.body.join("\n"), start: open.start, end: index + 1 });
-      open = null;
-    } else {
-      open = { lang: fence[1] ?? "", start: index + 1, body: [] };
-    }
+    const fence = OPEN.exec(line);
+    if (fence) open = { lang: fence[1] ?? "", start: index + 1, body: [] };
   }
   return found;
 }

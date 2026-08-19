@@ -59,26 +59,71 @@ describe("loadContent — validation", () => {
     await expect(loadContent(dir)).rejects.toThrow(/unknown example tag "not-registered"/);
   });
 
-  it("rejects a slug reused across two categories", async () => {
+  /** Writes a second page reusing an existing slug in another category. The slug namespace is
+   *  no longer global, so this is legal on its own and only becomes an error when something
+   *  downstream actually needs to tell the two apart. */
+  function withReusedSlug(dir: string, slug: string, related?: string): void {
+    mkdirSync(join(dir, "concepts"), { recursive: true });
+    writeFileSync(
+      join(dir, "concepts", `${slug}.md`),
+      [
+        "---",
+        `title: "${slug}, again"`,
+        `description: "A second page deliberately reusing the ${slug} slug, in another category."`,
+        "category: concepts",
+        "tags: [demo]",
+        "updated: 2026-01-01",
+        ...(related ? [`related: [${related}]`] : []),
+        "---",
+        "",
+        "Body.",
+      ].join("\n"),
+      "utf-8",
+    );
+  }
+
+  it("allows a slug to be reused in another category", async () => {
+    const dir = brokenContent((d) => withReusedSlug(d, "greet"));
+    const { pages } = await loadContent(dir);
+    expect(
+      pages
+        .filter((p) => p.slug === "greet")
+        .map((p) => p.url)
+        .sort(),
+    ).toEqual(["/commands/greet/", "/concepts/greet/"]);
+  });
+
+  it("rejects a bare related: slug that two pages answer to", async () => {
     const dir = brokenContent((d) => {
-      mkdirSync(join(d, "concepts"), { recursive: true });
-      writeFileSync(
-        join(d, "concepts", "greet.md"),
-        [
-          "---",
-          'title: "Greet, again"',
-          'description: "A second page deliberately reusing the greet slug to test uniqueness."',
-          "category: concepts",
-          "tags: [demo]",
-          "updated: 2026-01-01",
-          "---",
-          "",
-          "Body.",
-        ].join("\n"),
-        "utf-8",
+      withReusedSlug(d, "greet");
+      editFile(join(d, "scripting", "lesson-one.md"), (s) =>
+        s.replace("order: 1", "order: 1\nrelated: [greet]"),
       );
     });
-    await expect(loadContent(dir)).rejects.toThrow(/slug "greet" is used by more than one page/);
+    await expect(loadContent(dir)).rejects.toThrow(
+      /related slug "greet" is ambiguous \(commands\/greet, concepts\/greet\) — write it as "category\/slug"/,
+    );
+  });
+
+  it("resolves a qualified related: reference to the page it names", async () => {
+    const dir = brokenContent((d) => {
+      withReusedSlug(d, "greet");
+      editFile(join(d, "scripting", "lesson-one.md"), (s) =>
+        s.replace("order: 1", "order: 1\nrelated: [concepts/greet]"),
+      );
+    });
+    const { pages } = await loadContent(dir);
+    const lessonOne = pages.find((p) => p.slug === "lesson-one")!;
+    expect(lessonOne.relatedLinks).toEqual([{ url: "/concepts/greet/", title: "greet, again" }]);
+  });
+
+  it("rejects a qualified related: reference to a page that doesn't exist", async () => {
+    const dir = brokenContent((d) =>
+      editFile(join(d, "scripting", "lesson-one.md"), (s) =>
+        s.replace("order: 1", "order: 1\nrelated: [concepts/nothing-here]"),
+      ),
+    );
+    await expect(loadContent(dir)).rejects.toThrow(/related page "concepts\/nothing-here" does not exist/);
   });
 
   it("rejects a related: slug that doesn't exist", async () => {
@@ -97,7 +142,7 @@ describe("loadContent — validation", () => {
         s.replace("order: 1", "order: 1\nrelated: [lesson-two]"),
       );
     });
-    await expect(loadContent(dir)).rejects.toThrow(/related slug "lesson-two" is a draft/);
+    await expect(loadContent(dir)).rejects.toThrow(/related page "lesson-two" is a draft/);
   });
 
   it("allows a draft page to link to a published page", async () => {

@@ -45,16 +45,21 @@ function resolves(path: string): boolean {
 describe("repository paths named in the tools", () => {
   it("all exist", () => {
     const missing: string[] = [];
+    // `test` and `README.md` are scanned too. They were not, and two references rotted there
+    // unseen: comments naming `verify-examples.mjs` two rewrites after it stopped being an
+    // `.mjs` file, and a `PLAN-BUILD.md` that has never existed in this repository.
     for (const file of [
       ...sourceFiles("src"),
       ...sourceFiles("scripts"),
+      ...sourceFiles("test"),
       ...sourceFiles(".claude"),
       "CLAUDE.md",
+      "README.md",
     ]) {
       // A setup script's *comments* name real repository paths; its body names paths inside
-      // the sandbox, and several fixtures deliberately create files called things like
-      // `scripts/deploy.sh` or `src/main.ts` as sample data. Only the commentary is a claim
-      // about this repository.
+      // the sandbox, and several fixtures deliberately create sample files whose names look
+      // like repository paths (a deploy script under a scripts directory, an entry point under
+      // a src one). Only the commentary is a claim about this repository.
       const raw = readFileSync(join(ROOT, file), "utf-8");
       const source = file.endsWith(".sh")
         ? raw

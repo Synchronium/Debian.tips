@@ -5,7 +5,7 @@
 //
 // The counterpart to verify-examples.ts, which does the same for command pages. Those carry
 // their examples as YAML; a prose page states the same claim as a ```bash fence followed by
-// the output it produced, which scripts/lib/proseBlocks.ts pairs up.
+// the output it produced, which src/content/proseBlocks.ts pairs up.
 //
 // Without this, 96 output blocks across 15 pages were checked by nobody, and one of them had
 // quietly drifted two Debian point releases out of date.
@@ -16,57 +16,10 @@ import { captureAll, openSandbox } from "./lib/sandbox.js";
 import { PROSE_CATEGORIES } from "../src/content/schema.js";
 import { fixtureScript, proseSource } from "../src/paths.js";
 import { MASK_TOKENS, normalise, shapeOf } from "./lib/normalise.js";
-import { parseProseFile, type ProsePair } from "./lib/proseBlocks.js";
-import { readSetupDirectives } from "./lib/replay.js";
-
-const [sandboxName, slug, setupArg] = process.argv.slice(2);
-if (!sandboxName || !slug) {
-  console.error("usage: verify-prose.ts <sandbox> <slug> [setup.sh]");
-  process.exit(2);
-}
-
-const category = PROSE_CATEGORIES.find((name) => existsSync(proseSource(name, slug)));
-if (!category) {
-  console.error(`no prose page with slug "${slug}" (looked in ${PROSE_CATEGORIES.join(", ")})`);
-  process.exit(2);
-}
-const pagePath = proseSource(category, slug);
-
-const setupPath = setupArg ?? (existsSync(fixtureScript(slug)) ? fixtureScript(slug) : undefined);
-const directives = setupPath ? readSetupDirectives(setupPath) : { asUser: false, needsSystemd: false };
-
-const { pairs, unpaired } = parseProseFile(pagePath);
-const runnable = pairs.filter((pair) => pair.comparison !== "skip");
-const skipped = pairs.filter((pair) => pair.comparison === "skip");
-
-// A mask token in a documented output would match any real output for ever, because the
-// masks are idempotent. Same rule the command pages are held to.
-for (const pair of pairs) {
-  const token = MASK_TOKENS.find((mask) => pair.output.includes(mask));
-  if (token) {
-    console.error(`${pagePath}:${pair.line} documents the mask token ${token}, which would match anything.`);
-    process.exit(2);
-  }
-}
-const unexplained = skipped.find((pair) => !pair.note);
-if (unexplained) {
-  console.error(`${pagePath}:${unexplained.line} is skipped with no reason given.`);
-  process.exit(2);
-}
-
-const sandbox = openSandbox({
-  name: sandboxName,
-  command: slug,
-  tool: "prose",
-  asUser: directives.asUser,
-  needsSystemd: directives.needsSystemd,
-  setupPath,
-});
-
-const captured = captureAll(
-  sandbox,
-  runnable.map((pair) => pair.command),
-);
+import { parseProseFile, type ProsePair } from "../src/content/proseBlocks.js";
+import { ReplayError, readSetupDirectives } from "./lib/replay.js";
+import { firstDifference, scoreLine } from "./lib/report.js";
+import type { ReplayResult } from "./verify-examples.js";
 
 interface Mismatch {
   pair: ProsePair;
@@ -74,52 +27,138 @@ interface Mismatch {
   got: string;
 }
 
-const mismatches: Mismatch[] = [];
-let shapeMatches = 0;
-let matches = 0;
-
-runnable.forEach((pair, index) => {
-  const compare = pair.comparison === "shape" ? shapeOf : normalise;
-  const want = compare(pair.output);
-  const got = compare(captured.get(index) ?? "");
-  if (want === got) {
-    matches++;
-    if (pair.comparison === "shape") shapeMatches++;
-  } else {
-    mismatches.push({ pair, want, got });
-  }
-});
-
-/** The first line that differs, quoted so leading and trailing spaces are visible. */
-function firstDifference(want: string, got: string): string {
-  const wantLines = want.split("\n");
-  const gotLines = got.split("\n");
-  const total = Math.max(wantLines.length, gotLines.length);
-  for (let i = 0; i < total; i++) {
-    if (wantLines[i] === gotLines[i]) continue;
-    const show = (line: string | undefined) => (line === undefined ? "(no such line)" : JSON.stringify(line));
-    return [
-      `    line ${i + 1} of ${total} differs:`,
-      `      page: ${show(wantLines[i])}`,
-      `      real: ${show(gotLines[i])}`,
-    ].join("\n");
-  }
-  return "    (identical line by line — a trailing-newline difference)";
+export interface ProseReplayOptions {
+  sandbox: string;
+  /** Page slug, e.g. "pipes-and-redirection". Qualified as `category/slug` when two pages in
+   *  different categories share a slug. */
+  slug: string;
+  setupPath?: string | undefined;
 }
 
-const howNote = shapeMatches ? ` (${matches - shapeMatches} exactly, ${shapeMatches} by shape)` : " exactly";
-const skipNote = skipped.length ? `, ${skipped.length} skipped` : "";
-// Unpaired blocks are claims nothing checked. Reported rather than failed: a config stanza
-// is legitimately not command output, and the count is what tells an author which is which.
-const unpairedNote = unpaired ? `, ${unpaired} block(s) not checkable` : "";
-console.log(
-  `\n${slug} (as ${directives.asUser ? "user" : "root"}): ${matches}/${runnable.length} documented outputs reproduce${howNote}${skipNote}${unpairedNote}\n`,
-);
+/** Finds the prose page a slug names. A bare slug is looked for in every prose category, and
+ *  is an error if more than one answers to it — the slug namespace is per-category, so
+ *  `recipes/find` is how you say which one you mean. */
+function locate(reference: string): { category: string; slug: string; path: string } {
+  if (reference.includes("/")) {
+    const [category = "", slug = ""] = reference.split("/", 2);
+    const path = proseSource(category, slug);
+    if (!(PROSE_CATEGORIES as readonly string[]).includes(category) || !existsSync(path)) {
+      throw new ReplayError(`no prose page at "${reference}"`);
+    }
+    return { category, slug, path };
+  }
 
-for (const mismatch of mismatches) {
-  console.log(`--- ${pagePath}:${mismatch.pair.line}`);
-  console.log(`    $ ${mismatch.pair.command.split("\n")[0]}`);
-  console.log(firstDifference(mismatch.want, mismatch.got));
+  const matches = PROSE_CATEGORIES.filter((name) => existsSync(proseSource(name, reference)));
+  const [only] = matches;
+  if (!only) {
+    throw new ReplayError(
+      `no prose page with slug "${reference}" (looked in ${PROSE_CATEGORIES.join(", ")})`,
+    );
+  }
+  if (matches.length > 1) {
+    throw new ReplayError(
+      `slug "${reference}" names ${matches.length} pages (${matches.map((c) => `${c}/${reference}`).join(", ")}) — say which one`,
+    );
+  }
+  return { category: only, slug: reference, path: proseSource(only, reference) };
 }
 
-process.exit(mismatches.length === 0 ? 0 : 1);
+export function replayProsePage(options: ProseReplayOptions): ReplayResult {
+  const { slug, path: pagePath } = locate(options.slug);
+
+  const setupPath = options.setupPath ?? (existsSync(fixtureScript(slug)) ? fixtureScript(slug) : undefined);
+  const directives = readSetupDirectives(setupPath);
+
+  const { pairs, unpaired } = parseProseFile(pagePath);
+  const runnable = pairs.filter((pair) => pair.comparison !== "skip");
+  const skipped = pairs.filter((pair) => pair.comparison === "skip");
+
+  // A mask token in a documented output would match any real output for ever, because the
+  // masks are idempotent. Same rule the command pages are held to.
+  for (const pair of pairs) {
+    const token = MASK_TOKENS.find((mask) => pair.output.includes(mask));
+    if (token) {
+      throw new ReplayError(
+        `${pagePath}:${pair.line} documents the mask token ${token}, which would match anything.`,
+      );
+    }
+  }
+  const unexplained = skipped.find((pair) => !pair.note);
+  if (unexplained) {
+    throw new ReplayError(`${pagePath}:${unexplained.line} is skipped with no reason given.`);
+  }
+
+  const sandbox = openSandbox({
+    name: options.sandbox,
+    command: slug,
+    tool: "prose",
+    asUser: directives.asUser,
+    needsSystemd: directives.needsSystemd,
+    setupPath,
+  });
+
+  const captured = captureAll(
+    sandbox,
+    runnable.map((pair) => pair.command),
+  );
+
+  const mismatches: Mismatch[] = [];
+  let shapeMatches = 0;
+  let matches = 0;
+
+  runnable.forEach((pair, index) => {
+    const compare = pair.comparison === "shape" ? shapeOf : normalise;
+    const want = compare(pair.output);
+    const got = compare(captured.get(index) ?? "");
+    if (want === got) {
+      matches++;
+      if (pair.comparison === "shape") shapeMatches++;
+    } else {
+      mismatches.push({ pair, want, got });
+    }
+  });
+
+  console.log(
+    scoreLine({
+      page: slug,
+      asUser: directives.asUser,
+      matched: matches,
+      total: runnable.length,
+      shapeMatches,
+      notes: [
+        skipped.length ? `, ${skipped.length} skipped` : "",
+        // Unpaired blocks are claims nothing checked. Reported rather than failed: a config
+        // stanza is legitimately not command output, and the count is what tells an author
+        // which is which.
+        unpaired ? `, ${unpaired} block(s) not checkable` : "",
+      ],
+    }),
+  );
+
+  for (const mismatch of mismatches) {
+    console.log(`--- ${pagePath}:${mismatch.pair.line}`);
+    console.log(`    $ ${mismatch.pair.command.split("\n")[0]}`);
+    console.log(firstDifference(mismatch.want, mismatch.got));
+  }
+
+  return { page: slug, matched: matches, total: runnable.length, mismatches: mismatches.length };
+}
+
+function main(): void {
+  const [sandbox, slug, setupPath] = process.argv.slice(2);
+  if (!sandbox || !slug) {
+    console.error("usage: verify-prose.ts <sandbox> <slug> [setup.sh]");
+    process.exit(2);
+  }
+
+  try {
+    const result = replayProsePage({ sandbox, slug, setupPath });
+    process.exit(result.mismatches === 0 ? 0 : 1);
+  } catch (error) {
+    if (!(error instanceof ReplayError)) throw error;
+    console.error(error.message);
+    process.exit(2);
+  }
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) main();

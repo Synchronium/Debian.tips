@@ -1,18 +1,23 @@
+import GithubSlugger from "github-slugger";
 import { html, raw } from "../html.js";
 import { layout } from "./layout.js";
+import { isoDay, techArticleJsonLd } from "./pageMeta.js";
 import { breadcrumbs } from "./partials/breadcrumbs.js";
 import { tagChips } from "./partials/tagChips.js";
+import { related } from "./partials/related.js";
 import { toc } from "./partials/toc.js";
 import { exampleCard } from "./partials/exampleCard.js";
 import { highlightCode, renderInline, type TocEntry } from "../content/markdown.js";
-import type { Page } from "../content/loader.js";
+import type { CommandPage } from "../content/loader.js";
 import type { ExamplesFile } from "../content/schema.js";
 
+/** Section headings and the `##` headings in `index.md` land in the same document, so they are
+ *  slugged by the same algorithm: `github-slugger`, which is what `rehype-slug` uses for the
+ *  prose side. A hand-rolled `[^a-z0-9]+` version disagreed with it on any title that wasn't
+ *  plain ASCII, and reduced a title with no ASCII at all to the empty string — an `id=""` that
+ *  the collision check below could not see, because it only fires on the second one. */
 function slugify(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+  return new GithubSlugger().slug(title);
 }
 
 /** Collapsed by default: useful when an output can't be interpreted without seeing its
@@ -39,10 +44,9 @@ ${blocks.map((b) => raw(b))}
 </details>`;
 }
 
-export async function commandPage(page: Page, cssHref: string): Promise<string> {
-  const dateStr = page.updated.toISOString().slice(0, 10);
+export async function commandPage(page: CommandPage, cssHref: string): Promise<string> {
+  const dateStr = isoDay(page.updated);
   const examplesFile = page.examples;
-  if (!examplesFile) throw new Error(`commandPage: ${page.slug} has no examples`);
 
   // Round down to the nearest ten and mark it "+", but only when there really are
   // extras — exactly 50 examples should read "50", not "50+".
@@ -84,12 +88,6 @@ ${cards.map((c) => raw(c))}
     }),
   );
 
-  const relatedHtml = page.relatedLinks.length
-    ? html`<nav class="related" aria-label="Related pages"><h2>Related</h2><ul>
-${page.relatedLinks.map((r) => raw(html`<li><a href="${r.url}">${r.title}</a></li>`))}
-</ul></nav>`
-    : "";
-
   const body = html`
 ${raw(breadcrumbs(page.category, page.title))}
 <article class="command-page">
@@ -101,7 +99,7 @@ ${raw(tagChips(page.tags))}
 <div class="prose">${raw(page.html)}</div>
 ${raw(await fixturesHtml(examplesFile))}
 ${sectionsHtml.map((s) => raw(s))}
-${raw(relatedHtml)}
+${raw(related(page.relatedLinks))}
 </div>
 ${raw(toc([...page.toc, ...sectionTocEntries]))}
 </article>`;
@@ -115,12 +113,8 @@ ${raw(toc([...page.toc, ...sectionTocEntries]))}
     cssHref,
     draft: page.draft,
     indexable: true,
-    jsonLd: {
-      "@context": "https://schema.org",
-      "@type": "TechArticle",
-      headline: page.title,
-      description: page.description,
-      dateModified: dateStr,
-    },
+    ogType: "article",
+    modified: dateStr,
+    jsonLd: techArticleJsonLd(page),
   });
 }

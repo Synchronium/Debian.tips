@@ -21,21 +21,22 @@ HTML/CSS/JS deployed to GitHub Pages — no client-side framework, no build-time
 
 ## Local development
 
-Requires Node 22+.
+Requires Node 24+ (what CI runs, and what the devcontainer provides).
 
 ```sh
 npm install
 npm run dev      # dev server at http://localhost:4321, rebuilds on file change
 npm run build    # one-off production build to dist/
-npm run check    # typecheck + tests + build + linkcheck — run before committing
+npm run check    # format + typecheck + tests + build + linkcheck + link audit — the full gate
 ```
 
 ## Project structure
 
 ```
-content/            Markdown + YAML content (commands, concepts, scripting, recipes, debian)
+content/            Markdown + YAML content, one directory per category (see src/content/schema.ts)
 src/                Generator: content pipeline, templates, dev server, build/linkcheck scripts
 src/templates/      Page templates and shared partials
+src/client/         Client JavaScript inlined into every page (theme, copy buttons, search key)
 scripts/            Sandbox, example replay (npm run replay), and content-fixture setup scripts
 styles/site.css     Full design system (single stylesheet, hashed on build)
 public/             Static assets copied as-is into dist/ (favicon, robots.txt, CNAME, search.js)
@@ -85,13 +86,15 @@ npx tsx scripts/verify-examples.ts "$name" wc scripts/fixtures/wc.sh   # -> "wc 
 scripts/sandbox.sh stop "$name"
 ```
 
-Every command page replays at 100% — 535 documented outputs and 64 sample-file blocks. Pages
-whose output depends on who ran the command (file ownership, a `~` path, a permission denial) say
-so with a `# verify: --user` line in their setup script, which both tools read; the mode is
-printed with the score, since the same page scores differently under each. A number
-of examples can't run in a batch (they
-need a concurrent writer, like `tail -f`); those are listed in a `.skip` file alongside a note on
-how they were verified, rather than being quietly dropped.
+Every page with a setup script replays at 100%. The counts — how many outputs are re-run, across
+how many pages, and how many are exempt — are on [the about page](https://debian.tips/about/),
+counted from the content at build time rather than typed here, where they went stale within a
+week the first time. Pages whose output depends on who ran the command (file ownership, a `~`
+path, a permission denial) say so with a `# verify: --user` line in their setup script, which
+both tools read; the mode is printed with the score, since the same page scores differently under
+each. A number of examples can't run in a batch (they need a concurrent writer, like `tail -f`);
+those are listed in a `.skip` file alongside a note on how they were verified, rather than being
+quietly dropped.
 
 ## CI and deployment
 

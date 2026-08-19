@@ -1,19 +1,16 @@
 import { html, raw } from "../html.js";
 import { layout } from "./layout.js";
+import { isoDay, techArticleJsonLd } from "./pageMeta.js";
 import { breadcrumbs } from "./partials/breadcrumbs.js";
 import { tagChips } from "./partials/tagChips.js";
 import { prevNext } from "./partials/prevNext.js";
+import { related } from "./partials/related.js";
 import { toc } from "./partials/toc.js";
-import type { Page } from "../content/loader.js";
+import type { ArticlePage, ScriptingPage } from "../content/loader.js";
 
-export function articlePage(page: Page, cssHref: string): string {
-  const dateStr = page.updated.toISOString().slice(0, 10);
-
-  const relatedHtml = page.relatedLinks.length
-    ? html`<nav class="related" aria-label="Related pages"><h2>Related</h2><ul>
-${page.relatedLinks.map((r) => raw(html`<li><a href="${r.url}">${r.title}</a></li>`))}
-</ul></nav>`
-    : "";
+export function articlePage(page: ArticlePage | ScriptingPage, cssHref: string): string {
+  const dateStr = isoDay(page.updated);
+  const series = page.category === "scripting" ? prevNext(page.prev, page.next) : "";
 
   const body = html`
 ${raw(breadcrumbs(page.category, page.title))}
@@ -23,8 +20,8 @@ ${raw(breadcrumbs(page.category, page.title))}
 <p class="meta">Updated ${dateStr}</p>
 ${raw(tagChips(page.tags))}
 <div class="prose">${raw(page.html)}</div>
-${raw(relatedHtml)}
-${raw(prevNext(page.prev, page.next))}
+${raw(related(page.relatedLinks))}
+${raw(series)}
 </div>
 ${raw(toc(page.toc))}
 </article>`;
@@ -38,12 +35,8 @@ ${raw(toc(page.toc))}
     cssHref,
     draft: page.draft,
     indexable: true,
-    jsonLd: {
-      "@context": "https://schema.org",
-      "@type": "TechArticle",
-      headline: page.title,
-      description: page.description,
-      dateModified: dateStr,
-    },
+    ogType: "article",
+    modified: dateStr,
+    jsonLd: techArticleJsonLd(page),
   });
 }

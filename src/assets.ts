@@ -7,9 +7,16 @@ export function copyPublic(distDir: string): void {
   cpSync(PUBLIC_DIR, distDir, { recursive: true });
 }
 
-/** Copies styles/site.css into dist/assets/site.<hash8>.css and returns its href. */
-export function writeHashedCss(distDir: string): string {
-  const source = readFileSync(join(STYLES_DIR, "site.css"), "utf-8");
+/** Copies styles/site.css into dist/assets/site.<hash8>.css and returns its href.
+ *
+ *  `extraCss` is appended before hashing: the syntax-highlighting classes are cut from the
+ *  rendered pages, so they only exist once the content has been rendered, and the hash has to
+ *  cover them or a stale cached stylesheet would leave a page's code blocks uncoloured. */
+export function writeHashedCss(distDir: string, extraCss = ""): string {
+  const base = readFileSync(join(STYLES_DIR, "site.css"), "utf-8");
+  const source = extraCss
+    ? `${base}\n/* Syntax highlighting, generated from the content. */\n${extraCss}\n`
+    : base;
   const hash = createHash("sha256").update(source).digest("hex").slice(0, 8);
   const filename = `site.${hash}.css`;
   const assetsDir = join(distDir, "assets");

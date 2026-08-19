@@ -1,5 +1,9 @@
+import { readFileSync } from "node:fs";
+import { transformSync } from "esbuild";
+import { join } from "node:path";
 import { html, raw, type Raw } from "../html.js";
 import { CATEGORY_META, NAV_ORDER, SITE, STANDALONE_PAGES } from "../config.js";
+import { CLIENT_DIR } from "../paths.js";
 import type { Category } from "../content/schema.js";
 
 export interface LayoutOptions {
@@ -11,6 +15,15 @@ export interface LayoutOptions {
   jsonLd?: Record<string, unknown>;
   cssHref: string;
   draft?: boolean;
+  /** `article` for a content page, `website` for the chrome around it (home, listings, tags).
+   *  Social cards and structured-data consumers treat the two differently. */
+  ogType?: "website" | "article";
+  /** ISO date for `article:modified_time`, on the pages that are articles. */
+  modified?: string;
+  /** `rel="prev"`/`rel="next"` for a paginated listing, so a crawler reads the pages as one
+   *  sequence rather than as near-duplicates of each other. */
+  prevPath?: string;
+  nextPath?: string;
   /** Only command/article pages set this — Pagefind indexes solely inside elements
    * carrying this attribute once it's present anywhere on the site, so leaving it
    * off listing/tag/home/404 pages keeps search results to actual content pages. */
@@ -25,41 +38,48 @@ function analyticsHtml(): string {
 <script>${raw(`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${id}');`)}</script>`;
 }
 
-const THEME_SCRIPT =
-  "(function(){try{var t=localStorage.getItem('theme');if(!t){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}" +
-  "document.documentElement.setAttribute('data-theme',t);document.documentElement.classList.add('js');}catch(e){}})();";
+/** Compiled and minified once per build, then inlined into every page.
+ *
+ *  These run before and during first paint, so they are inlined rather than fetched — a request
+ *  per page for this much would cost more than it saves, and the theme script has to run before
+ *  the page renders or it renders in the wrong theme first.
+ *
+ *  Compiling means the source can be ordinary TypeScript — checked by `tsconfig.client.json`,
+ *  formatted by Prettier, readable — while what ships is small. Before this it was hand-written
+ *  ES5 inlined verbatim, which is what happens when there is nowhere to compile.
+ *
+ *  Cached because the layout runs for every page and neither file changes between them. The
+ *  `</script` check runs on the *output*: minification can move a string, and a page that stops
+ *  parsing halfway is a bad way to find that out. */
+const scriptCache = new Map<string, string>();
+function clientScript(filename: string): string {
+  const cached = scriptCache.get(filename);
+  if (cached !== undefined) return cached;
 
-/** Always-loaded glue: theme toggle, copy buttons, and the search trigger. The
- * search dialog's own wiring (and Pagefind itself) live in /assets/search.js,
- * fetched via dynamic import() only when the dialog is first opened, so
- * Pagefind's JS/WASM bundle never loads for visitors who don't search. */
-const INTERACTION_SCRIPT =
-  "(function(){" +
-  "function setTheme(t){document.documentElement.setAttribute('data-theme',t);try{localStorage.setItem('theme',t);}catch(e){}}" +
-  "function openSearch(){import('/assets/search.js').then(function(m){m.openSearch();});}" +
-  "document.addEventListener('click',function(ev){" +
-  "if(ev.target.closest('[data-theme-toggle]')){var cur=document.documentElement.getAttribute('data-theme');setTheme(cur==='dark'?'light':'dark');return;}" +
-  "if(ev.target.closest('[data-search-open]')){ev.preventDefault();openSearch();return;}" +
-  "var copy=ev.target.closest('[data-copy]');" +
-  "if(copy){" +
-  "var original=copy.dataset.label||(copy.dataset.label=copy.textContent);" +
-  "navigator.clipboard.writeText(copy.getAttribute('data-copy')).then(function(){" +
-  "copy.textContent='Copied';" +
-  "var live=document.getElementById('live-region');if(live)live.textContent='Copied to clipboard';" +
-  "clearTimeout(copy._copyTimeout);" +
-  "copy._copyTimeout=setTimeout(function(){copy.textContent=original;delete copy.dataset.label;},1500);" +
-  // Clipboard access rejects on insecure origins (any non-localhost host) and when
-  // permission is denied. Without this the button silently does nothing at all.
-  "}).catch(function(){" +
-  "copy.textContent='Press Ctrl+C';" +
-  "clearTimeout(copy._copyTimeout);" +
-  "copy._copyTimeout=setTimeout(function(){copy.textContent=original;delete copy.dataset.label;},2000);" +
-  "});}" +
-  "});" +
-  "document.addEventListener('keydown',function(ev){" +
-  "if((ev.metaKey||ev.ctrlKey)&&ev.key==='k'){ev.preventDefault();openSearch();}" +
-  "});" +
-  "})();";
+  const source = readFileSync(join(CLIENT_DIR, filename), "utf-8");
+  // es2020: optional chaining and nullish coalescing survive as-is, and everything this site
+  // supports has had them for years. Not `esnext`, which would pass through syntax newer than
+  // the browsers these pages are read in.
+  // Wrapped before compiling rather than with esbuild's `format: "iife"`. Both stop every
+  // top-level name — `setTheme`, `copy`, `COPIED_MS` — becoming a global on every page, which is
+  // what the hand-written ES5 version used its own IIFE for. But `format: "iife"` also decides
+  // the dynamic `import()` needs CommonJS interop and emits ~300 bytes of __toESM helpers to
+  // support it. Wrapping the source keeps those out, and esbuild can still shorten the names
+  // because it can see nothing outside the function reaches them.
+  const { code } = transformSync(`(() => {\n${source}\n})();`, {
+    loader: "ts",
+    minify: true,
+    target: "es2020",
+  });
+
+  if (/<\/script/i.test(code)) {
+    throw new Error(
+      `${filename}: compiles to code containing "</script", which would end the inline script early`,
+    );
+  }
+  scriptCache.set(filename, code);
+  return code;
+}
 
 function headerHtml(activeCategory: Category | undefined): string {
   const navItems = NAV_ORDER.map((cat) => {
@@ -108,7 +128,11 @@ ${STANDALONE_PAGES.map((s) => raw(html`<li><a href="${s.path}">${s.navLabel}</a>
 
 /** Static markup only — no results are pre-rendered, so this ships fine to every
  * page without needing Pagefind at build time. All behaviour is wired by
- * assets/search.js on first open. */
+ * assets/search.js on first open.
+ *
+ * The result list itself is not a live region: replacing its contents on every keystroke made a
+ * screen reader announce every result again, mid-typing. The status line beside it says how many
+ * there are, which is the part worth hearing. */
 function searchDialogHtml(): string {
   return html`<dialog id="search-dialog" aria-label="Search debian.tips">
 <div class="search-dialog-inner">
@@ -117,7 +141,8 @@ function searchDialogHtml(): string {
 <input type="search" id="search-input" placeholder="Search commands, concepts, recipes…" aria-label="Search debian.tips" autocomplete="off" spellcheck="false" />
 <button type="button" data-search-close aria-label="Close search">Close</button>
 </div>
-<ul id="search-results" aria-live="polite"></ul>
+<ul id="search-results"></ul>
+<p class="visually-hidden" role="status" id="search-status"></p>
 </div>
 </dialog>`;
 }
@@ -146,7 +171,7 @@ export function layout(opts: LayoutOptions): string {
 
   // No data-theme attribute: styles/site.css defaults to dark and honours
   // prefers-color-scheme, so visitors without JS get their OS preference instead of
-  // being pinned to dark. THEME_SCRIPT sets an explicit attribute before paint for
+  // being pinned to dark. src/client/theme-init.js sets an explicit attribute before paint for
   // everyone else, which then wins over the media query in both directions.
   return html`<!doctype html>
 <html lang="en">
@@ -159,14 +184,17 @@ ${raw(analyticsHtml())}
 <link rel="canonical" href="${canonical}" />
 <link rel="alternate" type="application/rss+xml" title="${SITE.title}" href="/feed.xml" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-<meta property="og:type" content="website" />
+<meta property="og:type" content="${opts.ogType ?? "website"}" />
 <meta property="og:site_name" content="${SITE.title}" />
 <meta property="og:title" content="${opts.title}" />
 <meta property="og:description" content="${opts.description}" />
 <meta property="og:url" content="${canonical}" />
 <meta property="og:image" content="${SITE.url}/og-default.png" />
 <meta name="twitter:card" content="summary_large_image" />
-<script>${raw(THEME_SCRIPT)}</script>
+${opts.modified ? raw(html`<meta property="article:modified_time" content="${opts.modified}" />`) : ""}
+${opts.prevPath ? raw(html`<link rel="prev" href="${SITE.url}${opts.prevPath}" />`) : ""}
+${opts.nextPath ? raw(html`<link rel="next" href="${SITE.url}${opts.nextPath}" />`) : ""}
+<script>${raw(clientScript("theme-init.ts"))}</script>
 <link rel="stylesheet" href="${opts.cssHref}" />
 <script type="application/ld+json">${raw(safeJsonLd(websiteJsonLd))}</script>
 ${opts.jsonLd ? raw(html`<script type="application/ld+json">${raw(safeJsonLd(opts.jsonLd))}</script>`) : ""}
@@ -180,7 +208,7 @@ ${opts.bodyHtml}
 ${raw(footerHtml())}
 ${raw(searchDialogHtml())}
 <div aria-live="polite" class="visually-hidden" id="live-region"></div>
-<script>${raw(INTERACTION_SCRIPT)}</script>
+<script>${raw(clientScript("interaction.ts"))}</script>
 </body>
 </html>
 `;

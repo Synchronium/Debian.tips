@@ -1,0 +1,4 @@
+# The fixture tree's exemption, so the build's exemption counting has something to count.
+#
+# Verified by hand against a second terminal; a batch run has only one.
+Greet from another terminal

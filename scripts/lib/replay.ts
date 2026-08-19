@@ -1,7 +1,12 @@
 // Reading a page's replay metadata: which examples are exempt from the batch, and how the
 // page has to be run.
 import { readFileSync } from "node:fs";
-import { skipFile } from "../../src/paths.js";
+import { readSkipEntries } from "../../src/content/replaySkips.js";
+
+/** A page cannot be replayed as asked: a stale exemption, an unknown directive, a sandbox that
+ *  is not what the page needs. Thrown rather than exiting, so the batch runner can report the
+ *  page and carry on with the rest — and so these tools can be called as functions at all. */
+export class ReplayError extends Error {}
 
 /** Titles listed in scripts/fixtures/<command>.skip: examples a batch can't reproduce,
  *  because they need a concurrent writer, a live log rotation or a network peer. Each is
@@ -12,25 +17,15 @@ import { skipFile } from "../../src/paths.js";
  *  `output:` block: one matching nothing reads as an exemption while exempting nothing,
  *  and is an error. */
 export function loadSkipTitles(command: string, titlesWithOutput: string[]): Set<string> {
-  let entries = [];
-  try {
-    entries = readFileSync(skipFile(command), "utf-8")
-      .split("\n")
-      .map((l) => l.trim())
-      .filter((l) => l && !l.startsWith("#"));
-  } catch {
-    return new Set(); // no skip file: nothing is exempt
-  }
-
+  const entries = readSkipEntries(command);
   const known = new Set(titlesWithOutput);
   const stale = entries.filter((t) => !known.has(t));
   if (stale.length) {
-    console.error(
+    throw new ReplayError(
       `scripts/fixtures/${command}.skip names ${stale.length} example(s) that don't exist on the page (or carry no output: block):\n` +
         stale.map((t) => `  ${JSON.stringify(t)}`).join("\n") +
         `\nRename or remove them — an entry that matches nothing exempts nothing, and reads as though it does.`,
     );
-    process.exit(2);
   }
   return new Set(entries);
 }
@@ -73,10 +68,9 @@ export function readSetupDirectives(setupPath: string | undefined): SetupDirecti
   );
   const unknown = directives.filter((d) => !(KNOWN_DIRECTIVES as readonly string[]).includes(d));
   if (unknown.length) {
-    console.error(
+    throw new ReplayError(
       `${setupPath}: unknown "# verify:" directive(s): ${unknown.join(" ")} (understood: ${KNOWN_DIRECTIVES.join(", ")})`,
     );
-    process.exit(2);
   }
   return { asUser: directives.includes("--user"), needsSystemd: directives.includes("--systemd") };
 }

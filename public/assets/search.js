@@ -1,8 +1,12 @@
-// Lazy-loaded on first search-dialog open (see layout.ts INTERACTION_SCRIPT).
+// Lazy-loaded on first search-dialog open (see src/client/interaction.js).
 // Pulls in Pagefind's own JS/WASM bundle, which is the actually heavy part —
 // this file itself stays tiny so the always-loaded inline script doesn't.
 
-let dialog, input, results, pagefind;
+/** How many results the dialog shows. Anything past this is summarised rather than dropped
+ *  silently — see runSearch. */
+const SHOWN = 8;
+
+let dialog, input, results, status, pagefind;
 
 const ESCAPE_HTML = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 function escapeHtml(s) {
@@ -14,6 +18,7 @@ export function openSearch() {
     dialog = document.getElementById("search-dialog");
     input = document.getElementById("search-input");
     results = document.getElementById("search-results");
+    status = document.getElementById("search-status");
     dialog.addEventListener("click", (ev) => {
       if (ev.target === dialog) dialog.close();
     });
@@ -27,6 +32,7 @@ export function openSearch() {
   dialog.showModal();
   input.value = "";
   results.innerHTML = "";
+  status.textContent = "";
   input.focus();
 
   if (!pagefind) {
@@ -43,6 +49,7 @@ async function runSearch() {
   const query = input.value;
   if (!query) {
     results.innerHTML = "";
+    status.textContent = "";
     return;
   }
   const pf = await pagefind;
@@ -54,15 +61,28 @@ async function runSearch() {
   const search = await pf.debouncedSearch(query);
   // debouncedSearch returns null when a newer keystroke superseded this call.
   if (!search || query !== input.value) return;
-  const entries = await Promise.all(search.results.slice(0, 8).map((r) => r.data()));
+  const entries = await Promise.all(search.results.slice(0, SHOWN).map((r) => r.data()));
   if (query !== input.value) return;
 
-  results.innerHTML = entries.length
-    ? entries
-        .map(
-          (e) =>
-            `<li><a href="${e.url}"><span class="search-result-title">${escapeHtml(e.meta.title)}</span><span class="search-result-excerpt">${e.excerpt}</span></a></li>`,
-        )
-        .join("")
-    : '<li class="search-empty">No results found.</li>';
+  if (!entries.length) {
+    results.innerHTML = '<li class="search-empty">No results found.</li>';
+    status.textContent = "No results found.";
+    return;
+  }
+
+  // `excerpt` is inserted as markup on purpose: Pagefind escapes the page text it came from and
+  // wraps the matched words in <mark>, which is the highlighting. Every other field is escaped.
+  const items = entries.map(
+    (e) =>
+      `<li><a href="${e.url}"><span class="search-result-title">${escapeHtml(e.meta.title)}</span><span class="search-result-excerpt">${e.excerpt}</span></a></li>`,
+  );
+  // A hard cap with nothing said about it reads as "that's all there is". As the site grows,
+  // most searches will have more behind them than the first handful shown.
+  if (search.results.length > entries.length) {
+    items.push(
+      `<li class="search-more">Showing ${entries.length} of ${search.results.length} matches — keep typing to narrow it down.</li>`,
+    );
+  }
+  results.innerHTML = items.join("");
+  status.textContent = `${search.results.length} result${search.results.length === 1 ? "" : "s"}.`;
 }

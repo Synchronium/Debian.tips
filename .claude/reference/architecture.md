@@ -14,15 +14,19 @@ The validation order matters and is layered: schema shape → every `tags:` entr
 (scripting only) `order:` values are unique. `related:` links are validated at build time, not
 just documented — a typo'd slug fails the build, it doesn't silently 404.
 
-Five categories (`src/content/schema.ts` `CATEGORIES`): `commands`, `concepts`, `scripting`,
-`recipes`, `debian`. All but `commands` are flat `content/<category>/<slug>.md` files. `commands`
-is special-cased: each command is a directory, `content/commands/<slug>/index.md` (frontmatter +
-prose) paired with `content/commands/<slug>/examples.yaml` (structured sections of tested
-examples) — `loader.ts`'s `loadCommands` requires both files to exist and cross-checks the
-examples file's `command:` field against the directory name.
+The categories are whatever `CATEGORIES` in `src/content/schema.ts` says — read them there
+rather than from a list here, which is how this document came to name five of them for months
+after `troubleshooting` and `compare` were added. All but `commands` are flat
+`content/<category>/<slug>.md` files. `commands` is special-cased: each command is a directory,
+`content/commands/<slug>/index.md` (frontmatter + prose) paired with
+`content/commands/<slug>/examples.yaml` (structured sections of tested examples) — `loader.ts`'s
+`loadCommands` requires both files to exist and cross-checks the examples file's `command:` field
+against the directory name.
 
-`src/build.ts` orchestrates: load content → render each page through `src/templates/` → write
-`dist/`. Category listing pages, tag pages, the homepage, sitemap, and RSS feed are all generated
+`src/build.ts` orchestrates: load content → render every page through `src/templates/` → write
+`dist/`. Rendering finishes before anything is written, because the stylesheet carries the
+syntax-highlighting classes cut from the rendered pages (`src/content/shikiStyles.ts`) and is
+content-hashed — so no page can be given its stylesheet link until the last page is rendered. Category listing pages, tag pages, the homepage, sitemap, and RSS feed are all generated
 from the same loaded content model, not authored separately.
 
 Two fields on each example — `level` and `tags` — are validated but intentionally **not rendered

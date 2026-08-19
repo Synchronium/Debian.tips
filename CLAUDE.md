@@ -21,12 +21,17 @@ npm install
 npm run dev      # dev server at http://localhost:4321, full rebuild on any file change
 npm run build    # one-off production build to dist/
 npm test         # vitest run (unit + fixture-based build tests)
-npm run check    # tsc --noEmit && vitest run && build && pagefind && linkcheck && link-audit — the full gate
-npm run replay   # replay every command page's examples in a sandbox (needs Docker, ~30s warm)
+npm run check    # format, tsc --noEmit, vitest, build, pagefind, linkcheck, link-audit — the full gate
+npm run replay   # replay every page's examples in a sandbox (needs Docker, ~2.5 min warm)
+npm run replay -- --changed        # only the pages your diff touches — what CI runs on a PR
 npm run audit:links -- --verbose   # the link graph on its own, advisory findings included
 ```
 
-Run `npm run check` before treating any change as done — it's also what CI runs (`.github/workflows/ci.yml`), followed by `pa11y-ci` as a separate accessibility gate.
+Run `npm run check` before treating any change as done — it's also what CI runs
+(`.github/workflows/ci.yml`), followed by `pa11y-ci` as a separate accessibility gate whose URL
+list is generated from the built sitemap by `scripts/pa11y-urls.ts`. `check` sets
+`NODE_ENV=production` itself, so the local gate and the CI one see the same site: drafts are
+excluded from both.
 
 Single test file: `npx vitest run test/schema.test.ts`
 Single test by name: `npx vitest run -t "accepts a valid command page"`
@@ -78,10 +83,15 @@ Three rules follow from that, and all three have been broken here at least once:
 
 ## Where the content lives
 
-Five categories are flat `content/<category>/<slug>.md`; `commands` is a directory per command,
-`content/commands/<slug>/index.md` paired with `examples.yaml`. `src/content/schema.ts` is the
-single source of truth for what a page needs, and its comment on `CATEGORIES` gives the test for
-which category a page belongs in.
+`src/content/schema.ts` is the single source of truth for what a page needs, and its comment on
+`CATEGORIES` gives the test for which category a page belongs in — including how many categories
+there are, which is why no other document lists them. Every category except `commands` is flat
+`content/<category>/<slug>.md`; `commands` is a directory per command,
+`content/commands/<slug>/index.md` paired with `examples.yaml`.
+
+Slugs are unique per category rather than site-wide, so `related:` accepts either a bare slug or
+`category/slug`, and says so when a bare one is ambiguous. Two pages sharing a slug may not both
+have a replay setup script, since those are named `scripts/fixtures/<slug>.sh`.
 
 ## Where to look
 

@@ -1,4 +1,10 @@
 command: greet
+fixtures:
+  - name: names.txt
+    note: "two names, one per line"
+    content: |
+      Ada
+      Grace
 sections:
   - title: "Basics"
     intro: "A quick warm-up before the real examples."
@@ -7,3 +13,26 @@ sections:
         code: echo "hello"
         description: Prints hello to stdout.
         level: basic
+        output: |2
+          hello
+      - title: "Say hello to everyone"
+        code: cat names.txt
+        description: Prints each name in the sample file.
+        level: basic
+        output: |2
+          Ada
+          Grace
+      - title: "Say hello with the time"
+        code: date +%s
+        description: The timestamp moves, so this one is compared by shape.
+        level: intermediate
+        volatile: "the timestamp is the moment you ran it"
+        compare: shape
+        output: |2
+          1755561600
+      - title: "Greet from another terminal"
+        code: echo "hello" > /dev/pts/1
+        description: Needs a second terminal, so the batch cannot reproduce it.
+        level: advanced
+        output: |2
+          hello

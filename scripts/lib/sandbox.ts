@@ -9,6 +9,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { FIXTURE_DIR, SANDBOX_SCRIPT } from "../../src/paths.js";
+import { ReplayError } from "./replay.js";
 
 /** Seconds an example may run before `timeout` kills it. Pages document commands that
  *  block for ever (`tail -f`, `journalctl -f`); a timed-out example reports as a mismatch. */
@@ -16,7 +17,12 @@ export const EXAMPLE_TIMEOUT_SECONDS = 5;
 
 /** Bytes kept per example. An interactive command that loops on EOF can emit hundreds of
  *  megabytes before `timeout` fires, which would overrun the read buffer for the whole
- *  batch and leave every later example reporting empty. */
+ *  batch and leave every later example reporting empty.
+ *
+ *  Applied with `head -c`, which counts bytes and will happily stop mid-character; the captured
+ *  text is repaired to the last whole character on the way back (see `captureAll`), so a cap
+ *  landing inside a multi-byte sequence reports as truncation rather than as a mismatch on a
+ *  replacement character nobody can explain. */
 export const OUTPUT_CAP_BYTES = 100_000;
 
 /** Read buffer for one batch: every example's output arrives in a single string. */
@@ -94,7 +100,7 @@ export function openSandbox(options: OpenOptions): Sandbox {
   if (needsSystemd) {
     const init = exec("cat /proc/1/comm", { asRoot: true }).trim();
     if (init !== "systemd") {
-      exit(
+      throw new ReplayError(
         `${command} declares "# verify: --systemd" but ${name} is running "${init}" as PID 1.\n` +
           `Start one with: ${SANDBOX_SCRIPT} start --systemd`,
       );
@@ -135,7 +141,9 @@ export function openSandbox(options: OpenOptions): Sandbox {
     setupOut = `${failure.stdout ?? ""}${failure.stderr ?? ""}`;
   }
   if (!setupOut.includes(SETUP_OK)) {
-    exit(`${setupPath} failed inside the sandbox — no fixtures were created:\n${setupOut.trim()}`);
+    throw new ReplayError(
+      `${setupPath} failed inside the sandbox — no fixtures were created:\n${setupOut.trim()}`,
+    );
   }
 
   return {
@@ -165,7 +173,9 @@ export function captureAll(sandbox: Sandbox, commands: string[]): Map<number, st
     ),
   ].join("\n");
 
-  const runner = `/tmp/batch-${process.pid}.sh`;
+  // Named for the tool and the page rather than for this process, so two tools — or, one day,
+  // two workers — sharing a sandbox cannot overwrite each other's batch mid-run.
+  const runner = `/tmp/batch-${sandbox.workdir.replace(/\//g, "-")}.sh`;
   let raw = "";
   try {
     raw = sandbox.exec(`echo ${base64(script)} | base64 -d > ${runner} && bash ${runner}`);
@@ -177,9 +187,16 @@ export function captureAll(sandbox: Sandbox, commands: string[]): Map<number, st
   const chunks = raw.split(new RegExp(`^${MARKER}(\\d+)$`, "m"));
   const output = new Map<number, string>();
   for (let i = 1; i < chunks.length; i += 2) {
-    output.set(Number(chunks[i]), (chunks[i + 1] ?? "").replace(/^\n/, ""));
+    output.set(Number(chunks[i]), dropPartialCharacter((chunks[i + 1] ?? "").replace(/^\n/, "")));
   }
   return output;
+}
+
+/** Drops a trailing replacement character, which is what `head -c` leaves behind when the byte
+ *  cap falls inside a multi-byte sequence. Comparing that against a page produces a mismatch on
+ *  a character neither the page nor the command ever contained. */
+function dropPartialCharacter(text: string): string {
+  return text.replace(/\uFFFD$/, "");
 }
 
 /** Copies a local file into the sandbox, base64-encoded so no content needs quoting. */
@@ -194,9 +211,4 @@ function writeFile(
 
 function base64(text: string): string {
   return Buffer.from(text, "utf-8").toString("base64");
-}
-
-function exit(message: string): never {
-  console.error(message);
-  process.exit(2);
 }

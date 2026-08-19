@@ -6,6 +6,7 @@ import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeStringify from "rehype-stringify";
 import { type Highlighter, type BundledLanguage, bundledLanguages, createHighlighter } from "shiki";
+import { extractShikiStyles } from "./shikiStyles.js";
 
 export interface TocEntry {
   level: 2 | 3;
@@ -46,6 +47,13 @@ function fixLightThemeContrast(html: string): string {
   return LIGHT_CONTRAST_FIXES.reduce((acc, [pattern, replacement]) => acc.replace(pattern, replacement), html);
 }
 
+/** Everything done to Shiki's output before it reaches a page: the contrast repair above, then
+ *  lifting the per-token inline styles into shared classes. Order matters — the repair rewrites
+ *  colours in the style declarations, which is where the classes are cut from. */
+function finishShiki(html: string): string {
+  return extractShikiStyles(fixLightThemeContrast(html));
+}
+
 let highlighterPromise: Promise<Highlighter> | undefined;
 function getHighlighter(): Promise<Highlighter> {
   highlighterPromise ??= createHighlighter({ themes: [THEMES.dark, THEMES.light], langs: LOAD_LANGS });
@@ -60,7 +68,7 @@ function resolveLang(requested: string | null | undefined): BundledLanguage | "p
 
 export async function highlightCode(code: string, lang: string): Promise<string> {
   const highlighter = await getHighlighter();
-  return fixLightThemeContrast(highlighter.codeToHtml(code, { lang: resolveLang(lang), themes: THEMES }));
+  return finishShiki(highlighter.codeToHtml(code, { lang: resolveLang(lang), themes: THEMES }));
 }
 
 /* The `any`s below are deliberate and confined to this file's AST plumbing.
@@ -101,7 +109,7 @@ function remarkShiki() {
     for (const node of codeNodes) {
       const lang = resolveLang(node.lang);
       const isOutput = lang === "plaintext";
-      const rendered = fixLightThemeContrast(highlighter.codeToHtml(node.value, { lang, themes: THEMES }));
+      const rendered = finishShiki(highlighter.codeToHtml(node.value, { lang, themes: THEMES }));
       const withA11y = rendered.replace(
         /^<pre /,
         `<pre aria-label="${isOutput ? "output" : "command"}" `,

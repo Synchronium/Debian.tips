@@ -1,0 +1,10 @@
+{
+  "//": "Client code is checked separately so DOM globals exist here and nowhere else. Sharing one config would let `document` and `localStorage` typecheck inside the build and the harness, where they are always a mistake.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": []
+  },
+  "include": ["src/client/**/*.ts"],
+  "exclude": []
+}

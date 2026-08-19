@@ -14,7 +14,8 @@ prose detail, but nothing below depends on them existing.
 ## 1. Identify the page
 
 From the request, work out:
-- **category** (`commands|concepts|scripting|recipes|debian`) → target directory
+- **category** — one of the values in `CATEGORIES` in `src/content/schema.ts`, whose comment
+  gives the test for which one a page belongs in → target directory
 - **slug** → directory/file name (command pages: `content/commands/<slug>/`; others:
   `content/<category>/<slug>.md`)
 - **tier** (commands only: `flagship|standard|light`) — drives length and example count. Judge it

@@ -1,0 +1,2 @@
+An empty harness directory: the fixture tree's pages, with no setup scripts beside them. Used by
+test/stats.test.ts to check that a page nothing replays is counted as a page nothing replays.

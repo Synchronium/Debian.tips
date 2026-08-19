@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseProsePage } from "../scripts/lib/proseBlocks.js";
+import { parseProsePage } from "../src/content/proseBlocks.js";
 
 /* The pairing rule decides which claims on a prose page get checked. A rule that pairs too
  * little leaves a claim unverified; one that pairs too much attributes an output to a
@@ -89,5 +89,26 @@ describe("parseProsePage", () => {
     const { pairs, unpaired } = parseProsePage(source);
     expect(pairs.map((p) => p.command)).toEqual(["one", "two"]);
     expect(unpaired).toBe(0);
+  });
+});
+
+describe("fence info strings", () => {
+  it("pairs a command fence that carries more than the language", () => {
+    // `/^```(\S*)\s*$/` did not recognise this line as a fence at all, so it was read as
+    // content and every open/close pairing after it on the page inverted. The page still
+    // rendered, the replay reported "1 block not checkable", and nothing failed — verification
+    // lost silently, which is the one thing this harness exists to prevent.
+    const page = parseProsePage('```bash title="one"\necho hi\n```\n```\nhi\n```\n');
+    expect(page.unpaired).toBe(0);
+    expect(page.pairs).toHaveLength(1);
+    expect(page.pairs[0]).toMatchObject({ command: "echo hi", output: "hi" });
+  });
+
+  it("does not let a fence line inside an output block close it", () => {
+    // A closing fence carries no info string, so a line like ```bash inside an output block —
+    // output that happens to contain Markdown — is content, not the end of the block.
+    const page = parseProsePage("```bash\ncat post.md\n```\n```\n```bash x\nhi\n```\n");
+    expect(page.pairs).toHaveLength(1);
+    expect(page.pairs[0]?.output).toBe("```bash x\nhi");
   });
 });

@@ -3,74 +3,43 @@
    ========================================================================== */
 
 /* Theme resolution, in cascade order:
-   1. dark is the base, so a page with no data-theme attribute still renders
-   2. visitors with no explicit choice follow prefers-color-scheme
-   3. an explicit data-theme (set by the toggle, or restored from localStorage
-      by the inline script in layout.ts) overrides both
-   The served HTML deliberately carries no data-theme attribute — hardcoding one
-   meant visitors without JS always got dark regardless of their OS setting,
-   since the script that reads the preference never ran. */
-:root,
-:root[data-theme="dark"] {
-  --bg: #101318;
-  --bg-surface: #171c24;
-  --bg-inset: #0b0e12;
-  --border: #2a3140;
-  --text: #e6e9ef;
-  --text-muted: #9aa4b2;
-  --accent: #ff7aa2;
-  --accent-hover: #ffa3bf;
-  --ok: #6fd08c;
-  --warn: #f2c14e;
-  --danger: #ff8080;
-  --card-shadow: none;
+   1. `light-dark()` picks a value from `color-scheme`, which defaults to `light dark` — so a
+      visitor with no explicit choice follows prefers-color-scheme
+   2. an explicit data-theme (set by the toggle, or restored from localStorage by
+      src/client/theme-init.ts) pins `color-scheme` to one value, which overrides that
+   The served HTML deliberately carries no data-theme attribute — hardcoding one meant visitors
+   without JS always got dark regardless of their OS setting, since the script that reads the
+   preference never ran.
+
+   Every token is defined once. This used to be four copies of twelve values — a dark block, a
+   dark override, a light media query and a light override — kept in step by hand. `light-dark()`
+   makes the theme a property of `color-scheme` rather than of the selector, so the three states
+   need three one-line rules and no duplicated values at all. */
+:root {
+  color-scheme: light dark;
+
+  --bg: light-dark(#ffffff, #101318);
+  --bg-surface: light-dark(#f6f7f9, #171c24);
+  --bg-inset: light-dark(#f0f1f4, #0b0e12);
+  --border: light-dark(#d8dce3, #2a3140);
+  --text: light-dark(#1c2430, #e6e9ef);
+  --text-muted: light-dark(#5b6572, #9aa4b2);
+  --accent: light-dark(#b3134f, #ff7aa2);
+  --accent-hover: light-dark(#8f0f3f, #ffa3bf);
+  --ok: light-dark(#1a7f43, #6fd08c);
+  --warn: light-dark(#8a6100, #f2c14e);
+  --danger: light-dark(#b42318, #ff8080);
+  --card-shadow: light-dark(0 1px 3px rgb(0 0 0 / 0.08), none);
 }
 
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    --bg: #ffffff;
-    --bg-surface: #f6f7f9;
-    --bg-inset: #f0f1f4;
-    --border: #d8dce3;
-    --text: #1c2430;
-    --text-muted: #5b6572;
-    --accent: #b3134f;
-    --accent-hover: #8f0f3f;
-    --ok: #1a7f43;
-    --warn: #8a6100;
-    --danger: #b42318;
-    --card-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
-  }
-}
-
-/* Last, so an explicit choice beats the media query above in both directions. */
+/* The toggle's two states. Pinning `color-scheme` re-resolves every `light-dark()` above at
+   once, and it also tells the browser to match its own form controls and scrollbars to the
+   choice — which the previous selector-per-palette version did not do. */
 :root[data-theme="light"] {
-  --bg: #ffffff;
-  --bg-surface: #f6f7f9;
-  --bg-inset: #f0f1f4;
-  --border: #d8dce3;
-  --text: #1c2430;
-  --text-muted: #5b6572;
-  --accent: #b3134f;
-  --accent-hover: #8f0f3f;
-  --ok: #1a7f43;
-  --warn: #8a6100;
-  --danger: #b42318;
-  --card-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+  color-scheme: light;
 }
 :root[data-theme="dark"] {
-  --bg: #101318;
-  --bg-surface: #171c24;
-  --bg-inset: #0b0e12;
-  --border: #2a3140;
-  --text: #e6e9ef;
-  --text-muted: #9aa4b2;
-  --accent: #ff7aa2;
-  --accent-hover: #ffa3bf;
-  --ok: #6fd08c;
-  --warn: #f2c14e;
-  --danger: #ff8080;
-  --card-shadow: none;
+  color-scheme: dark;
 }
 
 :root {
@@ -86,8 +55,13 @@
   --radius-s: 6px;
   --radius-m: 10px;
 
-  /* Measured sticky header height, used to keep anchor-jumped headings and
-     the sticky TOC clear of the header instead of hidden behind it. */
+  /* Measured sticky header height, used to keep anchor-jumped headings and the sticky TOC
+     clear of the header instead of hidden behind it.
+
+     Measured, not computed: nothing checks it, and nothing can. If the header ever wraps to a
+     second line — an eighth nav category, a longer label, a narrow desktop window — every
+     anchor jump on the site lands under the header and the sticky TOC sits too high, with no
+     test that can see it. src/config.ts names the nav-overflow decision this depends on. */
   --header-height: 61px;
 
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
@@ -100,8 +74,6 @@
   --fs-xl: 1.5rem;
   --fs-2xl: 1.9rem;
   --fs-3xl: 2.4rem;
-
-  color-scheme: dark light;
 }
 
 /* ==========================================================================
@@ -627,6 +599,13 @@ main {
   margin-inline-start: auto;
   text-align: right;
 }
+/* Sits between the two arrows on a split listing; `.pager` is a flex row, so it needs no
+   placement of its own beyond staying vertically centred with the links either side. */
+.pager-position {
+  align-self: center;
+  color: var(--text-muted);
+  font-size: var(--fs-s);
+}
 
 .related {
   margin-top: var(--space-7);
@@ -695,6 +674,30 @@ main {
   background: var(--bg-surface);
 }
 .tags a:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* The 404 page's "browse a category" list. Shaped like the tag chips, but named for what it is:
+   reusing `.tags` for it meant one class meaning two different things, and a change to chip
+   styling silently restyling a page nobody looks at until they are already lost. */
+.browse-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+.browse-categories a {
+  display: inline-block;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-xs);
+  text-decoration: none;
+  color: var(--text-muted);
+  background: var(--bg-surface);
+}
+.browse-categories a:hover {
   color: var(--accent);
   border-color: var(--accent);
 }
@@ -966,11 +969,6 @@ pre[data-prompt] .line::before {
   margin-top: var(--space-2);
 }
 
-/* Sample data the examples were run against — collapsed so it orients a reader who
-   needs it without pushing the examples themselves below the fold. */
-/* Sits above a volatile example's output: the block is a real capture, but the reader's
-   own run will differ in the ways the note describes. Distinguished from the output itself
-   rather than styled as a warning — nothing is wrong, it just isn't byte-for-byte. */
 /* The homepage's claim about verification. Set apart from the category sections above it,
    since it is the site's argument for itself rather than more content to browse. */
 .tested {
@@ -987,6 +985,9 @@ pre[data-prompt] .line::before {
   margin-bottom: 0;
 }
 
+/* Sits above a volatile example's output: the block is a real capture, but the reader's
+   own run will differ in the ways the note describes. Distinguished from the output itself
+   rather than styled as a warning — nothing is wrong, it just isn't byte-for-byte. */
 .output-varies {
   margin: 0 0 var(--space-2);
   padding: var(--space-2) var(--space-3);
@@ -1000,6 +1001,8 @@ pre[data-prompt] .line::before {
   color: var(--text);
 }
 
+/* Sample data the examples were run against — collapsed so it orients a reader who
+   needs it without pushing the examples themselves below the fold. */
 .fixtures {
   margin-top: var(--space-5);
   border: 1px solid var(--border);
@@ -1124,6 +1127,14 @@ pre[data-prompt] .line::before {
 .search-empty {
   padding: var(--space-4);
   color: var(--text-muted);
+  text-align: center;
+}
+/* The "showing 8 of 40" line under a truncated result list. Not a result, so it is not a link
+   and does not take the hover treatment. */
+.search-more {
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
   text-align: center;
 }
 

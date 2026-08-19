@@ -27,7 +27,7 @@ jobs:
           # verified — deployed under the previous run's approval.
           ref: ${{ github.event.workflow_run.head_sha || github.ref }}
       - uses: actions/setup-node@v7
-        with: { node-version: 22, cache: npm }
+        with: { node-version: 24, cache: npm }
       - run: npm ci
       - run: npm run build
         env: { NODE_ENV: production }

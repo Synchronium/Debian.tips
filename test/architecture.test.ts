@@ -1,11 +1,10 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { parse } from "yaml";
-import type { ExamplesFile } from "../src/content/schema.js";
 import { PROSE_CATEGORIES } from "../src/content/schema.js";
-import { CONTENT_DIR, EXAMPLES_FILE, FIXTURE_DIR, commandDir, proseSource } from "../src/paths.js";
-import { parseProsePage } from "../scripts/lib/proseBlocks.js";
+import { CONTENT_DIR, FIXTURE_DIR, proseSource } from "../src/paths.js";
+import { parseProsePage } from "../src/content/proseBlocks.js";
+import { readExamplesFile } from "../scripts/lib/examplesFile.js";
 
 const COMMANDS_DIR = join(CONTENT_DIR, "commands");
 
@@ -26,8 +25,9 @@ function documentedOutputs(): { where: string; output: string }[] {
   const found: { where: string; output: string }[] = [];
 
   for (const slug of readdirSync(COMMANDS_DIR)) {
-    const file = join(commandDir(slug), EXAMPLES_FILE);
-    const doc = parse(readFileSync(file, "utf-8")) as ExamplesFile;
+    // Parsed through the schema rather than cast, so a malformed examples.yaml fails here with
+    // the loader's message instead of as a TypeError somewhere inside the loop below.
+    const doc = readExamplesFile(slug);
     for (const section of doc.sections) {
       for (const example of section.examples) {
         if (example.output !== undefined)

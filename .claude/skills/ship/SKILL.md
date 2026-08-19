@@ -11,8 +11,9 @@ the push — CI is the user's to watch, not something to poll.
 
 ## 1. Run the right gates
 
-`npm run check` always. It is typecheck, tests, build, pagefind, linkcheck and the link audit,
-needs nothing but Node, and is what CI's `check` job runs.
+`npm run check` always. It is the format check, typecheck, tests, build, pagefind, linkcheck and
+the link audit; it needs nothing but Node, and it is exactly what CI's `check` job runs — it sets
+`NODE_ENV=production` itself, so drafts are excluded here the same way they are there.
 
 `npm run replay` **as well**, whenever the change touches any of:
 
@@ -23,6 +24,10 @@ needs nothing but Node, and is what CI's `check` job runs.
 | `scripts/fixtures/<x>.sh` or `.skip` | `npm run replay -- <x>` |
 | `scripts/lib/normalise.ts`, `lib/sandbox.ts`, `verify-*.ts` | **everything**: `npm run replay` |
 | prose only, no commands or fixtures | nothing |
+
+`npm run replay -- --changed` works out that table from your diff — the same thing CI runs on a
+pull request. The rows above are still worth knowing, because it is the shared-library row that
+decides whether "everything" is the right answer.
 
 The shared-library row matters most. `normalise.ts` is used by both sides of every comparison,
 so a bug there corrupts a page and then certifies the corruption. Never push a change to it on

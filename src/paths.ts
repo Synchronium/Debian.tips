@@ -20,6 +20,11 @@ export const DIST_DIR = join(ROOT, "dist");
 export const PUBLIC_DIR = join(ROOT, "public");
 export const STYLES_DIR = join(ROOT, "styles");
 
+/** Client-side JavaScript that the layout inlines into every page, rather than serving as a
+ *  file: it has to run before first paint. Under `src/` because it is a build input — anything
+ *  the browser fetches for itself lives in `public/assets/` instead. */
+export const CLIENT_DIR = join(ROOT, "src", "client");
+
 /** Setup scripts, `.skip` lists and the Python helpers a page's examples need. */
 export const FIXTURE_DIR = join(ROOT, "scripts", "fixtures");
 
@@ -27,11 +32,17 @@ export const FIXTURE_DIR = join(ROOT, "scripts", "fixtures");
  *  on having been started from the repository root. */
 export const SANDBOX_SCRIPT = join(ROOT, "scripts", "sandbox.sh");
 
-/** A page's setup script: creates its sample files, and is what opts it into the replay. */
-export const fixtureScript = (slug: string): string => join(FIXTURE_DIR, `${slug}.sh`);
+/** A page's setup script: creates its sample files, and is what opts it into the replay.
+ *
+ *  `fixtureDir` is a parameter for the same reason `contentDir` is one: a build over a synthetic
+ *  content tree has a synthetic harness beside it, and defaulting to this repository's would have
+ *  the build counting one tree's pages against another tree's setup scripts. */
+export const fixtureScript = (slug: string, fixtureDir: string = FIXTURE_DIR): string =>
+  join(fixtureDir, `${slug}.sh`);
 
 /** Examples a batch cannot reproduce, listed by title with a note on how each was checked. */
-export const skipFile = (slug: string): string => join(FIXTURE_DIR, `${slug}.skip`);
+export const skipFile = (slug: string, fixtureDir: string = FIXTURE_DIR): string =>
+  join(fixtureDir, `${slug}.skip`);
 
 /** A command page is a directory holding prose and examples; every other page is one file. */
 export const commandDir = (slug: string, contentDir: string = CONTENT_DIR): string =>
@@ -43,3 +54,8 @@ export const proseSource = (category: string, slug: string, contentDir: string =
 export const INDEX_FILE = "index.md";
 export const EXAMPLES_FILE = "examples.yaml";
 export const TAGS_FILE = "tags.yaml";
+
+/** The file a directory URL resolves to. Named here for the same reason the content filenames
+ *  are: the builder writes it, the dev server serves it and linkcheck resolves links to it, and
+ *  three spellings of one convention is how they drift apart. */
+export const OUTPUT_INDEX = "index.html";
