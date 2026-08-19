@@ -105,6 +105,7 @@ This file is deliberately short. The detail lives next to the job that needs it:
 | Reviewing a Dependabot PR | `.claude/skills/review-dependency-prs/SKILL.md` |
 | Changing the replay harness, or a replay failing oddly | `.claude/reference/verification.md` |
 | Changing `src/` — pipeline, templates, markdown, dev server, link audit | `.claude/reference/architecture.md` |
+| Why something is the way it is, before changing it | `docs/adr/` |
 
 The two reference documents are where the long-form explanations went; nothing was dropped in
 moving them, and they carry the failure modes that produced each rule.

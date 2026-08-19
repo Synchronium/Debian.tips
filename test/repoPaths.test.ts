@@ -48,11 +48,15 @@ describe("repository paths named in the tools", () => {
     // `test` and `README.md` are scanned too. They were not, and two references rotted there
     // unseen: comments naming `verify-examples.mjs` two rewrites after it stopped being an
     // `.mjs` file, and a `PLAN-BUILD.md` that has never existed in this repository.
+    // `docs/` is scanned for the same reason it exists: an ADR names the test or the gate that
+    // enforces its decision, and a decision whose enforcement has been renamed away is exactly
+    // the one worth being told about.
     for (const file of [
       ...sourceFiles("src"),
       ...sourceFiles("scripts"),
       ...sourceFiles("test"),
       ...sourceFiles(".claude"),
+      ...sourceFiles("docs"),
       "CLAUDE.md",
       "README.md",
     ]) {

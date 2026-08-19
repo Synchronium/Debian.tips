@@ -1,5 +1,8 @@
 # How the generator is put together
 
+*Decisions* about the generator — what was chosen and what it rules out — are recorded in
+`docs/adr/`. This document is the mechanism; that one is the reasoning.
+
 Reference, not a checklist. Read this when changing `src/` — the content pipeline, the
 templates, the markdown rendering, the dev server or the link audit. Writing or verifying a
 content page needs none of it.
