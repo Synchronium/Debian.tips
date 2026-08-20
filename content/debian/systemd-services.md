@@ -161,6 +161,10 @@ rebuilding the man page index, none of it in a crontab. `systemctl list-timers` 
 set with the next and last run times filled in, which is the view you want when asking why
 something ran at four in the morning.
 
+Debian did not migrate away from cron, though — `/etc/cron.daily` is still there and still runs.
+[cron vs systemd timers](/compare/cron-vs-systemd-timers/) is the comparison, including which of
+the two a given job actually wants.
+
 For your own jobs, [`crontab`](/commands/crontab/) is still fewer keystrokes, and a timer costs
 two files instead of one line. What a timer buys is that its output goes to the journal with a
 recorded exit status, rather than being mailed to a user who does not exist. That trade is worth

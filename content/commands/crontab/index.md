@@ -64,3 +64,6 @@ files instead of one line. Cron is still the faster thing to reach for, but for 
 failure you would want to notice, [`systemctl`](/commands/systemctl/) covers the alternative, and
 [Managing services with systemd](/debian/systemd-services/) shows the timers Debian already runs
 on your machine without a crontab anywhere.
+
+[cron vs systemd timers](/compare/cron-vs-systemd-timers/) puts the two side by side on the same
+job, if what you want is to decide between them rather than to use one.
