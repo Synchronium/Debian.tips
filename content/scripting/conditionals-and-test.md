@@ -86,6 +86,10 @@ count=5
 if [[ "$count" -gt 3 && "$count" -lt 10 ]]; then echo "in range"; fi
 ```
 
+Being bash syntax is also its one limitation: under `/bin/sh`, which is dash on Debian, `[[`
+does not exist at all and the script stops there. [sh vs bash vs dash](/compare/sh-vs-bash-vs-dash/)
+covers when that matters and what to write instead.
+
 The equivalent with `[` needs `-a` (deprecated and best avoided) or two separate `[ ]` tests
 joined with `&&`:
 
