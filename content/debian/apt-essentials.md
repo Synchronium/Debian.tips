@@ -64,6 +64,9 @@ abbreviates the same thing to `rc` in its first column, which is the form you wi
 most often. `purge` clears that state entirely, deleting those leftover files.
 For a package you're getting rid of for good, `purge` is the more complete cleanup; for one
 you're likely to reinstall, plain `remove` avoids losing configuration you might want back.
+`autoremove` sits on a different axis again — it acts on packages nobody asked for rather than
+on how much of one to delete — and
+[remove vs purge vs autoremove](/compare/remove-vs-purge-vs-autoremove/) is the full comparison.
 
 ## Searching and inspecting
 

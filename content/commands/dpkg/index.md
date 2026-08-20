@@ -45,7 +45,8 @@ Given that, most installing is better done through apt. What `dpkg` is for:
 - **`ii`** — installed and configured. The normal state.
 - **`rc`** — removed, but its configuration files are still on disk. This is what `apt remove`
   leaves behind, and why a package you "removed" can still be affecting things. `apt purge`
-  clears it.
+  clears it, and [remove vs purge vs autoremove](/compare/remove-vs-purge-vs-autoremove/) is
+  when to pick which.
 - **`iU`** or **`iF`** — unpacked or half-configured. Something went wrong; `dpkg --configure -a`
   is the usual repair.
 - **`un`** — not installed, but known about, usually because something else references it.

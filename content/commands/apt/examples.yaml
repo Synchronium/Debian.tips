@@ -198,6 +198,8 @@ sections:
     intro: >-
       `remove` and `purge` differ only in what happens to the configuration in `/etc`, and that
       difference is behind most of the "I removed it but it's still configured" confusion.
+      `autoremove` is not a third strength of the same operation: it acts on packages you never
+      asked for, a distinction [pulled apart here](/compare/remove-vs-purge-vs-autoremove/).
     examples:
       - title: Remove a package, keeping its configuration
         code: sudo apt remove cowsay
