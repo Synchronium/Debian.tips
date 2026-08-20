@@ -66,6 +66,13 @@ fi
 apt-mark manual cowsay >/dev/null 2>&1
 apt-mark unhold cowsay >/dev/null 2>&1
 
+# The perl chain arrived as cowsay's dependencies and must read as automatically installed:
+# `apt remove -s cowsay` names all four in its "no longer required" notice, which is the point
+# of that example. /compare/remove-vs-purge-vs-autoremove/ marks them manual deliberately, to
+# keep its own autoremove output down to one package, so this asserts the state rather than
+# inheriting whatever ran last.
+apt-mark auto perl perl-modules-5.40 libperl5.40 libgdbm-compat4t64 libtext-charwidth-perl >/dev/null 2>&1
+
 # ca-certificates held, so the three hold examples tell one consistent story across restores:
 # `hold` acts on cowsay and reports a change, `showhold` has something to list, and `unhold`
 # acts on this one and reports cancelling a hold that was really there. Held here rather than

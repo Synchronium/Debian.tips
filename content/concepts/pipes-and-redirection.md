@@ -42,7 +42,9 @@ one end to `ls` as its stdout and the other to `grep` as its stdin.
 Chains of pipes work the same way, one connection at a time: `cat access.log | sort | uniq -c |
 sort -rn` is three separate pipes, each just wiring one command's stdout to the next command's
 stdin — see [sort](/commands/sort/) and [uniq](/commands/uniq/) for more on what each stage
-actually does.
+actually does. Nothing about the last stage is special either: any command that reads stdin can
+take that position, whether it is [`wc`](/commands/wc/) counting the result or
+[`cowsay`](/commands/cowsay/) announcing it.
 
 ## Redirecting to and from files
 

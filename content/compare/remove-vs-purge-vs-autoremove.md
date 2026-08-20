@@ -101,8 +101,9 @@ cowsay-off
 cowsay
 ```
 
-Only `cowsay-off` was ever typed at a prompt. `cowsay` came along because `cowsay-off` depends
-on it, so apt marked it automatic — and that mark is what decides its fate later.
+Only `cowsay-off` was ever typed at a prompt. [`cowsay`](/commands/cowsay/) came along because
+`cowsay-off` depends on it, so apt marked it automatic — and that mark is what decides its fate
+later.
 
 Remove the package you asked for and apt says so, in a notice that is easy to lose in the
 scroll:

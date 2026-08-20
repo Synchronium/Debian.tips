@@ -4,7 +4,10 @@ sections:
   - title: Finding a package
     intro: >-
       None of these change anything, so none need `sudo`. All of them read the local cache built
-      by `apt update` rather than asking the repositories directly.
+      by `apt update` rather than asking the repositories directly. The examples on this page act
+      on [`cowsay`](/commands/cowsay/) throughout, because it is small, it is
+      `Architecture: all` — so its output is identical on every machine — and removing it breaks
+      nothing.
     examples:
       - title: Search for a package by name and description
         code: apt search 'talking cow' | head -6

@@ -1,0 +1,775 @@
+command: cowsay
+
+fixtures:
+  - name: "notes.txt"
+    note: "three short lines, to show what wrapping does to them"
+    content: |
+      Backup finished
+      14 files copied
+      0 errors
+  - name: "access.log"
+    note: "10 requests from 3 addresses, 7 of them 200s — the same sample log the text-processing pages use"
+    content: |
+      203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
+      203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
+      198.51.100.7 - - [13/Aug/2026:09:14:22] "GET /index.html HTTP/1.1" 200 512
+      198.51.100.7 - - [13/Aug/2026:09:14:25] "GET /missing.html HTTP/1.1" 404 162
+      203.0.113.5 - - [13/Aug/2026:09:15:47] "GET /index.html HTTP/1.1" 200 512
+      192.0.2.44 - - [13/Aug/2026:09:16:03] "POST /login HTTP/1.1" 302 0
+      192.0.2.44 - - [13/Aug/2026:09:16:04] "GET /dashboard HTTP/1.1" 200 4021
+      198.51.100.7 - - [13/Aug/2026:09:18:51] "GET /index.html HTTP/1.1" 200 512
+      203.0.113.5 - - [13/Aug/2026:09:19:10] "GET /api/status HTTP/1.1" 500 89
+      192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
+  - name: "cows/server.cow"
+    note: "a hand-written cowfile, using each of the three variables the format provides"
+    content: |
+      $the_cow = <<"EOC";
+           $thoughts
+            $thoughts
+              .-------------.
+              |  $eyes  ------ |
+              |  $tongue         |
+              '-------------'
+               \\___________/
+      EOC
+  - name: "downloaded.cow"
+    note: "a cowfile that runs a command before drawing anything, standing in for one off the internet"
+    content: |
+      print "(this line came from the cowfile, before any cow was drawn)\n";
+      $the_cow = <<"EOC";
+            $thoughts
+             $thoughts  (a perfectly ordinary cow)
+      EOC
+
+sections:
+  - title: Saying something
+    intro: >-
+      Everything after the options is the message, joined with spaces. With no message at all,
+      `cowsay` reads standard input instead — which is the form that makes it a filter rather
+      than a toy, and the one the rest of this page is mostly about.
+    examples:
+      - title: Say a message
+        code: cowsay 'Hello, world'
+        description: The message goes in a balloon, sized to fit, with the default cow underneath.
+        level: basic
+        output: |2
+           ______________
+          < Hello, world >
+           --------------
+                  \   ^__^
+                   \  (oo)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Skip the quotes for plain words
+        code: cowsay Hello world
+        description: Arguments are joined with a single space, so quoting only matters when the message contains something the shell would act on — a `;`, a `$`, a `*`, or the run of spaces you wanted kept.
+        level: basic
+        output: |2
+           _____________
+          < Hello world >
+           -------------
+                  \   ^__^
+                   \  (oo)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Think it instead of saying it
+        code: cowthink 'Was that meant to happen?'
+        description: A second command from the same package, with a thought balloon and a trail of bubbles instead of a pointer. Every option below works identically on both.
+        level: basic
+        output: |2
+           ___________________________
+          ( Was that meant to happen? )
+           ---------------------------
+                  o   ^__^
+                   o  (oo)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Say nothing at all
+        code: cowsay ''
+        description: An empty message is not an error, and the balloon collapses to its minimum. Worth knowing when the thing you piped in turns out to have produced nothing.
+        level: basic
+        output: |2
+           __
+          <  >
+           --
+                  \   ^__^
+                   \  (oo)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Find where Debian put it
+        code: dpkg -L cowsay | grep /usr/games
+        description: '`/usr/games`, not `/usr/bin`. That directory is on a login shell''s `PATH` and not on cron''s, which is the single most common reason a working command stops working inside a job.'
+        level: basic
+        output: |2
+          /usr/games
+          /usr/games/cowsay
+          /usr/games/cowthink
+      - title: Confirm which one your shell will run
+        code: command -v cowsay
+        description: Prints nothing and exits non-zero if `/usr/games` is missing from your `PATH`, which is a faster answer than reading the error from whatever invoked it.
+        level: basic
+        output: |2
+          /usr/games/cowsay
+
+  - title: Taking input from a pipe
+    intro: >-
+      With no message argument `cowsay` reads standard input, so anything that prints can feed
+      it. Remember that it re-wraps what it receives: the line breaks in the input are gone
+      unless you pass `-n`.
+    examples:
+      - title: Pipe a message in
+        code: echo 'Backup finished' | cowsay
+        description: The form almost every real use takes. `cowsay` behaves like any other filter here — see [pipes and redirection](/concepts/pipes-and-redirection/) if the plumbing is the unfamiliar part.
+        level: basic
+        output: |2
+           _________________
+          < Backup finished >
+           -----------------
+                  \   ^__^
+                   \  (oo)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Read a file
+        code: cowsay < notes.txt
+        description: Three lines in, one line out. `cowsay` treats the whole input as a single paragraph and re-breaks it at 40 columns, which is rarely what you want for a file.
+        level: basic
+        output: |2
+           ___________________________________
+          / Backup finished 14 files copied 0 \
+          \ errors                            /
+           -----------------------------------
+                  \   ^__^
+                   \  (oo)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Keep the file's own line breaks
+        code: cowsay -n < notes.txt
+        description: '`-n` turns wrapping off, so the input arrives as written. This is the fix for the previous example, and it works only because the text came in on standard input.'
+        level: basic
+        output: |2
+           _________________
+          / Backup finished \
+          | 14 files copied |
+          \ 0 errors        /
+           -----------------
+                  \   ^__^
+                   \  (oo)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Feed it a here-string
+        code: cowsay <<< 'from a here-string'
+        description: A bash here-string is standard input without a pipeline or a subshell, which matters when the next thing you want to do is read `$?` from the command that produced the text.
+        level: intermediate
+        output: |2
+           ____________________
+          < from a here-string >
+           --------------------
+                  \   ^__^
+                   \  (oo)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Announce a count
+        code: wc -l < access.log | cowsay
+        description: '`<` rather than a filename argument, so `wc` prints the number on its own instead of the number and the file name.'
+        level: basic
+        output: |2
+           ____
+          < 10 >
+           ----
+                  \   ^__^
+                   \  (oo)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Announce the result of a whole pipeline
+        code: awk '{print $1}' access.log | sort -u | wc -l | cowsay
+        description: Distinct client addresses in the log. `cowsay` is the last stage and cares only that something arrived on standard input, so any pipeline at all can end this way.
+        level: intermediate
+        output: |2
+           ___
+          < 3 >
+           ---
+                  \   ^__^
+                   \  (oo)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Report a match count with a themed cow
+        code: grep -c ' 200 ' access.log | cowsay -f apt
+        description: '`-f apt` picks the cowfile the `cowsay` package ships for Debian''s own package manager. Cowfiles are covered below.'
+        level: intermediate
+        output: |2
+           ___
+          < 7 >
+           ---
+                 \ (__)
+                   (oo)
+             /------\/
+            / |    ||
+           *  /\---/\
+              ~~   ~~
+      - title: Preserve the columns of a counted list
+        code: uniq -c < notes.txt | cowsay -n
+        description: '`uniq -c` right-aligns its counts, and without `-n` that alignment is destroyed along with the line breaks. Any command whose output is a table needs `-n` here.'
+        level: intermediate
+        output: |2
+           _________________________
+          /       1 Backup finished \
+          |       1 14 files copied |
+          \       1 0 errors        /
+           -------------------------
+                  \   ^__^
+                   \  (oo)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+
+  - title: Changing the face
+    intro: >-
+      Eight single-letter options set a preset expression, and two more set the eyes and tongue
+      directly. They are mutually exclusive in practice: a preset always wins over `-e`,
+      whichever order you write them in.
+    examples:
+      - title: Assimilate the cow
+        code: cowsay -b 'Resistance is futile'
+        description: '`-b` is "borg" mode, and sets the eyes to `==`.'
+        level: basic
+        output: |2
+           ______________________
+          < Resistance is futile >
+           ----------------------
+                  \   ^__^
+                   \  (==)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Report a failure
+        code: cowsay -d 'The build is dead'
+        description: '`-d` is "dead": `xx` for eyes, and a lolling `U` tongue. The most useful of the presets, because it reads as failure at a glance in a script that also uses the default cow for success.'
+        level: basic
+        output: |2
+           ___________________
+          < The build is dead >
+           -------------------
+                  \   ^__^
+                   \  (xx)\_______
+                      (__)\       )\/\
+                       U  ||----w |
+                          ||     ||
+      - title: Show greed
+        code: "cowsay -g 'Disk usage: 98%'"
+        description: '`-g` is "greedy", with dollar signs for eyes.'
+        level: basic
+        output: |2
+           _________________
+          < Disk usage: 98% >
+           -----------------
+                  \   ^__^
+                   \  ($$)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Show paranoia
+        code: cowsay -p 'Who ran that as root?'
+        description: '`-p` is "paranoid", with `@@` for eyes.'
+        level: basic
+        output: |2
+           _______________________
+          < Who ran that as root? >
+           -----------------------
+                  \   ^__^
+                   \  (@@)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Show a cow that has had enough
+        code: cowsay -s 'Deploy went fine, probably'
+        description: '`-s` is "stoned", and like `-d` it sets the tongue as well as the eyes.'
+        level: basic
+        output: |2
+           ____________________________
+          < Deploy went fine, probably >
+           ----------------------------
+                  \   ^__^
+                   \  (**)\_______
+                      (__)\       )\/\
+                       U  ||----w |
+                          ||     ||
+      - title: Show tiredness
+        code: cowsay -t 'Third rebuild today'
+        description: '`-t` is "tired", with half-closed `--` eyes.'
+        level: basic
+        output: |2
+           _____________________
+          < Third rebuild today >
+           ---------------------
+                  \   ^__^
+                   \  (--)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Show alertness
+        code: cowsay -w 'Tests passed'
+        description: '`-w` is "wired", with wide `OO` eyes.'
+        level: basic
+        output: |2
+           ______________
+          < Tests passed >
+           --------------
+                  \   ^__^
+                   \  (OO)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Show youth
+        code: cowsay -y 'First commit'
+        description: '`-y` is "youthful", with small `..` eyes.'
+        level: basic
+        output: |2
+           ______________
+          < First commit >
+           --------------
+                  \   ^__^
+                   \  (..)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Set the eyes yourself
+        code: cowsay -e '^^' 'Custom eyes'
+        description: '`-e` takes any two characters. Quote them: `^`, `$`, `*` and `@` all mean something to the shell first.'
+        level: intermediate
+        output: |2
+           _____________
+          < Custom eyes >
+           -------------
+                  \   ^__^
+                   \  (^^)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Watch a longer string get truncated
+        code: cowsay -e 'XXXX' 'Only the first two count'
+        description: Exactly two characters are used and the rest are dropped silently, because the cowfile has a two-character slot to fill. There is no error and no warning.
+        level: intermediate
+        output: |2
+           __________________________
+          < Only the first two count >
+           --------------------------
+                  \   ^__^
+                   \  (XX)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Stick the tongue out
+        code: cowsay -T 'U ' 'Tongue out'
+        description: '`-T` is the tongue, also two characters. The trailing space in `''U ''` is deliberate: without it the second character comes from nowhere and the art shifts left.'
+        level: intermediate
+        output: |2
+           ____________
+          < Tongue out >
+           ------------
+                  \   ^__^
+                   \  (oo)\_______
+                      (__)\       )\/\
+                       U  ||----w |
+                          ||     ||
+      - title: Set both at once
+        code: cowsay -e '$$' -T 'vv' 'Both at once'
+        description: '`-e` and `-T` are independent, so any combination works. Single quotes keep the shell away from the `$$`, which would otherwise expand to the shell''s own process id.'
+        level: intermediate
+        output: |2
+           ______________
+          < Both at once >
+           --------------
+                  \   ^__^
+                   \  ($$)\_______
+                      (__)\       )\/\
+                       vv ||----w |
+                          ||     ||
+      - title: Find out which wins
+        code: cowsay -d -e '^^' 'Which one wins?'
+        description: The preset does, in either order. If a script sets a mode from a variable and also wants custom eyes, only one of the two can be honoured — so pick `-e` and set both characters yourself.
+        level: advanced
+        output: |2
+           _________________
+          < Which one wins? >
+           -----------------
+                  \   ^__^
+                   \  (xx)\_______
+                      (__)\       )\/\
+                       U  ||----w |
+                          ||     ||
+      - title: Combine a face with cowthink
+        code: cowthink -y -e 'oO' 'Thinking about it'
+        description: Same result — the preset overrides `-e` here too, and the only difference `cowthink` makes is the balloon and the bubbles.
+        level: intermediate
+        output: |2
+           ___________________
+          ( Thinking about it )
+           -------------------
+                  o   ^__^
+                   o  (..)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+
+  - title: Choosing a cow
+    intro: >-
+      The figure comes from a *cowfile*. `-l` lists what is installed, `-f` picks one by name,
+      and `$COWPATH` is the colon-separated list of directories that `-f` searches — the same
+      shape as `PATH`, and defaulting to `/usr/share/cowsay/cows` when it is unset.
+    examples:
+      - title: List the cowfiles you have
+        code: cowsay -l
+        description: Names only, without the `.cow` extension, which is the form `-f` wants. The first line names the directory, so this doubles as a way to see what `$COWPATH` is currently resolving to.
+        level: basic
+        output: |2
+          Cow files in /usr/share/cowsay/cows:
+          apt bud-frogs bunny calvin cheese cock cower daemon default dragon
+          dragon-and-cow duck elephant elephant-in-snake eyes flaming-sheep fox
+          ghostbusters gnu hellokitty kangaroo kiss koala kosh luke-koala
+          mech-and-cow milk moofasa moose pony pony-smaller ren sheep skeleton
+          snowman stegosaurus stimpy suse three-eyes turkey turtle tux unipony
+          unipony-smaller vader vader-koala www
+      - title: Count them
+        code: cowsay -l | tail -n +2 | wc -w
+        description: '`tail -n +2` drops the "Cow files in ..." heading, leaving only names for [`wc -w`](/commands/wc/) to count. Debian''s `cowsay` package ships 47.'
+        level: intermediate
+        output: |2
+          47
+      - title: Pick one by name
+        code: cowsay -f tux 'Debian'
+        description: '`-f` takes the name as `-l` printed it. The extension is optional — `-f tux` and `-f tux.cow` both work.'
+        level: basic
+        output: |2
+           ________
+          < Debian >
+           --------
+             \
+              \
+                  .--.
+                 |o_o |
+                 |:_/ |
+                //   \ \
+               (|     | )
+              /'\_   _/`\
+              \___)=(___/
+      - title: Use the cow the package manager gets
+        code: cowsay -f apt 'Reading package lists...'
+        description: One of the shipped cowfiles is Debian's own apt logo. It is the smallest of them, which makes it a good default when the output has to sit inside something else.
+        level: basic
+        output: |2
+           __________________________
+          < Reading package lists... >
+           --------------------------
+                 \ (__)
+                   (oo)
+             /------\/
+            / |    ||
+           *  /\---/\
+              ~~   ~~
+      - title: Use a much larger one
+        code: cowsay -f stegosaurus 'Legacy code'
+        description: Cowfiles vary enormously in size. Check one before putting it in a login banner or a CI log, because nothing constrains the height and the balloon sits above whatever it is.
+        level: intermediate
+        output: |2
+           _____________
+          < Legacy code >
+           -------------
+          \                             .       .
+           \                           / `.   .' "
+            \                  .---.  <    > <    >  .---.
+             \                 |    \  \ - ~ ~ - /  /    |
+                   _____          ..-~             ~-..-~
+                  |     |   \~~~\.'                    `./~~~/
+                 ---------   \__/                        \__/
+                .'  O    \     /               /       \  "
+               (_____,    `._.'               |         }  \/~~~/
+                `----.          /       }     |        /    \__/
+                      `-.      |       /      |       /      `. ,~~|
+                          ~-.__|      /_ - ~ ^|      /- _      `..-'
+                               |     /        |     /     ~-.     `-. _  _  _
+                               |_____|        |_____|         ~ - . _ _ _ _ _>
+      - title: See what a wrong name reports
+        code: cowsay -f nosuch 'hello'
+        description: A clear error and nothing else — no balloon, no fallback to the default cow. Anything less obvious than this means the file was found and something inside it went wrong.
+        level: intermediate
+        output: |2
+          cowsay: Could not find nosuch cowfile!
+      - title: Use a cowfile by path
+        code: cowsay -f ./cows/server.cow 'Backup finished'
+        description: Any `-f` value containing a `/` is treated as a path and `$COWPATH` is skipped entirely. The leading `./` is not optional — see the last section for what happens without it.
+        level: intermediate
+        output: |2
+           _________________
+          < Backup finished >
+           -----------------
+               \
+                \
+                  .-------------.
+                  |  oo  ------ |
+                  |             |
+                  '-------------'
+                   \___________/
+      - title: Point COWPATH at your own directory
+        code: COWPATH=$PWD/cows cowsay -f server 'Backup finished'
+        description: With `$COWPATH` set, `-f` takes a bare name again and finds your cowfile the same way it finds a shipped one. Set it in `~/.bashrc` to make it permanent.
+        level: intermediate
+        output: |2
+           _________________
+          < Backup finished >
+           -----------------
+               \
+                \
+                  .-------------.
+                  |  oo  ------ |
+                  |             |
+                  '-------------'
+                   \___________/
+      - title: List what a custom COWPATH offers
+        code: COWPATH=$PWD/cows cowsay -l | tail -1
+        description: '`-l` walks every directory in `$COWPATH` and prints a heading for each. `tail -1` here keeps the output to the names, since the headings are absolute paths specific to your machine.'
+        level: advanced
+        output: |2
+          server
+      - title: Think with a chosen cow
+        code: cowthink -f tux 'Compiling'
+        description: '`-f` works on `cowthink` unchanged. Only the balloon and the connector differ, so every cowfile has a thinking form for free.'
+        level: basic
+        output: |2
+           ___________
+          ( Compiling )
+           -----------
+             o
+              o
+                  .--.
+                 |o_o |
+                 |:_/ |
+                //   \ \
+               (|     | )
+              /'\_   _/`\
+              \___)=(___/
+      - title: Pick a different cow every time
+        code: cowsay -f "$(cowsay -l | tail -n +2 | tr ' ' '\n' | shuf -n 1)" 'Surprise'
+        description: '`tr` turns the space-separated list into one name per line so `shuf -n 1` can choose one. Output differs every run, which is the point, so nothing is shown here.'
+        level: advanced
+
+  - title: Writing your own cowfile
+    intro: >-
+      A cowfile sets one variable, `$the_cow`, to the art. It is Perl, and the conventional
+      form is an interpolating heredoc so that three variables can be substituted into the
+      drawing: `$eyes` and `$tongue` (two characters each, from `-e` and `-T`) and `$thoughts`,
+      which is `\` for `cowsay` and `o` for `cowthink`.
+    examples:
+      - title: Read the shipped default first
+        code: cat /usr/share/cowsay/cows/default.cow
+        description: Eight lines, and every convention the format has. Note that the backslashes in the art are doubled — the heredoc interpolates, so a single one would be consumed before the art ever reached the screen.
+        level: intermediate
+        output: |2
+          $the_cow = <<"EOC";
+                  $thoughts   ^__^
+                   $thoughts  ($eyes)\\_______
+                      (__)\\       )\\/\\
+                       $tongue ||----w |
+                          ||     ||
+          EOC
+      - title: Read one you wrote
+        code: cat cows/server.cow
+        description: The same shape. `$tongue` is two spaces when `-T` is not given, which is why the line holding it is padded to look empty rather than short.
+        level: intermediate
+        output: |2
+          $the_cow = <<"EOC";
+               $thoughts
+                $thoughts
+                  .-------------.
+                  |  $eyes  ------ |
+                  |  $tongue         |
+                  '-------------'
+                   \\___________/
+          EOC
+      - title: Watch the variables fill in
+        code: cowsay -f ./cows/server.cow -d -T 'U ' 'Disk full'
+        description: '`-d` writes into `$eyes` and `-T` into `$tongue`, in a cowfile that never mentions either option. Any cowfile that uses the variables gets every option on this page for nothing.'
+        level: intermediate
+        output: |2
+           ___________
+          < Disk full >
+           -----------
+               \
+                \
+                  .-------------.
+                  |  xx  ------ |
+                  |  U          |
+                  '-------------'
+                   \___________/
+      - title: Install it where cowsay looks
+        code: mkdir -p ~/.cows && cp cows/server.cow ~/.cows/
+        description: Nothing about `~/.cows` is special to `cowsay`; it is just a directory you are about to name in `$COWPATH`. Keeping your cowfiles out of `/usr/share` means a package upgrade cannot remove them.
+        level: intermediate
+      - title: Make COWPATH permanent
+        code: echo 'export COWPATH=$HOME/.cows:/usr/share/cowsay/cows' >> ~/.bashrc
+        description: Both directories, in that order, so your own cowfiles win a name clash and every shipped one still resolves. Single quotes so `$HOME` is written literally and expanded when the shell reads the file.
+        level: intermediate
+
+  - title: Controlling the wrapping
+    intro: >-
+      `cowsay` re-wraps everything it is given at 40 columns by default, joining the input into
+      one paragraph first. `-W` changes the width; `-n` switches wrapping off, and works only
+      on text arriving via standard input.
+    examples:
+      - title: See the default width
+        code: cowsay 'The quick brown fox jumps over the lazy dog and keeps on running'
+        description: 40 columns, which is narrow enough that most command output wraps. The balloon changes shape once it needs more than one line — the `< >` becomes a `/ \` and `\ /` frame.
+        level: basic
+        output: |2
+           _________________________________________
+          / The quick brown fox jumps over the lazy \
+          \ dog and keeps on running                /
+           -----------------------------------------
+                  \   ^__^
+                   \  (oo)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Wrap at a narrower width
+        code: cowsay -W 20 'The quick brown fox jumps over the lazy dog'
+        description: Middle lines of a multi-line balloon are framed with `|` on both sides, so the shape tells you at a glance how many lines there are.
+        level: basic
+        output: |2
+           _____________________
+          / The quick brown fox \
+          | jumps over the lazy |
+          \ dog                 /
+           ---------------------
+                  \   ^__^
+                   \  (oo)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Wrap at a wider one
+        code: cowsay -W 70 'The quick brown fox jumps over the lazy dog and keeps on running'
+        description: Give it more than the text needs and the balloon goes back to a single line. `-W` is a maximum, not a fixed width.
+        level: basic
+        output: |2
+           __________________________________________________________________
+          < The quick brown fox jumps over the lazy dog and keeps on running >
+           ------------------------------------------------------------------
+                  \   ^__^
+                   \  (oo)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Watch line breaks disappear
+        code: printf 'one\ntwo\nthree\n' | cowsay
+        description: Three input lines become one. This is the behaviour behind almost every "why does my output look wrong" question about `cowsay`, and it applies to anything piped in.
+        level: basic
+        output: |2
+           _______________
+          < one two three >
+           ---------------
+                  \   ^__^
+                   \  (oo)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Keep them
+        code: printf 'one\ntwo\nthree\n' | cowsay -n
+        description: '`-n` passes the text through as it arrived. Nothing is wrapped, so a line longer than your terminal will still run off the edge — `-n` and `-W` are alternatives, not partners.'
+        level: basic
+        output: |2
+           _______
+          / one   \
+          | two   |
+          \ three /
+           -------
+                  \   ^__^
+                   \  (oo)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+
+  - title: Using it in a script
+    intro: >-
+      The two things worth remembering when this moves out of your terminal: `/usr/games` is not
+      on the `PATH` of anything scheduled, and `cowsay` writes to standard output like everything
+      else, so it redirects and pipes normally.
+    examples:
+      - title: Report success or failure differently
+        code: if make -s; then cowsay 'Build finished'; else cowsay -d 'Build failed'; fi
+        description: The dead cow for the failure branch is legible from across a room, which is the entire argument for doing this at the end of a long job. No output shown because it depends on your build.
+        level: intermediate
+      - title: Wrap it in a shell function
+        code: 'notify() { cowsay -W 60 "$*"; }'
+        description: '`"$*"` joins the arguments into one string, so `notify deploy finished` works without quotes at the call site. Put it in `~/.bashrc` alongside your other [functions](/scripting/functions/).'
+        level: intermediate
+      - title: Announce it from a git hook
+        code: printf '#!/bin/sh\ncowsay "Pushed to $(git branch --show-current)"\n' > .git/hooks/pre-push
+        description: Hooks run with your environment, so `/usr/games` is normally on the `PATH` here. Remember `chmod +x` — a hook that is not executable is skipped silently.
+        level: advanced
+      - title: Give cron the full path
+        code: 0 9 * * 1 /usr/games/cowsay 'Weekly report is due' | mail -s Reminder you
+        description: The reliable form inside a [crontab](/commands/crontab/), because cron's `PATH` is `/usr/bin:/bin` and nothing else. Setting `PATH=` at the top of the crontab works too.
+        level: advanced
+      - title: See what cron would have seen
+        code: env -i PATH=/usr/bin:/bin sh -c 'cowsay Scheduled backup done'
+        description: '`env -i` clears the environment so you can reproduce a scheduled job''s `PATH` deliberately, rather than finding out at 09:00. The error comes from [dash](/compare/sh-vs-bash-vs-dash/), which is what `sh` is on Debian.'
+        level: advanced
+        output: |2
+          sh: 1: cowsay: not found
+
+  - title: Things that go wrong
+    intro: >-
+      Three failures that look like something else. The last is a security note rather than a
+      cosmetic one, and it is the reason a cowfile from a stranger deserves the same reading as
+      any other downloaded script.
+    examples:
+      - title: Watch colour codes break the balloon
+        code: printf '\033[31mDeploy failed\033[0m on host deb1\n' | cowsay | cat -v
+        description: '`cowsay` counts the escape sequences as characters when it sizes and pads the balloon, so the frame no longer lines up with the visible text. `cat -v` is only here to make the escapes printable on this page; strip colour before piping in, or accept a ragged edge.'
+        level: advanced
+        output: |2
+           ____________________________
+          < ^[[31mDeploy failed^[[0m on host deb1 >
+           ----------------------------
+                  \   ^__^
+                   \  (oo)\_______
+                      (__)\       )\/\
+                          ||----w |
+                          ||     ||
+      - title: Forget the ./ on a relative cowfile
+        code: cowsay -f cows/server.cow 'Backup finished'
+        description: A path with a `/` in it is handed to Perl's `do`, which will not read a relative path that does not start with `./`. The balloon is drawn and the cow is not, and the error names Perl rather than `cowsay`.
+        level: advanced
+        output: |2
+          do "cows/server.cow" failed, '.' is no longer in @INC; did you mean do "./cows/server.cow"? at /usr/games/cowsay line 196.
+           _________________
+          < Backup finished >
+           -----------------
+      - title: Pass -n a message argument
+        code: cowsay -n 'why is this the usage message'
+        description: '`-n` applies only to standard input, and giving it a message is treated as a usage error rather than reported as one. Nothing tells you which option it objected to.'
+        level: intermediate
+        output: |2
+          cow{say,think} version 3.03, (c) 1999 Tony Monroe
+          Usage: cowsay [-bdgpstwy] [-h] [-e eyes] [-f cowfile]
+                    [-l] [-n] [-T tongue] [-W wrapcolumn] [message]
+      - title: Run a cowfile you did not write
+        code: cowsay -f ./downloaded.cow 'Nice cow'
+        description: A cowfile is executed, not parsed — `cowsay` loads it with Perl's `do`, so anything in the file runs with your privileges before a single character is drawn. Read a downloaded cowfile first; a legitimate one is a `$the_cow` assignment, a heredoc of art, and nothing else.
+        level: advanced
+        danger: true
+        output: |2
+          (this line came from the cowfile, before any cow was drawn)
+           __________
+          < Nice cow >
+           ----------
+                \
+                 \  (a perfectly ordinary cow)

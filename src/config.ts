@@ -90,6 +90,7 @@ export const COMMAND_GROUPS: { title: string; commands: string[] }[] = [
       "diff",
       "column-tools",
       "tee",
+      "cowsay",
     ],
   },
   {

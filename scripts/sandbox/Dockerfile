@@ -14,8 +14,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl rsync less man-db procps iproute2 iputils-ping \
     cron python3 wget \
     sudo ca-certificates openssl \
-    jq lsof psmisc \
+    jq lsof psmisc cowsay \
     && rm -rf /var/lib/apt/lists/*
+
+# cowsay installs into /usr/games, which Debian puts on a login shell's PATH via
+# /etc/login.defs and leaves off everything else — /troubleshooting/sudo-command-not-found/
+# documents the same list from the other end. A `docker exec` is not a login shell, so without
+# this the whole cowsay page would have to spell out /usr/games/cowsay on every line, and none
+# of those lines would be what a reader types. Pinned here for the same reason the harness pins
+# the umask: it removes a difference caused by how the sandbox is entered, not a difference in
+# what the command does. `su -` resets PATH from login.defs regardless, so the sudo page's
+# `echo $PATH` block is unaffected.
+ENV PATH="${PATH}:/usr/games"
 
 # A container cannot load kernel modules — the host owns the kernel — so this unit fails on
 # every boot and leaves `systemctl is-system-running` reporting "degraded" for a reason no
