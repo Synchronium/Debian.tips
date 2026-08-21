@@ -6,6 +6,7 @@ import { tagChips } from "./partials/tagChips.js";
 import { prevNext } from "./partials/prevNext.js";
 import { related } from "./partials/related.js";
 import { toc } from "./partials/toc.js";
+import { sourceLinks } from "./partials/sourceLinks.js";
 import type { ArticlePage, ScriptingPage } from "../content/loader.js";
 
 export function articlePage(page: ArticlePage | ScriptingPage, cssHref: string): string {
@@ -22,6 +23,7 @@ ${raw(tagChips(page.tags))}
 <div class="prose">${raw(page.html)}</div>
 ${raw(related(page.relatedLinks))}
 ${raw(series)}
+${raw(sourceLinks(page.slug, page.sources))}
 </div>
 ${raw(toc(page.toc))}
 </article>`;

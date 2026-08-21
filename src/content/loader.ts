@@ -14,8 +14,9 @@ import {
   frontmatterSchema,
   tagRegistrySchema,
 } from "./schema.js";
-import { CONTENT_DIR, EXAMPLES_FILE, INDEX_FILE, TAGS_FILE, fixtureScript } from "../paths.js";
+import { CONTENT_DIR, EXAMPLES_FILE, FIXTURE_DIR, INDEX_FILE, TAGS_FILE, fixtureScript } from "../paths.js";
 import { type TocEntry, renderMarkdown } from "./markdown.js";
+import { type PageSources, pageSources } from "./sourcePaths.js";
 
 export class ContentError extends Error {}
 
@@ -44,6 +45,9 @@ interface BasePage {
   draft: boolean;
   html: string;
   toc: TocEntry[];
+  /** The files in this repository that produced this page, and whether anything re-runs it.
+   *  Rendered at the foot of every page by `src/templates/partials/sourceLinks.ts`. */
+  sources: PageSources;
 }
 
 /** A command reference: prose plus a structured `examples.yaml`. The examples are not optional
@@ -263,7 +267,10 @@ function resolveRelated(
   return { entry: only };
 }
 
-export async function loadContent(contentDir: string = CONTENT_DIR): Promise<ContentModel> {
+export async function loadContent(
+  contentDir: string = CONTENT_DIR,
+  fixtureDir: string = FIXTURE_DIR,
+): Promise<ContentModel> {
   const tagRegistry = loadTagRegistry(contentDir);
 
   const raw: RawEntry[] = [];
@@ -369,6 +376,7 @@ export async function loadContent(contentDir: string = CONTENT_DIR): Promise<Con
       draft: entry.data.draft ?? false,
       html,
       toc,
+      sources: pageSources(entry.category, entry.slug, contentDir, fixtureDir),
     };
 
     const page = ((): Page => {

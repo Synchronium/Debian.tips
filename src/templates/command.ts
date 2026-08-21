@@ -7,6 +7,7 @@ import { tagChips } from "./partials/tagChips.js";
 import { related } from "./partials/related.js";
 import { toc } from "./partials/toc.js";
 import { exampleCard } from "./partials/exampleCard.js";
+import { sourceLinks } from "./partials/sourceLinks.js";
 import { highlightCode, renderInline, type TocEntry } from "../content/markdown.js";
 import type { CommandPage } from "../content/loader.js";
 import type { ExamplesFile } from "../content/schema.js";
@@ -88,6 +89,21 @@ ${cards.map((c) => raw(c))}
     }),
   );
 
+  // Rendered only when there is something to expand. A page whose examples all document their
+  // output has 79 collapsed blocks (awk) and a page with none has zero, and a button that does
+  // nothing is worse than no button. Hidden without JS by styles/site.css, like every other
+  // control whose behaviour is scripted.
+  const collapsedOutputs = examplesFile.sections
+    .flatMap((s) => s.examples)
+    .filter((example) => example.output !== undefined).length;
+  const outputToggle =
+    collapsedOutputs === 0
+      ? ""
+      : html`<div class="examples-toolbar" data-pagefind-ignore>
+<button class="toggle-outputs" type="button" data-toggle-outputs aria-pressed="false">Expand all output</button>
+<span class="examples-toolbar-note">${collapsedOutputs} outputs, collapsed by default</span>
+</div>`;
+
   const body = html`
 ${raw(breadcrumbs(page.category, page.title))}
 <article class="command-page">
@@ -98,8 +114,10 @@ ${raw(breadcrumbs(page.category, page.title))}
 ${raw(tagChips(page.tags))}
 <div class="prose">${raw(page.html)}</div>
 ${raw(await fixturesHtml(examplesFile))}
+${raw(outputToggle)}
 ${sectionsHtml.map((s) => raw(s))}
 ${raw(related(page.relatedLinks))}
+${raw(sourceLinks(page.slug, page.sources))}
 </div>
 ${raw(toc([...page.toc, ...sectionTocEntries]))}
 </article>`;

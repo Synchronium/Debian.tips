@@ -1034,6 +1034,93 @@ pre[data-prompt] .line::before {
   margin-top: 0;
 }
 
+/* Sits between the sample files and the first example section: one control for all of a
+   page's collapsed output. Scripted, so it is hidden when JS is not running — the outputs
+   are still each openable on their own. */
+.examples-toolbar {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-5);
+}
+.toggle-outputs {
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+.toggle-outputs:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.examples-toolbar-note {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+:root:not(.js) .examples-toolbar {
+  display: none;
+}
+
+/* The foot of every page: which files produced it, and how to re-run its examples. Quiet on
+   purpose — it is provenance rather than content, and a reader who does not want it should be
+   able to see at a glance that the page has ended. */
+.page-sources {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: var(--fs-s);
+}
+.page-sources h2 {
+  font-size: var(--fs-m);
+  margin-top: 0;
+}
+.source-files {
+  margin: var(--space-3) 0;
+  padding-left: var(--space-5);
+}
+.source-files li {
+  margin-top: var(--space-2);
+}
+.source-files code {
+  word-break: break-all;
+}
+.source-replay {
+  position: relative;
+  margin-top: var(--space-3);
+}
+.source-replay pre {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  overflow-x: auto;
+}
+.source-replay .copy {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+.source-replay .copy:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+:root:not(.js) .source-replay .copy {
+  display: none;
+}
+
 /* ==========================================================================
    14. Search dialog
    ========================================================================== */
@@ -1147,6 +1234,8 @@ pre[data-prompt] .line::before {
   .site-footer,
   .toc,
   .example-code .copy,
+  .source-replay .copy,
+  .examples-toolbar,
   .draft-banner {
     display: none;
   }

@@ -118,7 +118,7 @@ function footerHtml(): string {
 <nav aria-label="Meta"><h2>Meta</h2><ul>
 ${STANDALONE_PAGES.map((s) => raw(html`<li><a href="${s.path}">${s.navLabel}</a></li>`))}
 <li><a href="/feed.xml">RSS</a></li>
-<li><a href="https://github.com/Synchronium/Debian.tips">GitHub</a></li>
+<li><a href="${SITE.repo}">GitHub</a></li>
 </ul></nav>
 <p class="footer-tagline">Made for the terminal-curious. Tested on Debian stable.</p>
 </div>

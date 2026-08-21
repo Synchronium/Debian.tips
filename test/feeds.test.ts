@@ -20,6 +20,7 @@ function page(slug: string, overrides: Partial<ArticlePage> = {}): ArticlePage {
     draft: false,
     html: "",
     toc: [],
+    sources: { files: [], replayable: false },
     ...overrides,
   };
 }

@@ -67,6 +67,26 @@ function copy(button: HTMLElement): void {
   );
 }
 
+/** Expand or collapse every output on a command page at once, per page and per visit — nothing
+ *  is stored. A remembered preference could only be applied after first paint, since `open` is
+ *  DOM state no stylesheet can set and the `<details>` elements do not exist yet while the head
+ *  script runs; on a page with 79 of them that means a reflow, and following a `#example-3` link
+ *  would leave the reader somewhere else entirely once the blocks above them opened.
+ *
+ *  The reason to want it is browser find: Firefox will not match text inside a closed
+ *  `<details>` at all, and Chrome's behaviour is not consistent. Expand, then Ctrl+F. */
+function toggleOutputs(button: HTMLElement): void {
+  const expand = button.getAttribute("aria-pressed") !== "true";
+  for (const details of document.querySelectorAll<HTMLDetailsElement>("details.example-output")) {
+    details.open = expand;
+  }
+  button.setAttribute("aria-pressed", String(expand));
+  button.textContent = expand ? "Collapse all output" : "Expand all output";
+
+  const live = document.getElementById("live-region");
+  if (live) live.textContent = expand ? "All output expanded" : "All output collapsed";
+}
+
 // The theme toggle's pressed state is set here rather than in the markup: the served HTML carries
 // no theme, so the button cannot know which way it points until theme-init has read the stored
 // preference.
@@ -85,6 +105,11 @@ document.addEventListener("click", (event) => {
   if (target.closest("[data-search-open]")) {
     event.preventDefault();
     void openSearch();
+    return;
+  }
+  const outputToggle = target.closest<HTMLElement>("[data-toggle-outputs]");
+  if (outputToggle) {
+    toggleOutputs(outputToggle);
     return;
   }
   const copyButton = target.closest<HTMLElement>("[data-copy]");

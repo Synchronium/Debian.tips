@@ -56,4 +56,12 @@ linking to a draft, so a draft could never be anything but an orphan.
 ## Revisit when
 
 The advisory finding needs to become a failure, or a third question turns up that neither check
-asks. The obvious candidate is external links, which nothing currently validates at all.
+asks.
+
+One has since: [ADR-0017](0017-every-page-links-to-its-own-sources.md) puts a link into this
+repository on every page, and neither check above can see it. It is answered without adding a third
+gate to `npm run check` — the links are generated from paths, so `test/sourceLinks.test.ts` checks
+the paths against the working tree rather than fetching anything. That is the pattern to reach for
+if another class of external link turns up: validate what generates the URL, not the URL. Links
+written by hand in prose, to sites this repository does not control, remain unvalidated by
+anything.

@@ -230,6 +230,13 @@ Two gates, and a command page needs both:
    sandbox, so a fixture that changes system state can break a page you never touched — and that
    only ever shows up in the full run. See §4d; it has happened six times.
 
+Both gates are also now visible to readers. Every page carries a block at its foot linking the
+files that produced it and the command that re-runs them, generated from the page's category and
+slug (`src/content/sourcePaths.ts`, ADR-0017). A page written without a setup script says so on the
+page itself — "nothing re-runs its examples" — rather than only in a counter on `/about/`. That is
+deliberate, and it is one more reason the setup script is part of writing the page rather than a
+follow-up.
+
 A new page arrives orphaned — its own `related:` list points outward, and nothing points back at
 it. `npm run check` now fails on that, and the `cross-link-pages` skill is the pass that fixes it:
 the useful link is usually an inline one on a sentence in an existing page that already raises the

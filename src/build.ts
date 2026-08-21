@@ -67,7 +67,7 @@ export async function build(
   resetShikiStyles();
   const cssHref = CSS_HREF_TOKEN;
 
-  const { pages, tags } = await loadContent(contentDir);
+  const { pages, tags } = await loadContent(contentDir, fixtureDir);
 
   // Rendered first, written second: nothing can be written until the stylesheet's hash is known,
   // and that is not known until the last page has been rendered.

@@ -28,6 +28,7 @@ function page(overrides: Partial<CommandPage> & Pick<CommandPage, "slug">): Comm
     draft: false,
     html: "",
     toc: [],
+    sources: { files: [], replayable: false },
     tagline: "",
     tier: "standard",
     examples: { command: overrides.slug, sections: [] },
@@ -51,6 +52,7 @@ function article(slug: string, category: ArticlePage["category"], tags: string[]
     draft: false,
     html: "",
     toc: [],
+    sources: { files: [], replayable: false },
   };
 }
 
