@@ -16,9 +16,9 @@
 //
 // Covered by test/normalise.test.ts. Add a case there alongside anything added here.
 
-/** The tokens a mask can introduce. verify-examples rejects a page containing one: they
- *  belong to a comparison, and on a page they would read as literal placeholders and match
- *  any future output for ever. */
+/** The tokens a mask can introduce. The replay rejects a page containing one: they belong to a
+ *  comparison, and on a page they would read as literal placeholders and match any future
+ *  output for ever. */
 export const MASK_TOKENS: readonly string[] = ["<TIMESTAMP>", "<RATE>", "<VOLATILE>", "<ELAPSED>"];
 
 /** Timestamps, each anchored to the column of the command that emits it.
@@ -117,9 +117,11 @@ export function stripArtifacts(text: string): string {
 }
 
 /** stripArtifacts, plus masking of values nothing can pin. Only ever used to compare a page
- *  against a fresh run: writing this to a page would leave
- *  Order matters: `rates` matches wget's summary line only after `timestamps` has replaced
- *  the stamp that opens it. */
+ *  against a fresh run: a mask written into a page would read as a literal placeholder and match
+ *  any future output for ever.
+ *
+ *  Order matters: `rates` matches wget's summary line only after `timestamps` has replaced the
+ *  stamp that opens it. */
 export function normalise(text: string): string {
   return rates(timestamps(stripArtifacts(text)));
 }

@@ -1,10 +1,9 @@
 // Turns Shiki's per-token inline styles into shared classes.
 //
 // Shiki emits every highlighted token as `<span style="color:#005CC5;--shiki-dark:#79C0FF">`,
-// which is about 45 bytes per token repeated hundreds of times per page — the awk page reached
-// 154 KB of HTML, nearly all of it these five distinct declarations written out again and again.
-// The declarations move into the stylesheet, one class each, and the markup keeps a six-character
-// class name.
+// about 45 bytes per token repeated hundreds of times per page — on a long command page that is
+// most of the HTML, and it is a handful of distinct declarations written out again and again.
+// They move into the stylesheet, one class each, and the markup keeps a six-character name.
 //
 // The whole site uses a handful of distinct styles (a theme has a fixed palette, and a page uses
 // a fraction of it), so the stylesheet grows by a few hundred bytes and every page shrinks.

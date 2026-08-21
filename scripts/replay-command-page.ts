@@ -2,7 +2,7 @@
 // documents.
 //
 //   scripts/sandbox.sh start                     # once
-//   npx tsx scripts/verify-examples.ts [--user] <sandbox> <command> [setup.sh]
+//   npx tsx scripts/replay-command-page.ts [--user] <sandbox> <command> [setup.sh]
 //
 // A page's `output:` blocks are its central claim: real captured output, not written from
 // memory. Replaying is the only thing that holds them to it, and it is what makes a
@@ -14,17 +14,17 @@
 // their setup script, so the command above is correct for every page.
 //
 // Exported as a function as well as a command: `npm run replay` calls `replayCommandPage`
-// directly rather than spawning one `npx tsx` per page, which cost about half a second of
-// TypeScript startup per page and dominated a batch of any size.
+// directly rather than spawning one `npx tsx` per page, which costs about half a second of
+// TypeScript startup each and dominates a batch of any size.
 //
 // Exit status: 0 when everything reproduces, 1 on any mismatch, 2 on a usage or setup error.
-import { partitionExamples } from "../src/content/replayCounts.js";
+import { partitionExamples } from "../src/content/pageChecks.js";
 import { COMPARISON } from "../src/content/schema.js";
 import { readExamplesFile } from "./lib/examplesFile.js";
 import { MASK_TOKENS, normalise, shapeOf } from "./lib/normalise.js";
-import { ReplayError, loadSkipTitles, readSetupDirectives } from "./lib/replay.js";
-import { firstDifference, scoreLine } from "./lib/report.js";
-import { captureAll, openSandbox, shellQuote } from "./lib/sandbox.js";
+import { ReplayError, loadSkipTitles, readSetupDirectives } from "./lib/replayMetadata.js";
+import { firstDifference, scoreLine } from "./lib/replayReport.js";
+import { SANDBOX_TOOL, captureAll, openSandbox, shellQuote } from "./lib/sandbox.js";
 
 export interface ReplayOptions {
   /** Container name from `scripts/sandbox.sh start`. */
@@ -69,21 +69,21 @@ export function replayCommandPage(options: ReplayOptions): ReplayResult {
   //
   // The split comes from `partitionExamples`, which is also what the page's own "checks N
   // outputs" line is counted from and what /about/ sums. One partition, so the figure a reader
-  // is shown and the figure this prints cannot drift apart. `loadSkipTitles` is still called,
-  // for the check it makes rather than the set it returns: an entry naming an example that no
-  // longer exists exempts nothing while reading as though it does, and that is a hard error.
-  const { checked: examples, exempt: skipped } = partitionExamples(doc, command);
-  const withOutput = [...examples, ...skipped];
+  // is shown and the figure this prints cannot drift apart. `loadSkipTitles` is called for the
+  // check it makes rather than the set it returns: an entry naming an example that no longer
+  // exists exempts nothing while reading as though it does, and that is a hard error.
+  const { checked, exempt } = partitionExamples(doc, command);
+  const documentedOutputs = [...checked, ...exempt];
   loadSkipTitles(
     command,
-    withOutput.map((example) => example.title),
+    documentedOutputs.map((example) => example.title),
   );
 
   // A mask token is idempotent under masking, so a page carrying one matches any real output
   // for ever: the example would read as verified, count towards the score, and never fail
   // again. Masks belong to the comparison, never to a page.
   const documented = [
-    ...withOutput.map((example) => ({ title: example.title, text: example.output ?? "" })),
+    ...documentedOutputs.map((example) => ({ title: example.title, text: example.output ?? "" })),
     ...fixtures.map((fixture) => ({ title: `fixture "${fixture.name}"`, text: fixture.content })),
   ];
   const masked = documented.filter((entry) => MASK_TOKENS.some((token) => entry.text.includes(token)));
@@ -98,7 +98,7 @@ export function replayCommandPage(options: ReplayOptions): ReplayResult {
   const sandbox = openSandbox({
     name: sandboxName,
     command,
-    tool: "verify",
+    tool: SANDBOX_TOOL.commandPage,
     asUser,
     needsSystemd: directives.needsSystemd,
     setupPath,
@@ -109,7 +109,7 @@ export function replayCommandPage(options: ReplayOptions): ReplayResult {
   // `from:` — and diffed, so a fixtures: block that has drifted from its setup script fails
   // rather than quietly misleading a reader.
   const fixtureCommands = fixtures.map((fixture) => fixture.from ?? `cat ${shellQuote(fixture.name)}`);
-  const captured = captureAll(sandbox, [...examples.map((example) => example.code), ...fixtureCommands]);
+  const captured = captureAll(sandbox, [...checked.map((example) => example.code), ...fixtureCommands]);
 
   // `compare: shape` relaxes the comparison for output carrying values no anchored mask
   // covers. Everything else — including most output declared `volatile:` — is compared
@@ -117,7 +117,7 @@ export function replayCommandPage(options: ReplayOptions): ReplayResult {
   const mismatches: Mismatch[] = [];
   let exampleMatches = 0;
   let shapeMatches = 0;
-  examples.forEach((example, index) => {
+  checked.forEach((example, index) => {
     const compare = example.compare === COMPARISON.shape ? shapeOf : normalise;
     const want = compare(example.output ?? "");
     const got = compare(captured.get(index) ?? "");
@@ -138,7 +138,7 @@ export function replayCommandPage(options: ReplayOptions): ReplayResult {
   const fixtureMismatches: Mismatch[] = [];
   let fixtureMatches = 0;
   fixtures.forEach((fixture, n) => {
-    const index = examples.length + n;
+    const index = checked.length + n;
     const want = normalise(fixture.content);
     const got = normalise(captured.get(index) ?? "");
     if (want === got) fixtureMatches++;
@@ -158,11 +158,11 @@ export function replayCommandPage(options: ReplayOptions): ReplayResult {
       page: command,
       asUser,
       matched: exampleMatches,
-      total: examples.length,
+      total: checked.length,
       shapeMatches,
       notes: [
         fixtures.length ? `, ${fixtureMatches}/${fixtures.length} fixtures` : "",
-        skipped.length ? ` (${skipped.length} not replayable in batch, see .skip file)` : "",
+        exempt.length ? ` (${exempt.length} not replayable in batch, see .skip file)` : "",
       ],
     }),
   );
@@ -176,7 +176,7 @@ export function replayCommandPage(options: ReplayOptions): ReplayResult {
   return {
     page: command,
     matched: exampleMatches,
-    total: examples.length,
+    total: checked.length,
     mismatches: mismatches.length + fixtureMismatches.length,
   };
 }
@@ -186,7 +186,7 @@ function main(): void {
   const asUser = argv[0] === "--user" ? (argv.shift(), true) : false;
   const [sandbox, command, setupPath] = argv;
   if (!sandbox || !command) {
-    console.error("usage: verify-examples.ts [--user] <sandbox-name> <command> [setup.sh]");
+    console.error("usage: replay-command-page.ts [--user] <sandbox-name> <command> [setup.sh]");
     process.exit(2);
   }
 

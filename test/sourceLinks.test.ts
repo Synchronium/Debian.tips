@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadContent } from "../src/content/loader.js";
 import { pageSources } from "../src/content/sourcePaths.js";
+import { sourceLinks } from "../src/templates/partials/sourceLinks.js";
 import { SITE, blobUrl } from "../src/config.js";
 import { CONTENT_DIR, FIXTURE_DIR, ROOT } from "../src/paths.js";
 
@@ -41,6 +42,13 @@ describe("the source files each page links to", () => {
   it("claims a page is replayable exactly when its setup script exists", () => {
     const wrong = model.pages.filter(
       (page) => page.sources.replayable !== existsSync(join(FIXTURE_DIR, `${page.slug}.sh`)),
+    );
+    expect(wrong.map((page) => page.url)).toEqual([]);
+  });
+
+  it("reports a skip file exactly when one exists", () => {
+    const wrong = model.pages.filter(
+      (page) => page.sources.hasSkipFile !== existsSync(join(FIXTURE_DIR, `${page.slug}.skip`)),
     );
     expect(wrong.map((page) => page.url)).toEqual([]);
   });
@@ -84,7 +92,7 @@ describe("repository links written by hand in content", () => {
  * first mattered, which is the day someone writes a page ahead of its fixture.
  *
  * The expected path is assembled from the slug rather than written out, because
- * `test/repoPaths.test.ts` scans this file for paths and would report a literal one — quite
+ * `test/documentedPaths.test.ts` scans this file for paths and would report a literal one — quite
  * correctly — as naming a file that does not exist. */
 describe("a page with no setup script", () => {
   const slug = "a-page-with-no-fixture-yet";
@@ -92,6 +100,44 @@ describe("a page with no setup script", () => {
   it("is not marked replayable and lists only its own source", () => {
     const sources = pageSources("concepts", slug);
     expect(sources.replayable).toBe(false);
+    expect(sources.hasSkipFile).toBe(false);
     expect(sources.files.map((file) => file.path)).toEqual([`content/concepts/${slug}.md`]);
+  });
+});
+
+/* The block tells a reader where the reason for an exemption is written. A command page records
+ * it in `scripts/fixtures/<slug>.skip`, which is listed among the files; a prose page records it
+ * inline, in a comment the Markdown pipeline strips before rendering, so the only place a reader
+ * can see it is the page source — also listed. Getting that backwards sends them after a file
+ * that does not exist, on the one block whose job is to make the claim checkable.
+ *
+ * Asserted against the rendered page rather than against `checksSentence`, because the failure
+ * is a sentence naming a file that is not in the list beside it. */
+describe("where the block says an exemption is explained", () => {
+  const rendered = model.pages
+    .filter((page) => page.checks.exempt > 0)
+    .map((page) => ({ page, html: sourceLinks(page.slug, page.sources, page.checks) }));
+
+  it("has pages of both kinds to check", () => {
+    expect(rendered.some(({ page }) => page.sources.hasSkipFile)).toBe(true);
+    expect(rendered.some(({ page }) => !page.sources.hasSkipFile)).toBe(true);
+  });
+
+  it("names the skip file only when the page lists one", () => {
+    const wrong = rendered
+      .filter(({ page, html }) => html.includes("the skip file above") !== page.sources.hasSkipFile)
+      .map(({ page }) => page.url);
+    expect(wrong).toEqual([]);
+  });
+
+  it("always points at a file the reader can actually open", () => {
+    for (const { page, html } of rendered) {
+      const [where, named] = page.sources.hasSkipFile
+        ? ["the skip file above", `${page.slug}.skip`]
+        : ["the page source above", `${page.slug}.md`];
+      expect(html, `${page.url} does not say where the reason is`).toContain(where);
+      const listed = page.sources.files.some((file) => file.path.endsWith(named));
+      expect(listed, `${page.url} points at ${named}, which it does not list`).toBe(true);
+    }
   });
 });

@@ -1,4 +1,5 @@
 import type { Category } from "./content/schema.js";
+import { FEED_FILE, NOT_FOUND_FILE } from "./paths.js";
 
 export const SITE = {
   url: "https://debian.tips",
@@ -6,18 +7,23 @@ export const SITE = {
   tagline: "Linux tips & tricks",
   description: "Practical Linux and Debian tips, tricks, and command references.",
   gaMeasurementId: "G-CFE8GTL7E4",
-  /** The public repository, with no trailing slash. Every page links into it — see
-   *  `src/templates/partials/sourceLinks.ts` — and so do the footer and the about page, which
-   *  is why the URL is here rather than spelled out at each of them. `blobUrl` below is the
-   *  only way a repository path should be turned into a link: it is the half that has to agree
-   *  with `test/sourceLinks.test.ts`, which checks the paths against the working tree. */
+  /** The public repository, with no trailing slash. Every page links into it, and so do the
+   *  footer and the about page. `blobUrl` below is the only sanctioned way to turn a repository
+   *  path into a link. */
   repo: "https://github.com/Synchronium/Debian.tips",
 } as const;
 
 /** A link to one file in the repository, on the default branch. `path` is relative to the
- *  repository root and uses forward slashes — `commandSourcePaths` and `proseSourcePaths` in
- *  `src/content/sourcePaths.ts` are what produce them. */
+ *  repository root and uses forward slashes — `pageSources` in `src/content/sourcePaths.ts` is
+ *  what produces them. */
 export const blobUrl = (path: string): string => `${SITE.repo}/blob/main/${path}`;
+
+/** The routes that are not a category listing. `CATEGORY_META` below covers those; these are the
+ *  rest, and each is linked from more than one template. */
+export const TAGS_PATH = "/tags/";
+export const FEED_PATH = `/${FEED_FILE}`;
+export const NOT_FOUND_PATH = `/${NOT_FOUND_FILE}`;
+export const tagPath = (tag: string): string => `${TAGS_PATH}${tag}/`;
 
 /** Editorial order for the header, the homepage and the sitemap. Deliberately *not* derived
  *  from `CATEGORIES`: validation order and reading order are different questions, and this list

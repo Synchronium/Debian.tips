@@ -7,8 +7,8 @@
 //
 // The pairing rule is deliberately strict: an output fence counts as belonging to a command
 // only when it opens on the line immediately after that command's fence closes. Pairing on
-// document order instead matches a block that prose has separated from its command, which on
-// one page silently attributed a simulated install's output to a real one.
+// document order instead attributes a block to a command the prose has separated it from, and
+// the page then reports as verified while checking the wrong claim.
 import { readFileSync } from "node:fs";
 import { COMPARISON, type Comparison } from "./schema.js";
 
@@ -64,11 +64,10 @@ const DIRECTIVE = new RegExp(
 /** A fence line: the backticks, then an info string whose first word is the language.
  *
  *  Anything after that first word is accepted and ignored. Requiring the line to end after the
- *  language (`/^```(\S*)\s*$/`) meant a fence written ```` ```bash title="x" ```` was not
- *  recognised as a fence *at all* — it was read as content, which inverted every open/close
- *  pairing after it on the page. The page still rendered, the replay reported the block as "not
- *  checkable", and nothing failed: verification was lost silently, which is the one failure mode
- *  this harness exists to prevent. */
+ *  language would leave a fence written ```` ```bash title="x" ```` unrecognised *as a fence*,
+ *  read as content, inverting every open/close pairing after it on the page. That fails silently
+ *  — the page still renders and the replay reports the blocks as "not checkable" — which is the
+ *  one failure mode this harness exists to prevent. */
 const OPEN = /^```([^\s`]*)(?:\s+\S.*)?\s*$/;
 
 /** A closing fence carries no info string, so only a bare ``` closes an open block. Keeping the

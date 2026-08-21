@@ -18,7 +18,15 @@ import { PUBLIC_DIR, STYLES_DIR } from "./paths.js";
  *  collapses whitespace would join the lines inside `<pre>`, which is where every documented
  *  output on the site lives. Nothing would catch it: the replay compares examples.yaml against
  *  the sandbox, never the rendered page. */
-function minify(source: string, filename: string, loader: "css" | "js"): { code: string; map: string } {
+/** How each kind of asset spells a source-map reference. Also the set of loaders this file
+ *  handles, so the two cannot disagree. */
+const SOURCE_MAP_COMMENT = {
+  css: (mapFile: string) => `/*# sourceMappingURL=${mapFile} */`,
+  js: (mapFile: string) => `//# sourceMappingURL=${mapFile}`,
+} as const;
+type AssetLoader = keyof typeof SOURCE_MAP_COMMENT;
+
+function minify(source: string, filename: string, loader: AssetLoader): { code: string; map: string } {
   const result = transformSync(source, {
     loader,
     minify: true,
@@ -38,10 +46,11 @@ function writeMinified(
   dir: string,
   filename: string,
   built: { code: string; map: string },
-  loader: "css" | "js",
+  loader: AssetLoader,
 ): string {
   const { code, map } = built;
-  const withMapUrl = `${code.replace(/\/\/# sourceMappingURL=.*$/m, "").trimEnd()}\n${loader === "css" ? "/*# sourceMappingURL=" : "//# sourceMappingURL="}${filename}.map${loader === "css" ? " */" : ""}\n`;
+  const body = code.replace(/\/\/# sourceMappingURL=.*$/m, "").trimEnd();
+  const withMapUrl = `${body}\n${SOURCE_MAP_COMMENT[loader](`${filename}.map`)}\n`;
   writeFileSync(join(dir, filename), withMapUrl, "utf-8");
   writeFileSync(join(dir, `${filename}.map`), map, "utf-8");
   return withMapUrl;

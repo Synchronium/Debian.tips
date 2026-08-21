@@ -1,15 +1,9 @@
 // The order pages are replayed in.
 //
 // Every page shares one sandbox, so the order is part of what is tested: a page that only passes
-// because of what ran before it is a page that is true by luck. ADR-0002 records why the sandbox
-// is shared; this is the half that decides which of the 50! possible orderings gets exercised.
-//
-// It was `.sort()` and nothing else until a reverse run found a live defect on `apt-essentials`
-// that needed three pages in one direction — `remove-vs-purge-vs-autoremove` marking cowsay auto,
-// the dpkg page's setup purging cowsay-off to orphan it, and apt-essentials greping `^The
-// following` and matching apt's orphan notice instead of the line it documents. Alphabetically the
-// apt page had already marked cowsay manual before any of that could happen, so the batch was
-// green and had been for as long as the page existed.
+// because of what ran before it is a page that is true by luck, and a single fixed order samples
+// exactly one of the possible orderings. ADR-0002 records why the sandbox is shared and what
+// sampling the rest of the space has already caught.
 //
 // A seed is always resolved and always printed, so nothing here is ever irreproducible: a shuffled
 // run that fails names the exact command that fails the same way again.

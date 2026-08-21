@@ -1,6 +1,6 @@
 import { html, raw } from "../html.js";
 import { layout } from "./layout.js";
-import { CATEGORY_META, NAV_ORDER } from "../config.js";
+import { CATEGORY_META, NAV_ORDER, NOT_FOUND_PATH } from "../config.js";
 
 export function notFoundPage(cssHref: string): string {
   const categoryLinks = NAV_ORDER.map((cat) =>
@@ -17,7 +17,7 @@ browse a category below.</p>
   return layout({
     title: "Page not found",
     description: "The page you're looking for doesn't exist or has moved.",
-    path: "/404.html",
+    path: NOT_FOUND_PATH,
     bodyHtml: raw(body),
     cssHref,
   });

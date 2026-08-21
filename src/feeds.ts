@@ -1,4 +1,4 @@
-import { SITE, STANDALONE_PAGES } from "./config.js";
+import { FEED_PATH, SITE, STANDALONE_PAGES } from "./config.js";
 import type { Page } from "./content/loader.js";
 
 const XML_ESC: Record<string, string> = {
@@ -31,10 +31,10 @@ export interface Listing {
   pages: Page[];
 }
 
-/** `listings` is what the build actually emitted, passed in rather than re-derived here.
- *  Deriving it meant this file held a second opinion about which listings exist, and it was
- *  wrong twice over: a tag with no pages gets no page built (so listing it advertised a 404),
- *  and a listing long enough to paginate emits several paths rather than one. */
+/** `listings` is what the build actually emitted, passed in rather than re-derived here: a
+ *  second opinion about which listings exist gets two things wrong, since a tag with no pages
+ *  gets no page built and a listing long enough to paginate emits several paths rather than
+ *  one. */
 export function sitemapXml(pages: Page[], listings: Listing[]): string {
   const entries: { path: string; lastmod?: Date | undefined }[] = [
     { path: "/", lastmod: newestUpdate(pages) },
@@ -74,7 +74,7 @@ export function feedXml(pages: Page[]): string {
   return `<?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 <title>${escapeXml(SITE.title)}</title>
-<link href="${SITE.url}/feed.xml" rel="self" />
+<link href="${SITE.url}${FEED_PATH}" rel="self" />
 <link href="${SITE.url}/" />
 <id>${SITE.url}/</id>
 <updated>${updated}</updated>

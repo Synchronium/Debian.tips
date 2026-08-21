@@ -16,21 +16,16 @@
 
 export DEBIAN_FRONTEND=noninteractive
 
-# cowsay is in the sandbox image, but the apt, dpkg and remove-vs-purge pages all use it as
-# their worked example and one of them autoremoves it. Guarded rather than assumed, because
-# `npm run replay -- --changed` replays subsets in varying combinations.
+# cowsay is in the sandbox image, but other pages use it as their worked example and one of them
+# autoremoves it. Guarded rather than assumed.
 if ! dpkg -l cowsay 2>/dev/null | grep -q '^ii'; then
   apt-get install -y cowsay >/dev/null 2>&1
 fi
 
-# cowsay-off absent. It installs three more cowfiles into /usr/share/cowsay/cows —
-# beavis.zen, bong and mutilated — so `cowsay -l` lists 50 rather than 47 whenever it is
-# there, and the page documents both the list and the count. Nothing on this page installs it;
-# /compare/remove-vs-purge-vs-autoremove/ does, and the apt and dpkg pages purge it again.
-# Alphabetically the apt page had already purged it before this page ran, so the batch was
-# green until a shuffled run put remove-vs-purge first. Asserting it is the fix: a page whose
-# output depends on a package being absent has to say so, exactly as one depending on a
-# package being present does.
+# cowsay-off absent. It adds three cowfiles to /usr/share/cowsay/cows, so `cowsay -l` lists 50
+# rather than 47 whenever it is installed, and this page documents both the list and the count.
+# Another page installs it. A page whose output depends on a package being *absent* has to assert
+# that, exactly as one depending on a package being present does.
 if dpkg -l cowsay-off 2>/dev/null | grep -q '^ii'; then
   apt-get purge -y cowsay-off >/dev/null 2>&1
 fi

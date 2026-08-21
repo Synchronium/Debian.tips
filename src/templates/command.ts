@@ -12,14 +12,19 @@ import { highlightCode, renderInline, type TocEntry } from "../content/markdown.
 import type { CommandPage } from "../content/loader.js";
 import type { ExamplesFile } from "../content/schema.js";
 
-/** Section headings and the `##` headings in `index.md` land in the same document, so they are
- *  slugged by the same algorithm: `github-slugger`, which is what `rehype-slug` uses for the
- *  prose side. A hand-rolled `[^a-z0-9]+` version disagreed with it on any title that wasn't
- *  plain ASCII, and reduced a title with no ASCII at all to the empty string — an `id=""` that
- *  the collision check below could not see, because it only fires on the second one. */
+/** Section headings and the `##` headings in `index.md` land in the same document, so both are
+ *  slugged by `github-slugger` — what `rehype-slug` uses for the prose side. A second
+ *  implementation disagrees on any title that is not plain ASCII, and reduces a title with no
+ *  ASCII at all to `id=""`, which the collision check below cannot see because it only fires on
+ *  the second one. */
 function slugify(title: string): string {
   return new GithubSlugger().slug(title);
 }
+
+/** The two states of the expand-all control. Rendered into `data-` attributes so the client
+ *  script can read them rather than carry its own copy. */
+const EXPAND_OUTPUTS_LABEL = "Expand all output";
+const COLLAPSE_OUTPUTS_LABEL = "Collapse all output";
 
 /** Collapsed by default: useful when an output can't be interpreted without seeing its
  * input, but noise for a reader who already knows the data or is skimming for a flag. */
@@ -89,10 +94,13 @@ ${cards.map((c) => raw(c))}
     }),
   );
 
-  // Rendered only when there is something to expand. A page whose examples all document their
-  // output has 79 collapsed blocks (awk) and a page with none has zero, and a button that does
-  // nothing is worse than no button. Hidden without JS by styles/site.css, like every other
-  // control whose behaviour is scripted.
+  // Rendered only when there is something to expand: a button that does nothing is worse than
+  // no button. Hidden without JS by styles/site.css, like every other scripted control.
+  //
+  // Both labels are written here and read back from the button by src/client/interaction.ts.
+  // The client script is compiled separately and cannot import from the templates, so an
+  // attribute is how one definition reaches both — spelling the label in both files is a pair
+  // nothing would keep in step.
   const collapsedOutputs = examplesFile.sections
     .flatMap((s) => s.examples)
     .filter((example) => example.output !== undefined).length;
@@ -100,7 +108,7 @@ ${cards.map((c) => raw(c))}
     collapsedOutputs === 0
       ? ""
       : html`<div class="examples-toolbar" data-pagefind-ignore>
-<button class="toggle-outputs" type="button" data-toggle-outputs aria-pressed="false">Expand all output</button>
+<button class="toggle-outputs" type="button" data-toggle-outputs aria-pressed="false" data-expand-label="${EXPAND_OUTPUTS_LABEL}" data-collapse-label="${COLLAPSE_OUTPUTS_LABEL}">${EXPAND_OUTPUTS_LABEL}</button>
 <span class="examples-toolbar-note">${collapsedOutputs} outputs, collapsed by default</span>
 </div>`;
 

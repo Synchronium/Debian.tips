@@ -1,4 +1,4 @@
-# Reconstructed from the documented outputs, then proven by scripts/verify-examples.ts.
+# Reconstructed from the documented outputs, then proven by scripts/replay-command-page.ts.
 cat > app.log <<'EOF'
 Jul  5 09:14:22 deb1 app[312]: error: connection refused
 Jul  5 09:14:23 deb1 app[312]: warning: retrying in 5s

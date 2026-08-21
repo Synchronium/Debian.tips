@@ -6,10 +6,9 @@
 // dynamic import() only when the dialog is first opened, so Pagefind's JS/WASM bundle never loads
 // for visitors who don't search.
 //
-// This was a concatenated string literal in the template until it grew into a real program: 25
-// lines of behaviour that nothing formatted, nothing type-checked and no test could reach. It is
-// now compiled and minified by esbuild at build time, so it is written as ordinary modern
-// TypeScript rather than to the oldest syntax a browser might accept.
+// Anything this file and theme-init.ts both need is declared in src/client/shared.ts, which is
+// prepended to both. Anything the *templates* decide reaches this file as a data- attribute
+// instead; see the expand-all labels.
 const COPIED_MS = 1500;
 const FALLBACK_MS = 2000;
 
@@ -19,18 +18,18 @@ const FALLBACK_MS = 2000;
 const copyTimers = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
 const copyLabels = new WeakMap<HTMLElement, string>();
 
-function setTheme(theme: "light" | "dark"): void {
-  document.documentElement.setAttribute("data-theme", theme);
-  document.querySelector("[data-theme-toggle]")?.setAttribute("aria-pressed", String(theme === "light"));
+function setTheme(theme: Theme): void {
+  document.documentElement.setAttribute(THEME_ATTRIBUTE, theme);
+  document.querySelector("[data-theme-toggle]")?.setAttribute("aria-pressed", String(theme === LIGHT));
   try {
-    localStorage.setItem("theme", theme);
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
   } catch {
     /* storage disabled: the theme still applies to this page */
   }
 }
 
-function currentTheme(): "light" | "dark" {
-  return document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+function currentTheme(): Theme {
+  return document.documentElement.getAttribute(THEME_ATTRIBUTE) === LIGHT ? LIGHT : DARK;
 }
 
 async function openSearch(): Promise<void> {
@@ -68,20 +67,22 @@ function copy(button: HTMLElement): void {
 }
 
 /** Expand or collapse every output on a command page at once, per page and per visit — nothing
- *  is stored. A remembered preference could only be applied after first paint, since `open` is
- *  DOM state no stylesheet can set and the `<details>` elements do not exist yet while the head
- *  script runs; on a page with 79 of them that means a reflow, and following a `#example-3` link
- *  would leave the reader somewhere else entirely once the blocks above them opened.
+ *  is stored. A remembered preference could only be applied after first paint: `open` is DOM
+ *  state no stylesheet can set, and the `<details>` elements do not exist yet while the head
+ *  script runs. On a page with dozens of them that is a reflow, and following an `#example-3`
+ *  link would land the reader somewhere else once the blocks above it opened.
  *
  *  The reason to want it is browser find: Firefox will not match text inside a closed
- *  `<details>` at all, and Chrome's behaviour is not consistent. Expand, then Ctrl+F. */
+ *  `<details>` at all, and Chrome's behaviour is not consistent. Expand, then Ctrl+F.
+ *
+ *  Both labels come from the button's own attributes, written by src/templates/command.ts. */
 function toggleOutputs(button: HTMLElement): void {
   const expand = button.getAttribute("aria-pressed") !== "true";
   for (const details of document.querySelectorAll<HTMLDetailsElement>("details.example-output")) {
     details.open = expand;
   }
   button.setAttribute("aria-pressed", String(expand));
-  button.textContent = expand ? "Collapse all output" : "Expand all output";
+  button.textContent = button.getAttribute(expand ? "data-collapse-label" : "data-expand-label") ?? "";
 
   const live = document.getElementById("live-region");
   if (live) live.textContent = expand ? "All output expanded" : "All output collapsed";
@@ -90,16 +91,14 @@ function toggleOutputs(button: HTMLElement): void {
 // The theme toggle's pressed state is set here rather than in the markup: the served HTML carries
 // no theme, so the button cannot know which way it points until theme-init has read the stored
 // preference.
-document
-  .querySelector("[data-theme-toggle]")
-  ?.setAttribute("aria-pressed", String(currentTheme() === "light"));
+document.querySelector("[data-theme-toggle]")?.setAttribute("aria-pressed", String(currentTheme() === LIGHT));
 
 document.addEventListener("click", (event) => {
   const target = event.target as Element | null;
   if (!target?.closest) return;
 
   if (target.closest("[data-theme-toggle]")) {
-    setTheme(currentTheme() === "dark" ? "light" : "dark");
+    setTheme(currentTheme() === DARK ? LIGHT : DARK);
     return;
   }
   if (target.closest("[data-search-open]")) {

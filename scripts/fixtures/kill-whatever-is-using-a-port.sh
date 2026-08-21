@@ -3,10 +3,9 @@
 #
 # Stands up something to find: a listener the page then identifies and kills.
 #
-# Port 9000 rather than the 8080 the recipe used to name. `npm run replay` runs every page in
-# one sandbox, and the curl and wget pages have a mock server on 8080 — so `fuser -k 8080/tcp`
-# here would have killed *their* fixture, on a page whose entire subject is killing whatever
-# holds a port. The failure would have surfaced on curl, several pages later.
+# Port 9000 rather than 8080. Every page shares one sandbox and the curl and wget pages hold
+# 8080, so `fuser -k 8080/tcp` here would kill *their* fixture — on a page whose whole subject is
+# killing whatever holds a port, and the failure would surface pages later, on curl.
 #
 # Restarted rather than started once: this runs before every example, and the page's own
 # `fuser -k` example kills the listener it is about to need again.

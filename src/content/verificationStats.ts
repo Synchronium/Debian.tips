@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { type Page, isCommandPage } from "./loader.js";
 import { PROSE_CATEGORIES } from "./schema.js";
 import { FIXTURE_DIR, fixtureScript, proseSource } from "../paths.js";
-import { commandChecks, proseChecks } from "./replayCounts.js";
+import { commandChecks, proseChecks } from "./pageChecks.js";
 
 /** What the site can say about its own verification, counted from the content rather than
  *  written down. A page that boasts about checking its examples is the worst possible place
@@ -39,8 +39,7 @@ export interface VerificationStats {
   /** Output blocks replayed on those pages. */
   proseOutputs: number;
   /** Prose pages with no setup script, whose outputs nothing re-runs — the counterpart to
-   *  `unreplayedCommandPages`, and missing for long enough that a written article could ship
-   *  uncounted and unmentioned while the command-page side of the same gap was being fixed.
+   *  `unreplayedCommandPages`.
    *
    *  A page that *has* a script but every one of whose blocks is exempt is in neither figure.
    *  It opted in, the replay runs it, and it reports its exemptions; it simply contributes no
@@ -66,12 +65,13 @@ function countProse(
       unreplayedProsePages++;
       continue;
     }
+    // A page in the model always has a source file; this only guards a caller passing a content
+    // directory the pages did not come from.
     const source = proseSource(page.category, page.slug, contentDir);
     if (!existsSync(source)) continue;
-    // `page.checks` is this same count, taken from the loader. Recomputed here from the file
-    // because the synthetic content tree in `test/fixtures/` is counted by this function
-    // without going through a build, and the two must not be allowed to drift — a test asserts
-    // they agree on the real tree.
+    // `page.checks` is this same count, taken from the loader. Recomputed from the file here
+    // because the synthetic tree in `test/fixtures/` is counted without going through a build;
+    // a test asserts the two agree on the real tree.
     const { checked } = proseChecks(readFileSync(source, "utf-8"));
     if (checked === 0) continue;
     prosePages++;
@@ -100,16 +100,15 @@ export function verificationStats(
         examples++;
         if (example.output !== undefined) outputs++;
         // `volatile` is not `byShape`: it says what will differ for a reader, and most output
-        // carrying it is still compared exactly. The two figures answer different questions
-        // and were briefly the same number by accident.
+        // carrying it is still compared exactly. Two figures, two questions.
         if (example.volatile) volatile++;
       }
     }
     // Per page, against that page's own examples, because `replayed` subtracts this from
-    // `outputs`. Counting every line in every .skip file instead meant an entry naming an
-    // example that no longer exists — or a prose page's skip file, which is not in `outputs`
-    // at all — quietly reducing the number the site advertises. `commandChecks` is what the
-    // page itself states, so the total and the per-page claim are one count.
+    // `outputs`. Counting `.skip` lines directly would let an entry naming a renamed example —
+    // or a prose page's exemption, which is not in `outputs` at all — reduce the figure the
+    // site advertises. `commandChecks` is what the page itself states, so the total and the
+    // per-page claim are one count.
     const checks = commandChecks(page.examples, page.slug, fixtureDir);
     fixtures += checks.fixtures;
     exemptions += checks.exempt;

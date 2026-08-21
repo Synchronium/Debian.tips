@@ -11,10 +11,9 @@
    without JS always got dark regardless of their OS setting, since the script that reads the
    preference never ran.
 
-   Every token is defined once. This used to be four copies of twelve values — a dark block, a
-   dark override, a light media query and a light override — kept in step by hand. `light-dark()`
-   makes the theme a property of `color-scheme` rather than of the selector, so the three states
-   need three one-line rules and no duplicated values at all. */
+   Every token is defined once. `light-dark()` makes the theme a property of `color-scheme`
+   rather than of the selector, so the three states need three one-line rules and no duplicated
+   values — rather than a palette per selector, kept in step by hand. */
 :root {
   color-scheme: light dark;
 
@@ -33,8 +32,8 @@
 }
 
 /* The toggle's two states. Pinning `color-scheme` re-resolves every `light-dark()` above at
-   once, and it also tells the browser to match its own form controls and scrollbars to the
-   choice — which the previous selector-per-palette version did not do. */
+   once, and tells the browser to match its own form controls and scrollbars to the choice.
+   The attribute is written by src/client/theme-init.ts before first paint. */
 :root[data-theme="light"] {
   color-scheme: light;
 }

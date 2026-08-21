@@ -11,13 +11,13 @@
 // compare two runs, and a page carrying one would read as a literal `<TIMESTAMP>` to a
 // reader and match any future output for ever.
 //
-// A setup script is required, unlike in verify-examples: fixtures are restored before every
+// A setup script is required, unlike in the replay: fixtures are restored before every
 // example, and capturing against an empty directory would record nothing worth adopting.
 import { readFileSync, writeFileSync } from "node:fs";
 import { examplesPath, readExamplesFile } from "./lib/examplesFile.js";
 import { stripArtifacts } from "./lib/normalise.js";
-import { ReplayError, loadSkipTitles, readSetupDirectives } from "./lib/replay.js";
-import { captureAll, openSandbox } from "./lib/sandbox.js";
+import { ReplayError, loadSkipTitles, readSetupDirectives } from "./lib/replayMetadata.js";
+import { SANDBOX_TOOL, captureAll, openSandbox } from "./lib/sandbox.js";
 import { findOutputBlock, replaceOutputBlock } from "./lib/yamlBlock.js";
 
 function main(): void {
@@ -30,7 +30,7 @@ function main(): void {
   }
 
   // Capturing as root for a page that replays as `user` would bake "root root" into every
-  // `ls -l` on it, so the mode is read from the same directive verify-examples reads.
+  // `ls -l` on it, so the mode is read from the same directive the replay reads.
   const directives = readSetupDirectives(setupPath);
   const asUser = asUserFlag || directives.asUser;
 
@@ -63,7 +63,7 @@ function main(): void {
   const sandbox = openSandbox({
     name: sandboxName,
     command,
-    tool: "adopt",
+    tool: SANDBOX_TOOL.adopt,
     asUser,
     needsSystemd: directives.needsSystemd,
     setupPath,
@@ -79,6 +79,7 @@ function main(): void {
   let lines = readFileSync(path, "utf-8").split("\n");
   // Rewritten last-first so each splice leaves the earlier line numbers intact.
   const claimed = new Set<number>();
+  let adopted = 0;
   for (const { example, index } of [...targets].reverse()) {
     const output = stripArtifacts(captured.get(index) ?? "");
     if (!output) {
@@ -104,13 +105,16 @@ function main(): void {
 
     claimed.add(lookup.block.keyLine);
     lines = replaceOutputBlock(lines, lookup.block, output);
+    adopted++;
     // The numbers written for a volatile example are one machine's. Flagged rather than
     // silent: the `volatile:` note has to keep describing what actually varies.
     const note = example.volatile ? " (volatile — check the note still describes what varies)" : "";
     console.log(`  adopted real output: ${example.title}${note}`);
   }
 
-  writeFileSync(path, lines.join("\n"), "utf-8");
+  // Only when something changed: a run that adopted nothing should leave the file alone rather
+  // than rewrite it with identical bytes and a new mtime.
+  if (adopted > 0) writeFileSync(path, lines.join("\n"), "utf-8");
 }
 
 try {

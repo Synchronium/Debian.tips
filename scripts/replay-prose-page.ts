@@ -1,25 +1,22 @@
 // Replays the documented output on one prose page — a concept, scripting lesson, recipe or
 // Debian article — inside a sandbox, and diffs it against what the page claims.
 //
-//   npx tsx scripts/verify-prose.ts <sandbox> <slug> [scripts/fixtures/<slug>.sh]
+//   npx tsx scripts/replay-prose-page.ts <sandbox> <slug> [scripts/fixtures/<slug>.sh]
 //
-// The counterpart to verify-examples.ts, which does the same for command pages. Those carry
-// their examples as YAML; a prose page states the same claim as a ```bash fence followed by
-// the output it produced, which src/content/proseBlocks.ts pairs up.
-//
-// Without this, 96 output blocks across 15 pages were checked by nobody, and one of them had
-// quietly drifted two Debian point releases out of date.
+// The counterpart to replay-command-page.ts. A command page carries its examples as YAML; a
+// prose page states the same claim as a ```bash fence followed by the output it produced, which
+// src/content/proseBlocks.ts pairs up.
 //
 // Exit status: 0 when every pair reproduces, 1 on a mismatch, 2 on a bad argument.
 import { existsSync } from "node:fs";
-import { captureAll, openSandbox } from "./lib/sandbox.js";
+import { SANDBOX_TOOL, captureAll, openSandbox } from "./lib/sandbox.js";
 import { COMPARISON, PROSE_CATEGORIES } from "../src/content/schema.js";
 import { fixtureScript, proseSource } from "../src/paths.js";
 import { MASK_TOKENS, normalise, shapeOf } from "./lib/normalise.js";
 import { parseProseFile, type ProsePair } from "../src/content/proseBlocks.js";
-import { ReplayError, readSetupDirectives } from "./lib/replay.js";
-import { firstDifference, scoreLine } from "./lib/report.js";
-import type { ReplayResult } from "./verify-examples.js";
+import { ReplayError, readSetupDirectives } from "./lib/replayMetadata.js";
+import { firstDifference, scoreLine } from "./lib/replayReport.js";
+import type { ReplayResult } from "./replay-command-page.js";
 
 interface Mismatch {
   pair: ProsePair;
@@ -91,7 +88,7 @@ export function replayProsePage(options: ProseReplayOptions): ReplayResult {
   const sandbox = openSandbox({
     name: options.sandbox,
     command: slug,
-    tool: "prose",
+    tool: SANDBOX_TOOL.prosePage,
     asUser: directives.asUser,
     needsSystemd: directives.needsSystemd,
     setupPath,
@@ -147,7 +144,7 @@ export function replayProsePage(options: ProseReplayOptions): ReplayResult {
 function main(): void {
   const [sandbox, slug, setupPath] = process.argv.slice(2);
   if (!sandbox || !slug) {
-    console.error("usage: verify-prose.ts <sandbox> <slug> [setup.sh]");
+    console.error("usage: replay-prose-page.ts <sandbox> <slug> [setup.sh]");
     process.exit(2);
   }
 

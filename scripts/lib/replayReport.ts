@@ -1,9 +1,8 @@
 // How a replay reports itself: the score line, and the first line that differs.
 //
-// verify-examples.ts and verify-prose.ts are the same program with two front ends — one reads
-// YAML, the other reads Markdown fences — and they were printing their results through two
-// byte-identical copies of this code. Shared so the two reports cannot drift into describing the
-// same result differently.
+// The command-page and prose-page replays are the same program with two front ends — one reads
+// YAML, the other reads Markdown fences. Shared so the two cannot drift into describing the same
+// result differently.
 
 /** The first line that differs, quoted so leading and trailing spaces are visible.
  *  A mismatch is usually one line deep in an otherwise-correct block. */

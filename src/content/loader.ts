@@ -14,10 +14,19 @@ import {
   frontmatterSchema,
   tagRegistrySchema,
 } from "./schema.js";
-import { CONTENT_DIR, EXAMPLES_FILE, FIXTURE_DIR, INDEX_FILE, TAGS_FILE, fixtureScript } from "../paths.js";
+import {
+  CONTENT_DIR,
+  EXAMPLES_FILE,
+  FIXTURE_DIR,
+  INDEX_FILE,
+  TAGS_FILE,
+  commandsDir,
+  fixtureScript,
+  proseSlug,
+} from "../paths.js";
 import { type TocEntry, renderMarkdown } from "./markdown.js";
 import { type PageSources, pageSources } from "./sourcePaths.js";
-import { type PageChecks, commandChecks, proseChecks } from "./replayCounts.js";
+import { type PageChecks, commandChecks, proseChecks } from "./pageChecks.js";
 
 export class ContentError extends Error {}
 
@@ -77,11 +86,10 @@ export interface ArticlePage extends BasePage {
   category: Exclude<Category, "commands" | "scripting">;
 }
 
-/** Modelled as a union rather than as one interface with optional `tier`/`order`/`examples`,
- *  because the optional-field version pushed the knowledge of which fields a category actually
- *  has into every consumer — seven `!` assertions and casts across the loader, the templates and
- *  the link audit, each of them a place the compiler had stopped helping. Narrowing on
- *  `page.category` now does that work. */
+/** A union rather than one interface with optional `tier`/`order`/`examples`: the optional-field
+ *  version pushes the knowledge of which fields a category actually has out into every consumer,
+ *  as assertions and casts the compiler cannot check. Narrowing on `page.category` does that work
+ *  instead. */
 export type Page = CommandPage | ScriptingPage | ArticlePage;
 
 export function isCommandPage(page: Page): page is CommandPage {
@@ -105,8 +113,7 @@ interface BaseEntry {
 
 /** Split the same way `Page` is, so the one place that knows a command directory must contain an
  *  examples.yaml — `loadCommands`, which refuses one that doesn't — is also the only place that
- *  has to say so. Leaving `examples` optional on a single entry type meant asserting it back at
- *  the point the page was built, which is the assertion this split removes. */
+ *  has to say so. */
 interface RawCommandEntry extends BaseEntry {
   category: "commands";
   data: CommandFrontmatter;
@@ -124,8 +131,7 @@ interface RawArticleEntry extends BaseEntry {
 }
 
 /** The same three shapes `Page` has, so narrowing on `entry.category` narrows its frontmatter
- *  too. Carrying one entry type with a `Frontmatter` union meant every use site re-asserted
- *  which member it had, which is the work this split does once. */
+ *  too. */
 type RawEntry = RawCommandEntry | RawScriptingEntry | RawArticleEntry;
 
 type RawProseEntry = RawScriptingEntry | RawArticleEntry;
@@ -172,7 +178,8 @@ function loadFlatCategory(category: Exclude<Category, "commands">, contentDir: s
   if (!existsSync(dir)) return [];
   const out: RawProseEntry[] = [];
   for (const filename of readdirSync(dir)) {
-    if (!filename.endsWith(".md")) continue;
+    const slug = proseSlug(filename);
+    if (slug === null) continue;
     const file = join(dir, filename);
     const { data, body } = parseFrontmatterFile(file);
     if (data.category !== category) {
@@ -180,7 +187,6 @@ function loadFlatCategory(category: Exclude<Category, "commands">, contentDir: s
         `${file}: frontmatter category "${data.category}" does not match directory "${category}"`,
       );
     }
-    const slug = filename.replace(/\.md$/, "");
     // Switched on the frontmatter rather than on `category`: the two are checked against each
     // other above, but they are separate types, and only the frontmatter carries `order`.
     out.push(
@@ -193,7 +199,7 @@ function loadFlatCategory(category: Exclude<Category, "commands">, contentDir: s
 }
 
 function loadCommands(contentDir: string): RawEntry[] {
-  const dir = join(contentDir, "commands");
+  const dir = commandsDir(contentDir);
   if (!existsSync(dir)) return [];
   const out: RawEntry[] = [];
   for (const slug of readdirSync(dir)) {
@@ -231,10 +237,8 @@ function loadCommands(contentDir: string): RawEntry[] {
   return out;
 }
 
-/** `readdirSync` order isn't guaranteed alphabetical or otherwise stable, so every
- * category needs an explicit sort: scripting lessons must read in course order
- * (`order`), everything else sorts by slug for a deterministic, filesystem-independent
- * listing order. */
+/** `readdirSync` order is not guaranteed stable, so every category needs an explicit sort:
+ *  scripting lessons read in course order (`order`), everything else by slug. */
 function sortEntries(entries: RawEntry[]): RawEntry[] {
   return [...entries].sort((a, b) => {
     if (a.data.category === "scripting" && b.data.category === "scripting") {
@@ -283,12 +287,10 @@ export async function loadContent(
     raw.push(...sortEntries(entries));
   }
 
-  // Validation below runs against *every* page, drafts included, so `npm run check`
-  // reports the same errors whether or not NODE_ENV=production is set. Validating
-  // only the production-visible subset used to mean a draft could hide a real
-  // problem locally (or, worse, that CI failed on content that passed locally).
-  // Drafts are excluded from `pages` further down — that part is still env-dependent
-  // by design, so drafts render in dev and are dropped from production builds.
+  // Validation below runs against *every* page, drafts included, so `npm run check` reports the
+  // same errors whether or not NODE_ENV=production is set — otherwise a draft can hide a real
+  // problem locally and fail only in CI. Drafts are excluded from `pages` further down, which is
+  // env-dependent by design: they render in dev and are dropped from production builds.
   const bySlug = new Map<string, RawEntry[]>();
   const byQualified = new Map<string, RawEntry>();
   for (const entry of raw) {
@@ -348,9 +350,8 @@ export async function loadContent(
     for (const reference of entry.data.related ?? []) {
       const resolved = resolveRelated(reference, byQualified, bySlug);
       if ("error" in resolved) throw new ContentError(`${entry.file}: ${resolved.error}`);
-      // A published page linking to a draft would 404 in production, where the draft
-      // isn't emitted. Caught here rather than only under NODE_ENV=production, so it
-      // surfaces in dev instead of first failing in CI.
+      // A published page linking to a draft would 404 in production, where the draft is not
+      // emitted. Caught here rather than only under NODE_ENV=production, so it surfaces in dev.
       if (!entry.data.draft && resolved.entry.data.draft) {
         throw new ContentError(
           `${entry.file}: related page "${reference}" is a draft (${resolved.entry.file}) — a published page can't link to a page that production builds don't emit`,
@@ -383,7 +384,7 @@ export async function loadContent(
       sources: pageSources(entry.category, entry.slug, contentDir, fixtureDir),
       // Counted from what the page carries, not from what the replay last reported: the build
       // has no sandbox. They agree because both sides read the same partition — see
-      // `src/content/replayCounts.ts`.
+      // `src/content/pageChecks.ts`.
       checks:
         entry.category === "commands"
           ? commandChecks(entry.examples, entry.slug, fixtureDir)

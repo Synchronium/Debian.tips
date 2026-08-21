@@ -34,11 +34,6 @@ cat > /etc/apt/apt.conf.d/99-replay-no-script-warning <<'EOF'
 APT::Cmd::Disable-Script-Warning "1";
 EOF
 
-if ! command -v apt-ftparchive >/dev/null 2>&1; then
-  apt-get update >/dev/null 2>&1
-  apt-get install -y gnupg apt-utils >/dev/null 2>&1
-fi
-
 build_package() {
   # name, version, description, [depends]
   local name=$1 version=$2 description=$3 depends=${4:-}

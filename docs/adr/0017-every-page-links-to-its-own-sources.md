@@ -1,8 +1,8 @@
-# ADR-0017: Every page links to the files that produced it
+# ADR-0017: Every content page links to the files that produced it
 
 - **Status:** Accepted
 - **Recorded:** 2026-08-21
-- **Enforced by:** `test/sourceLinks.test.ts` and `test/replayCounts.test.ts`, in `npm run check`
+- **Enforced by:** `test/sourceLinks.test.ts` and `test/pageChecks.test.ts`, in `npm run check`
 
 ## Context
 
@@ -22,8 +22,15 @@ on the page it was actually about.
 
 ## Decision
 
-Every page carries a block at its foot naming the files in this repository that produced it, each
-linked, and the single command that re-runs its examples.
+Every *content* page — everything under a category, which is everything with examples to re-run —
+carries a block at its foot naming the files in this repository that produced it, each linked, and
+the single command that re-runs its examples.
+
+The standalone pages are the exception, and `/about/` is currently the only one. It has no examples,
+so the block's replay command and its figures would both be empty, and the "no setup script yet"
+wording would be actively wrong. It links its own sources in its prose instead, under "Read it
+yourself" — and `test/sourceLinks.test.ts` holds those hand-written links to `SITE.repo` for the
+same reason it checks the generated ones.
 
 `src/content/sourcePaths.ts` derives the paths from the page's category and slug using the helpers
 in `src/paths.ts` — prose or `index.md` plus `examples.yaml`, then `scripts/fixtures/<slug>.sh` and
@@ -37,7 +44,7 @@ above it claims.
 
 Beside the command, the page states what that command will check: how many outputs, how many of
 those are compared by shape rather than byte for byte, and how many are exempt. The figures come
-from `src/content/replayCounts.ts`, which is also what `scripts/verify-examples.ts` partitions on
+from `src/content/pageChecks.ts`, which is also what `scripts/replay-command-page.ts` partitions on
 and what `/about/` sums — one definition, so a page cannot advertise a number the command
 contradicts. Counting them in the template instead would have made a fourth copy of "what does this
 page check", which is the same mistake `src/content/replaySkips.ts` was extracted to undo.
@@ -61,9 +68,18 @@ nothing would notice.
 
 `test/sourceLinks.test.ts` stands in for the check a link checker cannot run: it asserts every
 generated path resolves in the working tree, that the paths are repository-relative with forward
-slashes, and that `replayable` is true exactly when the setup script exists. It also asserts the
-hand-written GitHub links in `content/about.md` sit under `SITE.repo`, since Markdown cannot read
-the constant and would otherwise be left behind by a move.
+slashes, and that `replayable` and `hasSkipFile` are each true exactly when the file they name
+exists. It also asserts the hand-written GitHub links in `content/about.md` sit under `SITE.repo`,
+since Markdown cannot read the constant and would otherwise be left behind by a move.
+
+**Where the block says an exemption is explained depends on the kind of page**, and getting it
+wrong is not a wording slip. A command page records an exemption in `scripts/fixtures/<slug>.skip`,
+listed among the files; a prose page records it inline, in a `<!-- verify: skip … -->` comment the
+Markdown pipeline strips before rendering — so for those readers the page source is the only place
+it exists. Telling a reader to consult a skip file that was never written sends them away
+empty-handed from the one block whose job is to make the claim checkable. `PageSources.hasSkipFile`
+is what the two sentences are chosen on, and `test/sourceLinks.test.ts` asserts the file each
+sentence names is one the page actually lists.
 
 **The block is excluded from search.** It is the same paragraph on every page, and inside
 `data-pagefind-body`. Indexed, it made "container", "repository" and "replay" match all 50 pages
@@ -76,7 +92,7 @@ only to a counter on `/about/`. The pressure that creates is the pressure the si
 **A page's figures are a claim like any other.** They are counted from what the page carries, not
 from a replay run — the build has no sandbox. That is the same basis `/about/` has always used, and
 it holds because the replay passes; the numbers are what the command *will* print, which is exactly
-what makes them worth checking. `test/replayCounts.test.ts` asserts the per-page figures fold up to
+what makes them worth checking. `test/pageChecks.test.ts` asserts the per-page figures fold up to
 the site totals, that each of the four sentence shapes is exercised by real content, and that
 by-shape is not quietly conflated with `volatile:` — two figures close enough in meaning to be
 merged by someone tidying up, and answering different questions.

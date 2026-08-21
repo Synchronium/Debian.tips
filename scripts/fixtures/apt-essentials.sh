@@ -10,9 +10,8 @@
 
 export DEBIAN_FRONTEND=noninteractive
 
-# Other prose pages' setups also configure apt, and `npm run replay` runs every page in one
-# sandbox, so a source left behind by an earlier page changes what this one sees. Each page
-# normalises the sources and preferences directories to exactly what it needs.
+# Other pages' setups also configure apt, and every page shares one sandbox, so a source left
+# behind by an earlier one changes what this page sees. Normalise to exactly what it needs.
 find /etc/apt/sources.list.d -name '*.sources' ! -name 'debian.sources' -delete 2>/dev/null
 rm -f /etc/apt/preferences.d/*
 
@@ -44,13 +43,10 @@ fi
 # Nothing orphaned. The --simulate example greps for `^The following`, and apt has two notices
 # starting that way: "The following NEW packages will be installed" is the one the page
 # documents, and "The following package was automatically installed and is no longer required"
-# is printed above it whenever anything is auto-installed and unreferenced. The page then shows
-# the wrong first line, with no hint that a *different* notice matched.
+# is printed above it whenever anything is auto-installed and unreferenced. The page would then
+# show the wrong first line, with no hint that a different notice had matched.
 #
-# Nothing on this page creates an orphan, which is why this went unnoticed: it takes three
-# pages. /compare/remove-vs-purge-vs-autoremove/ marks cowsay auto, the dpkg page's setup purges
-# cowsay-off, and cowsay is then auto with nothing depending on it. In alphabetical order the
-# apt page has already marked cowsay manual by the time any of that happens, so the batch was
-# green; reversing the order made it fail. Asserting the state the output depends on is the fix
-# — the ordering is not something this page should have to be lucky about.
+# Nothing on this page creates an orphan — it takes another page marking a package auto and a
+# third removing what depended on it. Assert the state the output depends on rather than relying
+# on the ordering.
 apt-get autoremove -y >/dev/null 2>&1

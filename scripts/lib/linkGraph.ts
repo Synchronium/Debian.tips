@@ -7,7 +7,10 @@
 // Covered by test/linkGraph.test.ts for that reason.
 import { type Page, isCommandPage } from "../../src/content/loader.js";
 
-export type EdgeKind = "related" | "prose";
+/** How a page came to link another: a `related:` frontmatter entry, or a link written in prose.
+ *  Only the counts are reported separately, but they answer different editorial questions. */
+export const EDGE_KIND = { related: "related", prose: "prose" } as const;
+export type EdgeKind = (typeof EDGE_KIND)[keyof typeof EDGE_KIND];
 
 /** Both ends are page URLs. A slug is not the identity of a page — two pages in different
  *  categories may share one — and keying the graph by slug would merge them into a single node,
@@ -59,12 +62,13 @@ export function collectEdges(pages: Page[]): Edge[] {
     // bare slug or `category/slug` — to exactly one page, and re-resolving it here would be a
     // second implementation of that rule, free to disagree with the first.
     for (const link of page.relatedLinks) {
-      edges.push({ from: page.url, to: link.url, kind: "related" });
+      edges.push({ from: page.url, to: link.url, kind: EDGE_KIND.related });
     }
     for (const url of proseLinkTargets(page)) {
       // A listing, a tag page or /about/ resolves to no content page, and a page linking
       // itself is not an edge. Whether these resolve at all is src/linkcheck.ts's job.
-      if (contentUrls.has(url) && url !== page.url) edges.push({ from: page.url, to: url, kind: "prose" });
+      if (contentUrls.has(url) && url !== page.url)
+        edges.push({ from: page.url, to: url, kind: EDGE_KIND.prose });
     }
   }
   return edges;

@@ -16,7 +16,8 @@ function findHtmlFiles(dir: string): string[] {
 
 function toUrlPath(distFile: string): string {
   const rel = distFile.slice(DIST.length).replace(/\\/g, "/");
-  return rel.replace(/index\.html$/, "").replace(/\.html$/, "") || "/";
+  const withoutIndex = rel.endsWith(OUTPUT_INDEX) ? rel.slice(0, -OUTPUT_INDEX.length) : rel;
+  return withoutIndex.replace(/\.html$/, "") || "/";
 }
 
 function extractLinks(htmlSource: string): string[] {

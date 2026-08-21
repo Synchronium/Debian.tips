@@ -32,7 +32,7 @@
 // argument or a content error.
 import { loadContent, type Page, isCommandPage } from "../src/content/loader.js";
 import { STANDALONE_PAGES } from "../src/config.js";
-import { adjacency, affinity, collectEdges } from "./lib/linkGraph.js";
+import { EDGE_KIND, adjacency, affinity, collectEdges } from "./lib/linkGraph.js";
 
 /** The style guide's floor: every page links at least this many others. */
 const MIN_OUTBOUND = 2;
@@ -44,12 +44,9 @@ const MIN_INBOUND = 2;
 /** How many candidate sources to suggest for a page that needs linking to. */
 const SUGGESTIONS = 5;
 
-/** Standalone pages reached from the header and the homepage rather than from prose. They
- *  have no category listing to be found on, so site chrome is their route in and an inbound
- *  prose link is a bonus rather than the thing that rescues them.
- *
- *  Taken from the same list the builder works from, so a new standalone page is exempt the
- *  moment it exists. Kept as a separate set here only to make the intent explicit. */
+/** Standalone pages are reached from the header and the homepage rather than from prose, so
+ *  site chrome is their route in and an inbound prose link is a bonus. Taken from the same list
+ *  the builder works from, so a new one is exempt the moment it exists. */
 const CHROME_LINKED = new Set(STANDALONE_PAGES.map((page) => page.path));
 
 /** Drafts are held to neither rule. A published page linking to one is a build error, so a
@@ -114,7 +111,7 @@ async function main(): Promise<void> {
   const weak = linkable.filter((page) => inboundCount(page) > 0 && inboundCount(page) < MIN_INBOUND);
   const thin = audited.filter((page) => (outbound.get(page.url)?.size ?? 0) < MIN_OUTBOUND);
 
-  const proseEdges = edges.filter((edge) => edge.kind === "prose").length;
+  const proseEdges = edges.filter((edge) => edge.kind === EDGE_KIND.prose).length;
   const drafts = pages.length - audited.length;
   console.log(
     `${pages.length} pages, ${edges.length} links (${proseEdges} in prose)` +

@@ -1,9 +1,8 @@
 // Reading a page's exemption list: the examples a batch run cannot reproduce.
 //
-// Pure and non-fatal, so it can be used by the build (which counts exemptions for the about
-// page) as well as by the replay (which additionally refuses a stale entry and exits). Both
-// need the same answer to "what does scripts/fixtures/<slug>.skip actually say", and until this
-// existed each parsed the file with its own copy of the line filtering.
+// Pure and non-fatal, so the build (which counts exemptions for the about page) and the replay
+// (which additionally refuses a stale entry and exits) can share one answer to "what does
+// scripts/fixtures/<slug>.skip actually say".
 import { readFileSync } from "node:fs";
 import { skipFile } from "../paths.js";
 

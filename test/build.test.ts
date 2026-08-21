@@ -82,7 +82,7 @@ describe("the about page", () => {
   it("is built, with its figures counted from the content", async () => {
     const html = readFileSync(join(distDir, "about", "index.html"), "utf-8");
     expect(html).toContain("How this site is tested");
-    // What the figures *are* is asserted in test/stats.test.ts, against the counting function
+    // What the figures *are* is asserted in test/verificationStats.test.ts, against the counting function
     // itself. Asserting them here meant matching the surrounding sentence, so rewording a line
     // of prose on the about page failed a build test that has no opinion about the wording.
     expect(html).toContain("4 outputs, across 1 command pages");

@@ -4,7 +4,7 @@ import { extname, join, sep } from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import chokidar from "chokidar";
 import { build } from "./build.js";
-import { DIST_DIR as DIST, ROOT, OUTPUT_INDEX } from "./paths.js";
+import { DIST_DIR as DIST, NOT_FOUND_FILE, OUTPUT_INDEX, ROOT } from "./paths.js";
 /** 4321 is what the README, `.pa11yci.json` and the CI accessibility job all expect. `PORT` is
  *  there for the case that decided it: something else already holding the port, where a dev
  *  server that refuses to start is less useful than one on a different number. */
@@ -24,18 +24,13 @@ const MIME: Record<string, string> = {
 let building = false;
 let pendingRebuild = false;
 
-/** Rebuilds the site in this process.
- *
- *  It used to shell out to `npx tsx src/build.ts`, which paid for a Node start and a fresh
- *  TypeScript transform on every keystroke-save, and threw away Shiki's highlighter — the
- *  expensive thing to construct — along with the process. In-process, the highlighter is built
- *  once and every rebuild after the first is markedly faster, which is what decides whether a
- *  much larger site is still pleasant to edit.
+/** Rebuilds the site in this process, rather than shelling out to `npx tsx src/build.ts`: that
+ *  pays for a Node start and a fresh TypeScript transform per save, and throws away Shiki's
+ *  highlighter — the expensive thing to construct — with the process.
  *
  *  The trade is that a change to `src/` itself is not picked up: the module graph is already
  *  loaded, and re-importing it would leak a new copy of every module per rebuild. The watcher
- *  below restarts the process for those instead, which is what a change to the generator
- *  actually needs. */
+ *  below restarts the process for those instead. */
 async function rebuild(): Promise<void> {
   if (building) {
     pendingRebuild = true;
@@ -105,7 +100,7 @@ const server = createServer((req, res) => {
       return;
     }
 
-    const notFound = join(DIST, "404.html");
+    const notFound = join(DIST, NOT_FOUND_FILE);
     if (existsSync(notFound)) {
       res.writeHead(404, { "Content-Type": "text/html; charset=utf-8" });
       res.end(readFileSync(notFound));

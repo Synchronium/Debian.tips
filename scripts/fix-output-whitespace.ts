@@ -15,8 +15,8 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import type { Example } from "../src/content/schema.js";
 import { examplesPath, readExamplesFile } from "./lib/examplesFile.js";
-import { ReplayError, readSetupDirectives } from "./lib/replay.js";
-import { captureAll, openSandbox } from "./lib/sandbox.js";
+import { ReplayError, readSetupDirectives } from "./lib/replayMetadata.js";
+import { SANDBOX_TOOL, captureAll, openSandbox } from "./lib/sandbox.js";
 import { findOutputBlock, replaceOutputBlock } from "./lib/yamlBlock.js";
 
 function main(): void {
@@ -40,7 +40,7 @@ function main(): void {
   const sandbox = openSandbox({
     name: sandboxName,
     command,
-    tool: "fix",
+    tool: SANDBOX_TOOL.fixWhitespace,
     asUser,
     needsSystemd: directives.needsSystemd,
     setupPath,
@@ -50,9 +50,11 @@ function main(): void {
     examples.map((example) => example.code),
   );
 
-  /** Trailing spaces per line, and leading and trailing blank lines. Never `\s`, which
-   *  matches a newline and would swallow the blank line after any line with a trailing
-   *  space. */
+  /** Trailing spaces per line, and leading and trailing blank lines.
+   *
+   *  Deliberately narrower than the replay's `normalise`: this tool decides whether two blocks
+   *  differ *only* in indentation, so anything it cannot explain that way must be left alone. A
+   *  looser comparison here would let it rewrite a block that genuinely differs. */
   const trimEdges = (text: string): string => text.replace(/[ \t\r]+$/gm, "").replace(/^\n+|\n+$/g, "");
 
   /** Comparable ignoring the indentation this tool exists to restore. */

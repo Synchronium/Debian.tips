@@ -55,9 +55,12 @@ Prettier is scoped to `src/`, `scripts/`, `test/` and `styles/`, and **never tou
 prose fence adjacency are load-bearing, and reformatting them would change what the site claims
 while the replay re-certified the result. `embeddedLanguageFormatting` is `off` for a related
 reason: Prettier recognises the `html` tagged template and will reformat the site's markup
-inside it, which changed every emitted page the first time this was set up. It covers `src/`, `test/` and `scripts/`: the replay harness is TypeScript
-too, run through `tsx`, and imports the content types from `src/content/schema.ts` rather than
-keeping its own idea of what an `examples.yaml` contains.
+inside it, which changed every emitted page the first time this was set up.
+
+`tsc` covers `src/`, `test/` and `scripts/` together: the replay harness is TypeScript too, run
+through `tsx`, and it imports the content types from `src/content/schema.ts` rather than keeping
+its own idea of what an `examples.yaml` contains. `src/client/` is checked separately by
+`tsconfig.client.json`, which is the only config with DOM globals — see ADR-0013.
 
 ## The one thing that makes this site different
 
@@ -84,6 +87,54 @@ Three rules follow from that, and all three have been broken here at least once:
   seventh took three pages and only appeared in one direction, so `--order=reverse` found it and
   the default order never would. `npm run replay -- --order=random` before shipping anything that
   changes shared state.
+
+## Writing code here
+
+Every page on this site links to the files that produced it (ADR-0017), so the code is part of
+what the site publishes. Someone arriving from a page has one question — "is this claim really
+checked?" — and they are reading a file they have never seen before, in a repository they do not
+know. **Optimise for that reader.** Three rules, each of which this codebase has broken often
+enough to be worth writing down.
+
+**Never compare against a bare literal.** A set of allowed values gets a `const` object with the
+type derived from it, and every comparison goes through that:
+
+```ts
+export const ORDER_MODE = { alpha: "alpha", reverse: "reverse", random: "random" } as const;
+export type OrderMode = (typeof ORDER_MODE)[keyof typeof ORDER_MODE];
+//  order.mode === ORDER_MODE.alpha        not  order.mode === "alpha"
+```
+
+`COMPARISON`, `ORDER_MODE`, `EDGE_KIND`, `SANDBOX_FLAVOUR`, `SANDBOX_TOOL` and `SETUP_DIRECTIVE`
+are the existing ones; follow them. A union type is not enough on its own — `type X = "a" | "b"`
+still leaves the literal written out at every use, and a value that is validated in one place and
+re-spelled in another *fails open*, staying green while quietly doing nothing. The same goes for
+paths, filenames and routes: `src/paths.ts` owns where things are and `src/config.ts` owns the
+site's routes, so `"404.html"` or `/tags/` written into a third file is a bug waiting for a
+rename. A string a *reader* sees is the same rule — the expand-all labels live in one template and
+reach the client script as a `data-` attribute rather than being typed twice.
+
+**Comments explain the rule, never the history.** Say what the code guarantees and what breaks
+without it. Do not say what the code used to be, when it changed, which page it broke, or what the
+review found — git has the first, `docs/adr/` has the rest, and prose that has to be read past to
+reach the point is worse than no prose. A comment is also a claim that goes stale: no counts of
+examples or pages, no measurements that will move, no naming another page that might be renamed.
+
+```sh
+# Good — the rule, and what breaks without it.
+# cowsay-off adds three cowfiles, so `cowsay -l` lists 50 rather than 47 when it is installed.
+# A page whose output depends on a package being absent has to assert that.
+
+# Bad — the incident.
+# Alphabetically the apt page had already purged it before this page ran, so the batch was
+# green until a shuffled run put remove-vs-purge first, which is how this was found...
+```
+
+**Name things for what they are now.** A file called `replay.ts` that replays nothing, a
+`verify-*.ts` that exports a `replay*` function, a `stats.ts` in a directory called `content` —
+each costs a reader a wrong guess before they reach the code. If a rename is right, do it: the
+imports are typechecked and `test/documentedPaths.test.ts` catches every stale mention in the
+comments and the docs, so the change is mechanically verifiable rather than a leap.
 
 ## Where the content lives
 

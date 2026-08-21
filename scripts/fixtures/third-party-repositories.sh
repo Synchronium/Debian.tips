@@ -25,11 +25,6 @@ KEY_EMAIL=packages@example.com
 find /etc/apt/sources.list.d -name '*.sources' ! -name 'debian.sources' -delete 2>/dev/null
 rm -f /etc/apt/preferences.d/*
 
-if ! command -v apt-ftparchive >/dev/null 2>&1; then
-  apt-get update >/dev/null 2>&1
-  apt-get install -y gnupg apt-utils >/dev/null 2>&1
-fi
-
 build_package() {
   # name, version, section, description
   local name=$1 version=$2 description=$3

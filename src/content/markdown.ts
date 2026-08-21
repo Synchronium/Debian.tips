@@ -181,16 +181,14 @@ function collectHeadings(tree: any): TocEntry[] {
   return toc;
 }
 
-/* Short prose fields — an example's `description`, a section's `intro`, a fixture's
- * `note` — have always been authored as markdown (backticked flags, the occasional
- * `[link](/path/)`, emphasis) but were interpolated into templates as escaped plain
- * text, so the markers shipped literally: readers saw `` `-g` `` rather than a
- * monospaced -g. This renders them through the same remark parser as page prose, so
- * there's one set of markdown rules on the site rather than a second hand-rolled one.
+/* Short prose fields — an example's `description`, a section's `intro`, a fixture's `note` —
+ * are authored as markdown (backticked flags, the occasional `[link](/path/)`, emphasis) and
+ * rendered through the same remark parser as page prose, so there is one set of markdown rules
+ * on the site rather than a second hand-rolled one.
  *
- * Deliberately *without* `allowDangerousHtml`: a stray `<tag>` in one of these fields
- * is dropped rather than injected. Nothing in content/ needs raw HTML here, and these
- * strings land inside a <p>. */
+ * Deliberately *without* `allowDangerousHtml`: a stray `<tag>` in one of these fields is dropped
+ * rather than injected. Nothing in content/ needs raw HTML here, and these strings land inside
+ * a <p>. */
 const inlineProcessor = unified()
   .use(remarkParse)
   .use(remarkGfm)

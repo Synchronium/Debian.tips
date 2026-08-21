@@ -19,9 +19,13 @@ export async function exampleCard(sectionSlug: string, index: number, example: E
   let codeHtml = injectAttr(await highlightCode(example.code, "bash"), 'aria-label="command"');
   if (isPromptable(example.code)) codeHtml = injectAttr(codeHtml, 'data-prompt="1"');
 
-  const outputHtml = example.output
-    ? injectAttr(await highlightCode(example.output, "plaintext"), 'aria-label="output"')
-    : null;
+  // `!== undefined`, not truthiness: the schema permits an empty `output:`, and the replay and
+  // the expand-all count both treat one as a documented output. Rendering no block for it would
+  // put the page's own figures out by one against what it shows.
+  const outputHtml =
+    example.output === undefined
+      ? null
+      : injectAttr(await highlightCode(example.output, "plaintext"), 'aria-label="output"');
 
   const descHtml = await renderInline(example.description, `example "${example.title}"`);
   // A volatile example's output is real, but the reader's will differ. The note says how,

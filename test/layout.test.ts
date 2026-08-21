@@ -31,11 +31,28 @@ function withNodeEnv(value: string | undefined, body: () => void): void {
 
 describe("layout", () => {
   it("inlines the client scripts rather than linking them", () => {
-    // They have to run before first paint, which a <script src> cannot promise.
+    // They have to run before first paint, which a <script src> cannot promise. Asserted on
+    // strings the minifier cannot rename — an identifier it is free to shorten would make this
+    // a test of esbuild's output rather than of the layout.
     const html = render();
-    expect(html).toContain('localStorage.getItem("theme")');
+    expect(html).toContain("localStorage.getItem");
+    expect(html).toContain("prefers-color-scheme: light");
     expect(html).toContain("data-search-open");
     expect(html).not.toContain('src="/assets/interaction.js"');
+  });
+
+  it("compiles every client script with the shared declarations", () => {
+    // src/client/shared.ts is prepended rather than imported, because the two scripts are
+    // inlined at different points in the document. If that stopped happening both would still
+    // compile — as one TypeScript global scope, tsconfig.client.json typechecks them together —
+    // and both would fail at runtime with the theme names undefined.
+    // The IIFE wrapper is what `clientScript` adds, so it is what separates the two compiled
+    // client scripts from the analytics snippet a production build also inlines.
+    const scripts = [...render().matchAll(/<script>(.*?)<\/script>/gs)]
+      .map((match) => match[1] ?? "")
+      .filter((script) => script.startsWith("(()=>"));
+    expect(scripts).toHaveLength(2);
+    for (const script of scripts) expect(script).toContain('"data-theme"');
   });
 
   it("keeps analytics out of a development build", () => {

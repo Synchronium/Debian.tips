@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NO_CHECKS } from "../src/content/replayCounts.js";
+import { NO_CHECKS } from "./support/pageChecks.js";
 import type { ArticlePage, CommandPage } from "../src/content/loader.js";
 import {
   adjacency,
@@ -29,7 +29,7 @@ function page(overrides: Partial<CommandPage> & Pick<CommandPage, "slug">): Comm
     draft: false,
     html: "",
     toc: [],
-    sources: { files: [], replayable: false },
+    sources: { files: [], replayable: false, hasSkipFile: false },
     checks: NO_CHECKS,
     tagline: "",
     tier: "standard",
@@ -54,7 +54,7 @@ function article(slug: string, category: ArticlePage["category"], tags: string[]
     draft: false,
     html: "",
     toc: [],
-    sources: { files: [], replayable: false },
+    sources: { files: [], replayable: false, hasSkipFile: false },
     checks: NO_CHECKS,
   };
 }

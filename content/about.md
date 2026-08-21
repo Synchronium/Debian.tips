@@ -97,6 +97,11 @@ all in one public repository. There is no hidden step.
   sandbox, the runner, and the code that decides what counts as a match
 - [The CI workflow](https://github.com/Synchronium/Debian.tips/blob/main/.github/workflows/ci.yml)
   — where it runs on every change
+- [This page](https://github.com/Synchronium/Debian.tips/blob/main/content/about.md) — every
+  figure above is a placeholder in it, filled in from a count of the content at build time
+
+Every other page on the site carries the same list at its foot, naming the files that produced
+that page in particular and the one command that re-runs its examples.
 
 If you find an example that does not reproduce on a current Debian system, that is a bug
 worth reporting, and one the build should have caught.

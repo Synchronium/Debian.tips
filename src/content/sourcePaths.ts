@@ -1,17 +1,15 @@
 // Which files in this repository produced a given page.
 //
-// The site's claim is that every documented output was really produced by the command shown, and
-// until this existed the route from a claim to its evidence was: read /about/, find the
-// repository, work out where a page of that category lives, guess at the setup script's name.
-// Four steps and a convention nobody outside the repository knows. Every page now carries the
-// answer, and `test/sourceLinks.test.ts` checks the paths still resolve.
+// The site's claim is that every documented output was really produced by the command shown, so
+// a reader has to be able to reach the evidence without knowing this repository's conventions.
+// Every page carries the answer, and `test/sourceLinks.test.ts` checks the paths still resolve.
 //
 // Paths are relative to the repository root and always use forward slashes, because they are
 // both a URL fragment (see `blobUrl` in src/config.ts) and a filesystem path the test resolves.
-// `contentDir` and `fixtureDir` are parameters for the same reason they are on `fixtureScript`
-// and `verificationStats`: a build over the synthetic tree in `test/fixtures/` has a synthetic
-// harness beside it, and hardcoding this repository's would make every path on those pages wrong
-// while still pointing at files that exist.
+// `contentDir` and `fixtureDir` are parameters for the same reason they are on `fixtureScript`:
+// a build over the synthetic tree in `test/fixtures/` has a synthetic harness beside it, and
+// hardcoding this repository's would make every path on those pages wrong while still pointing
+// at files that exist.
 import { existsSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import {
@@ -25,6 +23,7 @@ import {
   proseSource,
   skipFile,
 } from "../paths.js";
+import type { Category } from "./schema.js";
 
 /** One file, with what it is for. The label is what a reader sees beside the link: a bare list
  *  of four paths answers "where" without answering "which of these is the one I want". */
@@ -39,6 +38,11 @@ export interface PageSources {
    *  and therefore whether `npm run replay -- <slug>` has anything to run. A page without one
    *  says so rather than printing a command that would report it as unverified. */
   replayable: boolean;
+  /** Whether `scripts/fixtures/<slug>.skip` exists and is listed above. A command page records
+   *  an exemption there; a prose page records it inline, in a comment the Markdown pipeline
+   *  strips before a reader ever sees it. The two need different wording, and this is what
+   *  `src/templates/partials/sourceLinks.ts` picks between them on. */
+  hasSkipFile: boolean;
 }
 
 /** Repository-root-relative, forward slashes on every platform. */
@@ -47,7 +51,7 @@ function repoPath(absolute: string): string {
 }
 
 export function pageSources(
-  category: string,
+  category: Category,
   slug: string,
   contentDir: string = CONTENT_DIR,
   fixtureDir: string = FIXTURE_DIR,
@@ -70,9 +74,10 @@ export function pageSources(
   }
 
   const skips = skipFile(slug, fixtureDir);
-  if (existsSync(skips)) {
+  const hasSkipFile = existsSync(skips);
+  if (hasSkipFile) {
     files.push({ path: repoPath(skips), label: "examples the batch cannot run, and how each was checked instead" });
   }
 
-  return { files, replayable };
+  return { files, replayable, hasSkipFile };
 }

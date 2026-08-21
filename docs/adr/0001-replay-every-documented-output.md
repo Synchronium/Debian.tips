@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Recorded:** 2026-08-19
-- **Enforced by:** `scripts/verify-examples.ts`, `scripts/verify-prose.ts`, `npm run replay`, the `replay` job in `.github/workflows/ci.yml`
+- **Enforced by:** `scripts/replay-command-page.ts`, `scripts/replay-prose-page.ts`, `npm run replay`, the `replay` job in `.github/workflows/ci.yml`
 
 ## Context
 

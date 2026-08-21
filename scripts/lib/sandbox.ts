@@ -1,23 +1,22 @@
 // Driving a disposable sandbox: running commands in it, installing a page's fixtures, and
 // capturing what each example prints.
 //
-// Shared by the three tools that replay examples — verify-examples, adopt-real-output and
-// fix-output-whitespace — so that all three run an example under identical conditions. A
-// captured output is only comparable with a documented one if the two were produced the
-// same way.
+// Shared by every tool that runs an example, so all of them run one under identical conditions.
+// A captured output is only comparable with a documented one if the two were produced the same
+// way.
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { FIXTURE_DIR, SANDBOX_SCRIPT } from "../../src/paths.js";
-import { ReplayError } from "./replay.js";
+import { ReplayError } from "./replayMetadata.js";
 
 /** Seconds an example may run before `timeout` kills it. Pages document commands that
  *  block for ever (`tail -f`, `journalctl -f`); a timed-out example reports as a mismatch. */
 export const EXAMPLE_TIMEOUT_SECONDS = 5;
 
 /** Bytes kept per example. An interactive command that loops on EOF can emit hundreds of
- *  megabytes before `timeout` fires, which would overrun the read buffer for the whole
- *  batch and leave every later example reporting empty.
+ *  megabytes before `timeout` fires, overrunning the read buffer for the whole batch and
+ *  leaving every later example reporting empty.
  *
  *  Applied with `head -c`, which counts bytes and will happily stop mid-character; the captured
  *  text is repaired to the last whole character on the way back (see `captureAll`), so a cap
@@ -66,13 +65,30 @@ export interface Sandbox {
   readonly restore: string;
 }
 
+/** How a sandbox is booted. `systemd` costs `--privileged` and the host's cgroup tree, so it is
+ *  asked for per page — see `SETUP_DIRECTIVE` in `replayMetadata.ts` — rather than applied to
+ *  everything. */
+export const SANDBOX_FLAVOUR = { default: "default", systemd: "systemd" } as const;
+export type SandboxFlavour = (typeof SANDBOX_FLAVOUR)[keyof typeof SANDBOX_FLAVOUR];
+
+/** The tools that open a sandbox. The value names the tool's working directory inside the
+ *  container, which is what keeps two of them running at once out of each other's files — so
+ *  the set is named here rather than left to a string literal at each call site. */
+export const SANDBOX_TOOL = {
+  commandPage: "verify",
+  prosePage: "prose",
+  adopt: "adopt",
+  fixWhitespace: "fix",
+} as const;
+export type SandboxTool = (typeof SANDBOX_TOOL)[keyof typeof SANDBOX_TOOL];
+
 export interface OpenOptions {
   /** Container name from `scripts/sandbox.sh start`. */
   name: string;
   /** Page slug, e.g. "wget". */
   command: string;
   /** Names this tool's working directory, keeping concurrent tools out of each other's. */
-  tool: string;
+  tool: SandboxTool;
   /** Run examples as the unprivileged `user` rather than root. */
   asUser: boolean;
   /** Require a sandbox booted with systemd as PID 1. */
@@ -99,7 +115,7 @@ export function openSandbox(options: OpenOptions): Sandbox {
 
   if (needsSystemd) {
     const init = exec("cat /proc/1/comm", { asRoot: true }).trim();
-    if (init !== "systemd") {
+    if (init !== SANDBOX_FLAVOUR.systemd) {
       throw new ReplayError(
         `${command} declares "# verify: --systemd" but ${name} is running "${init}" as PID 1.\n` +
           `Start one with: ${SANDBOX_SCRIPT} start --systemd`,
@@ -173,8 +189,8 @@ export function captureAll(sandbox: Sandbox, commands: string[]): Map<number, st
     ),
   ].join("\n");
 
-  // Named for the tool and the page rather than for this process, so two tools — or, one day,
-  // two workers — sharing a sandbox cannot overwrite each other's batch mid-run.
+  // Named for the tool and the page rather than for this process, so two tools sharing a
+  // sandbox cannot overwrite each other's batch mid-run.
   const runner = `/tmp/batch-${sandbox.workdir.replace(/\//g, "-")}.sh`;
   let raw = "";
   try {

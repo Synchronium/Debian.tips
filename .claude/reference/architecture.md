@@ -26,6 +26,12 @@ after `troubleshooting` and `compare` were added. All but `commands` are flat
 `loadCommands` requires both files to exist and cross-checks the examples file's `command:` field
 against the directory name.
 
+Two fields on every `Page` come from beside the loader rather than from frontmatter.
+`src/content/sourcePaths.ts` derives which files in this repository produced the page, and
+`src/content/pageChecks.ts` counts what `npm run replay -- <slug>` will check on it; both are
+rendered at the foot of the page by `src/templates/partials/sourceLinks.ts`, and the same counting
+feeds the about page's totals via `src/content/verificationStats.ts`. ADR-0017 has the reasoning.
+
 `src/build.ts` orchestrates: load content → render every page through `src/templates/` → write
 `dist/`. Rendering finishes before anything is written, because the stylesheet carries the
 syntax-highlighting classes cut from the rendered pages (`src/content/shikiStyles.ts`) and is
@@ -80,8 +86,10 @@ stay that way: frontmatter `description` also feeds `<meta name="description">` 
 ## Dev server
 
 `src/server.ts` is a plain `node:http` server over `dist/`, not a bundler dev server — it does a
-full `build()` on startup and on every change under `content/`, `src/`, `styles/`, or `public/`
-(via `chokidar`, 150ms debounced), then serves the freshly-written static files. No HMR.
+full `build()` on startup and on every change under `content/`, `src/`, `styles/`, `public/` or
+`scripts/fixtures/` (via `chokidar`, 150ms debounced), then serves the freshly-written static
+files. No HMR. `scripts/fixtures/` is watched because the about page's figures are counted from
+it: adding or removing a setup script changes what the built site claims about itself.
 
 ## Tests
 
@@ -119,6 +127,15 @@ than another `related:` entry.
 
 ## CI/deploy
 
-`.github/workflows/ci.yml`: typecheck + tests + build + linkcheck + link-audit + pa11y-ci, on every PR and push
-to `main`. `.github/workflows/deploy.yml`: builds and publishes `dist/` to GitHub Pages on push to
-`main`. Both run on GitHub-hosted runners, independent of this repo's devcontainer.
+`.github/workflows/ci.yml` runs three jobs in parallel, on every PR and push to `main`:
+
+- `check` — format, typecheck (both configs), tests, build, pagefind, linkcheck, link audit, then
+  `pa11y-ci` against the built site. Exactly what `npm run check` runs locally.
+- `replay` — the examples, for real, in a Docker sandbox. A PR replays what its diff touched; a
+  push to `main` replays everything.
+- `replay-shuffled` — the full replay again in a seeded random order, on `main` only.
+
+`.github/workflows/deploy.yml` builds and publishes `dist/` to GitHub Pages on `workflow_run` of
+CI, gated on the whole workflow succeeding and pinned to the same commit. All of it runs on
+GitHub-hosted runners, independent of this repo's devcontainer. ADR-0003 is the topology and why;
+`.claude/skills/ship/SKILL.md` is what to do when one goes red.

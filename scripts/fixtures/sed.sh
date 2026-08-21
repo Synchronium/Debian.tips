@@ -1,4 +1,4 @@
-# Reconstructed from the documented outputs, then proven by scripts/verify-examples.ts.
+# Reconstructed from the documented outputs, then proven by scripts/replay-command-page.ts.
 cat > app.log <<'EOF'
 INFO: service starting
 DEBUG: loading config from /etc/app.conf

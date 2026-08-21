@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadContent } from "../src/content/loader.js";
-import { fillStats, verificationStats, type VerificationStats } from "../src/content/stats.js";
+import { fillStats, verificationStats, type VerificationStats } from "../src/content/verificationStats.js";
 
 /* Every number on /about/ comes from here, on a page whose whole argument is that its numbers
  * are counted rather than typed. Two of them were wrong and nothing could see it: outputs on a

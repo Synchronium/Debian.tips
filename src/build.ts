@@ -2,11 +2,19 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve, sep } from "node:path";
 import { copyPublic, writeHashedCss } from "./assets.js";
-import { CATEGORY_META, NAV_ORDER, STANDALONE_PAGES } from "./config.js";
-import { CONTENT_DIR, DIST_DIR, FIXTURE_DIR, OUTPUT_INDEX } from "./paths.js";
+import { CATEGORY_META, NAV_ORDER, STANDALONE_PAGES, TAGS_PATH, tagPath } from "./config.js";
+import {
+  CONTENT_DIR,
+  DIST_DIR,
+  FEED_FILE,
+  FIXTURE_DIR,
+  NOT_FOUND_FILE,
+  OUTPUT_INDEX,
+  SITEMAP_FILE,
+} from "./paths.js";
 import { loadContent } from "./content/loader.js";
 import { renderMarkdown } from "./content/markdown.js";
-import { fillStats, verificationStats } from "./content/stats.js";
+import { fillStats, verificationStats } from "./content/verificationStats.js";
 import { resetShikiStyles, shikiStyleCss } from "./content/shikiStyles.js";
 import matter from "gray-matter";
 import { type Listing, feedXml, sitemapXml } from "./feeds.js";
@@ -107,16 +115,16 @@ export async function build(
     .filter(({ taggedPages }) => taggedPages.length > 0);
 
   emit(
-    "/tags/",
+    TAGS_PATH,
     tagsIndexPage(
       populatedTags.map(({ tag }) => tag),
       pages,
       cssHref,
     ),
   );
-  listings.push({ path: "/tags/", pages });
+  listings.push({ path: TAGS_PATH, pages });
   for (const { tag, taggedPages } of populatedTags) {
-    for (const slice of paginate(taggedPages, `/tags/${tag.name}/`)) {
+    for (const slice of paginate(taggedPages, tagPath(tag.name))) {
       emit(slice.path, tagPage(tag, slice, cssHref));
       listings.push({ path: slice.path, pages: slice.items });
     }
@@ -128,7 +136,7 @@ export async function build(
   const stats = verificationStats(pages, contentDir, fixtureDir);
   for (const standalone of STANDALONE_PAGES) {
     const parsed = matter(readFileSync(join(contentDir, standalone.source), "utf-8"));
-    const rendered = await renderMarkdown(fillStats(parsed.content, stats));
+    const body = await renderMarkdown(fillStats(parsed.content, stats));
     emit(
       standalone.path,
       standalonePage(
@@ -136,8 +144,8 @@ export async function build(
           title: String(parsed.data.title),
           description: String(parsed.data.description),
           path: standalone.path,
-          html: rendered.html,
-          toc: rendered.toc,
+          html: body.html,
+          toc: body.toc,
         },
         cssHref,
       ),
@@ -150,12 +158,12 @@ export async function build(
   for (const page of rendered) writePage(distDir, page.path, page.html, finalCssHref);
 
   writeFileSync(
-    join(distDir, "404.html"),
+    join(distDir, NOT_FOUND_FILE),
     notFoundPage(cssHref).replaceAll(CSS_HREF_TOKEN, finalCssHref),
     "utf-8",
   );
-  writeFileSync(join(distDir, "sitemap.xml"), sitemapXml(pages, listings), "utf-8");
-  writeFileSync(join(distDir, "feed.xml"), feedXml(pages), "utf-8");
+  writeFileSync(join(distDir, SITEMAP_FILE), sitemapXml(pages, listings), "utf-8");
+  writeFileSync(join(distDir, FEED_FILE), feedXml(pages), "utf-8");
 
   return { pageCount: pages.length, tagCount: populatedTags.length };
 }

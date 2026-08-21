@@ -15,27 +15,26 @@
 //
 // Pages run one at a time, in one sandbox per flavour, and that is deliberate: every page
 // sharing one container is what tests CLAUDE.md's third rule, that a page's setup script
-// normalises what it needs rather than trusting what the last page left behind.
-// Parallelising across a pool would weaken that; _PLANS/PLAN-CODE-IMPROVEMENTS.md says what it
-// would take. What *is* cheap is not paying for a TypeScript startup per page, so the two
-// verifiers are imported and called rather than spawned.
+// normalises what it needs rather than trusting what the last page left behind. See ADR-0002.
+// What *is* cheap is not paying for a TypeScript startup per page, so the two replays are
+// imported and called rather than spawned.
 //
-// The order within that one sandbox is a `--order` away, because a fixed order tests exactly one
-// of the possible orderings and a page can pass by luck in it — see scripts/lib/replayOrder.ts
-// for the defect that established this. The seed is always printed, so a shuffled failure names
-// the command that reproduces it.
+// The order within that one sandbox is a `--order` away: a fixed order tests exactly one of the
+// possible orderings, and a page that passes only because of what ran before it passes anyway.
+// The seed is always printed, so a shuffled failure names the command that reproduces it.
 //
 // Exit status: 0 when every page reproduces, 1 if any page fails, 2 if Docker is
 // unavailable or an argument names no page.
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { ReplayError, readSetupDirectives } from "./lib/replay.js";
+import { ReplayError, readSetupDirectives } from "./lib/replayMetadata.js";
 import { ORDER_MODE, type ReplayOrder, describeOrder, orderPages, parseOrder } from "./lib/replayOrder.js";
 import { PROSE_CATEGORIES } from "../src/content/schema.js";
-import { CONTENT_DIR, SANDBOX_SCRIPT, fixtureScript } from "../src/paths.js";
-import { replayCommandPage } from "./verify-examples.js";
-import { replayProsePage } from "./verify-prose.js";
+import { CONTENT_DIR, SANDBOX_SCRIPT, commandsDir, fixtureScript, proseSlug } from "../src/paths.js";
+import { replayCommandPage } from "./replay-command-page.js";
+import { replayProsePage } from "./replay-prose-page.js";
+import { SANDBOX_FLAVOUR, type SandboxFlavour } from "./lib/sandbox.js";
 
 const args = process.argv.slice(2);
 const FLAGS = ["--changed"];
@@ -61,17 +60,15 @@ try {
 
 const requestedPages = args.filter((arg) => !arg.startsWith("-"));
 
-// Prose pages state their claims as Markdown fences rather than YAML, so they run through
-// verify-prose.ts rather than verify-examples.ts.
-const commandPages = readdirSync(join(CONTENT_DIR, "commands"), { withFileTypes: true })
+// Prose pages state their claims as Markdown fences rather than YAML, so the two kinds run
+// through different replays.
+const commandPages = readdirSync(commandsDir(), { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name);
 
 const prosePages = PROSE_CATEGORIES.flatMap((category) =>
   existsSync(join(CONTENT_DIR, category))
-    ? readdirSync(join(CONTENT_DIR, category))
-        .filter((file) => file.endsWith(".md"))
-        .map((file) => file.replace(/\.md$/, ""))
+    ? readdirSync(join(CONTENT_DIR, category)).flatMap((file) => proseSlug(file) ?? [])
     : [],
 );
 
@@ -105,10 +102,16 @@ function changedPages(): string[] {
     return [...commandPages, ...prosePages];
   }
 
+  // `src/content/` is in this list because the replay imports from it: the fence-pairing rule,
+  // the partition, the exemption parser and the comparison vocabulary all live there, and a
+  // change to any of them can move any page's result. Leaving it out meant a pull request
+  // touching the pairing rule replayed nothing at all — and a mis-paired fence reports as "not
+  // checkable" rather than as broken, so the loss would have been silent.
   const harnessWide = changed.some(
     (file) =>
       file.startsWith("scripts/lib/") ||
       file.startsWith("scripts/sandbox") ||
+      file.startsWith("src/content/") ||
       file === "scripts/fixtures/_common.sh" ||
       file.endsWith(".py"),
   );
@@ -126,10 +129,12 @@ function changedPages(): string[] {
   return [...touched];
 }
 
+// Not sorted here: `orderPages` sorts before it does anything else, so the order this arrives in
+// cannot reach the run.
 const selected = onlyChanged ? changedPages() : requestedPages;
-const pages = [...commandPages, ...prosePages]
-  .filter((name) => (selected.length || onlyChanged ? selected.includes(name) : true))
-  .sort();
+const pages = [...commandPages, ...prosePages].filter((name) =>
+  selected.length || onlyChanged ? selected.includes(name) : true,
+);
 
 const missing = requestedPages.filter((name) => !pages.includes(name));
 if (missing.length) {
@@ -163,15 +168,14 @@ try {
 // A page declaring `# verify: --systemd` needs a sandbox booted with systemd as PID 1,
 // which costs --privileged and the host's cgroup tree. Each flavour is started only if a
 // page in this run asks for it.
-type Flavour = "default" | "systemd";
-const flavourOf = (name: string): Flavour =>
-  readSetupDirectives(fixtureScript(name)).needsSystemd ? "systemd" : "default";
+const flavourOf = (name: string): SandboxFlavour =>
+  readSetupDirectives(fixtureScript(name)).needsSystemd ? SANDBOX_FLAVOUR.systemd : SANDBOX_FLAVOUR.default;
 const flavours = new Map(runnable.map((name) => [name, flavourOf(name)]));
 const neededFlavours = [...new Set(flavours.values())].sort();
 
 // Registered before the first container starts: one left behind holds its name and its
 // ports, and the next run would inherit whatever state it was left in.
-const sandboxes = new Map<Flavour, string>();
+const sandboxes = new Map<SandboxFlavour, string>();
 let stopped = false;
 const stop = (): void => {
   if (stopped) return;
@@ -193,7 +197,7 @@ for (const signal of ["SIGINT", "SIGTERM"]) {
 }
 
 for (const flavour of neededFlavours) {
-  const startArgs = flavour === "systemd" ? ["start", "--systemd"] : ["start"];
+  const startArgs = flavour === SANDBOX_FLAVOUR.systemd ? ["start", "--systemd"] : ["start"];
   sandboxes.set(flavour, execFileSync(SANDBOX_SCRIPT, startArgs, { encoding: "utf-8" }).trim());
 }
 
@@ -203,7 +207,7 @@ console.log(`replaying ${runnable.length} page(s) in ${sandboxSummary}, order: $
 const failed: string[] = [];
 const started = Date.now();
 for (const name of runnable) {
-  const sandbox = sandboxes.get(flavours.get(name) ?? "default") ?? "";
+  const sandbox = sandboxes.get(flavours.get(name) ?? SANDBOX_FLAVOUR.default) ?? "";
   const setupPath = fixtureScript(name);
   try {
     const result = isProse(name)

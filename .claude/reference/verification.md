@@ -30,7 +30,7 @@ persists on the devcontainer itself.
 ## Replaying examples to prove the outputs are real
 
 A page's `output:` blocks are the site's core promise, and `npm run check` can't check them — it
-validates shape, not truth. `scripts/verify-examples.ts` replays every example on a page inside
+validates shape, not truth. `scripts/replay-command-page.ts` replays every example on a page inside
 the sandbox and diffs the real result against what the page claims:
 
 ```sh
@@ -39,7 +39,7 @@ npm run replay -- wget curl # just these
 
 # or drive one page directly, which is what the above does per page:
 name=$(scripts/sandbox.sh start)
-npx tsx scripts/verify-examples.ts "$name" wc scripts/fixtures/wc.sh   # -> "wc (as root): 25/25 ..."
+npx tsx scripts/replay-command-page.ts "$name" wc scripts/fixtures/wc.sh   # -> "wc (as root): 25/25 ..."
 ```
 
 `npm run replay` runs in CI as its own job (`.github/workflows/ci.yml`), in parallel with the
@@ -52,7 +52,7 @@ image, which the workflow does as its own step so the log says which half any sl
 That invocation is correct for every page. Some pages have to replay as the unprivileged
 `user` — anything printing file ownership (`tar -tvf`, `ls -l`) or documenting a permission
 denial, since root simply doesn't get denied — and each of those says so itself, with a
-`# verify: --user` line in its setup script that both `verify-examples.ts` and
+`# verify: --user` line in its setup script that both `replay-command-page.ts` and
 `adopt-real-output.ts` read.
 
 A second directive, `# verify: --systemd`, asks for a sandbox booted with systemd as PID 1
@@ -61,7 +61,7 @@ default sandbox runs `sleep` as PID 1, where every such example prints "System h
 booted with systemd as init system (PID 1). Can't operate." It is the same image — systemd is
 already installed — but a different runtime, costing `--privileged` and the host's cgroup tree,
 which is why it is opt-in per page rather than the default. `npm run replay` starts only the
-flavours the selected pages ask for, and `verify-examples.ts` refuses to replay a `--systemd`
+flavours the selected pages ask for, and `replay-command-page.ts` refuses to replay a `--systemd`
 page in a sandbox whose PID 1 isn't systemd rather than producing a page of identical errors. Replayed as root, `chmod` scores 9/42 and `tar` 32/42 on pages that
 are entirely correct, which reads exactly like a page that has drifted; the mode is part of the
 score, so it's printed alongside it.
@@ -120,7 +120,7 @@ silently strips that padding — such outputs need `output: |2`.
 
 Concepts, scripting lessons, recipes and Debian articles state the same kind of claim as a
 command page, but as Markdown rather than YAML: a ```` ```bash ```` fence followed by the output
-it produced. `scripts/verify-prose.ts` replays those, `src/content/proseBlocks.ts` pairs them up,
+it produced. `scripts/replay-prose-page.ts` replays those, `src/content/proseBlocks.ts` pairs them up,
 and `npm run replay` runs both kinds. A prose page opts in by having `scripts/fixtures/<slug>.sh`;
 without one it is listed as not replayed rather than passed over silently.
 
@@ -179,7 +179,7 @@ wrong for months and nothing could have told us.
 The `curl` and `wget` pages point at `http://127.0.0.1:8080`, served by
 `scripts/fixtures/http-mock.py` — thirteen-odd endpoints that echo a request, return a chosen
 status, redirect, delay, set a cookie, demand basic auth, or serve a small linked site with
-`Range` and `If-Modified-Since` support. `verify-examples.ts` installs any `.py` under
+`Range` and `If-Modified-Since` support. `replay-command-page.ts` installs any `.py` under
 `scripts/fixtures/` into `/opt/mock/` in the sandbox, and each page's setup script starts it.
 
 It binds `127.0.0.1` by default, because readers are told to run it on their own machines and it

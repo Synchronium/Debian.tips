@@ -22,7 +22,7 @@ the link audit; it needs nothing but Node, and it is exactly what CI's `check` j
 | `content/commands/<x>/examples.yaml` | `npm run replay -- <x>` |
 | a prose page with a setup script | `npm run replay -- <slug>` |
 | `scripts/fixtures/<x>.sh` or `.skip` | `npm run replay -- <x>` |
-| `scripts/lib/normalise.ts`, `lib/sandbox.ts`, `verify-*.ts` | **everything**: `npm run replay` |
+| anything under `scripts/lib/` or `src/content/` | **everything**: `npm run replay` |
 | a fixture that touches shared state — apt marks, sources, ports, accounts | **everything, twice**: `npm run replay` and `npm run replay -- --order=reverse` |
 | prose only, no commands or fixtures | nothing |
 
@@ -30,9 +30,12 @@ the link audit; it needs nothing but Node, and it is exactly what CI's `check` j
 pull request. The rows above are still worth knowing, because it is the shared-library row that
 decides whether "everything" is the right answer.
 
-The shared-library row matters most. `normalise.ts` is used by both sides of every comparison,
-so a bug there corrupts a page and then certifies the corruption. Never push a change to it on
-the strength of one page's replay.
+The shared-library row matters most, and it is wider than it looks: the replay imports from
+`src/content/` as well as `scripts/lib/` — the fence-pairing rule, the partition, the exemption
+parser and the comparison vocabulary all live there, and `--changed` treats both directories as
+harness-wide for that reason. `normalise.ts` is the sharpest case, used by both sides of every
+comparison, so a bug in it corrupts a page and then certifies the corruption. Never push a change
+to any of them on the strength of one page's replay.
 
 **Let the replay have the machine to itself.** Backgrounding it and carrying on with
 `npm run check` or `pa11y-ci` is the obvious move and it produces false failures: measured
@@ -132,6 +135,11 @@ repo has had was environmental, and the same five causes keep coming back:
   `sort`.
 - **races** — `systemctl start` returns before a `Type=simple` service is ready; journald writes
   asynchronously. A page that passes locally three times can still be racing.
+- **ordering** — only `replay-shuffled` is red, and the page it names looks untouched. That page
+  depends on state another page leaves behind. The log prints the seed and the command that
+  repeats the run exactly; `npm run replay` in the default order is the control. The fix belongs
+  in that page's setup script, which should assert the state its output depends on rather than
+  trusting what it finds — including the *absence* of something.
 
 Fix the cause rather than re-running the job. If the real output is right and the page is wrong,
 `scripts/adopt-real-output.ts` re-captures it.

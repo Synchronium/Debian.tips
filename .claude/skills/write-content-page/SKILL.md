@@ -107,6 +107,10 @@ input. Pages whose output echoes the input (`cut`, `head`) often need none.
 - Add a top-level `fixtures:` list to `examples.yaml` (`name`, optional `note`, `content`). It
   renders as one collapsed block above the examples.
 - Mirror it in a setup script at `scripts/fixtures/<command>.sh` that recreates those files.
+  Comment each step with the rule it enforces — what the page's output depends on, and what
+  breaks if the sandbox does not have it — never with the story of how it was found. CLAUDE.md's
+  "Writing code here" has the shape; these scripts are linked from the page they belong to, so a
+  reader meets them cold.
 - **If the input is a directory rather than a file** (`find`, `tar`, `ls`, `du`), the fixture is a
   captured `ls -lAR` of the tree — a reader can't evaluate `find projects -mtime +365` printing one
   path without seeing the other nine files and their dates. Capture it from the sandbox rather than
@@ -164,7 +168,7 @@ no longer grants.
 
 If a page's output depends on who ran the command — file ownership in `ls -l` or `tar -tvf`, a
 path under `~`, a permission denial root would never see — put `# verify: --user` in its setup
-script. Both `verify-examples.ts` and `adopt-real-output.ts` read it, so the command above stays
+script. Both `replay-command-page.ts` and `adopt-real-output.ts` read it, so the command above stays
 right for every page. Without it, replaying `chmod` as root reports 9/42 on a page that is
 perfectly correct, and that looks exactly like a page that has drifted.
 
@@ -177,7 +181,7 @@ output was silently abridged).
 
 A concept, lesson, recipe or Debian article states its claims as a ```` ```bash ```` fence
 followed by a bare fence holding the output. Those pairs are replayed by
-`scripts/verify-prose.ts` when the page has a `scripts/fixtures/<slug>.sh`, so write them to the
+`scripts/replay-prose-page.ts` when the page has a `scripts/fixtures/<slug>.sh`, so write them to the
 same standard as an `output:` block:
 
 - **The output fence must open on the line immediately after the command fence closes.** Prose in
@@ -222,7 +226,7 @@ Two gates, and a command page needs both:
    missing tag, dead `related` link, or broken cross-link it surfaces — don't hand back a page
    that fails this.
 2. `npm run replay -- <command>` for any page with fixtures, and report the score (it starts and
-   stops its own sandbox; `npx tsx scripts/verify-examples.ts <sandbox> <command>
+   stops its own sandbox; `npx tsx scripts/replay-command-page.ts <sandbox> <command>
    scripts/fixtures/<command>.sh` is the same check against a sandbox you're already holding).
    `npm run check` validates *shape*; only the replay checks whether the outputs are true, which
    is the site's actual promise.

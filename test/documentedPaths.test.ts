@@ -3,19 +3,18 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { ROOT } from "../src/paths.js";
 
-/* The tools print repository paths at people: "see .claude/skills/cross-link-pages/SKILL.md",
- * "re-capture with scripts/adopt-real-output.ts". Nothing checked those, so a rename would
- * leave a message confidently naming a file that no longer exists — and the message is read
- * precisely when someone is already stuck. */
+/* The tools and the documentation print repository paths at people: "see
+ * .claude/skills/cross-link-pages/SKILL.md", "re-capture with scripts/adopt-real-output.ts".
+ * Nothing else checks those, so a rename leaves a message confidently naming a file that no
+ * longer exists — and the message is read precisely when someone is already stuck. */
 
 /** Paths that appear inside the tools and the documentation, excluding the ones that are
  *  patterns rather than files (`scripts/fixtures/<command>.skip`).
  *
- *  `mjs` is in the list because it was once missing from it, which is how eight references to
- *  `verify-examples.mjs` survived the harness being rewritten in TypeScript — a check that
- *  cannot see a file extension reports a clean run either way. Plain `js` is deliberately *not*
- *  here: TypeScript's NodeNext imports spell every neighbour `./thing.js`, and matching those
- *  finds a relative specifier rather than a path from the repository root. */
+ *  An extension missing from this list is a whole class of reference the check cannot see, and
+ *  it reports a clean run either way — so add one when a file of that kind starts being named.
+ *  Plain `js` is deliberately *not* here: TypeScript's NodeNext imports spell every neighbour
+ *  `./thing.js`, and matching those finds a relative specifier rather than a repository path. */
 const REFERENCE =
   /(?:\.claude|scripts|src|test|content|styles|public)\/[A-Za-z0-9._/-]+\.(?:ts|mjs|sh|md|py|yaml|yml|css)/g;
 
@@ -45,10 +44,7 @@ function resolves(path: string): boolean {
 describe("repository paths named in the tools", () => {
   it("all exist", () => {
     const missing: string[] = [];
-    // `test` and `README.md` are scanned too. They were not, and two references rotted there
-    // unseen: comments naming `verify-examples.mjs` two rewrites after it stopped being an
-    // `.mjs` file, and a `PLAN-BUILD.md` that has never existed in this repository.
-    // `docs/` is scanned for the same reason it exists: an ADR names the test or the gate that
+    // `test`, `docs` and `README.md` are all scanned. An ADR names the test or the gate that
     // enforces its decision, and a decision whose enforcement has been renamed away is exactly
     // the one worth being told about.
     for (const file of [

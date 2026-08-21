@@ -22,7 +22,7 @@ of tested examples. Both files must exist, and the examples file's `command:` fi
 against the directory name.
 
 Every other category is a flat `content/<category>/<slug>.md`. Their claims are stated as a
-fenced `bash` block followed immediately by the output it produced, and `scripts/verify-prose.ts`
+fenced `bash` block followed immediately by the output it produced, and `scripts/replay-prose-page.ts`
 pairs the two up — a looser convention, and the right one, because on those pages the commands are
 incidental to an argument rather than the substance of the page.
 

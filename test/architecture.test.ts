@@ -2,17 +2,14 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { COMPARISON, PROSE_CATEGORIES } from "../src/content/schema.js";
-import { CONTENT_DIR, FIXTURE_DIR, proseSource } from "../src/paths.js";
+import { CONTENT_DIR, FIXTURE_DIR, commandsDir, proseSlug, proseSource } from "../src/paths.js";
 import { parseProsePage } from "../src/content/proseBlocks.js";
 import { readExamplesFile } from "../scripts/lib/examplesFile.js";
 
-const COMMANDS_DIR = join(CONTENT_DIR, "commands");
-
 /* An architecture in a documented output is the one defect that cannot fail in both places at
- * once: this devcontainer is arm64, a CI runner is amd64, and emulation isn't available here,
- * so the page passes locally and fails in CI or the reverse. It has cost a red CI more than
- * once, and it is invisible to every other check — the output is real, it reproduces perfectly,
- * and it is still wrong.
+ * once: this devcontainer is arm64, a CI runner is amd64, and emulation isn't available here, so
+ * the page passes locally and fails in CI or the reverse. It is invisible to every other check —
+ * the output is real, it reproduces perfectly, and it is still wrong.
  *
  * The rule is about the package rather than the command. `Architecture: all` packages print
  * "all" everywhere, which is what lets the apt page document `apt list` and `apt show` at all;
@@ -24,7 +21,7 @@ const PATTERN = new RegExp(`\\b(${ARCHITECTURES.join("|")})\\b`);
 function documentedOutputs(): { where: string; output: string }[] {
   const found: { where: string; output: string }[] = [];
 
-  for (const slug of readdirSync(COMMANDS_DIR)) {
+  for (const slug of readdirSync(commandsDir())) {
     // Parsed through the schema rather than cast, so a malformed examples.yaml fails here with
     // the loader's message instead of as a TypeError somewhere inside the loop below.
     const doc = readExamplesFile(slug);
@@ -42,8 +39,8 @@ function documentedOutputs(): { where: string; output: string }[] {
   for (const category of PROSE_CATEGORIES) {
     const dir = join(CONTENT_DIR, category);
     for (const filename of readdirSync(dir)) {
-      if (!filename.endsWith(".md")) continue;
-      const slug = filename.replace(/\.md$/, "");
+      const slug = proseSlug(filename);
+      if (slug === null) continue;
       const { pairs } = parseProsePage(readFileSync(proseSource(category, slug), "utf-8"));
       for (const pair of pairs)
         found.push({ where: `${category}/${slug}:${pair.line}`, output: pair.output });
@@ -63,9 +60,8 @@ describe("documented output", () => {
 
   /* An exemption whose stated reason is the architecture is always a defect rather than a
    * record of how something was checked instead. It silences the replay while leaving the page
-   * showing one machine's architecture to readers on the other — which is what `release-channels`
-   * did from the day it shipped, and what nothing could report, because the exemption was itself
-   * the thing suppressing the signal.
+   * showing one machine's architecture to readers on the other — and nothing else can report
+   * that, because the exemption is itself the thing suppressing the signal.
    *
    * There is always a fix: choose an `Architecture: all` package, or filter the field out of
    * the command's output. Both keep the example and remove the claim that cannot be true
@@ -81,8 +77,8 @@ describe("documented output", () => {
 
     for (const category of PROSE_CATEGORIES) {
       for (const filename of readdirSync(join(CONTENT_DIR, category))) {
-        if (!filename.endsWith(".md")) continue;
-        const slug = filename.replace(/\.md$/, "");
+        const slug = proseSlug(filename);
+        if (slug === null) continue;
         const { pairs } = parseProsePage(readFileSync(proseSource(category, slug), "utf-8"));
         for (const pair of pairs) {
           if (pair.comparison === COMPARISON.skip)

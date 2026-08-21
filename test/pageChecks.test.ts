@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { loadContent } from "../src/content/loader.js";
-import { verificationStats } from "../src/content/stats.js";
+import { verificationStats } from "../src/content/verificationStats.js";
 import { isCommandPage } from "../src/content/loader.js";
 import { PROSE_CATEGORIES } from "../src/content/schema.js";
 import { CONTENT_DIR, FIXTURE_DIR, fixtureScript } from "../src/paths.js";
@@ -10,7 +10,7 @@ import { CONTENT_DIR, FIXTURE_DIR, fixtureScript } from "../src/paths.js";
  * totals. They are the same numbers seen from two distances, so the only interesting failure is
  * the two disagreeing — a page advertising 51 outputs beside a command that prints 49.
  *
- * `src/content/replayCounts.ts` is what stops that: the page, the totals and the harness all
+ * `src/content/pageChecks.ts` is what stops that: the page, the totals and the harness all
  * partition through it. These assertions are the proof that they still do. */
 
 const model = await loadContent(CONTENT_DIR, FIXTURE_DIR);

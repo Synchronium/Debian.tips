@@ -19,21 +19,33 @@ badge and the site disagreed.
 
 ## Decision
 
-CI runs two jobs in parallel:
+CI runs three jobs in parallel:
 
 - **`check`** — format, typecheck (both configs), tests, build, pagefind, linkcheck, link audit,
   then `pa11y-ci` against the built site. Needs nothing but Node. This is exactly what
   `npm run check` runs locally, and it sets `NODE_ENV=production` itself so drafts are excluded in
   both places.
 - **`replay`** — builds the sandbox image, then replays pages. A pull request replays only what its
-  diff touched; a push to `main` replays everything.
+  diff touched, shuffled; a push to `main` replays everything in the default `alpha` order.
+- **`replay-shuffled`** — the full replay again, on a push to `main` only, in a random order seeded
+  from the commit SHA. GitHub gives each job its own runner, so this is genuinely parallel with
+  `replay` above: no wall clock and, more to the point, no CPU contention between two replays.
+  ADR-0002 records why one ordering is not the assertion.
 
 Deploy triggers on `workflow_run` of CI, runs only when `conclusion == 'success'`, and checks out
 `github.event.workflow_run.head_sha` rather than the tip of the branch.
 
 ## Consequences
 
-A failure names its own kind before anyone opens the log.
+A failure names its own kind before anyone opens the log: "the generator is broken", "a page is
+lying", and "a page is only true in one ordering" are three different problems.
+
+**`replay-shuffled` gates deployment, and that is deliberate.** Deploy keys off the whole
+workflow's conclusion, so a failure there holds the site back — including when the ordering it
+happened to pick surfaced a latent defect in a page the commit never touched. That is the intended
+trade: a page which is only true in one ordering is not true, and every other check here is a hard
+gate rather than an advisory one. `continue-on-error: true` on that job is the single line that
+changes it, if the interruption ever costs more than the defects it catches.
 
 `npm run check` is runnable on any machine with Node, which is why it is the thing to run before
 treating a change as done. The replay is a deliberate second step, run when the change touches
@@ -48,7 +60,10 @@ been verified by nothing. `workflow_dispatch` stays available for a manual re-de
 
 ## Revisit when
 
-Image build time comes to dominate the `replay` job. It is currently 22 seconds against 152 for
-the replay itself, and the workflow builds the image as its own step precisely so the log says
-which half any slowness is in. Caching the image is the next lever and is not worth its failure
-modes yet.
+Image build time comes to dominate a replay job. It is around 22 seconds against roughly 215 for a
+full replay, and the workflow builds the image as its own step precisely so the log says which half
+any slowness is in. Caching the image is the next lever and is not worth its failure modes yet.
+
+Also revisit if `replay-shuffled` starts holding back deployments for defects unrelated to the
+commit often enough to be disruptive. The lever is named above; ADR-0002's "Revisit when" covers
+the other half, which is what to do about the replay's total run time.

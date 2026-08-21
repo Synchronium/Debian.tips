@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { transformSync } from "esbuild";
 import { join } from "node:path";
 import { html, raw, type Raw } from "../html.js";
-import { CATEGORY_META, NAV_ORDER, SITE, STANDALONE_PAGES } from "../config.js";
+import { CATEGORY_META, FEED_PATH, NAV_ORDER, SITE, STANDALONE_PAGES } from "../config.js";
 import { CLIENT_DIR } from "../paths.js";
 import type { Category } from "../content/schema.js";
 
@@ -38,6 +38,11 @@ function analyticsHtml(): string {
 <script>${raw(`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${id}');`)}</script>`;
 }
 
+/** Declarations every client script is compiled with. See `src/client/shared.ts`: the scripts are
+ *  inlined at two different points in the document and cannot import from each other, so
+ *  prepending is how a value is written once and used in both. */
+const CLIENT_SHARED = "shared.ts";
+
 /** Compiled and minified once per build, then inlined into every page.
  *
  *  These run before and during first paint, so they are inlined rather than fetched — a request
@@ -45,8 +50,7 @@ function analyticsHtml(): string {
  *  the page renders or it renders in the wrong theme first.
  *
  *  Compiling means the source can be ordinary TypeScript — checked by `tsconfig.client.json`,
- *  formatted by Prettier, readable — while what ships is small. Before this it was hand-written
- *  ES5 inlined verbatim, which is what happens when there is nowhere to compile.
+ *  formatted by Prettier, readable — while what ships is small.
  *
  *  Cached because the layout runs for every page and neither file changes between them. The
  *  `</script` check runs on the *output*: minification can move a string, and a page that stops
@@ -56,16 +60,18 @@ function clientScript(filename: string): string {
   const cached = scriptCache.get(filename);
   if (cached !== undefined) return cached;
 
-  const source = readFileSync(join(CLIENT_DIR, filename), "utf-8");
+  const read = (name: string): string => readFileSync(join(CLIENT_DIR, name), "utf-8");
+  const source = `${read(CLIENT_SHARED)}\n${read(filename)}`;
   // es2020: optional chaining and nullish coalescing survive as-is, and everything this site
   // supports has had them for years. Not `esnext`, which would pass through syntax newer than
   // the browsers these pages are read in.
-  // Wrapped before compiling rather than with esbuild's `format: "iife"`. Both stop every
-  // top-level name — `setTheme`, `copy`, `COPIED_MS` — becoming a global on every page, which is
-  // what the hand-written ES5 version used its own IIFE for. But `format: "iife"` also decides
-  // the dynamic `import()` needs CommonJS interop and emits ~300 bytes of __toESM helpers to
-  // support it. Wrapping the source keeps those out, and esbuild can still shorten the names
-  // because it can see nothing outside the function reaches them.
+  //
+  // Wrapped by hand rather than with esbuild's `format: "iife"`. Both stop every top-level name
+  // becoming a global on every page, but `format: "iife"` also decides the dynamic `import()`
+  // needs CommonJS interop and emits ~300 bytes of __toESM helpers to support it. Wrapping the
+  // source keeps those out, and esbuild can still shorten the names because it can see nothing
+  // outside the function reaches them. Anything `shared.ts` declares that this script never
+  // mentions is dropped for the same reason.
   const { code } = transformSync(`(() => {\n${source}\n})();`, {
     loader: "ts",
     minify: true,
@@ -117,7 +123,7 @@ function footerHtml(): string {
 <nav aria-label="Explore"><h2>Explore</h2><ul>${exploreItems}</ul></nav>
 <nav aria-label="Meta"><h2>Meta</h2><ul>
 ${STANDALONE_PAGES.map((s) => raw(html`<li><a href="${s.path}">${s.navLabel}</a></li>`))}
-<li><a href="/feed.xml">RSS</a></li>
+<li><a href="${FEED_PATH}">RSS</a></li>
 <li><a href="${SITE.repo}">GitHub</a></li>
 </ul></nav>
 <p class="footer-tagline">Made for the terminal-curious. Tested on Debian stable.</p>
@@ -171,7 +177,7 @@ export function layout(opts: LayoutOptions): string {
 
   // No data-theme attribute: styles/site.css defaults to dark and honours
   // prefers-color-scheme, so visitors without JS get their OS preference instead of
-  // being pinned to dark. src/client/theme-init.js sets an explicit attribute before paint for
+  // being pinned to dark. src/client/theme-init.ts sets an explicit attribute before paint for
   // everyone else, which then wins over the media query in both directions.
   return html`<!doctype html>
 <html lang="en">
@@ -182,7 +188,7 @@ ${raw(analyticsHtml())}
 <title>${pageTitle}</title>
 <meta name="description" content="${opts.description}" />
 <link rel="canonical" href="${canonical}" />
-<link rel="alternate" type="application/rss+xml" title="${SITE.title}" href="/feed.xml" />
+<link rel="alternate" type="application/rss+xml" title="${SITE.title}" href="${FEED_PATH}" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <meta property="og:type" content="${opts.ogType ?? "website"}" />
 <meta property="og:site_name" content="${SITE.title}" />

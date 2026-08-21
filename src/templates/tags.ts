@@ -2,6 +2,7 @@ import { html, raw } from "../html.js";
 import { layout } from "./layout.js";
 import { pageCard } from "./partials/card.js";
 import { type PageSlice, paginationNav } from "./partials/pager.js";
+import { TAGS_PATH, tagPath } from "../config.js";
 import type { Page, TagInfo } from "../content/loader.js";
 
 export function tagsIndexPage(tags: TagInfo[], pages: Page[], cssHref: string): string {
@@ -14,7 +15,7 @@ export function tagsIndexPage(tags: TagInfo[], pages: Page[], cssHref: string): 
 <ul class="tag-index">
 ${tags.map((t) =>
   raw(
-    html`<li><a href="/tags/${t.name}/">${t.name}</a> <span class="tag-count">(${countByTag.get(t.name) ?? 0})</span> — ${t.description}</li>`,
+    html`<li><a href="${tagPath(t.name)}">${t.name}</a> <span class="tag-count">(${countByTag.get(t.name) ?? 0})</span> — ${t.description}</li>`,
   ),
 )}
 </ul>`;
@@ -22,7 +23,7 @@ ${tags.map((t) =>
   return layout({
     title: "Tags",
     description: "Browse every topic covered on debian.tips.",
-    path: "/tags/",
+    path: TAGS_PATH,
     bodyHtml: raw(body),
     cssHref,
   });
@@ -30,7 +31,7 @@ ${tags.map((t) =>
 
 export function tagPage(tag: TagInfo, slice: PageSlice<Page>, cssHref: string): string {
   const body = html`
-<nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><a href="/tags/">Tags</a></li><li aria-current="page">${tag.name}</li></ol></nav>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><a href="${TAGS_PATH}">Tags</a></li><li aria-current="page">${tag.name}</li></ol></nav>
 <h1>${tag.name}</h1>
 <p class="lede">${tag.description}</p>
 <div class="card-grid">${slice.items.map((p) => raw(pageCard(p, "h2")))}</div>

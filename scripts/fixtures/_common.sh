@@ -4,14 +4,11 @@
 # should meet the same users.csv, not three files that happen to share a name. Keeping one
 # definition is what makes that true.
 #
-# A setup script runs inside the sandbox, where the repository isn't mounted, so it can't
-# source a relative path. verify-examples.ts and adopt-real-output.ts install this file
-# alongside the setup script and the page scripts source it by absolute path:
+# A setup script runs inside the sandbox, where the repository isn't mounted, so it can't source
+# a relative path. The harness installs this file alongside the setup script, and a page sources
+# it by absolute path:
 #
 #     . /tmp/fixtures-common.sh
-#
-# Until now they inlined a copy of everything below instead, which is how a file called
-# _common.sh ended up shared with nobody.
 mk_users_csv() { cat > users.csv <<'EOF'
 name,age,department
 Alice,34,Engineering

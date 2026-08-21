@@ -36,12 +36,11 @@ export const CATEGORIES = [
 export type Category = (typeof CATEGORIES)[number];
 
 /** Every category except `commands`: the ones whose pages are a single Markdown file, stating
- *  their examples as fenced blocks rather than in a structured `examples.yaml`. The prose
- *  replay and the build's statistics both need this set.
+ *  their examples as fenced blocks rather than in a structured `examples.yaml`. The prose replay
+ *  and the build's statistics both need this set.
  *
- *  Derived rather than listed, because a listed copy is one a new category gets left out of —
- *  and the symptom would be silence: pages in it would simply never be replayed, under a total
- *  that still looked right. */
+ *  Derived rather than listed, because a new category left out of a listed copy fails silently:
+ *  its pages would never be replayed, under a total that still looked right. */
 export type ProseCategory = Exclude<Category, "commands">;
 export const PROSE_CATEGORIES: readonly ProseCategory[] = CATEGORIES.filter(
   (category): category is ProseCategory => category !== "commands",
@@ -135,16 +134,16 @@ export const exampleSchema = z.object({
   code: z.string().min(1),
   description: z.string().min(1),
   output: z.string().optional(),
-  /** Reserved, deliberately: validated and authored on every example, but no template
-   * renders it yet. Kept for a future difficulty badge / filter. Don't "clean up" as
-   * dead data, and keep setting it accurately when authoring — backfilling 600+
-   * examples later would be far more expensive than getting it right up front.
-   * `level` is conceptual difficulty; it is *not* a proxy for the `beginner` tag below
-   * (only 78 of 169 `basic` examples carry it, and 20 `advanced` ones do). */
+  /** Reserved, deliberately: validated and authored on every example, but no template renders
+   * it yet. Kept for a future difficulty badge or filter. Don't "clean up" as dead data, and
+   * keep setting it accurately when authoring — backfilling every example later costs far more
+   * than getting it right up front. `level` is conceptual difficulty, and is *not* a proxy for
+   * the `beginner` tag below: plenty of `basic` examples do not carry it, and some `advanced`
+   * ones do. */
   level: z.enum(LEVELS),
-  /** Reserved, same as `level` — validated against content/tags.yaml so a typo still
-   * fails the build, but not rendered anywhere yet. Coverage is currently partial
-   * (~47% of examples), so anything built on it needs to handle untagged examples. */
+  /** Reserved, same as `level` — validated against content/tags.yaml so a typo still fails the
+   * build, but not rendered anywhere yet. Coverage is partial, so anything built on it has to
+   * handle an untagged example. */
   tags: z.array(z.string()).optional(),
   danger: z.boolean().optional(),
   /** Set when the output is real but cannot reproduce byte for byte, because it contains a
@@ -198,7 +197,7 @@ export const fixtureSchema = z.object({
   /** The command that reproduces `content` inside the sandbox, defaulting to
    * `cat <name>`. Set it when the block isn't one file's contents — a directory tree
    * shown as `ls -lAR projects`, or a placeholder standing in for a duplicate file.
-   * `scripts/verify-examples.ts` runs it and diffs, so a fixture that has drifted from
+   * `scripts/replay-command-page.ts` runs it and diffs, so a fixture that has drifted from
    * its setup script fails the replay instead of quietly misleading a reader. Never
    * rendered: it exists only to keep the rendered block honest. */
   from: z.string().optional(),

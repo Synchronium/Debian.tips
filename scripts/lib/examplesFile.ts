@@ -1,14 +1,13 @@
 // Reading a command page's examples.yaml, the way the build reads it.
 //
-// The three tools that replay or rewrite a page used to do `parse(readFileSync(...)) as
-// ExamplesFile` — importing the type and asserting it, which is the one spelling of "share the
-// schema" that buys nothing at runtime. A malformed file surfaced as a TypeError deep inside a
-// loop, and the two tools that *edit* content were the ones operating on an unchecked shape.
+// Parsed through the schema rather than cast to it: an assertion is the one spelling of "share
+// the schema" that buys nothing at runtime, and it leaves a malformed file surfacing as a
+// TypeError deep inside a loop — in tools that *edit* content.
 import { readFileSync } from "node:fs";
 import { parse } from "yaml";
 import { EXAMPLES_FILE, commandDir } from "../../src/paths.js";
 import { type ExamplesFile, examplesFileSchema } from "../../src/content/schema.js";
-import { ReplayError } from "./replay.js";
+import { ReplayError } from "./replayMetadata.js";
 import { join } from "node:path";
 
 /** Absolute path to a command page's examples file. Absolute because a tool may be run from

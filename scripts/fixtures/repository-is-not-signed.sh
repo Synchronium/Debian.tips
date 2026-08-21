@@ -25,11 +25,6 @@ cat > /etc/apt/apt.conf.d/99-replay-no-script-warning <<'EOF'
 APT::Cmd::Disable-Script-Warning "1";
 EOF
 
-if ! command -v apt-ftparchive >/dev/null 2>&1; then
-  apt-get update >/dev/null 2>&1
-  apt-get install -y gnupg apt-utils >/dev/null 2>&1
-fi
-
 if [ ! -f "$REPO/dists/stable/InRelease" ]; then
   mkdir -p "$REPO/pool/main" "$REPO/dists/stable/main/binary-all"
   root=/build/signing-demo
