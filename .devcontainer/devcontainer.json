@@ -22,7 +22,7 @@
 		// repositories, so this feature (upstream apt repo) rather than postCreateCommand.
 		// `gh auth login` is a one-off, not once per rebuild — the credential lives in
 		// ~/.config/gh, which is mounted as a volume below for exactly that reason.
-		"ghcr.io/devcontainers/features/github-cli:1": {}
+		"ghcr.io/devcontainers/features/github-cli:1.1.1": {}
 	},
 	"privileged": true,
 
