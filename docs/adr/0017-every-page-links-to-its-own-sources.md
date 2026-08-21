@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Recorded:** 2026-08-21
-- **Enforced by:** `test/sourceLinks.test.ts`, in `npm run check`
+- **Enforced by:** `test/sourceLinks.test.ts` and `test/replayCounts.test.ts`, in `npm run check`
 
 ## Context
 
@@ -35,6 +35,18 @@ re-runs its examples, and names the file that would change that. Printing `npm r
 on a page the replay reports as unverified would be a command that does not do what the sentence
 above it claims.
 
+Beside the command, the page states what that command will check: how many outputs, how many of
+those are compared by shape rather than byte for byte, and how many are exempt. The figures come
+from `src/content/replayCounts.ts`, which is also what `scripts/verify-examples.ts` partitions on
+and what `/about/` sums — one definition, so a page cannot advertise a number the command
+contradicts. Counting them in the template instead would have made a fourth copy of "what does this
+page check", which is the same mistake `src/content/replaySkips.ts` was extracted to undo.
+
+Three of the four sentences that produces are for cases that are easy to forget: output compared by
+shape, output that is exempt, and a page that checks nothing at all because every one of its blocks
+is exempt. That last state is one `/about/` deliberately leaves out of both its page counters, so
+until now no page in it said so.
+
 The repository URL is `SITE.repo` in `src/config.ts`, and `blobUrl()` beside it is the only
 sanctioned way to turn a path into a link. The footer used to spell the URL out; it no longer does.
 
@@ -60,6 +72,14 @@ equally; `data-pagefind-ignore` puts the word count back exactly where it was.
 **Naming an unverified page on the page itself.** This is the point rather than a cost, but it is
 worth being deliberate about: a page written ahead of its fixture now says so to its readers, not
 only to a counter on `/about/`. The pressure that creates is the pressure the site wants.
+
+**A page's figures are a claim like any other.** They are counted from what the page carries, not
+from a replay run — the build has no sandbox. That is the same basis `/about/` has always used, and
+it holds because the replay passes; the numbers are what the command *will* print, which is exactly
+what makes them worth checking. `test/replayCounts.test.ts` asserts the per-page figures fold up to
+the site totals, that each of the four sentence shapes is exercised by real content, and that
+by-shape is not quietly conflated with `volatile:` — two figures close enough in meaning to be
+merged by someone tidying up, and answering different questions.
 
 **A page's provenance is now part of the page.** Moving content between categories, renaming a
 slug, or splitting a command page changes what the block says, and the test fails until the block

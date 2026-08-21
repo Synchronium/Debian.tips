@@ -13,7 +13,7 @@
 // Exit status: 0 when every pair reproduces, 1 on a mismatch, 2 on a bad argument.
 import { existsSync } from "node:fs";
 import { captureAll, openSandbox } from "./lib/sandbox.js";
-import { PROSE_CATEGORIES } from "../src/content/schema.js";
+import { COMPARISON, PROSE_CATEGORIES } from "../src/content/schema.js";
 import { fixtureScript, proseSource } from "../src/paths.js";
 import { MASK_TOKENS, normalise, shapeOf } from "./lib/normalise.js";
 import { parseProseFile, type ProsePair } from "../src/content/proseBlocks.js";
@@ -70,8 +70,8 @@ export function replayProsePage(options: ProseReplayOptions): ReplayResult {
   const directives = readSetupDirectives(setupPath);
 
   const { pairs, unpaired } = parseProseFile(pagePath);
-  const runnable = pairs.filter((pair) => pair.comparison !== "skip");
-  const skipped = pairs.filter((pair) => pair.comparison === "skip");
+  const runnable = pairs.filter((pair) => pair.comparison !== COMPARISON.skip);
+  const skipped = pairs.filter((pair) => pair.comparison === COMPARISON.skip);
 
   // A mask token in a documented output would match any real output for ever, because the
   // masks are idempotent. Same rule the command pages are held to.
@@ -107,12 +107,12 @@ export function replayProsePage(options: ProseReplayOptions): ReplayResult {
   let matches = 0;
 
   runnable.forEach((pair, index) => {
-    const compare = pair.comparison === "shape" ? shapeOf : normalise;
+    const compare = pair.comparison === COMPARISON.shape ? shapeOf : normalise;
     const want = compare(pair.output);
     const got = compare(captured.get(index) ?? "");
     if (want === got) {
       matches++;
-      if (pair.comparison === "shape") shapeMatches++;
+      if (pair.comparison === COMPARISON.shape) shapeMatches++;
     } else {
       mismatches.push({ pair, want, got });
     }

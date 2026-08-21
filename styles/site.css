@@ -1065,22 +1065,46 @@ pre[data-prompt] .line::before {
   display: none;
 }
 
-/* The foot of every page: which files produced it, and how to re-run its examples. Quiet on
-   purpose — it is provenance rather than content, and a reader who does not want it should be
-   able to see at a glance that the page has ended. */
+/* The foot of every page: which files produced it, what the replay checks here, and how to
+   run it. Given the callout treatment from section 11 — an inset panel with a coloured rule —
+   because it is the site's own claim about the page rather than more of the page, and the
+   reader should be able to see at a glance where the content ended.
+
+   `--ok` rather than `--accent`: the same green the Tip callout uses, since what this block
+   says is that the page above it has been checked. */
 .page-sources {
   margin-top: var(--space-6);
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--border);
+  border-left: 3px solid var(--ok);
+  border-radius: 0 var(--radius-m) var(--radius-m) 0;
+  background: var(--bg-surface);
+  padding: var(--space-4) var(--space-5);
   color: var(--text-muted);
   font-size: var(--fs-s);
 }
+.page-sources > * + * {
+  margin-top: var(--space-3);
+}
 .page-sources h2 {
-  font-size: var(--fs-m);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ok);
   margin-top: 0;
 }
+
+/* What the command above will report. Set apart from the prose around it because it is the
+   one part of this block a reader can hold against their own run. */
+.page-checks {
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-inset);
+  /* --bg-surface and --bg-inset are four hex points apart in light mode, so the panel needs an
+     edge to read as one; in dark mode the fill alone is enough and the border is barely there. */
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  color: var(--text);
+}
 .source-files {
-  margin: var(--space-3) 0;
   padding-left: var(--space-5);
 }
 .source-files li {

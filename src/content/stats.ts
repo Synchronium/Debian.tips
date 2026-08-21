@@ -1,9 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { type Page, isCommandPage } from "./loader.js";
 import { PROSE_CATEGORIES } from "./schema.js";
-import { readSkipEntries } from "./replaySkips.js";
 import { FIXTURE_DIR, fixtureScript, proseSource } from "../paths.js";
-import { parseProsePage } from "./proseBlocks.js";
+import { commandChecks, proseChecks } from "./replayCounts.js";
 
 /** What the site can say about its own verification, counted from the content rather than
  *  written down. A page that boasts about checking its examples is the worst possible place
@@ -69,8 +68,11 @@ function countProse(
     }
     const source = proseSource(page.category, page.slug, contentDir);
     if (!existsSync(source)) continue;
-    const { pairs } = parseProsePage(readFileSync(source, "utf-8"));
-    const checked = pairs.filter((pair) => pair.comparison !== "skip").length;
+    // `page.checks` is this same count, taken from the loader. Recomputed here from the file
+    // because the synthetic content tree in `test/fixtures/` is counted by this function
+    // without going through a build, and the two must not be allowed to drift — a test asserts
+    // they agree on the real tree.
+    const { checked } = proseChecks(readFileSync(source, "utf-8"));
     if (checked === 0) continue;
     prosePages++;
     proseOutputs += checked;
@@ -93,24 +95,24 @@ export function verificationStats(
   let exemptions = 0;
 
   for (const page of commandPages) {
-    fixtures += page.examples.fixtures?.length ?? 0;
-    const titlesWithOutput = new Set<string>();
     for (const section of page.examples.sections) {
       for (const example of section.examples) {
         examples++;
-        if (example.output !== undefined) {
-          outputs++;
-          titlesWithOutput.add(example.title);
-        }
+        if (example.output !== undefined) outputs++;
+        // `volatile` is not `byShape`: it says what will differ for a reader, and most output
+        // carrying it is still compared exactly. The two figures answer different questions
+        // and were briefly the same number by accident.
         if (example.volatile) volatile++;
       }
     }
-    // Counted per page, against that page's own examples, because `replayed` subtracts this
-    // figure from `outputs`. Counting every line in every .skip file instead meant an entry
-    // naming an example that no longer exists — or a prose page's skip file, which is not in
-    // `outputs` at all — quietly reduced the number the site advertises.
-    exemptions += readSkipEntries(page.slug, fixtureDir).filter((title) => titlesWithOutput.has(title))
-      .length;
+    // Per page, against that page's own examples, because `replayed` subtracts this from
+    // `outputs`. Counting every line in every .skip file instead meant an entry naming an
+    // example that no longer exists — or a prose page's skip file, which is not in `outputs`
+    // at all — quietly reducing the number the site advertises. `commandChecks` is what the
+    // page itself states, so the total and the per-page claim are one count.
+    const checks = commandChecks(page.examples, page.slug, fixtureDir);
+    fixtures += checks.fixtures;
+    exemptions += checks.exempt;
   }
 
   const { prosePages, proseOutputs, unreplayedProsePages } = countProse(pages, contentDir, fixtureDir);

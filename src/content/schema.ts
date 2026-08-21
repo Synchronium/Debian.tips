@@ -53,6 +53,30 @@ export type Tier = (typeof TIERS)[number];
 export const LEVELS = ["basic", "intermediate", "advanced"] as const;
 export type Level = (typeof LEVELS)[number];
 
+/** How the replay compares one documented output against a fresh run.
+ *
+ *  An object rather than the `as const` array `TIERS` and `LEVELS` use, because these three are
+ *  reached for by name at several comparison sites across the build, the harness and the tests
+ *  — `COMPARISON.skip` says which of the three it is, where `"skip"` says only that a string was
+ *  typed correctly. The array shape is still the right one where the values are iterated or
+ *  handed to `z.enum`, which these are not.
+ *
+ *  It lives in the content contract because both spellings of it are *authored*: a prose page
+ *  writes `<!-- verify: shape … -->` above a block, and a command page writes `compare: shape`
+ *  on an example. Two field names, one vocabulary, and keeping them tied together here is what
+ *  stops the two halves of the site drifting into meaning different things by "shape". */
+export const COMPARISON = {
+  /** Byte for byte, after the anchored masks in `scripts/lib/normalise.ts`. The default. */
+  exact: "exact",
+  /** Digits, quantities, dates and identifiers masked on both sides: the numbers may move, a
+   *  renamed field or a vanished line still fails. */
+  shape: "shape",
+  /** Not run at all. Prose pages carry the reason inline; command pages carry it in
+   *  `scripts/fixtures/<slug>.skip`. */
+  skip: "skip",
+} as const;
+export type Comparison = (typeof COMPARISON)[keyof typeof COMPARISON];
+
 const dateSchema = z.union([z.string(), z.date()]).transform((v, ctx) => {
   const d = typeof v === "string" ? new Date(v) : v;
   if (Number.isNaN(d.getTime())) {
@@ -149,12 +173,12 @@ export const exampleSchema = z.object({
    * state still fails. It is weaker than the default, so it is opt-in per example rather
    * than implied by `volatile`, and it requires `volatile` to be set: a reader looking at
    * output nobody promises to reproduce should be told. */
-  compare: z.literal("shape").optional(),
+  compare: z.literal(COMPARISON.shape).optional(),
 }).superRefine((example, ctx) => {
-  if (example.compare === "shape" && !example.volatile) {
+  if (example.compare === COMPARISON.shape && !example.volatile) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'compare: "shape" needs `volatile:` too — say what will differ for the reader',
+      message: `compare: "${COMPARISON.shape}" needs \`volatile:\` too — say what will differ for the reader`,
     });
   }
 });

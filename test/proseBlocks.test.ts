@@ -13,6 +13,9 @@ describe("parseProsePage", () => {
     expect(pairs).toHaveLength(1);
     expect(pairs[0]!.command).toBe("echo hi");
     expect(pairs[0]!.output).toBe("hi");
+    // Literals here, not COMPARISON: what these pin is that the directive text an author
+    // writes — `verify: shape` — maps to this value. Asserting through the constant would keep
+    // passing after a rename that had broken the directive on every page in content/.
     expect(pairs[0]!.comparison).toBe("exact");
   });
 

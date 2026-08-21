@@ -23,7 +23,7 @@ ${raw(tagChips(page.tags))}
 <div class="prose">${raw(page.html)}</div>
 ${raw(related(page.relatedLinks))}
 ${raw(series)}
-${raw(sourceLinks(page.slug, page.sources))}
+${raw(sourceLinks(page.slug, page.sources, page.checks))}
 </div>
 ${raw(toc(page.toc))}
 </article>`;

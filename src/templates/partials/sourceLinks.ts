@@ -1,9 +1,49 @@
 import { html, raw } from "../../html.js";
 import { blobUrl } from "../../config.js";
 import type { PageSources } from "../../content/sourcePaths.js";
+import type { PageChecks } from "../../content/replayCounts.js";
 
-/** The foot of every page: the files that produced it, and the one command that re-runs its
- *  examples in a disposable container.
+/** What the replay command will actually check here, as a sentence.
+ *
+ *  Every clause is conditional, so the common page — everything compared exactly, nothing
+ *  exempt — reads as one short claim rather than a row of zeroes. The figures come from
+ *  `src/content/replayCounts.ts`, which is also what the harness partitions on and what
+ *  `/about/` sums, so this cannot advertise a number the command contradicts.
+ *
+ *  The zero-checked case is real and is the interesting one: a page can opt into the replay,
+ *  be run by it, and have every one of its blocks exempt. `/about/` deliberately leaves such a
+ *  page out of both its counters, which until now meant nothing anywhere said so. */
+function checksSentence(checks: PageChecks): string {
+  // The skip file is named and linked in the list above, so it is referred to here rather than
+  // linked a second time three lines below its own entry.
+  const exemptClause =
+    checks.exempt === 0
+      ? ""
+      : html` ${checks.exempt} more ${checks.exempt === 1 ? "is" : "are"} exempt; the skip file above
+says how ${checks.exempt === 1 ? "it was" : "each was"} checked instead.`;
+
+  if (checks.checked === 0) {
+    if (checks.exempt === 0) return "";
+    return html`<p class="page-checks">
+This page documents ${checks.exempt === 1 ? "one output" : `${checks.exempt} outputs`}, and the
+batch cannot run ${checks.exempt === 1 ? "it" : "any of them"}. The skip file above says how each
+was checked instead, and the command reports exactly that.
+</p>`;
+  }
+
+  const split =
+    checks.byShape === 0
+      ? html`, all compared exactly`
+      : html`: ${checks.checked - checks.byShape} exactly and ${checks.byShape}
+<a href="/about/#output-that-cannot-be-identical">by shape</a>`;
+
+  return html`<p class="page-checks">
+Checks ${checks.checked} ${checks.checked === 1 ? "output" : "outputs"}${raw(split)}.${raw(exemptClause)}
+</p>`;
+}
+
+/** The foot of every page: the files that produced it, what the replay checks here, and the one
+ *  command that re-runs it in a disposable container.
  *
  *  The copy button needs no wiring of its own — `src/client/interaction.ts` delegates from
  *  `[data-copy]` on the document, so this gets the same behaviour as every example's Copy.
@@ -11,7 +51,7 @@ import type { PageSources } from "../../content/sourcePaths.js";
  *  A page with no setup script is a real state and gets a different sentence rather than a
  *  hidden block: `npm run replay -- <slug>` would report it as unverified, and printing a
  *  command that does not do what the surrounding text claims is worse than saying so. */
-export function sourceLinks(slug: string, sources: PageSources): string {
+export function sourceLinks(slug: string, sources: PageSources, checks: PageChecks): string {
   const items = sources.files.map((file) =>
     raw(html`<li><a href="${blobUrl(file.path)}"><code>${file.path}</code></a> — ${file.label}</li>`),
   );
@@ -37,7 +77,8 @@ Docker and takes about a minute:
 <div class="source-replay">
 <pre><code>${replay}</code></pre>
 <button class="copy" type="button" aria-label="Copy command" data-copy="${replay}">Copy</button>
-</div>`)
+</div>
+${raw(checksSentence(checks))}`)
     : raw(html`<p>
 This page has no setup script yet, so nothing re-runs its examples: they were checked by hand
 when it was written and nothing has checked them since. Adding

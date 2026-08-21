@@ -117,7 +117,7 @@ ${raw(await fixturesHtml(examplesFile))}
 ${raw(outputToggle)}
 ${sectionsHtml.map((s) => raw(s))}
 ${raw(related(page.relatedLinks))}
-${raw(sourceLinks(page.slug, page.sources))}
+${raw(sourceLinks(page.slug, page.sources, page.checks))}
 </div>
 ${raw(toc([...page.toc, ...sectionTocEntries]))}
 </article>`;

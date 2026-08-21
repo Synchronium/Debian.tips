@@ -18,7 +18,8 @@
 // TypeScript startup per page and dominated a batch of any size.
 //
 // Exit status: 0 when everything reproduces, 1 on any mismatch, 2 on a usage or setup error.
-import type { Example } from "../src/content/schema.js";
+import { partitionExamples } from "../src/content/replayCounts.js";
+import { COMPARISON } from "../src/content/schema.js";
 import { readExamplesFile } from "./lib/examplesFile.js";
 import { MASK_TOKENS, normalise, shapeOf } from "./lib/normalise.js";
 import { ReplayError, loadSkipTitles, readSetupDirectives } from "./lib/replay.js";
@@ -51,11 +52,6 @@ interface Mismatch {
   got: string;
 }
 
-/** An example plus the section it appears in, for the mismatch report. */
-interface Replayed extends Example {
-  section: string;
-}
-
 export function replayCommandPage(options: ReplayOptions): ReplayResult {
   const { sandbox: sandboxName, command, setupPath } = options;
 
@@ -67,22 +63,21 @@ export function replayCommandPage(options: ReplayOptions): ReplayResult {
   const doc = readExamplesFile(command);
   const fixtures = doc.fixtures ?? [];
 
-  const withOutput: Replayed[] = [];
-  for (const section of doc.sections) {
-    for (const example of section.examples) {
-      if (example.output !== undefined) withOutput.push({ section: section.title, ...example });
-    }
-  }
-
   // Examples a batch can't reproduce — they need a concurrent writer, a live log rotation or
   // a network peer — are listed by title in scripts/fixtures/<command>.skip. Everything else
   // must reproduce exactly.
-  const skipTitles = loadSkipTitles(
+  //
+  // The split comes from `partitionExamples`, which is also what the page's own "checks N
+  // outputs" line is counted from and what /about/ sums. One partition, so the figure a reader
+  // is shown and the figure this prints cannot drift apart. `loadSkipTitles` is still called,
+  // for the check it makes rather than the set it returns: an entry naming an example that no
+  // longer exists exempts nothing while reading as though it does, and that is a hard error.
+  const { checked: examples, exempt: skipped } = partitionExamples(doc, command);
+  const withOutput = [...examples, ...skipped];
+  loadSkipTitles(
     command,
     withOutput.map((example) => example.title),
   );
-  const examples = withOutput.filter((example) => !skipTitles.has(example.title));
-  const skipped = withOutput.filter((example) => skipTitles.has(example.title));
 
   // A mask token is idempotent under masking, so a page carrying one matches any real output
   // for ever: the example would read as verified, count towards the score, and never fail
@@ -123,16 +118,16 @@ export function replayCommandPage(options: ReplayOptions): ReplayResult {
   let exampleMatches = 0;
   let shapeMatches = 0;
   examples.forEach((example, index) => {
-    const compare = example.compare === "shape" ? shapeOf : normalise;
+    const compare = example.compare === COMPARISON.shape ? shapeOf : normalise;
     const want = compare(example.output ?? "");
     const got = compare(captured.get(index) ?? "");
     if (want === got) {
       exampleMatches++;
-      if (example.compare === "shape") shapeMatches++;
+      if (example.compare === COMPARISON.shape) shapeMatches++;
     } else {
       mismatches.push({
         index,
-        title: example.compare === "shape" ? `${example.title} (compared by shape)` : example.title,
+        title: example.compare === COMPARISON.shape ? `${example.title} (compared by shape)` : example.title,
         command: example.code.split("\n")[0] ?? "",
         want,
         got,

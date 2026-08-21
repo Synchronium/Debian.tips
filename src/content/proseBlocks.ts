@@ -10,15 +10,19 @@
 // document order instead matches a block that prose has separated from its command, which on
 // one page silently attributed a simulated install's output to a real one.
 import { readFileSync } from "node:fs";
+import { COMPARISON, type Comparison } from "./schema.js";
 
-/** How a pair is compared, set by an HTML comment on the line above the command fence:
+/* How a pair is compared is set by an HTML comment on the line above the command fence:
  *
  *    <!-- verify: shape the uptime and PID differ per machine -->
  *    <!-- verify: skip needs a second terminal writing to the file -->
  *
- *  HTML is dropped by the Markdown pipeline, so neither reaches the reader. A skip must
- *  carry a reason: an unexplained exemption reads as verified when it is the opposite. */
-export type Comparison = "exact" | "shape" | "skip";
+ * HTML is dropped by the Markdown pipeline, so neither reaches the reader. A skip must
+ * carry a reason: an unexplained exemption reads as verified when it is the opposite.
+ *
+ * The vocabulary itself is `COMPARISON` in src/content/schema.ts, shared with the `compare:`
+ * field on a command page's examples — two field names for one idea, and they are worth
+ * exactly as much as they are worth together. */
 
 export interface ProsePair {
   /** Shell to run, verbatim from the ```bash fence. */
@@ -48,7 +52,14 @@ interface Fence {
   end: number;
 }
 
-const DIRECTIVE = /^\s*<!--\s*verify:\s*(shape|skip)\b\s*(.*?)\s*-->\s*$/;
+/** Built from `COMPARISON` rather than written out, so a fourth comparison mode cannot be added
+ *  to the vocabulary and silently left unparseable here. `exact` is excluded because it is the
+ *  default and is never written as a directive — there would be nothing for it to say. */
+const DIRECTIVE = new RegExp(
+  `^\\s*<!--\\s*verify:\\s*(${Object.values(COMPARISON)
+    .filter((mode) => mode !== COMPARISON.exact)
+    .join("|")})\\b\\s*(.*?)\\s*-->\\s*$`,
+);
 
 /** A fence line: the backticks, then an info string whose first word is the language.
  *
@@ -104,7 +115,7 @@ export function parseProsePage(source: string): ProsePage {
       command: fence.body,
       output: next.body,
       line: fence.start,
-      comparison: (directive?.[1] as Comparison | undefined) ?? "exact",
+      comparison: (directive?.[1] as Comparison | undefined) ?? COMPARISON.exact,
       note: directive?.[2] ?? "",
     });
   }

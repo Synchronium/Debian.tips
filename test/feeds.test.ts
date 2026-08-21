@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { NO_CHECKS } from "../src/content/replayCounts.js";
 import { feedXml, sitemapXml } from "../src/feeds.js";
 import type { ArticlePage, Page } from "../src/content/loader.js";
 
@@ -21,6 +22,7 @@ function page(slug: string, overrides: Partial<ArticlePage> = {}): ArticlePage {
     html: "",
     toc: [],
     sources: { files: [], replayable: false },
+    checks: NO_CHECKS,
     ...overrides,
   };
 }

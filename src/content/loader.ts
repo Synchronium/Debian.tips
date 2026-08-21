@@ -17,6 +17,7 @@ import {
 import { CONTENT_DIR, EXAMPLES_FILE, FIXTURE_DIR, INDEX_FILE, TAGS_FILE, fixtureScript } from "../paths.js";
 import { type TocEntry, renderMarkdown } from "./markdown.js";
 import { type PageSources, pageSources } from "./sourcePaths.js";
+import { type PageChecks, commandChecks, proseChecks } from "./replayCounts.js";
 
 export class ContentError extends Error {}
 
@@ -48,6 +49,9 @@ interface BasePage {
   /** The files in this repository that produced this page, and whether anything re-runs it.
    *  Rendered at the foot of every page by `src/templates/partials/sourceLinks.ts`. */
   sources: PageSources;
+  /** What `npm run replay -- <slug>` checks here. Stated on the page, and summed onto
+   *  `/about/` — one count, so the two cannot disagree. */
+  checks: PageChecks;
 }
 
 /** A command reference: prose plus a structured `examples.yaml`. The examples are not optional
@@ -377,6 +381,13 @@ export async function loadContent(
       html,
       toc,
       sources: pageSources(entry.category, entry.slug, contentDir, fixtureDir),
+      // Counted from what the page carries, not from what the replay last reported: the build
+      // has no sandbox. They agree because both sides read the same partition — see
+      // `src/content/replayCounts.ts`.
+      checks:
+        entry.category === "commands"
+          ? commandChecks(entry.examples, entry.slug, fixtureDir)
+          : proseChecks(entry.body),
     };
 
     const page = ((): Page => {

@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { PROSE_CATEGORIES } from "../src/content/schema.js";
+import { COMPARISON, PROSE_CATEGORIES } from "../src/content/schema.js";
 import { CONTENT_DIR, FIXTURE_DIR, proseSource } from "../src/paths.js";
 import { parseProsePage } from "../src/content/proseBlocks.js";
 import { readExamplesFile } from "../scripts/lib/examplesFile.js";
@@ -85,7 +85,7 @@ describe("documented output", () => {
         const slug = filename.replace(/\.md$/, "");
         const { pairs } = parseProsePage(readFileSync(proseSource(category, slug), "utf-8"));
         for (const pair of pairs) {
-          if (pair.comparison === "skip")
+          if (pair.comparison === COMPARISON.skip)
             reasons.push({ where: `${category}/${slug}:${pair.line}`, reason: pair.note });
         }
       }
