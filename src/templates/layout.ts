@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { html, raw, type Raw } from "../html.js";
 import { CATEGORY_META, FEED_PATH, NAV_ORDER, SITE, STANDALONE_PAGES } from "../config.js";
 import { CLIENT_DIR } from "../paths.js";
+import { footerCow } from "./partials/footerCow.js";
 import type { Category } from "../content/schema.js";
 
 export interface LayoutOptions {
@@ -126,7 +127,7 @@ ${STANDALONE_PAGES.map((s) => raw(html`<li><a href="${s.path}">${s.navLabel}</a>
 <li><a href="${FEED_PATH}">RSS</a></li>
 <li><a href="${SITE.repo}">GitHub</a></li>
 </ul></nav>
-<p class="footer-tagline">Made for the terminal-curious. Tested on Debian stable.</p>
+${raw(footerCow())}
 </div>
 <p class="footer-copyright">debian.tips is an independent site, not affiliated with the Debian Project.</p>
 </footer>`;

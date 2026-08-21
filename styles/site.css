@@ -474,6 +474,49 @@ h3 {
 .footer-inner nav a:hover {
   color: var(--accent);
 }
+/* The cow says the tagline.
+
+   Two <pre> elements at two sizes, which is the whole trick: the balloon is set to be read as
+   words, the art small enough that its characters read as tone rather than as type. Squint and
+   it is a photograph; lean in and it is punctuation.
+
+   The ground is pinned dark in both themes rather than following the tokens. Ink is the *bright*
+   part of the animal, so on a light ground the whole cow renders as its own negative — and the
+   alternatives are shipping a second, inverted copy of 9KB of art, or a `filter: invert()` that
+   the no-JS theme state cannot target cleanly. A terminal panel is also what cowsay actually
+   looks like. */
+.footer-cow {
+  flex-basis: 100%;
+  min-width: 0;
+}
+.cow-drawing {
+  --cow-ground: #0b0e12;
+  --cow-ink: #e6e9ef;
+  background: var(--cow-ground);
+  color: var(--cow-ink);
+  border: 1px solid #1e2635;
+  border-radius: var(--radius-m);
+  padding: var(--space-4) var(--space-5);
+  overflow-x: auto;
+  max-width: 100%;
+}
+.cow-balloon {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1.15;
+  margin: 0;
+  white-space: pre;
+}
+.cow-art {
+  /* Square cells. A monospace advance is close enough to 0.6em that an unitless line-height of
+     0.6 keeps the proportion at whatever size the clamp below settles on, so the drawing never
+     stretches. The cap is the art's natural size: 160 columns at four pixels a cell. */
+  font-family: var(--font-mono);
+  font-size: min(6.6px, 0.94vw);
+  line-height: 0.6;
+  margin: 0;
+  white-space: pre;
+}
 .footer-tagline {
   color: var(--text-muted);
   font-size: var(--fs-s);

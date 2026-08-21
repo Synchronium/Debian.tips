@@ -23,6 +23,11 @@ export const STYLES_DIR = join(ROOT, "styles");
  *  the browser fetches for itself lives in `public/assets/` instead. */
 export const CLIENT_DIR = join(ROOT, "src", "client");
 
+/** Generated ASCII art, and the script that generates it. A build input like the client
+ *  scripts: the art is inlined into the page rather than fetched. */
+export const ART_DIR = join(ROOT, "src", "art");
+export const COW_ART_FILE = "holstein.txt";
+
 /** Setup scripts, `.skip` lists and the Python helpers a page's examples need. */
 export const FIXTURE_DIR = join(ROOT, "scripts", "fixtures");
 
