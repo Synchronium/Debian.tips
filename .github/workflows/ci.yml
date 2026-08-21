@@ -65,11 +65,59 @@ jobs:
       # A pull request replays the pages its diff touches — and everything, if it touched the
       # harness, where one change can move any page's output. A push to main always replays the
       # whole site, so nothing is deployed on the strength of a partial run.
+      #
+      # The pull-request run is shuffled and the main run is not, which is the opposite of what
+      # it looks like. `alpha` on main is the stable reference: when the shuffled job beside it
+      # fails and this one passes, the difference is the ordering rather than a regression.
+      # Shuffling the pull-request run costs nothing — same pages, same time — and the pages it
+      # reorders are the ones the author just changed.
       - name: Replay the changed pages
         if: github.event_name == 'pull_request'
-        run: npm run replay -- --changed
+        run: npm run replay -- --changed --order=random:${{ github.sha }}
         env:
           REPLAY_DIFF_BASE: origin/${{ github.base_ref }}
       - name: Replay every page
         if: github.event_name != 'pull_request'
         run: npm run replay
+
+  # The same full replay, in a different order, on its own runner.
+  #
+  # Every page shares one sandbox, so the order is part of what is tested — and a fixed order
+  # tests exactly one of the 50! possible ones. That is not a theoretical gap: replaying in
+  # reverse found a live defect on `apt-essentials` that needed three pages in one direction and
+  # had been green since the page was written (2026-08-21). Sampling the space is the only way
+  # that class of bug surfaces before a reader hits it.
+  #
+  # A separate job rather than a second step, because GitHub gives each job its own runner: the
+  # two run genuinely in parallel on different machines, so this costs no wall clock and — the
+  # part that matters here — no CPU contention. Two replays sharing one machine is exactly the
+  # arrangement that produced false failures on timing-sensitive apt pages before
+  # (.claude/skills/ship/SKILL.md).
+  #
+  # Seeded from the commit SHA rather than left to chance: the permutation varies from commit to
+  # commit, so the space gets sampled over time, while re-running this job on the same commit
+  # rolls the same dice. A failure here is reproducible, never flaky.
+  #
+  # This gates deployment, deliberately. deploy.yml keys off the whole workflow's conclusion, so
+  # a failure here holds the site back — including when the ordering it picked surfaced a latent
+  # defect that has nothing to do with the commit that triggered it. That is the intended
+  # trade: a page which is only true in one ordering is not true, and every other check in this
+  # repository is a hard gate rather than an advisory one. `continue-on-error: true` is the one
+  # line that changes it if the interruption ever costs more than the defects it catches.
+  replay-shuffled:
+    # Pull requests replay only what they touched, where ordering says little and a full run
+    # would treble the time to first signal. This is the post-merge gate.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Build the sandbox image
+        run: docker build -t debian-tips-sandbox:trixie scripts/sandbox
+      - name: Replay every page in a seeded random order
+        run: npm run replay -- --order=random:${{ github.sha }}

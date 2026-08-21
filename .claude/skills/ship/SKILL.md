@@ -23,6 +23,7 @@ the link audit; it needs nothing but Node, and it is exactly what CI's `check` j
 | a prose page with a setup script | `npm run replay -- <slug>` |
 | `scripts/fixtures/<x>.sh` or `.skip` | `npm run replay -- <x>` |
 | `scripts/lib/normalise.ts`, `lib/sandbox.ts`, `verify-*.ts` | **everything**: `npm run replay` |
+| a fixture that touches shared state — apt marks, sources, ports, accounts | **everything, twice**: `npm run replay` and `npm run replay -- --order=reverse` |
 | prose only, no commands or fixtures | nothing |
 
 `npm run replay -- --changed` works out that table from your diff — the same thing CI runs on a
@@ -83,8 +84,15 @@ for the replay itself, so image caching would take ~12% off the slower job. npm 
 cached by `setup-node`. If `replay` ever does get slow, the log separates image-build time from
 replay time on purpose, so it will say which half to fix.
 
-CI still runs two jobs in parallel, `check` and `replay`, split so a failure says which kind it
-is: "the generator is broken" and "a page is lying" want different people looking at them.
+CI runs three jobs in parallel — `check`, `replay`, and `replay-shuffled` — split so a failure
+says which kind it is: "the generator is broken", "a page is lying" and "a page is only true in
+one ordering" want different people looking at them.
+
+`replay-shuffled` is the full site in `--order=random:<commit sha>`, on `main` only. Its own
+runner, so the parallelism is real and the contention warning above does not apply: that one is
+about two heavy jobs on *one* machine. If it fails while `replay` passes, the page is depending on
+what ran before it — the run prints the exact command to repeat the ordering, and fixing it means
+the page's setup script asserting the state its output needs.
 
 ## 4. Deploy is gated on CI
 

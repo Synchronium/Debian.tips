@@ -55,16 +55,9 @@ export type Level = (typeof LEVELS)[number];
 
 /** How the replay compares one documented output against a fresh run.
  *
- *  An object rather than the `as const` array `TIERS` and `LEVELS` use, because these three are
- *  reached for by name at several comparison sites across the build, the harness and the tests
- *  — `COMPARISON.skip` says which of the three it is, where `"skip"` says only that a string was
- *  typed correctly. The array shape is still the right one where the values are iterated or
- *  handed to `z.enum`, which these are not.
- *
- *  It lives in the content contract because both spellings of it are *authored*: a prose page
- *  writes `<!-- verify: shape … -->` above a block, and a command page writes `compare: shape`
- *  on an example. Two field names, one vocabulary, and keeping them tied together here is what
- *  stops the two halves of the site drifting into meaning different things by "shape". */
+ *  Here rather than beside either parser because both spellings are *authored*: a prose page
+ *  writes `<!-- verify: shape … -->` above a block, a command page writes `compare: shape` on an
+ *  example. Two field names, one vocabulary. */
 export const COMPARISON = {
   /** Byte for byte, after the anchored masks in `scripts/lib/normalise.ts`. The default. */
   exact: "exact",

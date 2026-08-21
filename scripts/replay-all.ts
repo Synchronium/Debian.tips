@@ -10,12 +10,20 @@
 // Separate from `npm run check` because it needs Docker: the whole run takes about half a
 // minute once the sandbox image exists, and a cold run is dominated by building that image.
 //
+//   npm run replay -- --order=reverse         # a different permutation, deterministically
+//   npm run replay -- --order=random:abc123   # and a seeded one, reproducible from the seed
+//
 // Pages run one at a time, in one sandbox per flavour, and that is deliberate: every page
-// sharing one container in a fixed order is what tests CLAUDE.md's third rule, that a page's
-// setup script normalises what it needs rather than trusting what the last page left behind.
+// sharing one container is what tests CLAUDE.md's third rule, that a page's setup script
+// normalises what it needs rather than trusting what the last page left behind.
 // Parallelising across a pool would weaken that; _PLANS/PLAN-CODE-IMPROVEMENTS.md says what it
 // would take. What *is* cheap is not paying for a TypeScript startup per page, so the two
 // verifiers are imported and called rather than spawned.
+//
+// The order within that one sandbox is a `--order` away, because a fixed order tests exactly one
+// of the possible orderings and a page can pass by luck in it — see scripts/lib/replayOrder.ts
+// for the defect that established this. The seed is always printed, so a shuffled failure names
+// the command that reproduces it.
 //
 // Exit status: 0 when every page reproduces, 1 if any page fails, 2 if Docker is
 // unavailable or an argument names no page.
@@ -23,6 +31,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { ReplayError, readSetupDirectives } from "./lib/replay.js";
+import { ORDER_MODE, type ReplayOrder, describeOrder, orderPages, parseOrder } from "./lib/replayOrder.js";
 import { PROSE_CATEGORIES } from "../src/content/schema.js";
 import { CONTENT_DIR, SANDBOX_SCRIPT, fixtureScript } from "../src/paths.js";
 import { replayCommandPage } from "./verify-examples.js";
@@ -30,12 +39,26 @@ import { replayProsePage } from "./verify-prose.js";
 
 const args = process.argv.slice(2);
 const FLAGS = ["--changed"];
-const unknownFlags = args.filter((arg) => arg.startsWith("-") && !FLAGS.includes(arg));
+const unknownFlags = args.filter(
+  (arg) => arg.startsWith("-") && !FLAGS.includes(arg) && !arg.startsWith("--order="),
+);
 if (unknownFlags.length) {
-  console.error(`replay: unexpected argument ${unknownFlags[0]} (accepts ${FLAGS.join(", ")})`);
+  console.error(
+    `replay: unexpected argument ${unknownFlags[0]} (accepts ${FLAGS.join(", ")}, --order=<mode>)`,
+  );
   process.exit(2);
 }
 const onlyChanged = args.includes("--changed");
+
+let order: ReplayOrder;
+try {
+  const flag = args.find((arg) => arg.startsWith("--order="));
+  order = parseOrder(flag ? flag.slice("--order=".length) : ORDER_MODE.alpha);
+} catch (error) {
+  console.error(`replay: ${(error as Error).message}`);
+  process.exit(2);
+}
+
 const requestedPages = args.filter((arg) => !arg.startsWith("-"));
 
 // Prose pages state their claims as Markdown fences rather than YAML, so they run through
@@ -119,8 +142,11 @@ if (missing.length) {
 // about how much is checked. A page needing no sample files still gets one, holding only a
 // comment saying so — an explicit "nothing to create here" beats an absence that reads as an
 // oversight, and it keeps this gate meaningful instead of permanently red.
-const runnable = pages.filter((name) => existsSync(fixtureScript(name)));
-const unfixtured = pages.filter((name) => !runnable.includes(name));
+const unfixtured = pages.filter((name) => !existsSync(fixtureScript(name)));
+const runnable = orderPages(
+  pages.filter((name) => existsSync(fixtureScript(name))),
+  order,
+);
 
 if (runnable.length === 0) {
   console.log(onlyChanged ? "no changed page has examples to replay." : "nothing to replay.");
@@ -172,7 +198,7 @@ for (const flavour of neededFlavours) {
 }
 
 const sandboxSummary = [...sandboxes].map(([flavour, name]) => `${name} (${flavour})`).join(", ");
-console.log(`replaying ${runnable.length} page(s) in ${sandboxSummary}\n`);
+console.log(`replaying ${runnable.length} page(s) in ${sandboxSummary}, order: ${describeOrder(order)}\n`);
 
 const failed: string[] = [];
 const started = Date.now();
@@ -202,5 +228,14 @@ if (failed.length) {
   console.log(`\nfailing: ${failed.join(", ")}`);
   console.log("Each mismatch above names the first line that differs. The real output is the truth:");
   console.log("re-capture with scripts/adopt-real-output.ts once you've confirmed the command is right.");
+  if (order.mode !== ORDER_MODE.alpha) {
+    // A page can fail in one ordering and pass in another, which is a defect in that page rather
+    // than in the run — so both commands are worth having: the first repeats this exact ordering,
+    // the second says whether the ordering is what did it.
+    console.log(`\nThis run was ordered ${describeOrder(order)}. To repeat it exactly:`);
+    console.log(`  npm run replay -- --order=${describeOrder(order)}`);
+    console.log("If it passes in the default order, the page depends on what ran before it:");
+    console.log("  npm run replay");
+  }
 }
 process.exit(failed.length === 0 ? 0 : 1);

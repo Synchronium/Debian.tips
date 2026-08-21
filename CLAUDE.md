@@ -24,6 +24,7 @@ npm test         # vitest run (unit + fixture-based build tests)
 npm run check    # format, tsc --noEmit, vitest, build, pagefind, linkcheck, link-audit — the full gate
 npm run replay   # replay every page's examples in a sandbox (needs Docker, ~2.5 min warm)
 npm run replay -- --changed        # only the pages your diff touches — what CI runs on a PR
+npm run replay -- --order=random   # a different ordering; the seed is printed, so it repeats
 npm run audit:links -- --verbose   # the link graph on its own, advisory findings included
 ```
 
@@ -77,9 +78,12 @@ Three rules follow from that, and all three have been broken here at least once:
   architecture — that is the defect, not a record of how it was checked instead.
 - **Assume another page can see what your fixture changes.** `npm run replay` runs every page in
   one sandbox, so a port, an apt source, an `apt.conf`, a GPG key, a new account or a package
-  state left behind changes what a later page sees. Six failures so far have been exactly this,
-  every one of them invisible to a single-page run and obvious in the batch. Each page's setup
-  script normalises what it needs rather than trusting what it finds.
+  state left behind changes what a later page sees. Seven failures so far have been exactly this,
+  every one of them invisible to a single-page run. Each page's setup script normalises what it
+  needs rather than trusting what it finds — **including state no page it can name creates**: the
+  seventh took three pages and only appeared in one direction, so `--order=reverse` found it and
+  the default order never would. `npm run replay -- --order=random` before shipping anything that
+  changes shared state.
 
 ## Where the content lives
 

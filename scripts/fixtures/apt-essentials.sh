@@ -40,3 +40,17 @@ fi
 if ! dpkg -l curl 2>/dev/null | grep -q '^ii'; then
   apt-get install -y curl >/dev/null 2>&1
 fi
+
+# Nothing orphaned. The --simulate example greps for `^The following`, and apt has two notices
+# starting that way: "The following NEW packages will be installed" is the one the page
+# documents, and "The following package was automatically installed and is no longer required"
+# is printed above it whenever anything is auto-installed and unreferenced. The page then shows
+# the wrong first line, with no hint that a *different* notice matched.
+#
+# Nothing on this page creates an orphan, which is why this went unnoticed: it takes three
+# pages. /compare/remove-vs-purge-vs-autoremove/ marks cowsay auto, the dpkg page's setup purges
+# cowsay-off, and cowsay is then auto with nothing depending on it. In alphabetical order the
+# apt page has already marked cowsay manual by the time any of that happens, so the batch was
+# green; reversing the order made it fail. Asserting the state the output depends on is the fix
+# — the ordering is not something this page should have to be lucky about.
+apt-get autoremove -y >/dev/null 2>&1
