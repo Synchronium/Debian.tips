@@ -145,7 +145,7 @@ with local:      0
 declared first:  1
 ```
 
-The first reports success for a command that plainly failed. This one is genuinely hard to spot
+The first reports success for a command that failed. This one is genuinely hard to spot
 by reading, and it is worth knowing before you rely on
 [error handling](/concepts/exit-codes-and-error-handling/) inside a function.
 

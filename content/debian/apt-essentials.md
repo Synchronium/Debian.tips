@@ -3,13 +3,13 @@ title: "APT essentials"
 description: "The apt, apt-get, and dpkg commands that cover almost everything you'll do to manage packages on Debian, and how remove differs from purge."
 category: debian
 tags: [apt, debian, sysadmin]
-updated: 2026-08-17
+updated: 2026-08-22
 related: [release-channels, third-party-repositories, systemd-services, systemctl, exit-codes-and-error-handling]
 ---
 
 `apt` is the command-line front end for Debian's package management system: installing,
 removing, updating, and inspecting the software on your system. Underneath it sits `dpkg`, which
-actually unpacks and configures individual `.deb` packages; `apt` adds dependency resolution and
+unpacks and configures individual `.deb` packages. `apt` adds dependency resolution and
 downloading from configured repositories on top.
 
 ## Keeping the system current
@@ -21,10 +21,9 @@ sudo apt full-upgrade        # like upgrade, but allowed to add/remove packages 
 ```
 
 `apt update` doesn't install anything. It downloads the latest list of available package
-versions from your sources. Nothing on your system actually changes until you run `upgrade`.
-`full-upgrade` (the successor to `dist-upgrade`) is what you want when a security update needs
-to remove an obsolete package or install a new dependency that plain `upgrade` won't touch on
-its own.
+versions from your sources, and nothing on your system changes until you run `upgrade`. Use
+`full-upgrade` (the successor to `dist-upgrade`) when a security update needs to remove an
+obsolete package or install a new dependency that plain `upgrade` won't touch on its own.
 
 Which versions any of this offers you depends on the channel the machine tracks, and on whether
 its sources name a codename or a role: a machine pointed at `stable` rather than `trixie` starts
@@ -47,8 +46,8 @@ Debian convention rather than something `apt` does universally. Check rather tha
 including the enable state Debian remembers across a `remove` but not a `purge`.
 
 `remove` and `purge` look interchangeable for a package with no configuration to speak of, but
-the distinction is real and `dpkg` shows it directly. After removing (not purging) a package
-that ships actual config files:
+the distinction still holds and `dpkg` shows it directly. After removing (not purging) a package
+that ships config files:
 
 ```bash
 dpkg -s nano | head -2
@@ -60,13 +59,14 @@ Status: deinstall ok config-files
 
 `config-files` is the state: the package's binaries are gone, but `/etc/nanorc` and similar
 files are still on disk, in case you reinstall later and want your settings back. `dpkg -l`
-abbreviates the same thing to `rc` in its first column, which is the form you will see quoted
-most often. `purge` clears that state entirely, deleting those leftover files.
+abbreviates it to `rc` in its first column. `purge` clears that state entirely, deleting those
+leftover files.
+
 For a package you're getting rid of for good, `purge` is the more complete cleanup; for one
 you're likely to reinstall, plain `remove` avoids losing configuration you might want back.
-`autoremove` sits on a different axis again — it acts on packages nobody asked for rather than
-on how much of one to delete — and
-[remove vs purge vs autoremove](/compare/remove-vs-purge-vs-autoremove/) is the full comparison.
+`autoremove` sits on a different axis again, acting on packages nobody asked for rather than on
+how much of one to delete. See
+[remove vs purge vs autoremove](/compare/remove-vs-purge-vs-autoremove/) for the full comparison.
 
 ## Searching and inspecting
 
@@ -78,7 +78,7 @@ apt list --upgradable            # list packages with a newer version available
 ```
 
 `apt list --installed` on a real system prints thousands of lines, so it is nearly always worth
-narrowing with [`grep`](/commands/grep/) — `apt list --installed | grep -i python` answers "is
+narrowing with [`grep`](/commands/grep/). `apt list --installed | grep -i python` answers "is
 this here, and which version" faster than `apt show` and a guess at the package name.
 
 Beyond `apt` itself, `dpkg` answers questions about packages already on your system without
@@ -98,8 +98,8 @@ dpkg -S /usr/bin/curl
 curl: /usr/bin/curl
 ```
 
-It is the one to reach for when you find an unfamiliar file or command on a system and want to
-know what installed it, without a search engine.
+Use it when you find an unfamiliar file or command on a system and want to know what installed
+it, without a search engine.
 
 ## Previewing a change before it happens
 
@@ -132,9 +132,9 @@ sudo apt-mark unhold ripgrep   # allow it to upgrade again
 ```
 
 A hold is useful when a specific version of a package is known to work with something else on
-the system and a newer one might not — though it is also a common reason for
-[a package being kept back](/troubleshooting/packages-kept-back/) months later; `upgrade` and `full-upgrade` both skip held packages
-automatically, without needing to remember to exclude them manually each time.
+the system and a newer one might not. `upgrade` and `full-upgrade` both skip held packages
+automatically, so there is nothing to remember at upgrade time. It is also a common reason for
+[a package being kept back](/troubleshooting/packages-kept-back/) months later.
 
 <!-- verify: shape the version moves whenever a security update lands -->
 ```bash
@@ -160,16 +160,16 @@ means and how to contain it.
 > explicit warning that its output format isn't guaranteed stable between versions. Scripts
 > should prefer `apt-get`/`apt-cache`, whose plain-text output is considered a stable interface
 > `apt` deliberately isn't. [apt vs apt-get](/compare/apt-vs-apt-get/) has the full comparison,
-> including the one place the two genuinely behave differently.
+> including the one place the two behave differently.
 
 For the full command reference rather than the essentials, see [`apt`](/commands/apt/).
 
 A script installing packages also needs `-y`, or `apt-get` stops at a prompt nobody is there to
-answer, and needs to check that the install actually succeeded rather than carrying on with a
+answer, and needs to check that the install succeeded rather than carrying on with a
 missing binary. See [Exit codes and error handling](/concepts/exit-codes-and-error-handling/)
 for the pattern.
 
 It also needs to cope with not being the only thing installing packages. On a machine running
-automatic updates, an install can fail outright because something else got there first — see
+automatic updates, an install can fail outright because something else got there first. See
 [Could not get lock /var/lib/dpkg/lock-frontend](/troubleshooting/could-not-get-lock-dpkg-frontend/),
 which is a race worth handling with a timeout rather than a retry loop.

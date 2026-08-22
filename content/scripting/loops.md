@@ -112,7 +112,7 @@ the second lost its backslashes entirely. Nothing warned, and the data is simply
 > discarded when the loop ends. `cat file | while read line; do count=$((count + 1)); done` leaves
 > `count` empty afterwards. Redirect from the file with `< file`, as above, or feed the loop with
 > `< <(command)` process substitution. This is the single most confusing thing about loops in
-> bash, because the loop plainly runs and the variable plainly does not change.
+> bash, because the loop does run, and the variable does not change.
 
 Here is the difference, in one script:
 

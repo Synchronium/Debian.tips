@@ -66,8 +66,8 @@ nothing until you tell systemd to re-read it:
 sudo systemctl daemon-reload
 ```
 
-Forget it and you get the most confusing symptom in systemd: a config file that plainly says one
-thing while the service plainly does another. `systemctl status` warns about it, and the warning
+Forget it and you get the most confusing symptom in systemd: a unit file that says one thing
+while the running service does another. `systemctl status` warns about it, and the warning
 is worth reading rather than scrolling past. A unit that isn't loaded yet is read fresh when it is
 first used, which is why the mistake sometimes appears to work.
 

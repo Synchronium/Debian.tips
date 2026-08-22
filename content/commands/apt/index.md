@@ -34,7 +34,7 @@ the repositories contain, not from the repositories themselves:
 - **`apt install` / `apt upgrade`** act on the cache as it currently stands.
 
 So `apt install` immediately after a fresh install of Debian, without an `apt update` first, can
-fail to find a package that plainly exists, or offer you a version that was superseded weeks
+fail to find a package that is right there in the archive, or offer you a version that was superseded weeks
 ago. When something is missing or stale, `apt update` is nearly always the first thing to try.
 [Debian's release channels](/debian/release-channels/) covers what those repositories are and
 how a package gets into one.

@@ -203,8 +203,8 @@ explanation.
   service's stdout and stderr go. `journalctl -u <unit>` has them, including for a unit that
   failed at boot three days ago. See [`journalctl`](/commands/journalctl/).
 - **"Editing the file in `/usr/lib/systemd/system/` is fine, I will remember."** The upgrade that
-  reverts it will arrive months later, and the symptom is a config file that plainly says one
-  thing while the service does another.
+  reverts it will arrive months later, and the symptom is a config file that says one thing
+  while the service does another.
 - **"`disabled` means it cannot start."** A disabled service can still be started by hand, or
   pulled in as a dependency of something else. `masked` is the state that genuinely prevents it,
   and `systemctl is-enabled` reports that separately.
