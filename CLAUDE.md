@@ -21,14 +21,14 @@ npm install
 npm run dev      # dev server at http://localhost:4321, full rebuild on any file change
 npm run build    # one-off production build to dist/
 npm test         # vitest run (unit + fixture-based build tests)
-npm run check    # format, tsc --noEmit, vitest, build, pagefind, linkcheck, link-audit — the full gate
+npm run check    # format, tsc --noEmit, vitest, build, pagefind, linkcheck, link-audit: the full gate
 npm run replay   # replay every page's examples in a sandbox (needs Docker, ~2.5 min warm)
-npm run replay -- --changed        # only the pages your diff touches — what CI runs on a PR
+npm run replay -- --changed        # only the pages your diff touches, which is what CI runs on a PR
 npm run replay -- --order=random   # a different ordering; the seed is printed, so it repeats
 npm run audit:links -- --verbose   # the link graph on its own, advisory findings included
 ```
 
-Run `npm run check` before treating any change as done — it's also what CI runs
+Run `npm run check` before treating any change as done. It's also what CI runs
 (`.github/workflows/ci.yml`), followed by `pa11y-ci` as a separate accessibility gate whose URL
 list is generated from the built sitemap by `scripts/pa11y-urls.ts`. `check` sets
 `NODE_ENV=production` itself, so the local gate and the CI one see the same site: drafts are
@@ -37,7 +37,7 @@ excluded from both.
 Single test file: `npx vitest run test/schema.test.ts`
 Single test by name: `npx vitest run -t "accepts a valid command page"`
 
-Accessibility check locally (matches CI): build, serve `dist/`, then run pa11y-ci against it —
+Accessibility check locally (matches CI): build, serve `dist/`, then run pa11y-ci against it:
 `npm run build && npx serve -l 4321 dist & npx wait-on http://localhost:4321 && npx pa11y-ci`.
 
 Static checks are `npm run format:check` (Prettier) and `tsc --noEmit`, both part of
@@ -51,22 +51,22 @@ TypeScript 7 (its peer range caps at `<6.1.0`, canary included), and forcing it 
 that misreads the code and a check that lies. Revisit when that lands.
 
 Prettier is scoped to `src/`, `scripts/`, `test/` and `styles/`, and **never touches `content/`**
-— `.prettierignore` explains why at length, but the short version is that `output: |2` blocks and
-prose fence adjacency are load-bearing, and reformatting them would change what the site claims
-while the replay re-certified the result. `embeddedLanguageFormatting` is `off` for a related
+(`.prettierignore` explains why at length). The short version is that `output: |2` blocks and
+prose fence adjacency decide what the site claims, so reformatting them would change it while
+the replay re-certified the result. `embeddedLanguageFormatting` is `off` for a related
 reason: Prettier recognises the `html` tagged template and will reformat the site's markup
 inside it, which changed every emitted page the first time this was set up.
 
 `tsc` covers `src/`, `test/` and `scripts/` together: the replay harness is TypeScript too, run
 through `tsx`, and it imports the content types from `src/content/schema.ts` rather than keeping
 its own idea of what an `examples.yaml` contains. `src/client/` is checked separately by
-`tsconfig.client.json`, which is the only config with DOM globals — see ADR-0013.
+`tsconfig.client.json`, which is the only config with DOM globals; see ADR-0013.
 
 ## The one thing that makes this site different
 
 Every example on every page was run for real, and is run again on every push. `npm run check`
-validates *shape* — schema, types, links — and would happily pass a page whose output no command
-ever produced. `npm run replay` is what checks the claims are true.
+validates *shape* (schema, types, links) and would happily pass a page whose output no command
+ever produced. Only `npm run replay` checks that the claims are true.
 
 Three rules follow from that, and all three have been broken here at least once:
 
@@ -78,12 +78,12 @@ Three rules follow from that, and all three have been broken here at least once:
   the *package*, not the command: an `Architecture: all` package prints `all` everywhere, which
   is what lets the `apt` and `dpkg` pages show `apt list` and `dpkg -l` at all.
   `test/architecture.test.ts` enforces this, and rejects an exemption whose stated reason is the
-  architecture — that is the defect, not a record of how it was checked instead.
+  architecture, since that is the defect rather than a record of how it was checked instead.
 - **Assume another page can see what your fixture changes.** `npm run replay` runs every page in
   one sandbox, so a port, an apt source, an `apt.conf`, a GPG key, a new account or a package
   state left behind changes what a later page sees. Seven failures so far have been exactly this,
   every one of them invisible to a single-page run. Each page's setup script normalises what it
-  needs rather than trusting what it finds — **including state no page it can name creates**: the
+  needs rather than trusting what it finds, **including state no page it can name creates**: the
   seventh took three pages and only appeared in one direction, so `--order=reverse` found it and
   the default order never would. `npm run replay -- --order=random` before shipping anything that
   changes shared state.
@@ -91,8 +91,8 @@ Three rules follow from that, and all three have been broken here at least once:
 ## Writing code here
 
 Every page on this site links to the files that produced it (ADR-0017), so the code is part of
-what the site publishes. Someone arriving from a page has one question — "is this claim really
-checked?" — and they are reading a file they have never seen before, in a repository they do not
+what the site publishes. Someone arriving from a page has one question, "is this claim really
+checked?", and they are reading a file they have never seen before, in a repository they do not
 know. **Optimise for that reader.** Three rules, each of which this codebase has broken often
 enough to be worth writing down.
 
@@ -106,32 +106,32 @@ export type OrderMode = (typeof ORDER_MODE)[keyof typeof ORDER_MODE];
 ```
 
 `COMPARISON`, `ORDER_MODE`, `EDGE_KIND`, `SANDBOX_FLAVOUR`, `SANDBOX_TOOL` and `SETUP_DIRECTIVE`
-are the existing ones; follow them. A union type is not enough on its own — `type X = "a" | "b"`
+are the existing ones; follow them. A union type is not enough on its own: `type X = "a" | "b"`
 still leaves the literal written out at every use, and a value that is validated in one place and
 re-spelled in another *fails open*, staying green while quietly doing nothing. The same goes for
 paths, filenames and routes: `src/paths.ts` owns where things are and `src/config.ts` owns the
 site's routes, so `"404.html"` or `/tags/` written into a third file is a bug waiting for a
-rename. A string a *reader* sees is the same rule — the expand-all labels live in one template and
+rename. A string a *reader* sees is the same rule, so the expand-all labels live in one template and
 reach the client script as a `data-` attribute rather than being typed twice.
 
 **Comments explain the rule, never the history.** Say what the code guarantees and what breaks
 without it. Do not say what the code used to be, when it changed, which page it broke, or what the
-review found — git has the first, `docs/adr/` has the rest, and prose that has to be read past to
+review found. Git has the first, `docs/adr/` has the rest, and prose that has to be read past to
 reach the point is worse than no prose. A comment is also a claim that goes stale: no counts of
 examples or pages, no measurements that will move, no naming another page that might be renamed.
 
 ```sh
-# Good — the rule, and what breaks without it.
+# Good: the rule, and what breaks without it.
 # cowsay-off adds three cowfiles, so `cowsay -l` lists 50 rather than 47 when it is installed.
 # A page whose output depends on a package being absent has to assert that.
 
-# Bad — the incident.
+# Bad: the incident.
 # Alphabetically the apt page had already purged it before this page ran, so the batch was
 # green until a shuffled run put remove-vs-purge first, which is how this was found...
 ```
 
 **Name things for what they are now.** A file called `replay.ts` that replays nothing, a
-`verify-*.ts` that exports a `replay*` function, a `stats.ts` in a directory called `content` —
+`verify-*.ts` that exports a `replay*` function, a `stats.ts` in a directory called `content`:
 each costs a reader a wrong guess before they reach the code. If a rename is right, do it: the
 imports are typechecked and `test/documentedPaths.test.ts` catches every stale mention in the
 comments and the docs, so the change is mechanically verifiable rather than a leap.
@@ -139,7 +139,7 @@ comments and the docs, so the change is mechanically verifiable rather than a le
 ## Where the content lives
 
 `src/content/schema.ts` is the single source of truth for what a page needs, and its comment on
-`CATEGORIES` gives the test for which category a page belongs in — including how many categories
+`CATEGORIES` gives the test for which category a page belongs in, including how many categories
 there are, which is why no other document lists them. Every category except `commands` is flat
 `content/<category>/<slug>.md`; `commands` is a directory per command,
 `content/commands/<slug>/index.md` paired with `examples.yaml`.
@@ -159,7 +159,7 @@ This file is deliberately short. The detail lives next to the job that needs it:
 | Committing, pushing, a CI failure | `.claude/skills/ship/SKILL.md` |
 | Reviewing a Dependabot PR | `.claude/skills/review-dependency-prs/SKILL.md` |
 | Changing the replay harness, or a replay failing oddly | `.claude/reference/verification.md` |
-| Changing `src/` — pipeline, templates, markdown, dev server, link audit | `.claude/reference/architecture.md` |
+| Changing `src/`: pipeline, templates, markdown, dev server, link audit | `.claude/reference/architecture.md` |
 | Why something is the way it is, before changing it | `docs/adr/` |
 
 The two reference documents are where the long-form explanations went; nothing was dropped in
@@ -172,19 +172,19 @@ changes keep it current. Two rules.
 
 **A change that contradicts an existing record deals with that record, in the same commit.** A
 stale ADR is worse than a missing one: it is read as current, and it is read precisely by someone
-already mid-decision. Which treatment depends on the size of the change — a reversed or replaced
+already mid-decision. Which treatment depends on the size of the change. A reversed or replaced
 decision gets a new record with the old one marked `Superseded by ADR-00NN`, keeping its reasoning
 where the next person can find it; a record that is merely wrong or unclear is edited in place.
 `docs/adr/README.md` has the distinction.
 
-**A change that makes a decision nothing covers should come with a proposed ADR — proposed, not
-merged.** Say what you'd write and let the user decide before adding it, the same way a new tag
+**A change that makes a decision nothing covers should come with a proposed ADR, proposed rather
+than merged.** Say what you'd write and let the user decide before adding it, the same way a new tag
 gets asked about rather than added. The test is whether someone would otherwise re-litigate the
 choice, or undo it by accident without knowing it was a choice: a new gate, a new category, a
 constraint on what content may claim, a dependency the output shape now depends on. Ordinary work
 inside an existing decision is not an ADR, and neither is a preference nobody could break by
 accident.
 
-Keep the shape of the existing records — Context, Decision, Consequences, Revisit when — and name
-what **enforces** it. If the honest answer is "nothing", write that: `docs/adr/README.md` explains
-why the empty field is worth having rather than hiding.
+Keep the shape of the existing records (Context, Decision, Consequences, Revisit when) and name
+what **enforces** it. If nothing does, write that: `docs/adr/README.md` explains why the empty
+field is worth having rather than hiding.

@@ -1,11 +1,11 @@
 ---
 name: write-content-page
-description: Author or extend one debian.tips content page (command reference, concept, scripting lesson, recipe, or Debian article) to the site's schema, tiering, and style-guide contract. Use when asked to write, draft, or expand a specific page — e.g. "write the sed page", "add examples for tar", "draft the exit-codes-and-error-handling concept", "write recipe: bulk-rename-files". Not for open-ended "what should we write next" planning.
+description: Author or extend one debian.tips content page (command reference, concept, scripting lesson, recipe, or Debian article) to the site's schema, tiering, and style-guide contract. Use when asked to write, draft, or expand a specific page, e.g. "write the sed page", "add examples for tar", "draft the exit-codes-and-error-handling concept", "write recipe: bulk-rename-files". Not for open-ended "what should we write next" planning.
 ---
 
 # Write a debian.tips content page
 
-One page per invocation. This checklist is self-contained — everything it references
+One page per invocation. This checklist is self-contained: everything it references
 (`src/content/schema.ts`, `content/tags.yaml`, existing content under `content/`) is committed to
 the repo, so it works the same for anyone who clones it, not just this working copy. If this
 project happens to keep its own internal planning notes locally, they're worth a skim for extra
@@ -14,11 +14,11 @@ prose detail, but nothing below depends on them existing.
 ## 1. Identify the page
 
 From the request, work out:
-- **category** — one of the values in `CATEGORIES` in `src/content/schema.ts`, whose comment
+- **category**: one of the values in `CATEGORIES` in `src/content/schema.ts`, whose comment
   gives the test for which one a page belongs in → target directory
 - **slug** → directory/file name (command pages: `content/commands/<slug>/`; others:
   `content/<category>/<slug>.md`)
-- **tier** (commands only: `flagship|standard|light`) — drives length and example count. Judge it
+- **tier** (commands only: `flagship|standard|light`) drives length and example count. Judge it
   by comparing to existing pages in `content/commands/`: a big, commonly-reached-for command with
   real depth (grep, find, sed, curl) is flagship; an everyday command with modest scope (tar) is
   standard; a small single-purpose command is light.
@@ -30,13 +30,13 @@ content, stop and ask rather than guessing.
 
 ## 2. Check the schema, not just this checklist
 
-Read `src/content/schema.ts` — it's authoritative if anything below has drifted out of sync with
+Read `src/content/schema.ts`, which is authoritative if anything below has drifted out of sync with
 it. Frontmatter needs `title`, `description` (50–160 chars), `tags` (1–6), `updated` (ISO date,
 use today), `category`; command pages also need `tagline` (≤60 chars) and `tier`; scripting pages
 need a unique `order`. `related` is optional but every slug in it must exist (or be created in
 this same batch).
 
-Check `content/tags.yaml` for the allowed tag set. Tags are curated on purpose — if the page
+Check `content/tags.yaml` for the allowed tag set. Tags are curated on purpose, so if the page
 genuinely needs a concept not in the registry, stop and ask before adding one; don't just add it
 because a page reads better with it.
 
@@ -45,7 +45,7 @@ because a page reads better with it.
 - **Commands**: `index.md` prose intro (flagship 600–1200 words / standard 150–400 / light
   50–150) + `examples.yaml` (flagship/standard 50–100 examples, light 25–50), sections ordered
   basic → advanced, `command:` field matching the directory name.
-- **Concepts**: 800–2000 words — hook → mental model → worked examples → common misconceptions →
+- **Concepts**: 800–2000 words: hook → mental model → worked examples → common misconceptions →
   "go deeper" links.
 - **Scripting**: one concept, runnable script(s), a pitfalls callout, exercises with `<details>`
   answers; `order` drives prev/next.
@@ -53,10 +53,10 @@ because a page reads better with it.
   per recipe.
 - **Debian**: same shape as concepts, Debian-specific.
 
-## 4. Test every example for real — don't fabricate output
+## 4. Test every example for real, and don't fabricate output
 
 Run every example inside the disposable sandbox (`scripts/sandbox.sh`), not directly on the
-devcontainer — it's a throwaway `debian:trixie` container (same "current Debian stable" target),
+devcontainer. It's a throwaway `debian:trixie` container (same "current Debian stable" target),
 so installing packages, using `sudo`, or standing up a service (e.g. `sshd`) for a test leaves
 nothing behind on the host:
 
@@ -68,7 +68,7 @@ nothing behind on the host:
   hostnames/users to `deb1`/`user`.
 - If a command genuinely can't be run even in the sandbox (touches real hardware, needs
   privileges Docker itself can't grant), say so explicitly in your reply instead of inventing
-  plausible-looking output — flag it for the user to verify on a real box.
+  plausible-looking output, and flag it for the user to verify on a real box.
 - Destructive examples (`rm`, `dd`, `mkfs`, `chmod -R`, `curl | sh`, etc.) get `danger: true` and
   the description must state the failure mode. Prefer teaching the safe variant first.
 
@@ -79,7 +79,7 @@ cheap to honour while writing and expensive to find later.
 
 - **The command must produce the output exactly as printed.** Not a variant you ran, not the same
   command with an extra `| tail -n3`, not a different path. `grep -r "TODO" ~/projects` cannot
-  print relative paths — the shell expands `~` before grep sees it — so an example showing
+  print relative paths, because the shell expands `~` before grep sees it, so an example showing
   `projects/app/main.ts:…` is unreproducible no matter how plausible it reads.
 - **Never abridge an `output:` block silently.** If the real output is 10 lines, show 10 or add a
   `| head -N` to the command so the shown output is complete for what's shown.
@@ -87,7 +87,7 @@ cheap to honour while writing and expensive to find later.
   stdout. Either omit `output:` or make the command show its result (`… && cat file`).
 - **Make non-deterministic output deterministic.** awk array iteration order is unspecified (and
   differs between mawk and gawk); `find`, `grep -r` and glob expansion follow directory order,
-  which is a hash order you cannot influence — four entries created `a,b,c,d` read back as
+  which is a hash order you cannot influence: four entries created `a,b,c,d` read back as
   `d,b,c,a`. Pipe through `sort`, or narrow the glob, rather than documenting whatever one run
   happened to print. Checksums count too: two fixture files with identical bytes produce identical
   `md5sum` output, which reads on the page as though the fixture were broken.
@@ -101,23 +101,23 @@ cheap to honour while writing and expensive to find later.
 ### 4b. Declare the sample data, then prove it
 
 Any example whose output can't be interpreted without seeing its input needs a `fixtures:` entry
-— above all where output is a summary (`wc -l file` → `40`) rather than a transformation of the
+and above all where output is a summary (`wc -l file` → `40`) rather than a transformation of the
 input. Pages whose output echoes the input (`cut`, `head`) often need none.
 
 - Add a top-level `fixtures:` list to `examples.yaml` (`name`, optional `note`, `content`). It
   renders as one collapsed block above the examples.
 - Mirror it in a setup script at `scripts/fixtures/<command>.sh` that recreates those files.
-  Comment each step with the rule it enforces — what the page's output depends on, and what
-  breaks if the sandbox does not have it — never with the story of how it was found. CLAUDE.md's
+  Comment each step with the rule it enforces: what the page's output depends on, and what
+  breaks if the sandbox does not have it, never with the story of how it was found. CLAUDE.md's
   "Writing code here" has the shape; these scripts are linked from the page they belong to, so a
   reader meets them cold.
 - **If the input is a directory rather than a file** (`find`, `tar`, `ls`, `du`), the fixture is a
-  captured `ls -lAR` of the tree — a reader can't evaluate `find projects -mtime +365` printing one
+  captured `ls -lAR` of the tree, since a reader can't evaluate `find projects -mtime +365` printing one
   path without seeing the other nine files and their dates. Capture it from the sandbox rather than
   writing it out: it encodes modes, sizes and mtimes at once, and all three must be set explicitly
   in the setup script. Don't rely on the umask for a mode you assert on: the umask a `docker exec`
-  inherits belongs to the host, not to the image — 0000 on this project's devcontainer, 0022 on a
-  GitHub runner — and while the replay pins it to 0022, a plain `scripts/sandbox.sh exec` does
+  inherits belongs to the host, not to the image (0000 on this project's devcontainer, 0022 on a
+  GitHub runner) and while the replay pins it to 0022, a plain `scripts/sandbox.sh exec` does
   not. The same command gives different modes depending on where and how you ran it.
 - Then prove the two agree:
 
@@ -141,8 +141,8 @@ something a reader could actually produce rather than a hand-written summary:
 | two files shown together | `tail -n +1 setA.txt setB.txt` |
 | a duplicate of another fixture | `cmp -s users.csv users2.csv && echo '(same as users.csv)'` |
 
-If an example's output is genuinely useful but can't reproduce byte for byte — `systemctl status`
-with its PID and uptime, `df -h` on the reader's own disks — don't drop it and don't fake it. Add
+If an example's output is genuinely useful but can't reproduce byte for byte (`systemctl status`
+with its PID and uptime, `df -h` on the reader's own disks) don't drop it and don't fake it. Add
 `volatile:` with a note saying what will differ:
 
 ```yaml
@@ -156,24 +156,24 @@ with its PID and uptime, `df -h` on the reader's own disks — don't drop it and
 
 The note is shown to the reader above the output, and the replay checks that example by shape:
 numbers, quantities, dates and identifiers are free to differ, everything else must match. It is
-not an escape hatch — output containing something the reader could never see (a container id, a
+not an escape hatch: output containing something the reader could never see (a container id, a
 path from the harness) still has to be removed rather than declared volatile.
 
 For examples a batch genuinely can't replay *at all* (needing a concurrent writer, like `tail -f`,
 or a network peer), list the title in `scripts/fixtures/<command>.skip` with a comment saying how it
 *was* verified. Don't leave it silently failing, and don't delete the example. Titles are matched
-exactly and must name an example that documents an `output:` block — the harness rejects an entry
+exactly and must name an example that documents an `output:` block, and the harness rejects an entry
 that matches nothing, because a renamed title otherwise leaves the file claiming an exemption it
 no longer grants.
 
-If a page's output depends on who ran the command — file ownership in `ls -l` or `tar -tvf`, a
-path under `~`, a permission denial root would never see — put `# verify: --user` in its setup
+If a page's output depends on who ran the command (file ownership in `ls -l` or `tar -tvf`, a
+path under `~`, a permission denial root would never see) put `# verify: --user` in its setup
 script. Both `replay-command-page.ts` and `adopt-real-output.ts` read it, so the command above stays
 right for every page. Without it, replaying `chmod` as root reports 9/42 on a page that is
 perfectly correct, and that looks exactly like a page that has drifted.
 
 Two helpers exist for repairs: `scripts/fix-output-whitespace.ts` (rewrites blocks whose only
-problem is lost padding — it refuses anything differing in substance) and
+problem is lost padding, and it refuses anything differing in substance) and
 `scripts/adopt-real-output.ts` (replaces named examples' output with the real capture; use when
 output was silently abridged).
 
@@ -203,27 +203,27 @@ Then `npm run replay -- <slug>` and aim for N/N, exactly as for a command page.
 ## 5. Style guide (apply to every sentence)
 
 An example's `description`, a section's `intro` and a fixture's `note` are rendered as **inline
-markdown** — backtick every flag, path, command and literal string in them (`` `-g` ``,
+markdown**, so backtick every flag, path, command and literal string in them (`` `-g` ``,
 `` `access.log` ``), and use `[text](/commands/grep/)` for cross-links and `*emphasis*` sparingly.
 Each must stay a single paragraph; a blank line or a leading `- ` fails the build. Nothing else on
 a page is markdown: `title`, `tagline` and frontmatter `description` are plain text, so a backtick
 there ships literally.
 
 Direct, second person, no fluff, no "In today's fast-paced world." **British English in all
-prose** (`colour`, `flavour`, `behaviour`, `sanitised`, `organise`, `-ise` not `-ize`) — but never
+prose** (`colour`, `flavour`, `behaviour`, `sanitised`, `organise`, `-ise` not `-ize`) but never
 touch a real flag, command, package name, or captured output for spelling (`--color` stays
-`--color`; a real GNU grep flag). Realistic placeholders (`access.log`, `~/projects`) — never
+`--color`; a real GNU grep flag). Realistic placeholders (`access.log`, `~/projects`), never
 `foo`/`file1`. Show the short flag in code; mention the long form in prose when it aids memory.
 Titles are outcomes ("Find files modified in the last 24 hours"), not syntax ("Using -mtime").
 Every page links ≥ 2 related pages using root-relative paths (`/concepts/pipes-and-redirection/`).
-Avoid common AI tropes — em dashes, "it's not X, it's Y", "here's why that matters", and similar.
+Avoid common AI tropes: em dashes, "it's not X, it's Y", "here's why that matters", and similar.
 
 ## 6. Verify before calling it done
 
 Two gates, and a command page needs both:
 
 1. `npm run check` (typecheck, tests, build, linkcheck, link audit). Fix any schema violation,
-   missing tag, dead `related` link, or broken cross-link it surfaces — don't hand back a page
+   missing tag, dead `related` link, or broken cross-link it surfaces, and don't hand back a page
    that fails this.
 2. `npm run replay -- <command>` for any page with fixtures, and report the score (it starts and
    stops its own sandbox; `npx tsx scripts/replay-command-page.ts <sandbox> <command>
@@ -231,17 +231,17 @@ Two gates, and a command page needs both:
    `npm run check` validates *shape*; only the replay checks whether the outputs are true, which
    is the site's actual promise.
 3. **`npm run replay` with no arguments**, once the page passes on its own. Every page shares one
-   sandbox, so a fixture that changes system state can break a page you never touched — and that
+   sandbox, so a fixture that changes system state can break a page you never touched, and that
    only ever shows up in the full run. See §4d; it has happened six times.
 
 Both gates are also now visible to readers. Every page carries a block at its foot linking the
 files that produced it and the command that re-runs them, generated from the page's category and
 slug (`src/content/sourcePaths.ts`, ADR-0017). A page written without a setup script says so on the
-page itself — "nothing re-runs its examples" — rather than only in a counter on `/about/`. That is
+page itself ("nothing re-runs its examples") rather than only in a counter on `/about/`. That is
 deliberate, and it is one more reason the setup script is part of writing the page rather than a
 follow-up.
 
-A new page arrives orphaned — its own `related:` list points outward, and nothing points back at
+A new page arrives orphaned: its own `related:` list points outward, and nothing points back at
 it. `npm run check` now fails on that, and the `cross-link-pages` skill is the pass that fixes it:
 the useful link is usually an inline one on a sentence in an existing page that already raises the
 question this page answers, not another `related:` entry.
@@ -249,7 +249,7 @@ question this page answers, not another `related:` entry.
 ## Notes for future parallel/batch use
 
 This checklist is written so it can be handed to a subagent per page with no extra context
-beyond "write page X" — everything it needs to self-verify (schema, tags, `npm run check`) is
+beyond "write page X": everything it needs to self-verify (schema, tags, `npm run check`) is
 in steps 2 and 6. The gap when parallelizing across many pages at once: agents can't see each
 other's `related:` targets or reuse each other's example ideas, so a consistency pass after the
 batch (voice, duplicate examples across pages, cross-links that should exist but don't) is still
@@ -259,7 +259,7 @@ a separate step, not something this skill covers solo.
 `--user` runs the replay as the unprivileged `user` rather than root. Any page about
 permissions needs it: root bypasses the checks such a page documents, so `chmod 600 /etc/shadow`
 succeeds as root and can never print the "Operation not permitted" the page shows. Prefer
-recording it as `# verify: --user` in the page's setup script rather than typing the flag —
+recording it as `# verify: --user` in the page's setup script rather than typing the flag, since
 both tools read it, which is what stops a page being captured as `user` and later checked as
 root, or the reverse. The flag remains for a page that has no setup script yet.
 
@@ -270,7 +270,7 @@ and matches titles exactly.
 ### 4d. What your fixture changes that another page can see
 
 The single most common way a finished page breaks. **`npm run replay` runs every page in one
-sandbox, in sequence.** Your setup script runs before each of your examples — but it only
+sandbox, in sequence.** Your setup script runs before each of your examples, but it only
 restores what *it* creates. Anything it changed elsewhere on the system is still changed when
 the next page starts, and anything an earlier page changed is already true when yours starts.
 
@@ -290,7 +290,7 @@ Every one so far has been shared, mutable system state:
 | **Package state** | `apt-essentials` leaves `nano` in the `rc` state on purpose; a `dpkg` example listing every package whose state is not `ii` faithfully reported it. |
 
 Two of those leaks exposed a **pre-existing defect on the other page** rather than a fault in the
-new one — `wc` was documenting a machine-specific count as exact, and the signing bug would have
+new one: `wc` was documenting a machine-specific count as exact, and the signing bug would have
 broken the next page to need a signed repository regardless. A leak is worth reading as evidence
 before assuming it is yours to suppress.
 
@@ -298,7 +298,7 @@ before assuming it is yours to suppress.
 
 - **Normalise what you need at the start; don't trust what you find.** The apt pages all begin by
   deleting foreign `.sources` and `preferences.d` entries and rewriting the `apt.conf` fragment
-  they want, rather than assuming a clean machine. Reset marks and holds the same way — an
+  they want, rather than assuming a clean machine. Reset marks and holds the same way, since an
   `apt-mark auto` from three examples earlier is enough to change a later one.
 - **Prefer a page-local name over a shared one.** Your own port, your own package names, your own
   user. `packages-kept-back` publishes `tips-demo` and `tips-extra` on 8082 precisely so no other
