@@ -45,7 +45,7 @@ describe("renderMarkdown", () => {
     expect(html).toContain("shiki");
     expect(html).toContain('aria-label="command"');
     // The dual-theme colours are in the stylesheet now, one class per distinct pair of
-    // declarations — see src/content/shikiStyles.ts and test/shikiStyles.test.ts. The markup
+    // declarations; see src/content/shikiStyles.ts and test/shikiStyles.test.ts. The markup
     // carries the class; the `--shiki-dark` custom property the dark theme reads is on the
     // rule, not on the element.
     expect(html).toMatch(/<span class="s[0-9a-f]{6}">/);
@@ -93,7 +93,7 @@ describe("renderInline", () => {
   });
 
   it("drops raw HTML tags rather than passing them through", async () => {
-    // The tags go, their text content stays — nothing is injected, and nothing
+    // The tags go, their text content stays, so nothing is injected and nothing
     // vanishes so quietly that a mangled field would look fine in review.
     expect(await renderInline("Set <script>alert(1)</script> here.", "ctx")).toBe("Set alert(1) here.");
   });
@@ -109,7 +109,7 @@ describe("renderInline", () => {
   });
 
   // A block-level construct would put a <div>/<ul>/<pre> inside the <p> these fields
-  // render into — invalid HTML that neither the schema nor linkcheck would catch.
+  // render into, which is invalid HTML that neither the schema nor linkcheck would catch.
   it("rejects block-level content, naming the field and the text", async () => {
     await expect(renderInline("- one\n- two", 'example "Sort by score"')).rejects.toThrow(
       /example "Sort by score": must be a single paragraph/,

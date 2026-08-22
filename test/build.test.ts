@@ -8,7 +8,7 @@ import { STANDALONE_PAGES } from "../src/config.js";
 
 const FIXTURE_CONTENT = join(import.meta.dirname, "fixtures", "content");
 /** The fixture tree's own setup scripts. A page opts into the replay by having one, and the
- *  build counts only the pages that do — so the fixture tree needs its own harness directory
+ *  build counts only the pages that do, so the fixture tree needs its own harness directory
  *  rather than being counted against this repository's. */
 const FIXTURE_HARNESS = join(import.meta.dirname, "fixtures", "harness");
 let distDir: string;
@@ -58,7 +58,7 @@ describe("build (fixture pipeline)", () => {
   });
 });
 
-describe("loadContent (fixtures) — scripting prev/next ordering", () => {
+describe("loadContent (fixtures): scripting prev/next ordering", () => {
   it("orders scripting pages by `order` and links prev/next by title and url", async () => {
     const { pages } = await loadContent(FIXTURE_CONTENT);
     const lessons = pages.filter(isScriptingPage);

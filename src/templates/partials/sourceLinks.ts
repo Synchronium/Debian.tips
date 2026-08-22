@@ -6,7 +6,7 @@ import type { PageChecks } from "../../content/pageChecks.js";
 /** Where a reader finds the reason an output is exempt.
  *
  *  A command page names each exemption in `scripts/fixtures/<slug>.skip`, which is listed among
- *  the files above. A prose page writes the reason inline, as an HTML comment above the block —
+ *  the files above. A prose page writes the reason inline, as an HTML comment above the block,
  *  which the Markdown pipeline strips, so it is visible only in the page source, also linked
  *  above. Pointing a reader at the wrong one of those sends them after a file that does not
  *  exist, on the block whose whole job is to make the claim checkable. */
@@ -16,8 +16,8 @@ function exemptionsAreIn(sources: PageSources): string {
 
 /** What the replay command will actually check here, as a sentence.
  *
- *  Every clause is conditional, so the common page — everything compared exactly, nothing
- *  exempt — reads as one short claim rather than a row of zeroes. The figures come from
+ *  Every clause is conditional, so the common page (everything compared exactly, nothing
+ *  exempt) reads as one short claim rather than a row of zeroes. The figures come from
  *  `src/content/pageChecks.ts`, which is also what the harness partitions on and what `/about/`
  *  sums, so this cannot advertise a number the command contradicts.
  *
@@ -57,7 +57,7 @@ Checks ${checks.checked} ${checks.checked === 1 ? "output" : "outputs"}${raw(spl
 /** The foot of every page: the files that produced it, what the replay checks here, and the one
  *  command that re-runs it in a disposable container.
  *
- *  The copy button needs no wiring of its own — `src/client/interaction.ts` delegates from
+ *  The copy button needs no wiring of its own: `src/client/interaction.ts` delegates from
  *  `[data-copy]` on the document, so this gets the same behaviour as every example's Copy.
  *
  *  A page with no setup script is a real state and gets a different sentence rather than a
@@ -77,7 +77,7 @@ export function sourceLinks(slug: string, sources: PageSources, checks: PageChec
 <h2 id="page-sources-heading">Check this page yourself</h2>
 <p>
 Nothing on this page was written from memory. Every output was captured from a real run, and is
-re-run on every change — <a href="/about/">how that works</a>. These are the files behind it:
+re-run on every change (<a href="/about/">how that works</a>). These are the files behind it:
 </p>
 <ul class="source-files">${items}</ul>
 ${

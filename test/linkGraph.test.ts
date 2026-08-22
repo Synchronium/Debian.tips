@@ -14,7 +14,7 @@ import {
  * but visible; an invented edge hides a real orphan behind a clean report, which is not.
  * These cases pin the second kind down. */
 
-/** A command page, since that is the shape carrying examples — the interesting case for the
+/** A command page, since that is the shape carrying examples, which is the interesting case for the
  *  graph, which reads links out of example descriptions as well as out of prose. */
 function page(overrides: Partial<CommandPage> & Pick<CommandPage, "slug">): CommandPage {
   return {

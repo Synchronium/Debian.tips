@@ -26,7 +26,7 @@ afterEach(() => {
   for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
-describe("loadContent — validation", () => {
+describe("loadContent: validation", () => {
   it("accepts the valid fixture tree (positive control)", async () => {
     await expect(loadContent(VALID_FIXTURE)).resolves.toBeDefined();
   });
@@ -101,7 +101,7 @@ describe("loadContent — validation", () => {
       );
     });
     await expect(loadContent(dir)).rejects.toThrow(
-      /related slug "greet" is ambiguous \(commands\/greet, concepts\/greet\) — write it as "category\/slug"/,
+      /related slug "greet" is ambiguous \(commands\/greet, concepts\/greet\): write it as "category\/slug"/,
     );
   });
 
@@ -213,7 +213,7 @@ describe("loadContent — validation", () => {
   });
 });
 
-describe("loadContent — validation is environment-independent", () => {
+describe("loadContent: validation is environment-independent", () => {
   const withNodeEnv = async (value: string | undefined, fn: () => Promise<void>): Promise<void> => {
     const previous = process.env["NODE_ENV"];
     if (value === undefined) delete process.env["NODE_ENV"];

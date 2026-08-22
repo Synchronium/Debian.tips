@@ -1,11 +1,11 @@
 # No entries: this file is here for the note.
 #
-# Two examples on the tar page need a second machine —
+# Two examples on the tar page need a second machine:
 #
 #   "Send a directory to a remote host without a local archive file"
 #   "Pull a remote directory into a local archive over the same connection"
 #
-# — because the point of both is the network hop, not tar's own behaviour, and there is
+# because the point of both is the network hop, not tar's own behaviour, and there is
 # no sshd peer in the replay sandbox. Neither documents an `output:` block, so neither is
 # replayed and neither needs exempting. They were verified by hand between two Debian
 # trixie containers running sshd, where each transferred site/ intact.

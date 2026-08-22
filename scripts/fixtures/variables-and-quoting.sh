@@ -7,5 +7,5 @@ echo "first" > a.txt
 echo "second" > b.txt
 
 # The word-splitting example removes this one by the wrong name. It exists so the lesson's
-# point — that the file survives only by luck — is true rather than hypothetical.
+# point, that the file survives only by luck, is true rather than hypothetical.
 echo "archive" > "my backup.tar.gz"

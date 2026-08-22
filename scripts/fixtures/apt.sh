@@ -13,12 +13,12 @@ find /etc/apt/sources.list.d -name '*.sources' ! -name 'debian.sources' -delete 
 rm -f /etc/apt/preferences.d/*
 
 # `apt` prints "WARNING: apt does not have a stable CLI interface" whenever stdout is not a
-# terminal — which, in this harness, is always. A reader running these examples at a prompt
+# terminal, which in this harness is always. A reader running these examples at a prompt
 # never sees it, so capturing it would put a line on every block that the page's own audience
 # cannot reproduce. Suppressed here for the same reason the harness pins the umask: it removes
 # a difference caused by the sandbox not being a terminal, not a difference in what apt does.
 #
-# The warning itself is not swept under the carpet — /compare/apt-vs-apt-get/ documents it
+# The warning itself is not swept under the carpet: /compare/apt-vs-apt-get/ documents it
 # deliberately, in a pipe, where it is exactly what a reader would see.
 cat > /etc/apt/apt.conf.d/99-replay-no-script-warning <<'EOF'
 APT::Cmd::Disable-Script-Warning "1";
@@ -31,7 +31,7 @@ if [ "$(cat $STATE 2>/dev/null)" != "apt" ]; then
   echo apt > $STATE
 fi
 
-# Examples that show a package's identity use Architecture: all packages throughout — cowsay,
+# Examples that show a package's identity use Architecture: all packages throughout: cowsay,
 # bash-completion, ca-certificates, tzdata. An arch-dependent package prints "arm64" here and
 # "amd64" on a CI runner, so the same page cannot pass in both places. This is the constraint
 # that keeps `apt list`, `apt search`, `apt show` and `dpkg -l` off most pages; choosing the
@@ -43,14 +43,14 @@ if ! dpkg -s cowsay >/dev/null 2>&1; then
   apt-get install -y cowsay >/dev/null 2>&1
 fi
 
-# cowsay-off absent, and also Architecture: all — the install and simulate examples plan work
+# cowsay-off absent, and also Architecture: all, so the install and simulate examples plan work
 # against it. A separate package from the one above so neither example undoes the other's
 # starting state.
 if dpkg -s cowsay-off >/dev/null 2>&1; then
   apt-get purge -y cowsay-off >/dev/null 2>&1
 fi
 
-# bash-completion in the `rc` state — removed but not purged, configuration still on disk.
+# bash-completion in the `rc` state: removed but not purged, configuration still on disk.
 # Installing then removing (not purging) is the only way to reach it, and it is what the
 # purge-an-already-removed-package example is about.
 if ! dpkg -l bash-completion 2>/dev/null | grep -q '^rc'; then

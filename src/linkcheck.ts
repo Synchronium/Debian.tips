@@ -64,7 +64,7 @@ function idsInFile(distFile: string): Set<string> {
 
 /** Duplicate ids are invalid HTML and silently break `#fragment` navigation: the
  * browser jumps to the first match, so the second element is unreachable by URL.
- * The fragment check below can't catch this on its own — it only asserts that *an*
+ * The fragment check below can't catch this on its own: it only asserts that *an*
  * element with that id exists, which stays true when there are two. */
 function duplicateIds(distFile: string): string[] {
   const seen = new Set<string>();
@@ -78,7 +78,7 @@ function duplicateIds(distFile: string): string[] {
 
 function main(): void {
   if (!existsSync(DIST)) {
-    console.error("dist/ does not exist — run the build first");
+    console.error("dist/ does not exist: run the build first");
     process.exit(1);
   }
 
@@ -90,7 +90,7 @@ function main(): void {
     const links = extractLinks(readFileSync(page, "utf-8"));
 
     for (const id of duplicateIds(page)) {
-      errors.push(`${pageUrl}: duplicate id "${id}" — anchors to it are ambiguous, rename one`);
+      errors.push(`${pageUrl}: duplicate id "${id}": anchors to it are ambiguous, rename one`);
     }
 
     for (const link of links) {
@@ -108,7 +108,7 @@ function main(): void {
 
       const fragment = link.split("#")[1];
       if (fragment && !idsInFile(targetFile).has(fragment)) {
-        errors.push(`${pageUrl}: broken anchor "${link}" — no id="${fragment}" on target page`);
+        errors.push(`${pageUrl}: broken anchor "${link}": no id="${fragment}" on target page`);
       }
     }
   }

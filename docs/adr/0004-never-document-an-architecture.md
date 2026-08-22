@@ -8,8 +8,8 @@
 
 This project is developed on an `arm64` devcontainer and verified on `amd64` GitHub runners, with
 no emulation available locally. Any documented output containing a machine architecture therefore
-fails in exactly one of the two places — and which one depends on where you happen to be standing,
-which makes it read as a flaky harness rather than as a page that cannot be true everywhere.
+fails in exactly one of the two places, and which one depends on where you happen to be standing.
+That makes it read as a flaky harness rather than as a page that cannot be true everywhere.
 
 Command pages followed this rule by accident for a long time, simply because their examples rarely
 printed one. Prose pages had to start following it deliberately.

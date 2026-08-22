@@ -24,7 +24,7 @@ export interface LayoutOptions {
    *  sequence rather than as near-duplicates of each other. */
   prevPath?: string;
   nextPath?: string;
-  /** Only command/article pages set this — Pagefind indexes solely inside elements
+  /** Only command/article pages set this. Pagefind indexes solely inside elements
    * carrying this attribute once it's present anywhere on the site, so leaving it
    * off listing/tag/home/404 pages keeps search results to actual content pages. */
   indexable?: boolean;
@@ -45,12 +45,12 @@ const CLIENT_SHARED = "shared.ts";
 
 /** Compiled and minified once per build, then inlined into every page.
  *
- *  These run before and during first paint, so they are inlined rather than fetched — a request
+ *  These run before and during first paint, so they are inlined rather than fetched: a request
  *  per page for this much would cost more than it saves, and the theme script has to run before
  *  the page renders or it renders in the wrong theme first.
  *
- *  Compiling means the source can be ordinary TypeScript — checked by `tsconfig.client.json`,
- *  formatted by Prettier, readable — while what ships is small.
+ *  Compiling means the source can be ordinary TypeScript (checked by `tsconfig.client.json`,
+ *  formatted by Prettier, readable) while what ships is small.
  *
  *  Cached because the layout runs for every page and neither file changes between them. The
  *  `</script` check runs on the *output*: minification can move a string, and a page that stops
@@ -132,7 +132,7 @@ ${STANDALONE_PAGES.map((s) => raw(html`<li><a href="${s.path}">${s.navLabel}</a>
 </footer>`;
 }
 
-/** Static markup only — no results are pre-rendered, so this ships fine to every
+/** Static markup only: no results are pre-rendered, so this ships fine to every
  * page without needing Pagefind at build time. All behaviour is wired by
  * assets/search.js on first open.
  *
@@ -207,7 +207,7 @@ ${opts.jsonLd ? raw(html`<script type="application/ld+json">${raw(safeJsonLd(opt
 </head>
 <body>
 ${raw(headerHtml(opts.activeCategory))}
-${opts.draft ? raw(html`<div class="draft-banner" role="note">Draft — excluded from production builds</div>`) : ""}
+${opts.draft ? raw(html`<div class="draft-banner" role="note">Draft: excluded from production builds</div>`) : ""}
 <main id="main"${opts.indexable ? raw(" data-pagefind-body") : ""}>
 ${opts.bodyHtml}
 </main>

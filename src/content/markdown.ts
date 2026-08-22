@@ -27,7 +27,7 @@ const LANG_ALIASES: Record<string, BundledLanguage | "plaintext"> = { sed: "bash
 const LOAD_LANGS: BundledLanguage[] = ["bash", "yaml", "json", "ini", "awk", "diff"];
 
 /** `github-light`'s keyword-red (#D73A49) and comment-gray (#6A737D) both fail
- * WCAG AA (4.5:1) against this site's light `--bg-inset` (#f0f1f4) — verified
+ * WCAG AA (4.5:1) against this site's light `--bg-inset` (#f0f1f4), verified
  * with pa11y-ci, 4.05:1 and 4.26:1 respectively. Swap in darker equivalents
  * (the comment colour reuses the site's own --text-muted value) after Shiki
  * renders, rather than forking the whole theme for two tokens. Dark-theme
@@ -36,7 +36,7 @@ const LOAD_LANGS: BundledLanguage[] = ["bash", "yaml", "json", "ini", "awk", "di
  * Anchored to the `color:` declaration on purpose. Shiki emits the light colour
  * as `style="color:#D73A49;--shiki-dark:#FF7B72"` while the highlighted code
  * itself sits in the element's text, so an unanchored replace would also rewrite
- * a literal `#D73A49` appearing *inside* a code sample — silently publishing
+ * a literal `#D73A49` appearing *inside* a code sample, silently publishing
  * output that no longer matches what the command actually printed. */
 const LIGHT_CONTRAST_FIXES: [RegExp, string][] = [
   [/color:#D73A49/g, "color:#B31D28"],
@@ -48,7 +48,7 @@ function fixLightThemeContrast(html: string): string {
 }
 
 /** Everything done to Shiki's output before it reaches a page: the contrast repair above, then
- *  lifting the per-token inline styles into shared classes. Order matters — the repair rewrites
+ *  lifting the per-token inline styles into shared classes. Order matters: the repair rewrites
  *  colours in the style declarations, which is where the classes are cut from. */
 function finishShiki(html: string): string {
   return extractShikiStyles(fixLightThemeContrast(html));
@@ -73,15 +73,15 @@ export async function highlightCode(code: string, lang: string): Promise<string>
 
 /* The `any`s below are deliberate and confined to this file's AST plumbing.
  *
- * These plugins walk and mutate mdast/hast trees in place — turning code nodes into
- * raw html nodes, rewriting blockquotes into asides — which the published `Node` types
+ * These plugins walk and mutate mdast/hast trees in place, turning code nodes into raw
+ * html nodes and rewriting blockquotes into asides, which the published `Node` types
  * model as tagged unions that don't narrow usefully across a generic recursive walk.
  * Typing it properly means taking `@types/mdast` and `@types/hast` as direct
  * dependencies and rewriting both custom plugins against `unist-util-visit`; that's a
  * real refactor of working, test-covered logic rather than an annotation pass, so it's
  * a deliberate deferral, not an oversight. The rest of the codebase is strict
- * (noUncheckedIndexedAccess, exactOptionalPropertyTypes) and should stay that way —
- * don't take these as licence to reach for `any` elsewhere.
+ * (noUncheckedIndexedAccess, exactOptionalPropertyTypes) and should stay that way, so
+ * don't take these as licence to use `any` elsewhere.
  */
 
 function walk(node: any, visit: (n: any) => void): void {
@@ -181,7 +181,7 @@ function collectHeadings(tree: any): TocEntry[] {
   return toc;
 }
 
-/* Short prose fields — an example's `description`, a section's `intro`, a fixture's `note` —
+/* Short prose fields (an example's `description`, a section's `intro`, a fixture's `note`)
  * are authored as markdown (backticked flags, the occasional `[link](/path/)`, emphasis) and
  * rendered through the same remark parser as page prose, so there is one set of markdown rules
  * on the site rather than a second hand-rolled one.
@@ -211,7 +211,7 @@ export async function renderInline(source: string, context: string): Promise<str
   const [only] = mdast.children;
   if (mdast.children.length !== 1 || only?.type !== "paragraph") {
     throw new Error(
-      `${context}: must be a single paragraph of inline markdown (code spans, links, emphasis) — got block-level content. Text: ${JSON.stringify(source)}`,
+      `${context}: must be a single paragraph of inline markdown (code spans, links, emphasis), but got block-level content. Text: ${JSON.stringify(source)}`,
     );
   }
 

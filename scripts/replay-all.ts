@@ -4,7 +4,7 @@
 //   npm run replay -- wget curl    # just these
 //   npm run replay -- --changed    # only the pages a diff touches (what CI runs on a PR)
 //
-// The check `npm run check` can't make: that gate validates shape — schema, links, types —
+// The check `npm run check` can't make: that gate validates shape (schema, links, types)
 // and would pass a page claiming output no command ever produced.
 //
 // Separate from `npm run check` because it needs Docker: the whole run takes about half a
@@ -77,7 +77,7 @@ const isProse = (name: string): boolean => prosePages.includes(name);
 /** The pages a diff touches, for the pull-request run.
  *
  *  A page is in if its own content changed, if its setup script changed, or if anything shared
- *  by the harness changed — `_common.sh` bodies, the Python helpers, the normalisation rules —
+ *  by the harness changed (`_common.sh` bodies, the Python helpers, the normalisation rules),
  *  in which case every page is back in, because a change there can move any page's output. The
  *  full set still runs on `main`, so this only ever trades a slower signal for a faster one on
  *  the branch, never a missing one before deployment. */
@@ -105,7 +105,7 @@ function changedPages(): string[] {
   // `src/content/` is in this list because the replay imports from it: the fence-pairing rule,
   // the partition, the exemption parser and the comparison vocabulary all live there, and a
   // change to any of them can move any page's result. Leaving it out meant a pull request
-  // touching the pairing rule replayed nothing at all — and a mis-paired fence reports as "not
+  // touching the pairing rule replayed nothing at all, and a mis-paired fence reports as "not
   // checkable" rather than as broken, so the loss would have been silent.
   const harnessWide = changed.some(
     (file) =>
@@ -145,7 +145,7 @@ if (missing.length) {
 // A page opts in to replay by having a setup script, and is otherwise reported rather than
 // passed over: "17/17 replayed" and "14 replayed, 3 have no fixtures" are different claims
 // about how much is checked. A page needing no sample files still gets one, holding only a
-// comment saying so — an explicit "nothing to create here" beats an absence that reads as an
+// comment saying so: an explicit "nothing to create here" beats an absence that reads as an
 // oversight, and it keeps this gate meaningful instead of permanently red.
 const unfixtured = pages.filter((name) => !existsSync(fixtureScript(name)));
 const runnable = orderPages(
@@ -184,7 +184,7 @@ const stop = (): void => {
     try {
       execFileSync(SANDBOX_SCRIPT, ["stop", name], { stdio: "ignore" });
     } catch {
-      console.error(`could not stop ${name} — remove it with: docker stop ${name}`);
+      console.error(`could not stop ${name}: remove it with: docker stop ${name}`);
     }
   }
 };
@@ -234,7 +234,7 @@ if (failed.length) {
   console.log("re-capture with scripts/adopt-real-output.ts once you've confirmed the command is right.");
   if (order.mode !== ORDER_MODE.alpha) {
     // A page can fail in one ordering and pass in another, which is a defect in that page rather
-    // than in the run — so both commands are worth having: the first repeats this exact ordering,
+    // than in the run, so both commands are worth having: the first repeats this exact ordering,
     // the second says whether the ordering is what did it.
     console.log(`\nThis run was ordered ${describeOrder(order)}. To repeat it exactly:`);
     console.log(`  npm run replay -- --order=${describeOrder(order)}`);

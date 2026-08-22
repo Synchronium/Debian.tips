@@ -7,13 +7,13 @@ import type { Tier } from "../content/schema.js";
 
 /** Homepage ordering, in priority order: flagship command pages first, then most
  * recently updated. `pages` arrives sorted by slug, so without this the preview would
- * be the alphabetically-first six forever — new content would never reach the homepage,
+ * be the alphabetically-first six forever, and new content would never reach the homepage,
  * and on /commands/ the big reference pages (grep, find, sed) would be crowded out by
  * whatever happens to sort early. Only categories with more than six pages actually
  * truncate; for the rest this just reorders. */
 const TIER_RANK: Record<Tier, number> = { flagship: 0, standard: 1, light: 2 };
 
-/** Pages with no tier — everything but a command page — sort after every tiered one, on date. */
+/** Pages with no tier (everything but a command page) sort after every tiered one, on date. */
 const UNTIERED_RANK = Object.keys(TIER_RANK).length;
 
 function homepageOrder(a: Page, b: Page): number {
@@ -22,7 +22,7 @@ function homepageOrder(a: Page, b: Page): number {
 }
 
 /** How many cards each category shows on the homepage before "see all". Small on purpose: the
- *  homepage is a table of contents, not a listing — `PAGE_SIZE` in partials/pager.ts is the
+ *  homepage is a table of contents, not a listing. `PAGE_SIZE` in partials/pager.ts is the
  *  number for pages whose job is to list things. */
 const HOME_CARDS_PER_CATEGORY = 6;
 

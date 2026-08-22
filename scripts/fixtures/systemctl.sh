@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fixtures for content/commands/systemctl/examples.yaml — must match its `fixtures:` block.
+# Fixtures for content/commands/systemctl/examples.yaml. Must match its `fixtures:` block.
 #
 # Needs a sandbox booted with systemd as PID 1; without one every example prints "System
 # has not been booted with systemd as init system (PID 1). Can't operate."
@@ -7,7 +7,7 @@
 #
 # Two units the examples own outright, rather than starting and stopping the system's real
 # ssh or cron. Both are reset to a known state here, because this script runs before every
-# example and unit state — enabled, running, failed — otherwise leaks from one to the next.
+# example, and unit state (enabled, running, failed) otherwise leaks from one to the next.
 
 cat > /etc/systemd/system/deploy-agent.service <<'EOF'
 [Unit]
@@ -43,7 +43,7 @@ EOF
 #   trap        `sleep` installs no SIGHUP handler, so the default disposition kills it,
 #               Restart=on-failure then restarts it, and `is-active` reports whichever of
 #               active/inactive/failed that race lands on. Sleeping in the background and
-#               waiting is what lets the trap run at all — a foreground `sleep infinity`
+#               waiting is what lets the trap run at all, since a foreground `sleep infinity`
 #               holds the signal until it returns, which is never.
 #
 #   --ready     with the default Type=simple, `systemctl start` returns once systemd has

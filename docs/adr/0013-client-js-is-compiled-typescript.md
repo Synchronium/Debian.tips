@@ -9,7 +9,7 @@
 The site's client-side behaviour is small: set the theme before first paint, wire copy buttons, open
 the search dialog. It was previously hand-written ES5 living inside a string literal in a template.
 
-Two things were wrong with that. Nothing checked it — Prettier globbed `*.ts` and `tsconfig`
+Two things were wrong with that. Nothing checked it: Prettier globbed `*.ts` and `tsconfig`
 included `*.ts`, so a file extracted from the literal was failing a format check nobody ran. And it
 was written in ES5 not by choice but because **there was nowhere to compile it**.
 
@@ -37,7 +37,7 @@ change them:
 - The source is **wrapped in an IIFE before compiling**, rather than using esbuild's
   `format: "iife"`. Both stop top-level names leaking as globals on every page. But `format: "iife"`
   also decides the dynamic `import()` needs CommonJS interop and emits roughly 300 bytes of
-  `__toESM` helpers to support it — 1735 bytes against 1275 for the wrapped form.
+  `__toESM` helpers to support it: 1735 bytes against 1275 for the wrapped form.
 - The `</script` check runs on the **output**, not the source. Minification can move a string, and a
   page that stops parsing halfway is a bad way to find that out.
 
@@ -46,6 +46,6 @@ changes between them.
 
 ## Revisit when
 
-Client-side behaviour grows past what is reasonable to inline on every page — roughly, when the
-inlined bytes exceed what a separate cached request would cost across a session. The theme script
-must stay inline regardless of what happens to the rest.
+Client-side behaviour grows past what is reasonable to inline on every page, which roughly means
+when the inlined bytes exceed what a separate cached request would cost across a session. The
+theme script must stay inline regardless of what happens to the rest.

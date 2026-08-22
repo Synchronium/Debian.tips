@@ -8,7 +8,7 @@ import { CONTENT_DIR, FIXTURE_DIR, fixtureScript } from "../src/paths.js";
 
 /* Each page now states what `npm run replay -- <slug>` will check on it, and /about/ states the
  * totals. They are the same numbers seen from two distances, so the only interesting failure is
- * the two disagreeing — a page advertising 51 outputs beside a command that prints 49.
+ * the two disagreeing: a page advertising 51 outputs beside a command that prints 49.
  *
  * `src/content/pageChecks.ts` is what stops that: the page, the totals and the harness all
  * partition through it. These assertions are the proof that they still do. */
@@ -47,7 +47,7 @@ describe("per-page figures and the site totals", () => {
 
 describe("the shapes a page's figures can take", () => {
   /* Each of these is exercised by real content today. They are asserted so that the branch in
-   * `checksSentence` covering it stays reachable — a wording change tested only against the
+   * `checksSentence` covering it stays reachable, since a wording change tested only against the
    * common case is how the other three end up wrong. */
 
   it("includes a page compared partly by shape", () => {

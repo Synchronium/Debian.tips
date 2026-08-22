@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fixtures for content/commands/journalctl/examples.yaml — must match its `fixtures:` block.
+# Fixtures for content/commands/journalctl/examples.yaml. Must match its `fixtures:` block.
 #
 # Needs a sandbox booted with systemd as PID 1, or there is no journal to read.
 # verify: --systemd

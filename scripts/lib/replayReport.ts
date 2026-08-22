@@ -1,6 +1,6 @@
 // How a replay reports itself: the score line, and the first line that differs.
 //
-// The command-page and prose-page replays are the same program with two front ends — one reads
+// The command-page and prose-page replays are the same program with two front ends: one reads
 // YAML, the other reads Markdown fences. Shared so the two cannot drift into describing the same
 // result differently.
 
@@ -20,7 +20,7 @@ export function firstDifference(want: string, got: string): string {
       `      real: ${show(gotLines[i])}`,
     ].join("\n");
   }
-  return "    (identical line by line — a trailing-newline difference)";
+  return "    (identical line by line, a trailing-newline difference)";
 }
 
 export interface Score {

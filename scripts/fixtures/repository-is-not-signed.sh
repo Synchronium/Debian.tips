@@ -5,7 +5,7 @@
 # key, which is the whole page: apt refuses the repository, and the reader needs to know that
 # this is a verification failure rather than a network or configuration one.
 #
-# Two keys are generated deliberately — the one that signs the repository, and an unrelated one
+# Two keys are generated deliberately: the one that signs the repository, and an unrelated one
 # installed as its Signed-By keyring. Signing with a real key and verifying against a real but
 # different key is the only way to get apt's genuine message rather than an approximation.
 
@@ -76,8 +76,8 @@ if ! curl -sf http://127.0.0.1:8083/dists/stable/InRelease >/dev/null 2>&1; then
   exit 1
 fi
 
-# The wrong key installed as the repository's keyring. Everything else here is correct — the
-# URL resolves, the repository is real, the signature is valid — so the only thing apt can
+# The wrong key installed as the repository's keyring. Everything else here is correct: the
+# URL resolves, the repository is real, the signature is valid, so the only thing apt can
 # object to is that this key did not make that signature.
 mkdir -p /etc/apt/keyrings
 cp "$REPO/wrong-key.asc" /etc/apt/keyrings/signing-demo.asc

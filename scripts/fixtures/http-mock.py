@@ -4,7 +4,7 @@
 Those pages need endpoints that echo a request back, return a chosen status, redirect,
 delay, set a cookie, or demand basic auth. Public services that do this (httpbin.org and
 friends) are third-party, frequently down, and answer with values that change on every
-request — a trace id, the caller's public IP, a date. None of that can be documented as
+request: a trace id, the caller's public IP, a date. None of that can be documented as
 exact output, which is why the pages that used them had illustrative rather than real
 responses.
 
@@ -22,7 +22,7 @@ would put a third party in the path of a check that is supposed to be self-conta
 
 Determinism rules for anything added here: sort JSON keys, use a fixed two-space indent,
 and never include a value derived from the clock, the client address, or a random source.
-That extends to the framework's own headers — `Date` and `Server` are both pinned below,
+That extends to the framework's own headers: `Date` and `Server` are both pinned below,
 so a page can print a response verbatim instead of masking half of it. (The certificate is
 freshly generated and therefore different every run. That's fine, and deliberate: nothing
 documented depends on which certificate it is, only on nobody trusting it.)
@@ -35,8 +35,8 @@ a bind address explicitly to widen it.
 IPv4 rather than `localhost`, and the pages name 127.0.0.1 in their URLs for the same
 reason: what `localhost` resolves to is a property of the reader's machine, not of the
 command being documented. wget prints the address it resolved and connected to, so a page
-captured where localhost means ::1 shows output nobody on an IPv4-only host can reproduce
-— and a container with IPv6 switched off (a CI runner, commonly) can't even bind it.
+captured where localhost means ::1 shows output nobody on an IPv4-only host can reproduce,
+and a container with IPv6 switched off (a CI runner, commonly) can't even bind it.
 """
 import json
 import os
@@ -131,7 +131,7 @@ LAST_MODIFIED = "Sun, 05 Jul 2026 15:35:00 GMT"
 
 # Every response carries a Date header, generated from the clock by the framework. Pinning
 # it is the difference between a page printing `curl -i` output verbatim and a page having
-# to mask a line — and a masked line is one a reader can never check.
+# to mask a line, and a masked line is one a reader can never check.
 DATE = "Sun, 05 Jul 2026 15:40:00 GMT"
 
 
@@ -170,7 +170,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header(key, value)
         self.end_headers()
         # A HEAD response must not carry a body. It went unnoticed here because HTTP/1.0
-        # closes the connection, so the stray bytes died with the socket — but `wget
+        # closes the connection, so the stray bytes died with the socket, but `wget
         # --spider` against a JSON endpoint was reading them, and under keep-alive it
         # would desynchronise every request after it.
         if self.command != "HEAD":
@@ -279,7 +279,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_text(PAGE, content_type="text/html")
         if path in SITE:
             return self.send_static(*SITE[path])
-        # A directory URL serves its index, the way a real server does — `wget -r` starts
+        # A directory URL serves its index, the way a real server does, and `wget -r` starts
         # from http://host/site/ rather than naming index.html itself.
         if path.endswith("/") and path + "index.html" in SITE:
             return self.send_static(*SITE[path + "index.html"])

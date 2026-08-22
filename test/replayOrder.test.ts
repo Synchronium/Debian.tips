@@ -25,7 +25,7 @@ describe("parsing --order", () => {
   });
 
   it("keeps a seed containing colons whole", () => {
-    // A caller passing something structured — a branch name, a tag — should not have it
+    // A caller passing something structured, a branch name or a tag, should not have it
     // truncated into a different seed that still looks valid.
     expect(parseOrder("random:refs/heads/main:2").seed).toBe("refs/heads/main:2");
   });
@@ -43,7 +43,7 @@ describe("ordering pages", () => {
   });
 
   it("does not depend on the order the caller collected them in", () => {
-    // The caller's input comes from readdirSync, which is a filesystem detail — two checkouts of
+    // The caller's input comes from readdirSync, which is a filesystem detail. Two checkouts of
     // the same commit could hand these over in different orders and must still replay identically.
     const shuffledInput = [...PAGES].reverse();
     for (const mode of Object.values(ORDER_MODE)) {

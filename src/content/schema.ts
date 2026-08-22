@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /** The page *shapes* the site publishes. This is the taxonomy's primary axis and it sorts
- *  pages by how they are written and read, not by what they are about — subject is the job of
+ *  pages by how they are written and read, not by what they are about. Subject is the job of
  *  `content/tags.yaml`, which is many-to-many precisely because `rsync` is a networking command
  *  and a files command at once.
  *
@@ -136,30 +136,30 @@ export const exampleSchema = z.object({
   output: z.string().optional(),
   /** Reserved, deliberately: validated and authored on every example, but no template renders
    * it yet. Kept for a future difficulty badge or filter. Don't "clean up" as dead data, and
-   * keep setting it accurately when authoring — backfilling every example later costs far more
-   * than getting it right up front. `level` is conceptual difficulty, and is *not* a proxy for
+   * keep setting it accurately when authoring, because backfilling every example later costs far
+   * more than getting it right up front. `level` is conceptual difficulty, and is *not* a proxy for
    * the `beginner` tag below: plenty of `basic` examples do not carry it, and some `advanced`
    * ones do. */
   level: z.enum(LEVELS),
-  /** Reserved, same as `level` — validated against content/tags.yaml so a typo still fails the
+  /** Reserved, same as `level`: validated against content/tags.yaml so a typo still fails the
    * build, but not rendered anywhere yet. Coverage is partial, so anything built on it has to
    * handle an untagged example. */
   tags: z.array(z.string()).optional(),
   danger: z.boolean().optional(),
   /** Set when the output is real but cannot reproduce byte for byte, because it contains a
-   * value from the clock, the machine, or the network — a PID, a memory figure, an elapsed
+   * value from the clock, the machine, or the network: a PID, a memory figure, an elapsed
    * time. The string says what will differ, and is shown to the reader above the output; a
    * bare flag would leave them guessing which parts to distrust.
    *
    * Says what differs; it does not by itself change how the output is checked. Most
    * volatile output is still compared exactly, because `scripts/lib/normalise.ts` masks the
-   * specific line it appears on — a `diff` header's mtime, a wget transfer rate — and an
+   * specific line it appears on (a `diff` header's mtime, a wget transfer rate) and an
    * anchored mask is stricter than a general one. */
   volatile: z.string().min(1).optional(),
   /** How the replay compares this example's output. Omitted means exactly, after the
    * anchored masks in `scripts/lib/normalise.ts`.
    *
-   * `shape` is for output carrying values no anchored mask covers — a PID, a memory
+   * `shape` is for output carrying values no anchored mask covers: a PID, a memory
    * figure, an invocation id. Digits, quantities, dates and identifiers are masked on both
    * sides, so the numbers may move while a renamed field, a vanished line or a changed
    * state still fails. It is weaker than the default, so it is opt-in per example rather
@@ -170,7 +170,7 @@ export const exampleSchema = z.object({
   if (example.compare === COMPARISON.shape && !example.volatile) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: `compare: "${COMPARISON.shape}" needs \`volatile:\` too — say what will differ for the reader`,
+      message: `compare: "${COMPARISON.shape}" needs \`volatile:\` too: say what will differ for the reader`,
     });
   }
 });
@@ -184,7 +184,7 @@ export const exampleSectionSchema = z.object({
 export type ExampleSection = z.infer<typeof exampleSectionSchema>;
 
 /** The sample data an example's `output:` was actually produced against. Without it a
- * reader can't evaluate output that doesn't echo its input — `wc -l report.txt` printing
+ * reader can't evaluate output that doesn't echo its input: `wc -l report.txt` printing
  * "40" is unverifiable unless report.txt is on the page somewhere. Contents must be
  * captured from a real run, never written from memory: a fixture that doesn't reproduce
  * the documented output is worse than no fixture at all. */
@@ -195,7 +195,7 @@ export const fixtureSchema = z.object({
   note: z.string().optional(),
   content: z.string().min(1),
   /** The command that reproduces `content` inside the sandbox, defaulting to
-   * `cat <name>`. Set it when the block isn't one file's contents — a directory tree
+   * `cat <name>`. Set it when the block isn't one file's contents: a directory tree
    * shown as `ls -lAR projects`, or a placeholder standing in for a duplicate file.
    * `scripts/replay-command-page.ts` runs it and diffs, so a fixture that has drifted from
    * its setup script fails the replay instead of quietly misleading a reader. Never
@@ -211,8 +211,8 @@ export const examplesFileSchema = z.object({
 });
 export type ExamplesFile = z.infer<typeof examplesFileSchema>;
 
-/** A tag's name is a URL path segment — `/tags/<name>/` is a real directory in `dist/` and a
- *  real link on every page carrying it — so it is held to what a path segment may contain
+/** A tag's name is a URL path segment. `/tags/<name>/` is a real directory in `dist/` and a
+ *  real link on every page carrying it, so it is held to what a path segment may contain
  *  rather than to `min(1)`. A tag called `apt/dpkg` would write outside its own directory and
  *  link somewhere that never resolves; a tag with a space would ship a link nothing can follow.
  *  The registry is hand-edited, which is exactly why the constraint belongs in the schema. */

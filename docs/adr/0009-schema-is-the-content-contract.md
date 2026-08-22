@@ -17,12 +17,12 @@ shape changes.
 ## Decision
 
 `src/content/schema.ts` defines what every page and every example needs, in Zod, and nothing else
-restates it. Documents defer to it — including for the list of categories, which is why no other
+restates it. Documents defer to it, including for the list of categories, which is why no other
 file names them.
 
 `src/content/loader.ts` validates in a layered order, failing with a specific `ContentError` naming
 the first problem: schema shape, then every `tags:` entry exists in `content/tags.yaml`, then slugs
-are unique within a category, then every `related:` target actually exists, then (scripting only)
+are unique within a category, then every `related:` target exists, then (scripting only)
 `order:` values are unique.
 
 Everything that reads content parses through the schema rather than casting to it, the replay
@@ -37,7 +37,7 @@ so when a bare one is ambiguous.
 `Page` is a discriminated union rather than one interface with optional fields, so a
 category-specific field can be added without another optional and another cast at every use site.
 
-Two fields on every example — `level` and `tags` — are validated but **deliberately not rendered by
+Two fields on every example, `level` and `tags`, are validated but **deliberately not rendered by
 any template**. They are reserved for a future difficulty badge or filter. They look like dead data
 and are not: backfilling them across hundreds of examples later would cost far more than authoring
 them accurately now, so keep setting them, and do not "clean them up".

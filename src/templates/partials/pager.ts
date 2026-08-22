@@ -42,7 +42,7 @@ export function paginate<T>(items: T[], basePath: string, size: number = PAGE_SI
 }
 
 /** The prev/next control under a split listing. Nothing is rendered for a listing that fits on
- *  one page — a lone "Page 1 of 1" is noise. */
+ *  one page: a lone "Page 1 of 1" is noise. */
 export function paginationNav(slice: PageSlice<unknown>): string {
   if (slice.total < 2) return "";
   return html`<nav class="pager" aria-label="Pagination">

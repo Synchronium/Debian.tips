@@ -24,7 +24,7 @@ if [ "$(cat $STATE 2>/dev/null)" != "dpkg" ]; then
 fi
 
 # Architecture: all throughout. `dpkg -l`, `dpkg -s` and `dpkg -I` all print an Architecture
-# field, so an arch-dependent package would make this page pass on arm64 and fail on amd64 —
+# field, so an arch-dependent package would make this page pass on arm64 and fail on amd64,
 # see test/architecture.test.ts. cowsay, cowsay-off and ca-certificates are all `all`.
 
 # cowsay installed: the query examples read it.
@@ -32,7 +32,7 @@ if ! dpkg -s cowsay >/dev/null 2>&1; then
   apt-get install -y cowsay >/dev/null 2>&1
 fi
 
-# bash-completion in the `rc` state — removed but not purged, configuration still on disk. The
+# bash-completion in the `rc` state: removed but not purged, configuration still on disk. The
 # state the page's `dpkg -l` first column is there to explain.
 if ! dpkg -l bash-completion 2>/dev/null | grep -q '^rc'; then
   apt-get install -y bash-completion >/dev/null 2>&1

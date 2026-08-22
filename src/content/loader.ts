@@ -48,7 +48,7 @@ interface BasePage {
   description: string;
   tags: string[];
   updated: Date;
-  /** `related:` exactly as authored — bare slugs and `category/slug` alike. Resolved forms are
+  /** `related:` exactly as authored, bare slugs and `category/slug` alike. Resolved forms are
    *  in `relatedLinks`; this is kept for error messages and tooling that reports on frontmatter. */
   related: string[];
   relatedLinks: PageLink[];
@@ -59,13 +59,13 @@ interface BasePage {
    *  Rendered at the foot of every page by `src/templates/partials/sourceLinks.ts`. */
   sources: PageSources;
   /** What `npm run replay -- <slug>` checks here. Stated on the page, and summed onto
-   *  `/about/` — one count, so the two cannot disagree. */
+   *  `/about/`, from one count, so the two cannot disagree. */
   checks: PageChecks;
 }
 
 /** A command reference: prose plus a structured `examples.yaml`. The examples are not optional
- *  here — `loadCommands` refuses a command directory without them — which is what lets the
- *  template take them without a runtime check. */
+ *  here, since `loadCommands` refuses a command directory without them, which is what lets
+ *  the template take them without a runtime check. */
 export interface CommandPage extends BasePage {
   category: "commands";
   tagline: string;
@@ -112,8 +112,8 @@ interface BaseEntry {
 }
 
 /** Split the same way `Page` is, so the one place that knows a command directory must contain an
- *  examples.yaml — `loadCommands`, which refuses one that doesn't — is also the only place that
- *  has to say so. */
+ *  examples.yaml (`loadCommands`, which refuses one that doesn't) is also the only place
+ *  that has to say so. */
 interface RawCommandEntry extends BaseEntry {
   category: "commands";
   data: CommandFrontmatter;
@@ -167,7 +167,7 @@ function parseFrontmatterFile(filePath: string): { data: Frontmatter; body: stri
   const parsed = frontmatterSchema.safeParse(data);
   if (!parsed.success) {
     throw new ContentError(
-      `${filePath}: invalid frontmatter — ${parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")}`,
+      `${filePath}: invalid frontmatter: ${parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")}`,
     );
   }
   return { data: parsed.data, body: content };
@@ -223,7 +223,7 @@ function loadCommands(contentDir: string): RawEntry[] {
     const examplesParsed = examplesFileSchema.safeParse(examplesYaml);
     if (!examplesParsed.success) {
       throw new ContentError(
-        `${examplesFile}: invalid — ${examplesParsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")}`,
+        `${examplesFile}: invalid: ${examplesParsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")}`,
       );
     }
     if (examplesParsed.data.command !== slug) {
@@ -269,7 +269,7 @@ function resolveRelated(
   if (matches.length > 1) {
     const options = matches.map((match) => qualify(match.category, match.slug)).join(", ");
     return {
-      error: `related slug "${reference}" is ambiguous (${options}) — write it as "category/slug"`,
+      error: `related slug "${reference}" is ambiguous (${options}): write it as "category/slug"`,
     };
   }
   return { entry: only };
@@ -288,7 +288,7 @@ export async function loadContent(
   }
 
   // Validation below runs against *every* page, drafts included, so `npm run check` reports the
-  // same errors whether or not NODE_ENV=production is set — otherwise a draft can hide a real
+  // same errors whether or not NODE_ENV=production is set. Otherwise a draft can hide a real
   // problem locally and fail only in CI. Drafts are excluded from `pages` further down, which is
   // env-dependent by design: they render in dev and are dropped from production builds.
   const bySlug = new Map<string, RawEntry[]>();
@@ -298,8 +298,8 @@ export async function loadContent(
     byQualified.set(qualify(entry.category, entry.slug), entry);
   }
 
-  // A slug no longer has to be unique across the whole site — `related:` can say which page it
-  // means, and every URL is `/category/slug/` regardless. One thing still keys off the bare slug
+  // A slug no longer has to be unique across the whole site, since `related:` can say which
+  // page it means, and every URL is `/category/slug/` regardless. One thing still keys off the bare slug
   // and cannot: the replay looks for a page's setup script at `scripts/fixtures/<slug>.sh`, so two
   // pages sharing a slug would share a setup script, and the second would be replayed against the
   // first one's fixtures while reporting a clean run. Caught here, in the cheap gate, rather than
@@ -308,7 +308,7 @@ export async function loadContent(
     if (entries.length > 1 && existsSync(fixtureScript(slug))) {
       throw new ContentError(
         `slug "${slug}" is used by ${entries.map((e) => e.file).join(" and ")}, and they would share ` +
-          `the one setup script at scripts/fixtures/${slug}.sh — rename one of the pages`,
+          `the one setup script at scripts/fixtures/${slug}.sh: rename one of the pages`,
       );
     }
   }
@@ -316,7 +316,7 @@ export async function loadContent(
   for (const entry of raw) {
     for (const tag of entry.data.tags) {
       if (!tagRegistry.has(tag)) {
-        throw new ContentError(`${entry.file}: unknown tag "${tag}" — add it to content/${TAGS_FILE} first`);
+        throw new ContentError(`${entry.file}: unknown tag "${tag}": add it to content/${TAGS_FILE} first`);
       }
     }
     for (const section of entry.category === "commands" ? entry.examples.sections : []) {
@@ -324,7 +324,7 @@ export async function loadContent(
         for (const tag of example.tags ?? []) {
           if (!tagRegistry.has(tag)) {
             throw new ContentError(
-              `${entry.file}: unknown example tag "${tag}" — add it to content/${TAGS_FILE} first`,
+              `${entry.file}: unknown example tag "${tag}": add it to content/${TAGS_FILE} first`,
             );
           }
         }
@@ -342,7 +342,7 @@ export async function loadContent(
     seenOrders.set(order, entry.file);
   }
 
-  // Resolved once, here, and reused when the links are built below — so a `related:` entry is
+  // Resolved once, here, and reused when the links are built below, so a `related:` entry is
   // parsed by exactly one piece of code whether it is being validated or rendered.
   const relatedTargets = new Map<RawEntry, RawEntry[]>();
   for (const entry of raw) {
@@ -354,7 +354,7 @@ export async function loadContent(
       // emitted. Caught here rather than only under NODE_ENV=production, so it surfaces in dev.
       if (!entry.data.draft && resolved.entry.data.draft) {
         throw new ContentError(
-          `${entry.file}: related page "${reference}" is a draft (${resolved.entry.file}) — a published page can't link to a page that production builds don't emit`,
+          `${entry.file}: related page "${reference}" is a draft (${resolved.entry.file}): a published page can't link to a page that production builds don't emit`,
         );
       }
       targets.push(resolved.entry);
@@ -383,7 +383,7 @@ export async function loadContent(
       toc,
       sources: pageSources(entry.category, entry.slug, contentDir, fixtureDir),
       // Counted from what the page carries, not from what the replay last reported: the build
-      // has no sandbox. They agree because both sides read the same partition — see
+      // has no sandbox. They agree because both sides read the same partition: see
       // `src/content/pageChecks.ts`.
       checks:
         entry.category === "commands"

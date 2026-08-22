@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fixtures for content/commands/sort/examples.yaml — must match its `fixtures:` block.
+# Fixtures for content/commands/sort/examples.yaml. Must match its `fixtures:` block.
 #
 # The directories exist for `du | sort -h`: their sizes are set with dd so the ordering the
 # page documents is a property of the fixtures, not of whatever the filesystem rounded to.

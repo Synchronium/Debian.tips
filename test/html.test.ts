@@ -34,7 +34,7 @@ describe("html tagged template", () => {
   it("bare (unwrapped) nested html() output gets double-escaped, by design", () => {
     // Nested html`` calls return plain strings; authors must wrap them in raw() to splice
     // them in as markup. This test documents that omitting raw() is caught, not silently
-    // accepted — see the escaping section of .claude/reference/architecture.md.
+    // accepted; see the escaping section of .claude/reference/architecture.md.
     const items = ["a<b"];
     const nestedWithoutRaw = html`<ul>${items.map((i) => html`<li>${i}</li>`)}</ul>`;
     expect(nestedWithoutRaw).toBe("<ul>&lt;li&gt;a&amp;lt;b&lt;/li&gt;</ul>");

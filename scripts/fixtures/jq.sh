@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fixtures for content/commands/jq/examples.yaml — must match its `fixtures:` block.
+# Fixtures for content/commands/jq/examples.yaml. Must match its `fixtures:` block.
 #
 # Four files, one per shape of JSON a reader actually meets: an object with an array inside it
 # (an API response), a bare top-level array, a nested configuration object, and a file of
@@ -8,7 +8,7 @@
 #
 # Written with printf rather than a heredoc so the JSON stays exactly as the page shows it:
 # a heredoc is fine here too, but every one of these is also read back by `cat` in the
-# fixtures block, so trailing whitespace and the final newline are load-bearing.
+# fixtures block, so trailing whitespace and the final newline decide whether it matches.
 
 cat > api-response.json <<'EOF'
 {
@@ -74,7 +74,7 @@ cat > events.jsonl <<'EOF'
 EOF
 
 # A file with a syntax error in it, for the example about what jq says when the input is not
-# JSON at all — the single most common thing to happen when you pipe a curl response in.
+# JSON at all, which is the single most common thing to happen when you pipe a curl response in.
 cat > broken.json <<'EOF'
 {"name": "nginx", "state": "running",}
 EOF

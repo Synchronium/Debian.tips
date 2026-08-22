@@ -7,19 +7,18 @@
 ## Context
 
 As the content grows, the instinct is to add hierarchy: `/commands/networking/`,
-`/commands/text-processing/`. It is the wrong instinct here, and it is worth writing down why,
-because it will recur.
+`/commands/text-processing/`. It is the wrong instinct here, and the reason will recur.
 
 The site already sorts every page twice, on axes that are genuinely independent. A subcategory
-would be a third axis that in almost every case restates the second one — `/commands/networking/`
+would be a third axis that in almost every case restates the second one: `/commands/networking/`
 and `/tags/networking/` would hold nearly the same pages. The tag version is the correct one,
 because it is many-to-many: `rsync` is a networking command *and* a files command, and a
 subcategory forces a choice that has no right answer.
 
 ## Decision
 
-**`category` is the page's shape** — how it is written and how a reader consumes it.
-**`tags` are the page's subject** — many-to-many, with a listing page per tag. There is no third
+**`category` is the page's shape**: how it is written and how a reader consumes it.
+**`tags` are the page's subject**: many-to-many, with a listing page per tag. There is no third
 axis. `src/content/schema.ts` is where the categories are defined, and nothing else lists them.
 
 Each category has a one-line test, phrased as what the reader arrived with, so filing a page does
@@ -42,7 +41,7 @@ still says something useful with one of its two subjects removed, it is a concep
 comparison title.
 
 `debian` is the one category on the subject axis rather than the shape axis. That is a product
-decision — the site is called debian.tips — and it is bounded rather than open: **`debian` is the
+decision (the site is called debian.tips) and it is bounded rather than open: **`debian` is the
 Debian wing of `concepts`**. Anything with a Debian subject but another shape files under that
 shape and takes the `debian` tag.
 
@@ -53,12 +52,12 @@ The apt error pages are `troubleshooting`, tagged `debian` and `apt`. `apt vs ap
 a sprawl instead of a browsable dozen.
 
 On-page grouping of the commands listing is a static lookup table, `COMMAND_GROUPS` in
-`src/config.ts`, not a frontmatter field — the same decision applied to layout. A command page not
-added to a group falls through to a "More commands" catch-all.
+`src/config.ts`, not a frontmatter field, which is the same decision applied to layout. A command
+page not added to a group falls through to a "More commands" catch-all.
 
 The one place hierarchy is genuinely needed is an **ordered sequence**, where "which lesson is
-next" is real information neither axis carries. That is what `order:` on scripting pages is, and it
-is deliberately narrow.
+next" is real information neither axis carries. `order:` on scripting pages does exactly that, and
+it is deliberately narrow.
 
 Documents must defer to `CATEGORIES` rather than restating it. Four of them named five categories
 for months after `troubleshooting` and `compare` were added, which is exactly the failure a
@@ -66,6 +65,6 @@ duplicated list produces.
 
 ## Revisit when
 
-A genuinely new *shape* of page appears — one whose reader arrives with something none of the seven
+A genuinely new *shape* of page appears, one whose reader arrives with something none of the seven
 tests describes. That is a new category. Wanting to group existing pages by subject is not; that is
 what tags already do.

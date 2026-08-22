@@ -8,7 +8,7 @@ import { readSkipEntries } from "./replaySkips.js";
 import { parseProsePage } from "./proseBlocks.js";
 import { COMPARISON, type Example, type ExamplesFile } from "./schema.js";
 
-/** An example that documents an output, with the section it came from — what the replay runs. */
+/** An example that documents an output, with the section it came from: what the replay runs. */
 export type ReplayedExample = Example & { section: string };
 
 export interface CommandPartition {
@@ -49,7 +49,7 @@ export interface PageChecks {
   checked: number;
   /** Of `checked`, the ones compared by shape rather than byte for byte.
    *
-   *  Driven by `compare: "shape"` and never by `volatile:` — see the note on `compare` in
+   *  Driven by `compare: "shape"` and never by `volatile:`; see the note on `compare` in
    *  `src/content/schema.ts`. Most volatile output is still compared exactly, because the mask
    *  for it is anchored to the line that carries it, and an anchored mask is stricter. Counting
    *  `volatile` here would overstate how loosely the page is checked. */

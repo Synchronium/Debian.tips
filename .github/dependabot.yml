@@ -1,12 +1,12 @@
 # Dependabot opens pull requests when a dependency has a newer version. It has no dashboard
-# and no badge — the only visible sign it's working is the PRs it raises, each of which runs
+# and no badge, so the only visible sign it's working is the PRs it raises, each of which runs
 # through CI like any other, which is what makes an automated bump safe to merge here.
 #
 # Minor and patch updates are grouped, so a week's routine bumps arrive as one PR per
 # ecosystem rather than fifteen; ungrouped, the noise is what stops people reading them.
 # Majors are deliberately left out of the groups and arrive one per PR. Grouping those too
 # produced a single PR carrying TypeScript 5 -> 7, Shiki 1 -> 4, Zod 3 -> 4 and @types/node
-# 22 -> 26 behind one merge button — the riskiest changes bundled into an all-or-nothing
+# 22 -> 26 behind one merge button, which bundles the riskiest changes into an all-or-nothing
 # review, next to a vitest patch.
 #
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
@@ -18,8 +18,8 @@ updates:
     schedule:
       interval: weekly
 
-  # The generator's own toolchain. Every dependency here is a devDependency — nothing in
-  # this repository ships to a visitor's browser — so a bump can break the build or the
+  # The generator's own toolchain. Every dependency here is a devDependency, since nothing in
+  # this repository ships to a visitor's browser, so a bump can break the build or the
   # tests, and can't introduce a runtime vulnerability in the published site.
   - package-ecosystem: "npm"
     directory: "/"

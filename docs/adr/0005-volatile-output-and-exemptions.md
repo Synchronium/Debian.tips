@@ -11,7 +11,7 @@ uptime and an invocation id. `df -h` reports the reader's own disks. `wget` prin
 
 Three responses are available and two of them are bad. Dropping the example loses the most useful
 thing on the page. Faking the output breaks the promise the whole site rests on (ADR-0001). Only
-the third — saying exactly what will differ, and checking everything else — keeps both.
+the third keeps both: say exactly what will differ, and check everything else.
 
 The same problem in a harder form: a few examples cannot be replayed by a batch at all, because
 they need a concurrent writer (`tail -f`) or a network peer. Left alone they fail forever, and the
@@ -31,8 +31,8 @@ numbers may move while a renamed field, a vanished line or a changed state still
 a comment saying how it *was* verified. For prose pages the equivalent is a
 `<!-- verify: skip <reason> -->` comment, and a skip with no reason is refused.
 
-Scores report the two kinds separately — `53/53 documented outputs reproduce (52 exactly, 1 by
-shape)` — because they are different claims.
+Scores report the two kinds separately (`53/53 documented outputs reproduce (52 exactly, 1 by
+shape)`) because they are different claims.
 
 ## Consequences
 
@@ -42,15 +42,15 @@ from becoming a way to make any failure stop.
 
 A `.skip` entry must name a real example that documents an `output:` block. An entry matching
 nothing is an error, because a renamed title would otherwise leave the file claiming an exemption
-it no longer grants — it reads as an exemption while exempting nothing.
+it no longer grants, reading as an exemption while exempting nothing.
 
 A documented output may never contain a mask token (`<TIMESTAMP>`, `<RATE>`, `<VOLATILE>`,
 `<ELAPSED>`). The masks are idempotent, so a page carrying one would match any real output forever.
 The replay rejects that outright.
 
-`normalise.ts` is on both sides of every comparison — adopt writes through it, verify compares
-through it — so a bug in it corrupts a page and then certifies the corruption. That is why every
-mask is anchored to the line shape that produces it rather than applied to the whole output, why it
+`normalise.ts` is on both sides of every comparison, since adopt writes through it and verify
+compares through it, so a bug in it corrupts a page and then certifies the corruption. That is why
+every mask is anchored to the line shape that produces it rather than applied to the whole output, why it
 has its own test file, and why a change to it means replaying everything rather than one page.
 
 ## Revisit when

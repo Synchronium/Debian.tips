@@ -3,17 +3,17 @@
    ========================================================================== */
 
 /* Theme resolution, in cascade order:
-   1. `light-dark()` picks a value from `color-scheme`, which defaults to `light dark` — so a
+   1. `light-dark()` picks a value from `color-scheme`, which defaults to `light dark`, so a
       visitor with no explicit choice follows prefers-color-scheme
    2. an explicit data-theme (set by the toggle, or restored from localStorage by
       src/client/theme-init.ts) pins `color-scheme` to one value, which overrides that
-   The served HTML deliberately carries no data-theme attribute — hardcoding one meant visitors
+   The served HTML deliberately carries no data-theme attribute, because hardcoding one meant visitors
    without JS always got dark regardless of their OS setting, since the script that reads the
    preference never ran.
 
    Every token is defined once. `light-dark()` makes the theme a property of `color-scheme`
    rather than of the selector, so the three states need three one-line rules and no duplicated
-   values — rather than a palette per selector, kept in step by hand. */
+   values, rather than a palette per selector kept in step by hand. */
 :root {
   color-scheme: light dark;
 
@@ -58,7 +58,7 @@
      clear of the header instead of hidden behind it.
 
      Measured, not computed: nothing checks it, and nothing can. If the header ever wraps to a
-     second line — an eighth nav category, a longer label, a narrow desktop window — every
+     second line (an eighth nav category, a longer label, a narrow desktop window) every
      anchor jump on the site lands under the header and the sticky TOC sits too high, with no
      test that can see it. src/config.ts names the nav-overflow decision this depends on. */
   --header-height: 61px;
@@ -126,7 +126,7 @@ kbd {
   font-family: var(--font-mono);
 }
 
-/* Inline code — a backticked flag, path or command in prose, an example
+/* Inline code: a backticked flag, path or command in prose, an example
    description or a section intro. The child combinator excludes `pre > code`,
    where Shiki owns the colours and a box would sit inside the code block.
    --bg-inset sits on the other side of --bg in both themes (darker in dark,
@@ -247,7 +247,7 @@ h3 {
 }
 
 /* ==========================================================================
-   5. Global chrome — header & footer
+   5. Global chrome: header & footer
    ========================================================================== */
 
 .site-header {
@@ -557,7 +557,7 @@ main {
     max-width: none;
     display: grid;
     /* .content and .toc are the only two direct children, one row, one
-       column each — a spanning sticky sidebar (grid-row: 1 / -1 across many
+       column each. A spanning sticky sidebar (grid-row: 1 / -1 across many
        auto-placed rows) forces browsers to inflate those rows to fit it,
        shoving the rest of the content down the page. Two items in a single
        row sidesteps that entirely. */
@@ -880,7 +880,7 @@ pre.shiki {
 }
 /* Shiki writes the light theme into each span's inline `color` and carries the dark
    theme alongside it as --shiki-dark, so dark is applied by overriding and light is
-   simply "don't override" — there's no way to un-override back to an inline style,
+   simply "don't override": there's no way to un-override back to an inline style,
    which is why these conditions are dark-positive while the token block above is
    light-positive. (prefers-color-scheme resolves to exactly one of light/dark in
    every current browser, so the two can't disagree.) Without the media query, a
@@ -986,7 +986,7 @@ pre[data-prompt] .line::before {
 
 /* Sits above a volatile example's output: the block is a real capture, but the reader's
    own run will differ in the ways the note describes. Distinguished from the output itself
-   rather than styled as a warning — nothing is wrong, it just isn't byte-for-byte. */
+   rather than styled as a warning, since nothing is wrong, it just isn't byte-for-byte. */
 .output-varies {
   margin: 0 0 var(--space-2);
   padding: var(--space-2) var(--space-3);
@@ -1000,7 +1000,7 @@ pre[data-prompt] .line::before {
   color: var(--text);
 }
 
-/* Sample data the examples were run against — collapsed so it orients a reader who
+/* Sample data the examples were run against, collapsed so it orients a reader who
    needs it without pushing the examples themselves below the fold. */
 .fixtures {
   margin-top: var(--space-5);
@@ -1034,7 +1034,7 @@ pre[data-prompt] .line::before {
 }
 
 /* Sits between the sample files and the first example section: one control for all of a
-   page's collapsed output. Scripted, so it is hidden when JS is not running — the outputs
+   page's collapsed output. Scripted, so it is hidden when JS is not running, since the outputs
    are still each openable on their own. */
 .examples-toolbar {
   display: flex;
@@ -1065,7 +1065,7 @@ pre[data-prompt] .line::before {
 }
 
 /* The foot of every page: which files produced it, what the replay checks here, and how to
-   run it. Given the callout treatment from section 11 — an inset panel with a coloured rule —
+   run it. Given the callout treatment from section 11 (an inset panel with a coloured rule)
    because it is the site's own claim about the page rather than more of the page, and the
    reader should be able to see at a glance where the content ended.
 

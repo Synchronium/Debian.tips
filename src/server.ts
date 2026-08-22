@@ -26,7 +26,7 @@ let pendingRebuild = false;
 
 /** Rebuilds the site in this process, rather than shelling out to `npx tsx src/build.ts`: that
  *  pays for a Node start and a fresh TypeScript transform per save, and throws away Shiki's
- *  highlighter — the expensive thing to construct — with the process.
+ *  highlighter, the expensive thing to construct, with the process.
  *
  *  The trade is that a change to `src/` itself is not picked up: the module graph is already
  *  loaded, and re-importing it would leak a new copy of every module per rebuild. The watcher
@@ -62,7 +62,7 @@ async function rebuild(): Promise<void> {
 
 function resolveFile(urlPath: string): string | null {
   // decodeURIComponent throws URIError on a malformed escape (e.g. "/%ZZ"), and an
-  // uncaught throw in the request handler takes the whole dev server down — treat
+  // uncaught throw in the request handler takes the whole dev server down, so treat
   // an undecodable path as simply not resolving to a file.
   let clean: string;
   try {
@@ -79,7 +79,7 @@ function resolveFile(urlPath: string): string | null {
 
   for (const candidate of candidates) {
     // path.join collapses ".." segments, so a URL like /../package.json can
-    // resolve outside DIST — reject anything that lands outside it.
+    // resolve outside DIST, so reject anything that lands outside it.
     if (candidate !== DIST && !candidate.startsWith(DIST + sep)) continue;
     if (existsSync(candidate) && statSync(candidate).isFile()) return candidate;
   }
@@ -128,9 +128,9 @@ let debounce: ReturnType<typeof setTimeout> | undefined;
 watcher.on("all", (_event, changedPath) => {
   // A change to the generator itself can't be picked up by re-running already-loaded modules,
   // so the process restarts instead. `tsx watch` would do this too, but only by restarting on
-  // every change — including every content edit, which is the case that has to stay fast.
+  // every change, including every content edit, which is the case that has to stay fast.
   if (changedPath.startsWith(`src${sep}`) && !changedPath.startsWith(join("src", "client"))) {
-    console.log(`${changedPath} changed — restarting the dev server`);
+    console.log(`${changedPath} changed: restarting the dev server`);
     watcher.close().then(() => {
       server.close();
       spawnSync("npx", ["tsx", "src/server.ts"], { cwd: ROOT, stdio: "inherit" });

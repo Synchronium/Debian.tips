@@ -6,7 +6,7 @@ import { commandsDir } from "../src/paths.js";
 
 /* A category is declared in `schema.ts` and rendered from `config.ts`. Adding one to
  * `CATEGORIES` alone gives its pages a working URL and no listing page, no nav entry and no
- * sitemap entry — pages that exist and cannot be reached. The reverse is worse: a `NAV_ORDER`
+ * sitemap entry, meaning pages that exist and cannot be reached. The reverse is worse: a `NAV_ORDER`
  * entry with no pages behind it ships a header link to an empty page. */
 
 describe("category configuration", () => {

@@ -1,7 +1,7 @@
 // Turns Shiki's per-token inline styles into shared classes.
 //
 // Shiki emits every highlighted token as `<span style="color:#005CC5;--shiki-dark:#79C0FF">`,
-// about 45 bytes per token repeated hundreds of times per page — on a long command page that is
+// about 45 bytes per token repeated hundreds of times per page. On a long command page that is
 // most of the HTML, and it is a handful of distinct declarations written out again and again.
 // They move into the stylesheet, one class each, and the markup keeps a six-character name.
 //
@@ -15,7 +15,7 @@ const classByStyle = new Map<string, string>();
 const styleByClass = new Map<string, string>();
 
 /** Anchored to `--shiki-dark`, the custom property Shiki uses to carry the second theme. Only
- *  Shiki emits that, so nothing else on the page can be caught by this — and the site emits no
+ *  Shiki emits that, so nothing else on the page can be caught by this, and the site emits no
  *  other inline styles at all. */
 const SHIKI_ELEMENT = /<(pre|span|code)\b([^>]*)>/g;
 const SHIKI_STYLE = /\sstyle="([^"]*--shiki-dark[^"]*)"/;
@@ -35,7 +35,7 @@ function classFor(style: string): string {
 }
 
 /** Rewrites one block of Shiki output, returning markup with classes in place of inline styles.
- *  The class is appended to whatever class attribute the element already has — `<pre>` carries
+ *  The class is appended to whatever class attribute the element already has. `<pre>` carries
  *  Shiki's own `shiki shiki-themes …`, which styles/site.css matches on. */
 export function extractShikiStyles(html: string): string {
   return html.replace(SHIKI_ELEMENT, (tag, tagName: string, attrs: string) => {
@@ -52,7 +52,7 @@ export function extractShikiStyles(html: string): string {
 }
 
 /** The CSS for every style seen so far, sorted by class name so the same content always produces
- *  the same stylesheet — the file is content-hashed, and a set iterated in insertion order would
+ *  the same stylesheet: the file is content-hashed, and a set iterated in insertion order would
  *  change its hash whenever pages were built in a different order. */
 export function shikiStyleCss(): string {
   return [...styleByClass]
@@ -62,7 +62,7 @@ export function shikiStyleCss(): string {
 }
 
 /** Forgets every style seen. Called at the start of a build so a colour that no content uses any
- *  more cannot survive in the stylesheet of a long-lived process — which the dev server is. */
+ *  more cannot survive in the stylesheet of a long-lived process, which the dev server is. */
 export function resetShikiStyles(): void {
   classByStyle.clear();
   styleByClass.clear();

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { layout } from "../src/templates/layout.js";
 import { raw } from "../src/html.js";
 
-/* The layout is on every page, so anything wrong here is wrong everywhere at once — and two of
+/* The layout is on every page, so anything wrong here is wrong everywhere at once, and two of
  * the things it does are invisible until they are wrong in production: it inlines client
  * JavaScript read from src/client/, and it only emits analytics in a production build. */
 
@@ -32,7 +32,7 @@ function withNodeEnv(value: string | undefined, body: () => void): void {
 describe("layout", () => {
   it("inlines the client scripts rather than linking them", () => {
     // They have to run before first paint, which a <script src> cannot promise. Asserted on
-    // strings the minifier cannot rename — an identifier it is free to shorten would make this
+    // strings the minifier cannot rename, since an identifier it is free to shorten would make this
     // a test of esbuild's output rather than of the layout.
     const html = render();
     expect(html).toContain("localStorage.getItem");
@@ -44,7 +44,7 @@ describe("layout", () => {
   it("compiles every client script with the shared declarations", () => {
     // src/client/shared.ts is prepended rather than imported, because the two scripts are
     // inlined at different points in the document. If that stopped happening both would still
-    // compile — as one TypeScript global scope, tsconfig.client.json typechecks them together —
+    // compile (as one TypeScript global scope, tsconfig.client.json typechecks them together)
     // and both would fail at runtime with the theme names undefined.
     // The IIFE wrapper is what `clientScript` adds, so it is what separates the two compiled
     // client scripts from the analytics snippet a production build also inlines.

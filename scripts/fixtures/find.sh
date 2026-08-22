@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Fixtures for content/commands/find/examples.yaml — must match its `fixtures:` block.
+# Fixtures for content/commands/find/examples.yaml. Must match its `fixtures:` block.
 #
 # Modes are set explicitly on everything, never left to the umask. That umask belongs to
-# the host rather than the image — 0000 on this project's devcontainer, 0022 on a CI
-# runner — so an inherited one gives a different tree in each place. Under 0000 a bare
+# the host rather than the image (0000 on this project's devcontainer, 0022 on a CI
+# runner) so an inherited one gives a different tree in each place. Under 0000 a bare
 # mkdir produces a 777 directory, and every -perm example on the page then matches the
 # entire tree.
 #

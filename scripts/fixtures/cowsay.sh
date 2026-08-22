@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fixtures for content/commands/cowsay/examples.yaml — must match its `fixtures:` block.
+# Fixtures for content/commands/cowsay/examples.yaml. Must match its `fixtures:` block.
 #
 # Three files and a directory. `notes.txt` is the multi-line input that shows what `-n` is for,
 # `cows/server.cow` is a hand-written cowfile exercising every variable the format has, and
@@ -9,7 +9,7 @@
 #
 # Note for anyone extending this page: cowsay lives in /usr/games, which is on a login shell's
 # PATH and not on a `docker exec`'s. scripts/sandbox/Dockerfile adds it to the image's PATH for
-# that reason, so `cowsay` works here exactly as it does at a reader's prompt — do not paper
+# that reason, so `cowsay` works here exactly as it does at a reader's prompt. Do not paper
 # over it per-example with an absolute path, and do not document `command -v cowsay` output as
 # anything other than /usr/games/cowsay.
 . /tmp/fixtures-common.sh
@@ -41,7 +41,7 @@ EOF
 # A hand-written cowfile. Every substitution the format offers appears exactly once:
 # $thoughts (the line joining balloon to figure, `\` for cowsay and `o` for cowthink),
 # $eyes (two characters, set by -e or by a mode flag) and $tongue (two characters, set by -T,
-# two spaces when unset — which is why the line below is padded to look empty rather than
+# two spaces when unset, which is why the line below is padded to look empty rather than
 # short). The doubled backslash is the trap the page documents: the heredoc interpolates, so a
 # single backslash would be eaten before the art ever reached the screen.
 mkdir -p cows
@@ -58,7 +58,7 @@ EOC
 EOF
 
 # A cowfile that runs code, for the section on why `-f` on a file from the internet is a
-# problem. cowsay loads a cowfile with Perl's `do`, which executes it — the print below lands
+# problem. cowsay loads a cowfile with Perl's `do`, which executes it, so the print below lands
 # above the balloon because get_cow runs before the balloon is written out. Harmless on purpose:
 # the page makes the point with a print rather than with something worth copying.
 cat > downloaded.cow <<'EOF'

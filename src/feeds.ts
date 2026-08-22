@@ -24,7 +24,7 @@ function newestUpdate(pages: Page[]): Date | undefined {
   );
 }
 
-/** One emitted listing page — a category index, a tag page, or a later page of either. */
+/** One emitted listing page: a category index, a tag page, or a later page of either. */
 export interface Listing {
   path: string;
   /** The pages it lists, which is what dates it. */

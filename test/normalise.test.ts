@@ -5,10 +5,10 @@ import { MASK_TOKENS, normalise, shapeOf, stripArtifacts } from "../scripts/lib/
  * `scripts/adopt-real-output.ts` writes `stripArtifacts` output straight onto a page, and
  * `scripts/replay-command-page.ts` compares `normalise` of the page against `normalise` of a fresh
  * run. Because both sides go through the same function, a bug here is invisible to the
- * replay — it corrupts the page and then certifies the corruption. Every case below is a
+ * replay: it corrupts the page and then certifies the corruption. Every case below is a
  * regression that actually shipped, or an invariant that keeps one from shipping. */
 
-describe("stripArtifacts — what gets written onto a page", () => {
+describe("stripArtifacts: what gets written onto a page", () => {
   it("keeps the first line's leading padding", () => {
     // `wc` and `uniq -c` right-align their counts. A `.trim()` here removed the padding
     // from the first line only, leaving crooked columns on the page while the replay
@@ -96,7 +96,7 @@ describe("stripArtifacts — what gets written onto a page", () => {
   });
 });
 
-describe("normalise — what gets compared", () => {
+describe("normalise: what gets compared", () => {
   const changes = (before: string, after: string) => {
     expect(normalise(before)).toBe(normalise(after));
   };

@@ -13,21 +13,21 @@ one red X and the log has to be read to tell them apart.
 The replay also needs Docker and its own image. A gate that cannot run without a daemon is a gate
 contributors skip, and `npm run check` is meant to be the everyday one.
 
-Separately, deployment used to run on every push to `main` independently of CI. A red build — a
-broken link, a failing test, a page whose examples no longer reproduced — went live anyway, and the
-badge and the site disagreed.
+Separately, deployment used to run on every push to `main` independently of CI. A red build went
+live anyway, whether it was a broken link, a failing test or a page whose examples no longer
+reproduced, and the badge and the site disagreed.
 
 ## Decision
 
 CI runs three jobs in parallel:
 
-- **`check`** — format, typecheck (both configs), tests, build, pagefind, linkcheck, link audit,
+- **`check`**: format, typecheck (both configs), tests, build, pagefind, linkcheck, link audit,
   then `pa11y-ci` against the built site. Needs nothing but Node. This is exactly what
   `npm run check` runs locally, and it sets `NODE_ENV=production` itself so drafts are excluded in
   both places.
-- **`replay`** — builds the sandbox image, then replays pages. A pull request replays only what its
+- **`replay`**: builds the sandbox image, then replays pages. A pull request replays only what its
   diff touched, shuffled; a push to `main` replays everything in the default `alpha` order.
-- **`replay-shuffled`** — the full replay again, on a push to `main` only, in a random order seeded
+- **`replay-shuffled`**: the full replay again, on a push to `main` only, in a random order seeded
   from the commit SHA. GitHub gives each job its own runner, so this is genuinely parallel with
   `replay` above: no wall clock and, more to the point, no CPU contention between two replays.
   ADR-0002 records why one ordering is not the assertion.
@@ -41,7 +41,7 @@ A failure names its own kind before anyone opens the log: "the generator is brok
 lying", and "a page is only true in one ordering" are three different problems.
 
 **`replay-shuffled` gates deployment, and that is deliberate.** Deploy keys off the whole
-workflow's conclusion, so a failure there holds the site back — including when the ordering it
+workflow's conclusion, so a failure there holds the site back, including when the ordering it
 happened to pick surfaced a latent defect in a page the commit never touched. That is the intended
 trade: a page which is only true in one ordering is not true, and every other check here is a hard
 gate rather than an advisory one. `continue-on-error: true` on that job is the single line that

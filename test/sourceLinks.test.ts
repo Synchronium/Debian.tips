@@ -10,7 +10,7 @@ import { CONTENT_DIR, FIXTURE_DIR, ROOT } from "../src/paths.js";
 /* Every page now links into the repository at the files that produced it, and neither gate
  * can see those links: `src/linkcheck.ts` walks `dist/` and resolves internal paths, and
  * `scripts/link-audit.ts` builds a graph of pages. Nothing fetches github.com, and nothing
- * should — so a renamed setup script or a page moved between categories would put a dead link
+ * should, so a renamed setup script or a page moved between categories would put a dead link
  * on every page it appears on, silently, on a site whose whole argument is that the claims are
  * checked. This is the gate that stands in for the one a link checker cannot run. */
 
@@ -88,12 +88,12 @@ describe("repository links written by hand in content", () => {
 
 /* A page with no setup script has to say so rather than printing a replay command that would
  * report it as unverified. Nothing in `content/` is in that state today, so the branch is
- * exercised against a slug that has no page — otherwise it would be untested until the day it
+ * exercised against a slug that has no page, or it would be untested until the day it
  * first mattered, which is the day someone writes a page ahead of its fixture.
  *
  * The expected path is assembled from the slug rather than written out, because
- * `test/documentedPaths.test.ts` scans this file for paths and would report a literal one — quite
- * correctly — as naming a file that does not exist. */
+ * `test/documentedPaths.test.ts` scans this file for paths and would report a literal one, quite
+ * correctly, as naming a file that does not exist. */
 describe("a page with no setup script", () => {
   const slug = "a-page-with-no-fixture-yet";
 
@@ -108,7 +108,7 @@ describe("a page with no setup script", () => {
 /* The block tells a reader where the reason for an exemption is written. A command page records
  * it in `scripts/fixtures/<slug>.skip`, which is listed among the files; a prose page records it
  * inline, in a comment the Markdown pipeline strips before rendering, so the only place a reader
- * can see it is the page source — also listed. Getting that backwards sends them after a file
+ * can see it is the page source, also listed. Getting that backwards sends them after a file
  * that does not exist, on the one block whose job is to make the claim checkable.
  *
  * Asserted against the rendered page rather than against `checksSentence`, because the failure

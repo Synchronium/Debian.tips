@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { extractShikiStyles, resetShikiStyles, shikiStyleCss } from "../src/content/shikiStyles.js";
 
 /* Lifting Shiki's inline styles into classes rewrites the markup of every code block on the
- * site, and the stylesheet it produces is content-hashed — so the two things that matter are
+ * site, and the stylesheet it produces is content-hashed, so the two things that matter are
  * that no colour is lost on the way, and that the same content always produces the same
  * stylesheet. */
 

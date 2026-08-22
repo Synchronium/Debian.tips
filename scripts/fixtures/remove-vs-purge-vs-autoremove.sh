@@ -11,7 +11,7 @@
 # apt-get install would spend seconds per block re-doing settled work.
 #
 # Note for anyone extending this page: nano is an arch-dependent package, so nothing here may
-# print a `dpkg -l` row or an `apt list` line for it — those carry `arm64` locally and `amd64`
+# print a `dpkg -l` row or an `apt list` line for it, since those carry `arm64` locally and `amd64`
 # on a CI runner. cowsay and cowsay-off are both Architecture: all and can be shown either way.
 # Package versions are the other trap: `Purging configuration files for nano (8.4-1)` and
 # `Remv cowsay [3.03+dfsg2-8]` both drift with a point release, so every block here narrows to
@@ -40,7 +40,7 @@ if [ "$(cat $STATE 2>/dev/null)" != "remove-vs-purge-vs-autoremove" ]; then
 fi
 
 # nano in the `rc` state: binaries gone, /etc/nanorc still there. It is the file the whole
-# remove-versus-purge distinction turns on, and the page shows it disappearing.
+# remove-versus-purge distinction rests on, and the page shows it disappearing.
 if ! dpkg -l nano 2>/dev/null | grep -q '^rc'; then
   apt-get install -y nano >/dev/null 2>&1
   apt-get remove -y nano >/dev/null 2>&1
@@ -61,7 +61,7 @@ apt-mark manual cowsay-off >/dev/null 2>&1
 # perl and libtext-charwidth-perl arrived as cowsay's dependencies and are therefore auto too,
 # which would make `apt autoremove` propose five packages and a perl chain nobody on a real
 # Debian system would recognise as orphaned. Marking them manual is what a real machine looks
-# like — perl is there because the system wants it — and it narrows autoremove's answer to the
+# like (perl is there because the system wants it) and it narrows autoremove's answer to the
 # one package the page is actually about.
 apt-mark manual perl libtext-charwidth-perl >/dev/null 2>&1
 

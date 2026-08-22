@@ -2,7 +2,7 @@
 //
 // Parsed through the schema rather than cast to it: an assertion is the one spelling of "share
 // the schema" that buys nothing at runtime, and it leaves a malformed file surfacing as a
-// TypeError deep inside a loop — in tools that *edit* content.
+// TypeError deep inside a loop, in tools that *edit* content.
 import { readFileSync } from "node:fs";
 import { parse } from "yaml";
 import { EXAMPLES_FILE, commandDir } from "../../src/paths.js";
@@ -26,7 +26,7 @@ export function readExamplesFile(command: string): ExamplesFile {
   const parsed = examplesFileSchema.safeParse(parse(readFileSync(path, "utf-8")));
   if (!parsed.success) {
     throw new ReplayError(
-      `${path}: invalid — ${parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")}`,
+      `${path}: invalid: ${parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")}`,
     );
   }
   if (parsed.data.command !== command) {

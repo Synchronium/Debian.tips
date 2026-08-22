@@ -6,13 +6,13 @@ import { ROOT } from "../src/paths.js";
 /* The tools and the documentation print repository paths at people: "see
  * .claude/skills/cross-link-pages/SKILL.md", "re-capture with scripts/adopt-real-output.ts".
  * Nothing else checks those, so a rename leaves a message confidently naming a file that no
- * longer exists — and the message is read precisely when someone is already stuck. */
+ * longer exists, and the message is read precisely when someone is already stuck. */
 
 /** Paths that appear inside the tools and the documentation, excluding the ones that are
  *  patterns rather than files (`scripts/fixtures/<command>.skip`).
  *
  *  An extension missing from this list is a whole class of reference the check cannot see, and
- *  it reports a clean run either way — so add one when a file of that kind starts being named.
+ *  it reports a clean run either way, so add one when a file of that kind starts being named.
  *  Plain `js` is deliberately *not* here: TypeScript's NodeNext imports spell every neighbour
  *  `./thing.js`, and matching those finds a relative specifier rather than a repository path. */
 const REFERENCE =

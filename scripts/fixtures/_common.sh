@@ -1,6 +1,6 @@
 # Shared fixture bodies, sourced by the per-page setup scripts.
 #
-# Several pages document the same sample files — a reader moving from cut to sort to uniq
+# Several pages document the same sample files, so a reader moving from cut to sort to uniq
 # should meet the same users.csv, not three files that happen to share a name. Keeping one
 # definition is what makes that true.
 #

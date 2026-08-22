@@ -7,8 +7,8 @@
 ## Context
 
 Formatting `content/` looks like exactly the sort of consistency win a formatter is for. It is the
-opposite. **The whitespace in those files is load-bearing, and reformatting them would silently
-change what the site claims.**
+opposite. **The whitespace in those files decides what the site claims, so reformatting them would
+change it silently.**
 
 Three specific ways:
 
@@ -26,8 +26,8 @@ the altered claim**, which is the single worst outcome available in this reposit
 ## Decision
 
 Prettier is scoped to `src/`, `scripts/`, `test/` and `styles/`. `content/` is never formatted, and
-neither is Markdown anywhere else — prose here is wrapped by hand and reflowing it produces large
-diffs and no benefit.
+neither is Markdown anywhere else, since prose here is wrapped by hand and reflowing it produces
+large diffs and no benefit.
 
 `embeddedLanguageFormatting` is `off`.
 
@@ -35,7 +35,7 @@ diffs and no benefit.
 
 That last setting is not a style preference either. Prettier recognises the `html` tagged template
 (ADR-0010) and formats the HTML inside it, so the first run **rewrote the markup of every page on
-the site** — the 404 page went from 77 lines to 116. It was caught only by building the site before
+the site**: the 404 page went from 77 lines to 116. It was caught only by building the site before
 and after and diffing `dist/`, which is now the way to verify any change to formatting
 configuration.
 

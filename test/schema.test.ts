@@ -209,7 +209,7 @@ describe("examplesFileSchema", () => {
     ],
   });
 
-  it("accepts a fixture without `from` — it defaults to cat <name> at replay time", () => {
+  it("accepts a fixture without `from`, defaulting to cat <name> at replay time", () => {
     const result = examplesFileSchema.safeParse(withFixture({ name: "app.log", content: "error\n" }));
     expect(result.success).toBe(true);
   });

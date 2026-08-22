@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fixtures for content/commands/tee/examples.yaml — must match its `fixtures:` block.
+# Fixtures for content/commands/tee/examples.yaml. Must match its `fixtures:` block.
 #
 # This page replays as the unprivileged `user`. Half of it is about `sudo tee`, and as root
 # that demonstrates nothing: root can already write /etc, so the trick the page exists to
@@ -15,6 +15,6 @@ mk_wordlist
 mk_access_log
 
 # The `sudo tee` examples write here, and it is outside the workdir the harness wipes between
-# examples — so this page has to clean up after itself or the "create a file you do not own"
+# examples, so this page has to clean up after itself or the "create a file you do not own"
 # examples would be appending to, or overwriting, a file a previous example left behind.
 sudo rm -f /etc/sysctl.d/99-swappiness.conf

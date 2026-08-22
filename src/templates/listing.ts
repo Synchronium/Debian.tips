@@ -6,7 +6,7 @@ import { CATEGORY_META, COMMAND_GROUPS, COMMAND_GROUP_FALLBACK } from "../config
 import type { Page } from "../content/loader.js";
 import type { Category } from "../content/schema.js";
 
-/** The `/commands/` index, grouped by topic. Never paginated — see partials/pager.ts. */
+/** The `/commands/` index, grouped by topic. Never paginated; see partials/pager.ts. */
 function groupedCommands(pages: Page[]): string {
   const bySlug = new Map(pages.map((p) => [p.slug, p]));
   const used = new Set<string>();

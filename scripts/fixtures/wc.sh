@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fixtures for content/commands/wc/examples.yaml — must match its `fixtures:` block.
+# Fixtures for content/commands/wc/examples.yaml. Must match its `fixtures:` block.
 for i in $(seq 1 40); do echo "line $i of the report"; done > report.txt
 cat <<'EOF' > users.csv
 name,age,department

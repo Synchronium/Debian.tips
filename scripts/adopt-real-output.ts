@@ -108,7 +108,7 @@ function main(): void {
     adopted++;
     // The numbers written for a volatile example are one machine's. Flagged rather than
     // silent: the `volatile:` note has to keep describing what actually varies.
-    const note = example.volatile ? " (volatile — check the note still describes what varies)" : "";
+    const note = example.volatile ? " (volatile: check the note still describes what varies)" : "";
     console.log(`  adopted real output: ${example.title}${note}`);
   }
 

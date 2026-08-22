@@ -1,5 +1,5 @@
-// Replays the documented output on one prose page — a concept, scripting lesson, recipe or
-// Debian article — inside a sandbox, and diffs it against what the page claims.
+// Replays the documented output on one prose page (a concept, scripting lesson, recipe or
+// Debian article) inside a sandbox, and diffs it against what the page claims.
 //
 //   npx tsx scripts/replay-prose-page.ts <sandbox> <slug> [scripts/fixtures/<slug>.sh]
 //
@@ -33,7 +33,7 @@ export interface ProseReplayOptions {
 }
 
 /** Finds the prose page a slug names. A bare slug is looked for in every prose category, and
- *  is an error if more than one answers to it — the slug namespace is per-category, so
+ *  is an error if more than one answers to it, since the slug namespace is per-category, so
  *  `recipes/find` is how you say which one you mean. */
 function locate(reference: string): { category: string; slug: string; path: string } {
   if (reference.includes("/")) {
@@ -54,7 +54,7 @@ function locate(reference: string): { category: string; slug: string; path: stri
   }
   if (matches.length > 1) {
     throw new ReplayError(
-      `slug "${reference}" names ${matches.length} pages (${matches.map((c) => `${c}/${reference}`).join(", ")}) — say which one`,
+      `slug "${reference}" names ${matches.length} pages (${matches.map((c) => `${c}/${reference}`).join(", ")}): say which one`,
     );
   }
   return { category: only, slug: reference, path: proseSource(only, reference) };

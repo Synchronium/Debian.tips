@@ -26,7 +26,7 @@ find /etc/apt/sources.list.d -name '*.sources' ! -name 'debian.sources' -delete 
 rm -f /etc/apt/preferences.d/*
 
 # Silence apt's "not a stable CLI interface" warning, which it prints whenever stdout is not
-# a terminal — always, in this harness. A reader running these commands at a prompt never sees
+# a terminal, which in this harness is always. A reader running these commands at a prompt never sees
 # it, so capturing it would document a line the page's own audience cannot reproduce. This is
 # the default for any page running `apt`; /compare/apt-vs-apt-get/ is the one page that removes
 # this file, because there the warning is the subject.
@@ -46,7 +46,7 @@ build_package() {
     echo "Section: utils"
     echo "Priority: optional"
     # Architecture: all throughout, so nothing this page prints names a machine's
-    # architecture — see test/architecture.test.ts.
+    # architecture; see test/architecture.test.ts.
     echo "Architecture: all"
     echo "Maintainer: Example <$KEY_EMAIL>"
     [ -n "$depends" ] && echo "Depends: $depends"
@@ -129,6 +129,6 @@ fi
 apt-mark unhold tips-demo >/dev/null 2>&1
 
 # ca-certificates held instead, so the hold example has something real to list. Chosen because
-# it has no upgrade pending — holding a package that does (libexpat1, here) would add it to the
+# it has no upgrade pending. Holding a package that does (libexpat1, here) would add it to the
 # kept-back list and change the output of every other example on the page.
 apt-mark hold ca-certificates >/dev/null 2>&1

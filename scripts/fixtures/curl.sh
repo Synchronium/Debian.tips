@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fixtures for content/commands/curl/examples.yaml — must match its `fixtures:` block.
+# Fixtures for content/commands/curl/examples.yaml. Must match its `fixtures:` block.
 #
 # Starts scripts/fixtures/http-mock.py, the local test server the examples send their
 # POSTs, redirects, cookies, auth and status-code requests to. Only started if it isn't
@@ -16,7 +16,7 @@
 # curl.skip: what they print can't be pinned, so nothing here has to reach the network.
 
 # Fails loudly if the server never answers. Every example on this page then reports a
-# mismatch, which reads as forty broken examples rather than one missing process — and the
+# mismatch, which reads as forty broken examples rather than one missing process, and the
 # reason (a port in use, no IPv6 loopback in this environment) is in the server's own
 # output, which is why that gets printed here rather than discarded.
 start_mock() {  # port [extra http-mock.py args...]

@@ -11,7 +11,7 @@
 /** The orderings a run can be asked for. The values are also the CLI spelling, so `--order=`
  *  accepts exactly what is listed here and the error text is derived rather than restated. */
 export const ORDER_MODE = {
-  /** Sorted by slug. The default, and the stable reference — when a shuffled run fails and this
+  /** Sorted by slug. The default, and the stable reference: when a shuffled run fails and this
    *  one passes, the difference is the ordering rather than a regression. */
   alpha: "alpha",
   /** The cheapest single alternative permutation: deterministic, needs no seed, and about as far
@@ -51,7 +51,7 @@ export function parseOrder(value: string): ReplayOrder {
   );
 }
 
-/** How the chosen order is written back to a reader — and, for `random`, the argument that
+/** How the chosen order is written back to a reader, and, for `random`, the argument that
  *  reproduces it exactly. */
 export function describeOrder(order: ReplayOrder): string {
   return order.mode === ORDER_MODE.random ? `${ORDER_MODE.random}:${order.seed}` : order.mode;
@@ -67,7 +67,7 @@ function hashSeed(seed: string): number {
   return hash >>> 0;
 }
 
-/** mulberry32: small, fast, and — the only property that matters here — identical everywhere.
+/** mulberry32: small, fast, and identical everywhere, which is the only property that matters here.
  *  `Math.random()` cannot be used even with a seed, because nothing in the language says two
  *  engines produce the same sequence from the same state, and a seed that reproduces only on the
  *  machine that generated it is not a seed. */
@@ -82,7 +82,7 @@ function mulberry32(state: number): () => number {
 }
 
 /** Returns the pages in the requested order. Input is sorted first, so the result depends only on
- *  the set of pages and the order — never on the order the caller happened to collect them in,
+ *  the set of pages and the order, never on the order the caller happened to collect them in,
  *  which comes from `readdirSync` and is a filesystem detail. */
 export function orderPages(names: string[], order: ReplayOrder): string[] {
   const sorted = [...names].sort();

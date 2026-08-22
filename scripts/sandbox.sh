@@ -2,7 +2,7 @@
 # Disposable Debian trixie sandbox for testing content-page command examples.
 #
 # Everything run via `exec` happens inside a throwaway `docker run --rm`
-# container with no host mounts and no access to the docker socket — never on
+# container with no host mounts and no access to the docker socket, never on
 # the host devcontainer. This is what makes it safe to grant broad permission
 # to invoke this script: the isolation is structural (a real disposable
 # container), not a command-name blocklist. See
@@ -22,11 +22,11 @@ ensure_image() {
   if created=$(docker image inspect -f '{{.Created}}' "$IMAGE" 2>/dev/null); then
     epoch=$(date -d "$created" +%s 2>/dev/null) || epoch=0
     # Anything in the build context newer than the image means a rebuild, not just the
-    # Dockerfile — whatever gets added alongside it later is covered without editing this.
+    # Dockerfile, so whatever gets added alongside it later is covered without editing this.
     if [[ -z "$(find "$DOCKERFILE_DIR" -type f -newermt "@$epoch" -print -quit 2>/dev/null)" ]]; then
       return
     fi
-    echo "sandbox: $DOCKERFILE_DIR is newer than $IMAGE — rebuilding" >&2
+    echo "sandbox: $DOCKERFILE_DIR is newer than $IMAGE, rebuilding" >&2
   fi
   docker build -t "$IMAGE" "$DOCKERFILE_DIR" >&2
 }
@@ -61,7 +61,7 @@ case "$cmd" in
     require_sandbox_name "$name"
 
     if (( systemd )); then
-      # Same image — systemd is already installed. What the systemctl and journalctl pages
+      # Same image: systemd is already installed. What the systemctl and journalctl pages
       # need isn't more packages, it's PID 1: with `sleep` as init, every example on those
       # pages prints "System has not been booted with systemd as init system (PID 1)".
       #
@@ -79,7 +79,7 @@ case "$cmd" in
       # about: `systemctl status cron` answers "activating" or not at all, which reads as
       # a page that has drifted. `is-system-running` returns non-zero for `degraded`, which
       # is a normal state for a container (no udev, no network target), so the exit status
-      # is deliberately ignored — `running` and `degraded` are both booted.
+      # is deliberately ignored, since `running` and `degraded` are both booted.
       for _ in $(seq 1 50); do
         state=$(docker exec "$name" systemctl is-system-running 2>/dev/null || true)
         case "$state" in

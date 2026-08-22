@@ -1,11 +1,11 @@
-// Audits the editorial link graph — which pages the prose connects to which.
+// Audits the editorial link graph: which pages the prose connects to which.
 //
 //   npm run audit:links                # defects in full, exits 1 if there are any
 //   npm run audit:links -- --verbose   # also list the weakly-linked pages
 //   npm run audit:links -- --advisory  # report only, always exits 0
 //
 // Part of `npm run check`, where the defects are the point and the advisory list would be
-// twenty lines of noise on every run — hence --verbose, which is what the cross-link skill
+// twenty lines of noise on every run, hence --verbose, which is what the cross-link skill
 // tells you to use.
 //
 // This is the opposite question to the one `src/linkcheck.ts` answers. Linkcheck asks
@@ -22,7 +22,7 @@
 // The first two are defects and set the exit status; the third is advisory. Each is listed
 // with the pages that could sensibly link to it, ranked by shared tags.
 //
-// What is deliberately not reported is one-way `related:` — A listing B while B does not
+// What is deliberately not reported is one-way `related:`, meaning A lists B while B does not
 // list A. The graph is hubs and spokes: `grep` and `exit-codes-and-error-handling` are
 // linked from everywhere, and a related list reciprocating all of it would name half the
 // site and help nobody. Asymmetry is the normal shape here, so flagging it is 50 rows of
@@ -51,8 +51,8 @@ const CHROME_LINKED = new Set(STANDALONE_PAGES.map((page) => page.path));
 
 /** Drafts are held to neither rule. A published page linking to one is a build error, so a
  *  draft can only ever be linked from another draft and would otherwise be reported as an
- *  orphan every time — an unfixable finding, which is the kind that gets a whole report
- *  ignored. A draft is audited when it is published, which is when it matters. */
+ *  orphan every time, which is an unfixable finding, and unfixable findings are the kind that
+ *  get a whole report ignored. A draft is audited when it is published, which is when it matters. */
 const auditable = (page: Page): boolean => !page.draft;
 
 /** How a page is named in the report: `category/slug`, which is unique where a bare slug is
@@ -119,7 +119,7 @@ async function main(): Promise<void> {
   );
 
   if (orphans.length) {
-    console.log(`orphaned — nothing links here (${orphans.length}):`);
+    console.log(`orphaned, nothing links here (${orphans.length}):`);
     for (const page of orphans) {
       console.log(`  ${describe(page)}`);
       console.log(suggest(page, "could link from"));
@@ -128,7 +128,7 @@ async function main(): Promise<void> {
   }
 
   if (thin.length) {
-    console.log(`thin — fewer than ${MIN_OUTBOUND} links out (${thin.length}):`);
+    console.log(`thin, fewer than ${MIN_OUTBOUND} links out (${thin.length}):`);
     for (const page of thin) {
       console.log(`  ${describe(page)} → ${named(outbound.get(page.url) ?? []).join(", ") || "nothing"}`);
     }
@@ -136,14 +136,14 @@ async function main(): Promise<void> {
   }
 
   if (weak.length && verbose) {
-    console.log(`weakly linked — one way in (${weak.length}):`);
+    console.log(`weakly linked, one way in (${weak.length}):`);
     for (const page of weak) {
       console.log(`  ${describe(page)} ← ${named(inbound.get(page.url) ?? []).join(", ")}`);
       console.log(suggest(page, "could also link from"));
     }
     console.log("");
   } else if (weak.length) {
-    console.log(`${weak.length} page(s) are reachable from only one other — --verbose to list them.`);
+    console.log(`${weak.length} page(s) are reachable from only one other; --verbose to list them.`);
   }
 
   const defects = orphans.length + thin.length;

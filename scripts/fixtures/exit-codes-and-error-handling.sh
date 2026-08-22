@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Fixtures for content/concepts/exit-codes-and-error-handling.md.
 #
-# The page is almost all self-contained shell — `true`, `false`, pipelines, `set -e` — which
+# The page is almost all self-contained shell (`true`, `false`, pipelines, `set -e`) which
 # needs nothing created. The one exception is the 126 example, which has to find a real file
 # that it is allowed to read and not allowed to execute.
 

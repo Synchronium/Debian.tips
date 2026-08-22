@@ -5,7 +5,7 @@ import { readSkipEntries } from "../../src/content/replaySkips.js";
 
 /** A page cannot be replayed as asked: a stale exemption, an unknown directive, a sandbox that
  *  is not what the page needs. Thrown rather than exiting, so the batch runner can report the
- *  page and carry on with the rest — and so these tools can be called as functions at all. */
+ *  page and carry on with the rest, and so these tools can be called as functions at all. */
 export class ReplayError extends Error {}
 
 /** Titles listed in `scripts/fixtures/<command>.skip`: examples a batch cannot reproduce, each
@@ -22,14 +22,14 @@ export function loadSkipTitles(command: string, titlesWithOutput: string[]): Set
     throw new ReplayError(
       `scripts/fixtures/${command}.skip names ${stale.length} example(s) that don't exist on the page (or carry no output: block):\n` +
         stale.map((title) => `  ${JSON.stringify(title)}`).join("\n") +
-        `\nRename or remove them — an entry that matches nothing exempts nothing, and reads as though it does.`,
+        `\nRename or remove them: an entry that matches nothing exempts nothing, and reads as though it does.`,
     );
   }
   return new Set(entries);
 }
 
 /** The `# verify:` directives a setup script may declare. The values are the flags themselves,
- *  so the set a script is checked against and the flags read out of it are one definition — two
+ *  so the set a script is checked against and the flags read out of it are one definition. Two
  *  copies fail open, leaving a renamed directive unrecognised while the error message still
  *  lists it. */
 export const SETUP_DIRECTIVE = {

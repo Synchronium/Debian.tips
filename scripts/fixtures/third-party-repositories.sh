@@ -9,7 +9,7 @@
 # Every step is guarded. This script runs again before each documented output, and building
 # packages and generating a signing key on each would dominate the run.
 #
-# The page documents states that are mutually exclusive on one machine — repository absent,
+# The page documents states that are mutually exclusive on one machine: repository absent,
 # present, and pinned. This leaves the sandbox in the "present, unpinned" state, which is the
 # one the page's warning is about; the others are marked `verify: skip` on the page.
 
@@ -76,7 +76,7 @@ fi
 #
 # Port 8081, not 8080. The curl, wget, awk, sed, grep and diff pages start
 # scripts/fixtures/http-mock.py on 8080 and nothing stops it afterwards, so in a full
-# `npm run replay` — one sandbox, every page in turn — 8080 is already taken by the time this
+# `npm run replay` (one sandbox, every page in turn) 8080 is already taken by the time this
 # page runs. Alone it passed; in the batch the bind failed silently and apt found no
 # repository. Hence the hard failure below rather than another silent one.
 if ! curl -sf http://127.0.0.1:8081/dists/stable/InRelease >/dev/null 2>&1; then

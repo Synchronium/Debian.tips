@@ -29,8 +29,8 @@ import { tagPage, tagsIndexPage } from "./templates/tags.js";
 
 /** Stands in for the stylesheet's href while pages are being rendered.
  *
- *  The stylesheet carries the syntax-highlighting classes, which are cut from the rendered pages
- *  — so its content, and therefore its content hash, is not known until every page has been
+ *  The stylesheet carries the syntax-highlighting classes, which are cut from the rendered
+ *  pages, so its content, and therefore its content hash, is not known until every page has been
  *  rendered. Pages are rendered against this token and it is substituted as they are written. */
 const CSS_HREF_TOKEN = "\u0000css-href\u0000";
 
@@ -54,7 +54,7 @@ function assertDisposable(distDir: string): void {
   const allowed = resolved === DIST_DIR || resolved.startsWith(resolve(tmpdir()) + sep);
   if (!allowed) {
     throw new Error(
-      `build: refusing to erase ${resolved} — the output directory must be ${DIST_DIR} or inside ${tmpdir()}`,
+      `build: refusing to erase ${resolved}: the output directory must be ${DIST_DIR} or inside ${tmpdir()}`,
     );
   }
 }
@@ -109,7 +109,7 @@ export async function build(
   }
 
   // A registered tag with no pages would otherwise render an empty card grid and be
-  // listed as "(0)" on the index — build only the tag pages that have content.
+  // listed as "(0)" on the index, so build only the tag pages that have content.
   const populatedTags = tags
     .map((tag) => ({ tag, taggedPages: pages.filter((p) => p.tags.includes(tag.name)) }))
     .filter(({ taggedPages }) => taggedPages.length > 0);

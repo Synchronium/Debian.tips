@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Fixtures for content/commands/tar/examples.yaml — must match its `fixtures:` block.
+# Fixtures for content/commands/tar/examples.yaml. Must match its `fixtures:` block.
 #
 # Every file gets a pinned mtime, because most of this page's output is `tar -tvf`, which
 # prints the stored timestamp of each member.
 #
 # The archives the extract/list/append examples read are built here rather than by an
 # earlier example, since fixtures are restored before every example. They are built with
-# --sort=name so the member order — and therefore every listing on the page — is fixed;
+# --sort=name so the member order, and therefore every listing on the page, is fixed;
 # tar otherwise stores entries in directory order, which is a hash order here.
 #
 # Replays as the unprivileged `user`, because `tar -tvf` prints an owner/group column for

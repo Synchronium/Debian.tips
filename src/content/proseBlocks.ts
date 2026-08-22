@@ -1,4 +1,4 @@
-// Finds the (command, output) pairs on a prose page — concepts, scripting, recipes, debian.
+// Finds the (command, output) pairs on a prose page: concepts, scripting, recipes, debian.
 //
 // Command pages carry their examples as structured YAML, so a tool can read the command and
 // its claimed output straight off the file. Prose pages state the same kind of claim in
@@ -21,8 +21,8 @@ import { COMPARISON, type Comparison } from "./schema.js";
  * carry a reason: an unexplained exemption reads as verified when it is the opposite.
  *
  * The vocabulary itself is `COMPARISON` in src/content/schema.ts, shared with the `compare:`
- * field on a command page's examples — two field names for one idea, and they are worth
- * exactly as much as they are worth together. */
+ * field on a command page's examples. Two field names for one idea, which is only safe while
+ * they stay in step. */
 
 export interface ProsePair {
   /** Shell to run, verbatim from the ```bash fence. */
@@ -54,7 +54,7 @@ interface Fence {
 
 /** Built from `COMPARISON` rather than written out, so a fourth comparison mode cannot be added
  *  to the vocabulary and silently left unparseable here. `exact` is excluded because it is the
- *  default and is never written as a directive — there would be nothing for it to say. */
+ *  default and is never written as a directive, since there would be nothing for it to say. */
 const DIRECTIVE = new RegExp(
   `^\\s*<!--\\s*verify:\\s*(${Object.values(COMPARISON)
     .filter((mode) => mode !== COMPARISON.exact)
@@ -65,9 +65,9 @@ const DIRECTIVE = new RegExp(
  *
  *  Anything after that first word is accepted and ignored. Requiring the line to end after the
  *  language would leave a fence written ```` ```bash title="x" ```` unrecognised *as a fence*,
- *  read as content, inverting every open/close pairing after it on the page. That fails silently
- *  — the page still renders and the replay reports the blocks as "not checkable" — which is the
- *  one failure mode this harness exists to prevent. */
+ *  read as content, inverting every open/close pairing after it on the page. That fails
+ *  silently: the page still renders, and the replay reports the blocks as "not checkable",
+ *  which is the one failure mode this harness exists to prevent. */
 const OPEN = /^```([^\s`]*)(?:\s+\S.*)?\s*$/;
 
 /** A closing fence carries no info string, so only a bare ``` closes an open block. Keeping the

@@ -2,7 +2,7 @@
 // harness under `scripts/`: both address the same directories, and a second opinion about where
 // something lives is a second opinion that can be wrong.
 //
-// `ROOT` is computed once, here, because the expression is relative to the file holding it — a
+// `ROOT` is computed once, here, because the expression is relative to the file holding it, and a
 // copy in a file one level deeper means something different while looking identical.
 //
 // Site *configuration* does not belong here (see `src/config.ts`) and neither does the content
@@ -19,7 +19,7 @@ export const PUBLIC_DIR = join(ROOT, "public");
 export const STYLES_DIR = join(ROOT, "styles");
 
 /** Client-side JavaScript that the layout inlines into every page, rather than serving as a
- *  file: it has to run before first paint. Under `src/` because it is a build input — anything
+ *  file: it has to run before first paint. Under `src/` because it is a build input; anything
  *  the browser fetches for itself lives in `public/assets/` instead. */
 export const CLIENT_DIR = join(ROOT, "src", "client");
 

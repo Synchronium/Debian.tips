@@ -16,7 +16,7 @@ jobs:
       - run: npm ci
       # `npm run check` sets NODE_ENV=production itself, so this is the same gate that runs
       # locally. It used to be set here only, which meant drafts were included locally and
-      # excluded in CI — and the link audit, the linkcheck and the about page's figures could
+      # excluded in CI, and the link audit, the linkcheck and the about page's figures could
       # all differ between a clean local run and a red one here.
       - run: npm run check
       - name: Serve dist/ for pa11y-ci
@@ -31,7 +31,7 @@ jobs:
 
   # Runs every documented `output:` block on every command page for real, inside a
   # disposable Debian container, and diffs the result against what the page claims. The
-  # `check` job above validates shape — schema, links, types — and would pass a page whose
+  # `check` job above validates shape (schema, links, types) and would pass a page whose
   # examples print something no command ever produced. This is the job that tests the
   # site's actual promise, and it's separate because it needs Docker and its own image.
   #
@@ -57,19 +57,19 @@ jobs:
       # Only the yaml parser is needed, but `npm ci` is what the lockfile guarantees.
       - run: npm ci
       # Built here rather than inside the first `sandbox.sh start` so the log shows image
-      # build time and replay time separately — if this job ever gets slow, that says
+      # build time and replay time separately, so if this job ever gets slow, that says
       # which half to fix. Caching the image (docker buildx + actions/cache) is the next
       # lever if the build dominates; it isn't worth the failure modes until it does.
       - name: Build the sandbox image
         run: docker build -t debian-tips-sandbox:trixie scripts/sandbox
-      # A pull request replays the pages its diff touches — and everything, if it touched the
+      # A pull request replays the pages its diff touches, and everything if it touched the
       # harness, where one change can move any page's output. A push to main always replays the
       # whole site, so nothing is deployed on the strength of a partial run.
       #
       # The pull-request run is shuffled and the main run is not, which is the opposite of what
       # it looks like. `alpha` on main is the stable reference: when the shuffled job beside it
       # fails and this one passes, the difference is the ordering rather than a regression.
-      # Shuffling the pull-request run costs nothing — same pages, same time — and the pages it
+      # Shuffling the pull-request run costs nothing (same pages, same time) and the pages it
       # reorders are the ones the author just changed.
       - name: Replay the changed pages
         if: github.event_name == 'pull_request'
@@ -82,15 +82,15 @@ jobs:
 
   # The same full replay, in a different order, on its own runner.
   #
-  # Every page shares one sandbox, so the order is part of what is tested — and a fixed order
+  # Every page shares one sandbox, so the order is part of what is tested, and a fixed order
   # tests exactly one of the 50! possible ones. That is not a theoretical gap: replaying in
   # reverse found a live defect on `apt-essentials` that needed three pages in one direction and
   # had been green since the page was written (2026-08-21). Sampling the space is the only way
   # that class of bug surfaces before a reader hits it.
   #
   # A separate job rather than a second step, because GitHub gives each job its own runner: the
-  # two run genuinely in parallel on different machines, so this costs no wall clock and — the
-  # part that matters here — no CPU contention. Two replays sharing one machine is exactly the
+  # two run genuinely in parallel on different machines, so this costs no wall clock and, the
+  # part that matters here, no CPU contention. Two replays sharing one machine is exactly the
   # arrangement that produced false failures on timing-sensitive apt pages before
   # (.claude/skills/ship/SKILL.md).
   #
@@ -99,7 +99,7 @@ jobs:
   # rolls the same dice. A failure here is reproducible, never flaky.
   #
   # This gates deployment, deliberately. deploy.yml keys off the whole workflow's conclusion, so
-  # a failure here holds the site back — including when the ordering it picked surfaced a latent
+  # a failure here holds the site back, including when the ordering it picked surfaced a latent
   # defect that has nothing to do with the commit that triggered it. That is the intended
   # trade: a page which is only true in one ordering is not true, and every other check in this
   # repository is a hard gate rather than an advisory one. `continue-on-error: true` is the one

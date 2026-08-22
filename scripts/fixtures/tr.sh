@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Fixtures for content/commands/tr/examples.yaml — must match its `fixtures:` block.
+# Fixtures for content/commands/tr/examples.yaml. Must match its `fixtures:` block.
 #
-# crlf.txt really does contain CRLF line endings — the page's fixture block renders them
+# crlf.txt really does contain CRLF line endings, and the page's fixture block renders them
 # visible with `from: sed "s/\r/␍/"`, since a raw CR shows as nothing at all.
 
 . /tmp/fixtures-common.sh

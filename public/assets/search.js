@@ -1,9 +1,9 @@
 // Lazy-loaded on first search-dialog open (see src/client/interaction.js).
-// Pulls in Pagefind's own JS/WASM bundle, which is the actually heavy part —
+// Pulls in Pagefind's own JS/WASM bundle, which is the heavy part,
 // this file itself stays tiny so the always-loaded inline script doesn't.
 
 /** How many results the dialog shows. Anything past this is summarised rather than dropped
- *  silently — see runSearch. */
+ *  silently; see runSearch. */
 const SHOWN = 8;
 
 let dialog, input, results, status, pagefind;
@@ -36,7 +36,7 @@ export function openSearch() {
   input.focus();
 
   if (!pagefind) {
-    // `npm run dev` rebuilds via src/build.ts only, which doesn't run Pagefind —
+    // `npm run dev` rebuilds via src/build.ts only, which doesn't run Pagefind, so
     // so this import 404s in local dev. Fail with a visible explanation rather
     // than an unhandled rejection and a dialog that silently does nothing.
     pagefind = import("/pagefind/pagefind.js")
@@ -80,7 +80,7 @@ async function runSearch() {
   // most searches will have more behind them than the first handful shown.
   if (search.results.length > entries.length) {
     items.push(
-      `<li class="search-more">Showing ${entries.length} of ${search.results.length} matches — keep typing to narrow it down.</li>`,
+      `<li class="search-more">Showing ${entries.length} of ${search.results.length} matches. Keep typing to narrow it down.</li>`,
     );
   }
   results.innerHTML = items.join("");

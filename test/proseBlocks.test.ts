@@ -14,7 +14,7 @@ describe("parseProsePage", () => {
     expect(pairs[0]!.command).toBe("echo hi");
     expect(pairs[0]!.output).toBe("hi");
     // Literals here, not COMPARISON: what these pin is that the directive text an author
-    // writes — `verify: shape` — maps to this value. Asserting through the constant would keep
+    // writes (`verify: shape`) maps to this value. Asserting through the constant would keep
     // passing after a rename that had broken the directive on every page in content/.
     expect(pairs[0]!.comparison).toBe("exact");
   });
@@ -99,7 +99,7 @@ describe("fence info strings", () => {
   it("pairs a command fence that carries more than the language", () => {
     // `/^```(\S*)\s*$/` did not recognise this line as a fence at all, so it was read as
     // content and every open/close pairing after it on the page inverted. The page still
-    // rendered, the replay reported "1 block not checkable", and nothing failed — verification
+    // rendered, the replay reported "1 block not checkable", and nothing failed, so verification
     // lost silently, which is the one thing this harness exists to prevent.
     const page = parseProsePage('```bash title="one"\necho hi\n```\n```\nhi\n```\n');
     expect(page.unpaired).toBe(0);
@@ -108,8 +108,8 @@ describe("fence info strings", () => {
   });
 
   it("does not let a fence line inside an output block close it", () => {
-    // A closing fence carries no info string, so a line like ```bash inside an output block —
-    // output that happens to contain Markdown — is content, not the end of the block.
+    // A closing fence carries no info string, so a line like ```bash inside an output block,
+    // in output that happens to contain Markdown, is content rather than the end of the block.
     const page = parseProsePage("```bash\ncat post.md\n```\n```\n```bash x\nhi\n```\n");
     expect(page.pairs).toHaveLength(1);
     expect(page.pairs[0]?.output).toBe("```bash x\nhi");

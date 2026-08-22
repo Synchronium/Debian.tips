@@ -6,7 +6,7 @@
 //      pseudo-terminal warning. These are *stripped*, and the stripped text is what a page
 //      is written with.
 //   2. Values nothing can pin, coming from the clock or the machine. These are *masked*,
-//      and only while comparing two runs — a mask must never reach a page.
+//      and only while comparing two runs. A mask must never reach a page.
 //
 // Every mask is anchored to the line shape that produces it. An unanchored one is more
 // dangerous than it looks: a bare `\d{4}-\d{2}-\d{2}` also matches a date inside a
@@ -79,7 +79,7 @@ const rates = (s: string): string =>
  *  rather than two consecutive blank lines around a hole. */
 const wgetBars = (s: string): string => s.replace(/^[ \t]*\d+K[ .]+.*?\d+%.*\n?(?:[ \t]*\n)*/gm, "");
 
-/** curl shows a progress meter whenever its output is not a terminal — here, always.
+/** curl shows a progress meter whenever its output is not a terminal, which here is always.
  *  Successive updates are separated by carriage returns, so the whole meter arrives as
  *  one physical line. Matching on "--:--:--" rather than the column layout keeps this
  *  working whatever suffixes the sizes and rates pick up (120, 163k, 1.2M). */
@@ -126,13 +126,13 @@ export function normalise(text: string): string {
   return rates(timestamps(stripArtifacts(text)));
 }
 
-/** Reduces output to its structure, for an example declared `volatile:` — one whose output
+/** Reduces output to its structure, for an example declared `volatile:`, one whose output
  *  is real but contains a value from the clock, the machine or the network.
  *
  *  What varies is masked; everything else must still match, so a renamed field, a vanished
  *  line or an error where there was none all change the shape:
  *
- *    quantity   288K, 1.7M, 261ms, 2min   a number and its unit move together — a service
+ *    quantity   288K, 1.7M, 261ms, 2min   a number and its unit move together: a service
  *                                         up for 261ms today is up for 2min tomorrow, and
  *                                         masking only the digits would leave ms vs min
  *    duration   2min 30s → one quantity   a span systemd spells with as many units as it

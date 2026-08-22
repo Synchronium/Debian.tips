@@ -18,7 +18,7 @@ import { ROOT, VERIFICATION_BASELINE_FILE } from "../src/paths.js";
  * stays green: separate a command fence from its output fence by a single line and the example
  * stops being checked, which the replay reports as "not checkable" and treats as fine.
  *
- * So the counts are pinned. Any movement fails, in either direction — a snapshot that only
+ * So the counts are pinned. Any movement fails, in either direction: a snapshot that only
  * noticed losses would drift upwards as pages were added and stop describing the site, and then
  * a later loss back to the recorded number would pass. */
 
@@ -45,7 +45,7 @@ function movesOn(before: PageVerification, after: PageVerification): Move[] {
 
 function describeMove(page: string, move: Move): string {
   const direction = isRegression(move.figure, move.before, move.after)
-    ? `REGRESSION — ${FIGURES[move.figure].regression}`
+    ? `REGRESSION: ${FIGURES[move.figure].regression}`
     : "improvement";
   return `  ${page}: ${move.figure} ${move.before} -> ${move.after}  (${direction})`;
 }
@@ -101,7 +101,7 @@ describe("the figures themselves", () => {
   });
 
   it("still find unpaired blocks somewhere", () => {
-    // Several pages legitimately carry one — the error message a troubleshooting page opens on,
+    // Several pages legitimately carry one: the error message a troubleshooting page opens on,
     // a config file a page tells you to write. If this ever reaches zero site-wide, the parser
     // has stopped recognising them and the count guards nothing.
     const total = Object.values(current).reduce((sum, figures) => sum + figures.unpaired, 0);

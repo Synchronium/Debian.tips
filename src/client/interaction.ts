@@ -1,5 +1,5 @@
 // The always-loaded glue: theme toggle, copy buttons, and the search trigger. Inlined into every
-// page by src/templates/layout.ts — it is small, and a request per page for this much would cost
+// page by src/templates/layout.ts. It is small, and a request per page for this much would cost
 // more than it saves.
 //
 // The search dialog's own wiring (and Pagefind itself) live in /assets/search.js, fetched via
@@ -13,7 +13,7 @@ const COPIED_MS = 1500;
 const FALLBACK_MS = 2000;
 
 /** The timeout each copy button owns, so a second click restarts its own label rather than
- *  another button's. Kept beside the element rather than on it — an expando on a DOM node is
+ *  another button's. Kept beside the element rather than on it, because an expando on a DOM node is
  *  invisible to the type system and to anyone reading the markup. */
 const copyTimers = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
 const copyLabels = new WeakMap<HTMLElement, string>();
@@ -66,7 +66,7 @@ function copy(button: HTMLElement): void {
   );
 }
 
-/** Expand or collapse every output on a command page at once, per page and per visit — nothing
+/** Expand or collapse every output on a command page at once, per page and per visit. Nothing
  *  is stored. A remembered preference could only be applied after first paint: `open` is DOM
  *  state no stylesheet can set, and the `<details>` elements do not exist yet while the head
  *  script runs. On a page with dozens of them that is a reflow, and following an `#example-3`

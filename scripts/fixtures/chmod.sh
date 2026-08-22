@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# Fixtures for content/commands/chmod/examples.yaml — must match its `fixtures:` block.
+# Fixtures for content/commands/chmod/examples.yaml. Must match its `fixtures:` block.
 #
 # This page replays as the unprivileged `user`: root bypasses the permission checks the
 # page documents, so `chmod 600 /etc/shadow` succeeds as root and `ls -l locked/` never
-# reports a denial. The directive below is what makes that happen — verify-examples.ts
+# reports a denial. The directive below is what makes that happen, and verify-examples.ts
 # and adopt-real-output.ts both read it, so the documented invocation is correct here
 # without anyone having to remember a flag. Replayed as root, this page scores 9/42.
 # verify: --user
 #
 # Every mode is set explicitly, never left to the umask, and every mtime is pinned,
 # because `ls -l` output is what almost every example on this page prints. The umask
-# belongs to the host rather than the image — 0000 on this project's devcontainer, 0022 on
-# a CI runner — so anything left to it would be documented differently in each place.
+# belongs to the host rather than the image (0000 on this project's devcontainer, 0022 on
+# a CI runner) so anything left to it would be documented differently in each place.
 
 # --- single files, each starting from a known mode --------------------------------
 : > notes.txt

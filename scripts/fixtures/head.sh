@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fixtures for content/commands/head/examples.yaml — must match its `fixtures:` block.
+# Fixtures for content/commands/head/examples.yaml. Must match its `fixtures:` block.
 #
 # The empty log files are for the -f examples, which a batch replay can't reproduce (see
 # head.skip); they exist so those commands have something to open.

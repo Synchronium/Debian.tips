@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fixtures for content/commands/uniq/examples.yaml — must match its `fixtures:` block.
+# Fixtures for content/commands/uniq/examples.yaml. Must match its `fixtures:` block.
 #
 # uniq only collapses *adjacent* duplicates, which is why the sorted copy is built here:
 # the page's examples need both the unsorted and the sorted form of the same list.

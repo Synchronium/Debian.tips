@@ -12,8 +12,8 @@ import { type Page, isCommandPage } from "../../src/content/loader.js";
 export const EDGE_KIND = { related: "related", prose: "prose" } as const;
 export type EdgeKind = (typeof EDGE_KIND)[keyof typeof EDGE_KIND];
 
-/** Both ends are page URLs. A slug is not the identity of a page — two pages in different
- *  categories may share one — and keying the graph by slug would merge them into a single node,
+/** Both ends are page URLs. A slug is not the identity of a page, since two pages in different
+ *  categories may share one, and keying the graph by slug would merge them into a single node,
  *  handing one page's inbound links to the other. */
 export interface Edge {
   from: string;
@@ -28,7 +28,7 @@ export function linksInHtml(html: string): string[] {
   return [...html.matchAll(/href="(\/[^"#]*)"/g)].map((match) => match[1]!);
 }
 
-/** Root-relative links in the short Markdown fields on a command page — example
+/** Root-relative links in the short Markdown fields on a command page: example
  *  descriptions, section intros, fixture notes. These render through `renderInline()`,
  *  which drops raw HTML, so a Markdown link is the only form that can appear. */
 export function linksInMarkdown(text: string): string[] {
@@ -58,8 +58,8 @@ export function collectEdges(pages: Page[]): Edge[] {
   const edges: Edge[] = [];
 
   for (const page of pages) {
-    // `relatedLinks`, not `related`: the loader has already resolved each authored reference —
-    // bare slug or `category/slug` — to exactly one page, and re-resolving it here would be a
+    // `relatedLinks`, not `related`: the loader has already resolved each authored reference,
+    // bare slug or `category/slug`, to exactly one page, and re-resolving it here would be a
     // second implementation of that rule, free to disagree with the first.
     for (const link of page.relatedLinks) {
       edges.push({ from: page.url, to: link.url, kind: EDGE_KIND.related });

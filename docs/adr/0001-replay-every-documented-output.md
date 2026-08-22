@@ -26,9 +26,9 @@ Every `output:` block on a command page, and every command/output fence pair on 
 re-run inside a disposable `debian:trixie` container and diffed against what the page claims. This
 runs on every push, not only when a page is written.
 
-The division of labour is deliberate and worth stating plainly: **`npm run check` validates
-shape — schema, types, links — and would happily pass a lying page. `npm run replay` is what
-checks the claims are true.** Neither substitutes for the other.
+The two gates do different jobs. **`npm run check` validates shape (schema, types, links) and
+would happily pass a lying page. Only `npm run replay` checks that the claims are true.** Neither
+substitutes for the other.
 
 Three rules follow directly, and each has been broken here at least once:
 
@@ -39,8 +39,8 @@ Three rules follow directly, and each has been broken here at least once:
 ## Consequences
 
 Writing a page costs more. Sample data has to be declared in a `fixtures:` block *and* recreated
-by `scripts/fixtures/<slug>.sh`, and the replay is what keeps those two honest — a fixture that
-does not reproduce the documented output is worse than no fixture, because it looks like evidence.
+by `scripts/fixtures/<slug>.sh`, and the replay checks that those two agree. A fixture that does
+not reproduce the documented output is worse than no fixture, because it looks like evidence.
 Verifying sometimes means installing a package or standing up a service, which is what the
 disposable container is for.
 
@@ -53,6 +53,6 @@ outputs are re-run on every push because the build counts them.
 
 ## Revisit when
 
-Not a candidate for revision. This is the product rather than an implementation choice — if it
+Not a candidate for revision. This is the product rather than an implementation choice: if it
 goes, the site is just another tips site. The things worth revisiting are *how* the replay runs
 (ADR-0002, ADR-0003), not whether it does.

@@ -2,7 +2,7 @@
 #
 # The three `journalctl -f` examples document no output, because -f blocks until interrupted
 # and a batch would only capture whatever had arrived before the timeout killed it. They are
-# named here rather than listed as entries — an entry naming an example the harness never had
+# named here rather than listed as entries, because an entry naming an example the harness never had
 # is an error, since it would read as an exemption while exempting nothing.
 #
 #   Watch new entries arrive

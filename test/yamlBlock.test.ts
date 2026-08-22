@@ -4,7 +4,7 @@ import { findOutputBlock, replaceOutputBlock } from "../scripts/lib/yamlBlock.js
 /* These two functions rewrite `examples.yaml` in place, which makes them the highest-stakes
  * untested code in the repository: a bug here corrupts a page's documented output, and
  * adopt-real-output.ts then re-certifies the corruption as "what the command printed". The
- * padding cases are the same hazard test/normalise.test.ts exists for, from the other end —
+ * padding cases are the same hazard test/normalise.test.ts exists for, from the other end:
  * `wc` and `uniq -c` right-align their first column, and a block written with a bare `|`
  * silently loses exactly that padding. */
 
@@ -89,7 +89,7 @@ describe("replaceOutputBlock", () => {
 
   it("keeps leading padding that a bare | would strip", () => {
     // The first line is indented further than the rest. Under a bare `|`, YAML takes the block's
-    // strip width from that first line and every later line loses two columns — the documented
+    // strip width from that first line and every later line loses two columns, so the documented
     // output silently stops matching what the command prints.
     const lines = [...FILE];
     const lookup = findOutputBlock(lines, "Count lines in every file");

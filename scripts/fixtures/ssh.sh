@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Fixtures for content/commands/ssh/examples.yaml — must match its `fixtures:` block.
+# Fixtures for content/commands/ssh/examples.yaml. Must match its `fixtures:` block.
 #
 # Replays as the unprivileged `user`: ssh refuses to use a private key owned by another
-# user, and the config/known_hosts examples all read ~/.ssh — as root, `ssh -G` and
+# user, and the config/known_hosts examples all read ~/.ssh. As root, `ssh -G` and
 # `ssh-keygen -R` report /root/.ssh/ where the page documents /home/user/.ssh/. The
 # directive below is what applies it; both verify-examples.ts and adopt-real-output.ts
 # read it, so nobody has to remember a flag.
 # verify: --user
 #
 # ~/.ssh lives outside the working directory the harness restores, so this script manages
-# it explicitly — the same situation the crontab page has with /var/spool.
+# it explicitly, the same situation the crontab page has with /var/spool.
 
 rm -rf ~/.ssh
 mkdir -p ~/.ssh

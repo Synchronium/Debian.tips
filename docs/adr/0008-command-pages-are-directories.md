@@ -8,7 +8,7 @@
 
 A command page is mostly examples, and each example carries more than prose can hold: a title, the
 code, a description, the expected output, a difficulty level, tags, a danger flag, a volatility
-note. The replay has to address each of those individually — to run *this* code and diff *that*
+note. The replay has to address each of those individually, to run *this* code and diff *that*
 output, and to know that this one is exempt and that one compares by shape.
 
 Markdown fences cannot carry that. Everything around a fence is prose, and prose is not
@@ -23,8 +23,8 @@ against the directory name.
 
 Every other category is a flat `content/<category>/<slug>.md`. Their claims are stated as a
 fenced `bash` block followed immediately by the output it produced, and `scripts/replay-prose-page.ts`
-pairs the two up — a looser convention, and the right one, because on those pages the commands are
-incidental to an argument rather than the substance of the page.
+pairs the two up. That is a looser convention, and the right one, because on those pages the
+commands are incidental to an argument rather than the substance of the page.
 
 Sample data is declared **twice, deliberately**: as a `fixtures:` block in `examples.yaml`, which is
 what the reader sees, and as `scripts/fixtures/<slug>.sh`, which recreates it in the sandbox. The
@@ -42,7 +42,7 @@ is worth remembering before it does.
 The duplication of sample data is the point rather than an oversight: a fixture that does not
 reproduce the documented output is worse than no fixture, because it looks like evidence. A block
 that is not one file's literal contents sets `from:` to the command that reproduces it, so every
-rendered block stays something a reader could actually produce.
+rendered block stays something a reader could produce for themselves.
 
 Prose pages opt into replay simply by having a setup script. Without one they are reported as *not
 replayed* rather than passed over silently, so the gap is visible.

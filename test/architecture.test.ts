@@ -8,7 +8,7 @@ import { readExamplesFile } from "../scripts/lib/examplesFile.js";
 
 /* An architecture in a documented output is the one defect that cannot fail in both places at
  * once: this devcontainer is arm64, a CI runner is amd64, and emulation isn't available here, so
- * the page passes locally and fails in CI or the reverse. It is invisible to every other check —
+ * the page passes locally and fails in CI or the reverse. It is invisible to every other check:
  * the output is real, it reproduces perfectly, and it is still wrong.
  *
  * The rule is about the package rather than the command. `Architecture: all` packages print
@@ -54,13 +54,13 @@ describe("documented output", () => {
   it("never names a machine architecture", () => {
     const offenders = documentedOutputs()
       .filter(({ output }) => PATTERN.test(output))
-      .map(({ where, output }) => `${where} — ${PATTERN.exec(output)![0]}`);
+      .map(({ where, output }) => `${where}: ${PATTERN.exec(output)![0]}`);
     expect(offenders).toEqual([]);
   });
 
   /* An exemption whose stated reason is the architecture is always a defect rather than a
    * record of how something was checked instead. It silences the replay while leaving the page
-   * showing one machine's architecture to readers on the other — and nothing else can report
+   * showing one machine's architecture to readers on the other, and nothing else can report
    * that, because the exemption is itself the thing suppressing the signal.
    *
    * There is always a fix: choose an `Architecture: all` package, or filter the field out of

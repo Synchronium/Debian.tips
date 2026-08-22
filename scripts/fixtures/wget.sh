@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fixtures for content/commands/wget/examples.yaml — must match its `fixtures:` block.
+# Fixtures for content/commands/wget/examples.yaml. Must match its `fixtures:` block.
 #
 # Starts scripts/fixtures/http-mock.py, the same local test server the curl page uses, and
 # creates the two small input files the batch-download and POST examples read. Only starts
@@ -10,7 +10,7 @@
 # verify: --user
 
 # Fails loudly if the server never answers. Every example on this page then reports a
-# mismatch, which reads as forty broken examples rather than one missing process — and the
+# mismatch, which reads as forty broken examples rather than one missing process, and the
 # reason (a port in use, no IPv6 loopback in this environment) is in the server's own
 # output, which is why that gets printed here rather than discarded.
 start_mock() {  # port [extra http-mock.py args...]

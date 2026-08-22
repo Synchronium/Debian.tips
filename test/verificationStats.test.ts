@@ -7,7 +7,7 @@ import { fillStats, verificationStats, type VerificationStats } from "../src/con
  * are counted rather than typed. Two of them were wrong and nothing could see it: outputs on a
  * command page with no setup script were counted as "re-run on every push" when the replay skips
  * that page entirely, and exemptions were counted by reading every line of every .skip file in
- * the repository — so an entry naming an example that no longer existed silently reduced the
+ * the repository, so an entry naming an example that no longer existed silently reduced the
  * figure the site advertises. */
 
 const FIXTURE_CONTENT = join(import.meta.dirname, "fixtures", "content");
@@ -56,7 +56,7 @@ describe("verificationStats", () => {
   it("does not report a page whose blocks are all exempt as one nothing re-runs", async () => {
     // The distinction the two figures turn on. A page with a setup script opted in: the replay
     // runs it and reports its exemptions. Counting it alongside the pages with no script at all
-    // would advertise a deliberate, explained exemption as an oversight — and would understate
+    // would advertise a deliberate, explained exemption as an oversight, and would understate
     // coverage on exactly the page that exists to state it accurately.
     const { pages } = await loadContent(FIXTURE_CONTENT);
     const allExempt = verificationStats(pages, FIXTURE_CONTENT, FIXTURE_ALL_EXEMPT);

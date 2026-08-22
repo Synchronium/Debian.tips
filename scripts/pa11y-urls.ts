@@ -5,7 +5,7 @@
 // Generated rather than hand-written: a typed list silently stops covering the site as
 // categories are added, and the symptom is a gate that passes because it is checking less.
 //
-// Not every page — that would be hundreds of headless-browser loads for near-identical markup.
+// Not every page, which would be hundreds of headless-browser loads for near-identical markup.
 // One page per *template*, plus every listing, which is where the markup actually varies:
 // a second command page tells you nothing the first one didn't.
 import { readFileSync, writeFileSync } from "node:fs";
@@ -18,7 +18,7 @@ const config = join(ROOT, ".pa11yci.json");
 
 const sitemap = readFileSync(join(DIST_DIR, SITEMAP_FILE), "utf-8");
 // Parsed as a URL rather than pattern-matched: the sitemap holds absolute locations, and taking
-// the path with a regex quietly produced `//debian.tips/commands/` — which is a path, resolves
+// the path with a regex quietly produced `//debian.tips/commands/`, which is a path, resolves
 // against the origin, and 404s.
 const paths = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => new URL(match[1] ?? "").pathname);
 
@@ -43,7 +43,7 @@ const otherListings = listings.filter((path) => !path.startsWith(TAGS_PATH) || p
 
 const urls = [...otherListings, ...(tagPages[0] ? [tagPages[0]] : []), ...samples.values()]
   .map((path) => `${origin}${path}`)
-  // The 404 page is not in the sitemap — deliberately, nothing should crawl to it — but it is
+  // The 404 page is deliberately not in the sitemap, since nothing should crawl to it, but it is
   // a template with its own markup, and one nobody looks at until it is already being seen.
   .concat(`${origin}${NOT_FOUND_PATH}`);
 

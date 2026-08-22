@@ -3,7 +3,7 @@
 One file per decision that shapes this repository: what was decided, what it rules out, and what
 would have to change for it to be worth revisiting.
 
-These records were written on 2026-08-19, and most of the decisions predate them — several had
+These records were written on 2026-08-19, and most of the decisions predate them. Several had
 been made and re-derived several times without ever being written down anywhere a clone could
 see. So each record carries a `Recorded:` date rather than a fabricated decision date. Where the
 reasoning came from a review or plan that is not committed, the record is now the only copy.
@@ -12,12 +12,12 @@ reasoning came from a review or plan that is not committed, the record is now th
 reconstructing decisions that had already been replaced. That was a one-off, to avoid opening the
 set with a history nobody needed.
 
-From here the normal rule applies, and it turns on how big the change is:
+From here the normal rule applies, and which treatment a change gets depends on its size:
 
-- **A decision is reversed or replaced** — write a new record, and mark the old one
+- **A decision is reversed or replaced**: write a new record, and mark the old one
   `Superseded by ADR-00NN` with a link. The old record stays. Its reasoning is the most useful
   thing available to anyone wondering whether the new decision has already been tried.
-- **A record is merely wrong, stale in detail, or unclear** — edit it in place. Git history is the
+- **A record is merely wrong, stale in detail, or unclear**: edit it in place. Git history is the
   audit trail for that, and a supersession chain over a corrected file name helps nobody.
 
 ## What belongs here, and what does not
@@ -35,16 +35,16 @@ restating it:
 | Writing or fixing a content page | `.claude/skills/write-content-page/SKILL.md` |
 | The map of everything | `CLAUDE.md` |
 
-Every record names what **enforces** it — the test, the gate, or the schema that fails when the
-decision is violated. A record with nothing in that field is a rule already decaying, and the
-field exists to make that visible.
+Every record names what **enforces** it: the test, the gate, or the schema that fails when the
+decision is violated. A record with nothing in that field is a rule nothing is holding up, and
+the field is there so that you can see which ones those are.
 
 ## The records
 
 ### The promise
 
 The site's one differentiating claim is that every output it shows was really produced by the
-command shown. These five are what make that true rather than aspirational.
+command shown. These five records keep that claim honest.
 
 | # | Decision |
 | --- | --- |
@@ -85,15 +85,14 @@ command shown. These five are what make that true rather than aspirational.
 
 Copy the shape of any existing record: a `Status` / `Recorded` / `Enforced by` header, then
 **Context**, **Decision**, **Consequences**, **Revisit when**. Number it sequentially, add it to
-the table above, and say what enforces it. If nothing does, say that too — it is useful
-information about how much the decision is actually worth.
+the table above, and say what enforces it. If nothing does, say that too: it is useful
+information about how much the decision is worth.
 
 `Status` is `Accepted` unless there is something to say (`Accepted, pending an upstream release`;
 `Accepted, with a deferred follow-up`). A record that has been replaced becomes
 `Superseded by [ADR-00NN](00NN-….md)`, and the superseding record says which one it replaces in its
-Context. Leave the superseded record otherwise intact — rewriting its reasoning to match the new
-decision destroys the only thing it is still good for.
+Context. Leave the superseded record otherwise intact, since rewriting its reasoning to match the
+new decision destroys the only thing it is still good for.
 
-The tables above carry no status column, so mark a superseded row in place —
-`~~0011~~ superseded by 0021` — rather than leaving it reading as current. An index that shows a
-replaced decision as live is the same failure the records exist to prevent, one level up.
+The tables above carry no status column, so mark a superseded row in place
+(`~~0011~~ superseded by 0021`) rather than leaving it reading as current.

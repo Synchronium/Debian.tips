@@ -13,7 +13,7 @@ import type { CommandPage } from "../content/loader.js";
 import type { ExamplesFile } from "../content/schema.js";
 
 /** Section headings and the `##` headings in `index.md` land in the same document, so both are
- *  slugged by `github-slugger` — what `rehype-slug` uses for the prose side. A second
+ *  slugged by `github-slugger`, which is what `rehype-slug` uses for the prose side. A second
  *  implementation disagrees on any title that is not plain ASCII, and reduces a title with no
  *  ASCII at all to `id=""`, which the collision check below cannot see because it only fires on
  *  the second one. */
@@ -55,7 +55,7 @@ export async function commandPage(page: CommandPage, cssHref: string): Promise<s
   const examplesFile = page.examples;
 
   // Round down to the nearest ten and mark it "+", but only when there really are
-  // extras — exactly 50 examples should read "50", not "50+".
+  // extras: exactly 50 examples should read "50", not "50+".
   const totalExamples = examplesFile.sections.reduce((n, s) => n + s.examples.length, 0);
   const roundedCount = Math.floor(totalExamples / 10) * 10;
   const countLabel =
@@ -70,7 +70,7 @@ export async function commandPage(page: CommandPage, cssHref: string): Promise<s
   // Seeded with the prose heading ids the markdown pipeline already emitted, because
   // section titles and `##` headings in index.md land in the same document and are
   // slugged by two different functions (slugify here, rehype-slug there). A collision
-  // between the two is invalid HTML and makes the section unreachable by anchor — the
+  // between the two is invalid HTML and makes the section unreachable by anchor: the
   // TOC renders two entries pointing at the same target.
   const seenSectionSlugs = new Set<string>(page.toc.map((entry) => entry.id));
   const sectionsHtml = await Promise.all(
@@ -78,7 +78,7 @@ export async function commandPage(page: CommandPage, cssHref: string): Promise<s
       const sectionSlug = slugify(section.title);
       if (seenSectionSlugs.has(sectionSlug)) {
         throw new Error(
-          `${page.slug}: section title "${section.title}" produces heading id "${sectionSlug}", which is already used on this page (by another section, or by a "##" heading in index.md) — rename one`,
+          `${page.slug}: section title "${section.title}" produces heading id "${sectionSlug}", which is already used on this page (by another section, or by a "##" heading in index.md): rename one`,
         );
       }
       seenSectionSlugs.add(sectionSlug);
@@ -99,7 +99,7 @@ ${cards.map((c) => raw(c))}
   //
   // Both labels are written here and read back from the button by src/client/interaction.ts.
   // The client script is compiled separately and cannot import from the templates, so an
-  // attribute is how one definition reaches both — spelling the label in both files is a pair
+  // attribute is how one definition reaches both. Spelling the label in both files is a pair
   // nothing would keep in step.
   const collapsedOutputs = examplesFile.sections
     .flatMap((s) => s.examples)

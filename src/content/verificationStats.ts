@@ -25,20 +25,20 @@ export interface VerificationStats {
   outputs: number;
   /** Documented outputs actually replayed on every push: the rest are exempt. */
   replayed: number;
-  /** Documented outputs that declare `volatile:` — real, but not identical on your machine. */
+  /** Documented outputs that declare `volatile:`: real, but not identical on your machine. */
   volatile: number;
   /** Sample-file blocks, themselves re-read from the sandbox and diffed. */
   fixtures: number;
   /** Examples exempted from the batch in scripts/fixtures/<command>.skip, each with a
    *  comment there saying how it was verified instead. */
   exemptions: number;
-  /** Prose pages — concepts, lessons, recipes, Debian articles — whose documented output is
+  /** Prose pages (concepts, lessons, recipes, Debian articles) whose documented output is
    *  replayed too. Counted separately because a prose page opts in by having a setup script,
    *  and most do not have one yet. */
   prosePages: number;
   /** Output blocks replayed on those pages. */
   proseOutputs: number;
-  /** Prose pages with no setup script, whose outputs nothing re-runs — the counterpart to
+  /** Prose pages with no setup script, whose outputs nothing re-runs, the counterpart to
    *  `unreplayedCommandPages`.
    *
    *  A page that *has* a script but every one of whose blocks is exempt is in neither figure.
@@ -105,8 +105,8 @@ export function verificationStats(
       }
     }
     // Per page, against that page's own examples, because `replayed` subtracts this from
-    // `outputs`. Counting `.skip` lines directly would let an entry naming a renamed example —
-    // or a prose page's exemption, which is not in `outputs` at all — reduce the figure the
+    // `outputs`. Counting `.skip` lines directly would let an entry naming a renamed example,
+    // or a prose page's exemption that is not in `outputs` at all, reduce the figure the
     // site advertises. `commandChecks` is what the page itself states, so the total and the
     // per-page claim are one count.
     const checks = commandChecks(page.examples, page.slug, fixtureDir);
@@ -135,7 +135,7 @@ export function verificationStats(
  *
  *  Throws on a token with no value rather than shipping `{{outputs}}` to a reader, and on a
  *  value of zero, which on this page would always mean the counting broke rather than that
- *  the site genuinely has none of something. The two "unreplayed" figures are the exception —
+ *  the site genuinely has none of something. The two "unreplayed" figures are the exception:
  *  zero is the state the site wants to be in, and saying so is the point. */
 const ZERO_IS_MEANINGFUL: ReadonlySet<keyof VerificationStats> = new Set([
   "unreplayedCommandPages",

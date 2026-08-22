@@ -1,6 +1,6 @@
 name: Deploy
 # Deploys only what CI passed. Previously this ran on every push to main independently, so
-# a red build — a broken link, a failing test, a page whose examples no longer reproduce —
+# a red build (a broken link, a failing test, a page whose examples no longer reproduce)
 # went live anyway and the badge and the site disagreed.
 #
 # `workflow_run` fires when CI finishes, and GitHub only honours it from the workflow file
@@ -24,7 +24,7 @@ jobs:
         with:
           # The exact commit CI tested. A `workflow_run` job otherwise checks out the tip
           # of the default branch, which after a quick second push is a commit nothing has
-          # verified — deployed under the previous run's approval.
+          # verified, and deployed under the previous run's approval.
           ref: ${{ github.event.workflow_run.head_sha || github.ref }}
       - uses: actions/setup-node@v7
         with: { node-version: 24, cache: npm }

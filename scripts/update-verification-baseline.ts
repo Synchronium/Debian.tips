@@ -1,6 +1,6 @@
 // Rewrites the snapshot of what each page verifies.
 //
-// Run it after a change that legitimately moves those figures — a new page, examples added or
+// Run it after a change that legitimately moves those figures: a new page, examples added or
 // removed, an exemption granted. Never run it to make a failing build pass: the test fails on a
 // *reduction* precisely because a page can lose a check without anything else noticing, and
 // regenerating in that state records the loss as the new normal.

@@ -6,7 +6,7 @@
 //
 // A page's `output:` blocks are its central claim: real captured output, not written from
 // memory. Replaying is the only thing that holds them to it, and it is what makes a
-// `fixtures:` block worth showing — if the documented fixture doesn't reproduce the
+// `fixtures:` block worth showing: if the documented fixture doesn't reproduce the
 // documented output, one of them is wrong.
 //
 // Examples with no `output:` are skipped, having nothing to compare. `--user` runs the
@@ -63,8 +63,8 @@ export function replayCommandPage(options: ReplayOptions): ReplayResult {
   const doc = readExamplesFile(command);
   const fixtures = doc.fixtures ?? [];
 
-  // Examples a batch can't reproduce — they need a concurrent writer, a live log rotation or
-  // a network peer — are listed by title in scripts/fixtures/<command>.skip. Everything else
+  // Examples a batch can't reproduce, because they need a concurrent writer, a live log
+  // rotation or a network peer, are listed by title in scripts/fixtures/<command>.skip. Everything else
   // must reproduce exactly.
   //
   // The split comes from `partitionExamples`, which is also what the page's own "checks N
@@ -105,14 +105,14 @@ export function replayCommandPage(options: ReplayOptions): ReplayResult {
   });
 
   // Fixtures are checked in the same batch, after the examples, so their indices continue the
-  // same sequence. Each is re-read from the sandbox — `cat <name>` unless the block sets
-  // `from:` — and diffed, so a fixtures: block that has drifted from its setup script fails
+  // same sequence. Each is re-read from the sandbox (`cat <name>` unless the block sets
+  // `from:`) and diffed, so a fixtures: block that has drifted from its setup script fails
   // rather than quietly misleading a reader.
   const fixtureCommands = fixtures.map((fixture) => fixture.from ?? `cat ${shellQuote(fixture.name)}`);
   const captured = captureAll(sandbox, [...checked.map((example) => example.code), ...fixtureCommands]);
 
   // `compare: shape` relaxes the comparison for output carrying values no anchored mask
-  // covers. Everything else — including most output declared `volatile:` — is compared
+  // covers. Everything else, including most output declared `volatile:`, is compared
   // exactly, after the anchored masks in normalise.
   const mismatches: Mismatch[] = [];
   let exampleMatches = 0;

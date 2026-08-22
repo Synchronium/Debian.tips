@@ -14,7 +14,7 @@ export const SITE = {
 } as const;
 
 /** A link to one file in the repository, on the default branch. `path` is relative to the
- *  repository root and uses forward slashes — `pageSources` in `src/content/sourcePaths.ts` is
+ *  repository root and uses forward slashes. `pageSources` in `src/content/sourcePaths.ts` is
  *  what produces them. */
 export const blobUrl = (path: string): string => `${SITE.repo}/blob/main/${path}`;
 
@@ -30,7 +30,7 @@ export const tagPath = (tag: string): string => `${TAGS_PATH}${tag}/`;
  *  is free to lead with whatever the site most wants read first.
  *
  *  Seven entries is already wide for a header. When the eighth lands (a `perl` track is the
- *  likely one), this is where it gets solved — by promoting five and putting the rest behind a
+ *  likely one), this is where it gets solved, by promoting five and putting the rest behind a
  *  "More", or by grouping into Learn / Do / Reference. Not by reshaping the categories. */
 export const NAV_ORDER: Category[] = [
   "commands",
@@ -71,7 +71,7 @@ export const CATEGORY_META: Record<Category, { label: string; path: string; desc
   compare: {
     label: "Compare",
     path: "/compare/",
-    description: "Two tools that overlap, what actually differs, and which one to reach for.",
+    description: "Two tools that overlap, what differs between them, and which one to use.",
   },
   debian: {
     label: "Debian",
@@ -80,7 +80,7 @@ export const CATEGORY_META: Record<Category, { label: string; path: string; desc
   },
 };
 
-/** Display grouping for /commands/ — a lookup table, not per-page frontmatter,
+/** Display grouping for /commands/: a lookup table, not per-page frontmatter,
  * so pages can be regrouped without touching content. A command page whose slug
  * isn't listed here still builds, but falls into COMMAND_GROUP_FALLBACK rather
  * than its logical section. Slugs with no page yet are ignored, so this doubles
@@ -143,8 +143,8 @@ export const COMMAND_GROUP_FALLBACK = "More commands";
 /** Pages that belong to no category: no listing to appear on, no tags, no prev/next. They are
  *  built straight from a Markdown file in `content/` and reached from the header and footer.
  *
- *  Listed here because a standalone page is otherwise spelled out in five unrelated places —
- *  the builder, the sitemap, two templates and the link audit's orphan exemption — and missing
+ *  Listed here because a standalone page is otherwise spelled out in five unrelated places
+ *  (the builder, the sitemap, two templates and the link audit's orphan exemption), and missing
  *  the last of those would report the new page as an orphan for ever, with no way to fix it,
  *  since nothing in `content/` is meant to link it.
  *

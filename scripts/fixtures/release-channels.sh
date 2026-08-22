@@ -15,7 +15,7 @@ rm -f /etc/apt/preferences.d/*
 
 # The official debian images pin each stanza to a snapshot with a comment line above the
 # URI. That comment is a property of the image, not of Debian, and a reader would never see
-# it — a harness artifact has to be removed rather than documented, so it goes here.
+# it: a harness artifact has to be removed rather than documented, so it goes here.
 sed -i '/^# http:\/\/snapshot\.debian\.org/d' /etc/apt/sources.list.d/debian.sources
 
 # The page shows a package that exists in both stable and backports, which needs the

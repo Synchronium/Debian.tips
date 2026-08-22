@@ -4,7 +4,7 @@ import { shellQuote } from "../scripts/lib/sandbox.js";
 
 /* `shellQuote` is the single point where content becomes a shell command: every example's code
  * goes through it on its way into `bash -c` inside the sandbox. A quoting bug here does not
- * announce itself — the command runs, prints something else, and the replay reports a mismatch
+ * announce itself: the command runs, prints something else, and the replay reports a mismatch
  * on a page that was correct. Checked against a real shell rather than against an expected
  * string, because what matters is what bash does with it. */
 

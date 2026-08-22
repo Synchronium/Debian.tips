@@ -3,7 +3,7 @@ import { paginate, paginationNav } from "../src/templates/partials/pager.js";
 
 /* Pagination exists because a tag can accumulate every page on the site. The cases that matter
  * are the boundaries: a set that exactly fills one page must not emit an empty second one, and
- * the first slice must keep the listing's own URL — a `/tags/apt/page/1/` would be a second URL
+ * the first slice must keep the listing's own URL, since a `/tags/apt/page/1/` would be a second URL
  * for a page that already has one. */
 
 const items = (count: number): number[] => Array.from({ length: count }, (_unused, i) => i + 1);
@@ -43,7 +43,7 @@ describe("paginate", () => {
   });
 
   it("emits a page for an empty set rather than nothing at all", () => {
-    // A category with no pages still has a listing — it says the category is empty, which is
+    // A category with no pages still has a listing, which says the category is empty, and that is
     // information. Emitting nothing would leave the nav linking to a 404.
     expect(paginate([], "/recipes/", 24)).toEqual([{ items: [], number: 1, total: 1, path: "/recipes/" }]);
   });

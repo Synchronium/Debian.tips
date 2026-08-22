@@ -11,7 +11,7 @@
 // Deliberately narrow. It only rewrites an example whose real output matches the documented
 // output once leading whitespace is ignored on both sides; anything differing in substance
 // is reported and left for a human. This is a formatting repair, not a way to make a wrong
-// example pass — use adopt-real-output.ts for that, deliberately.
+// example pass; use adopt-real-output.ts for that, deliberately.
 import { readFileSync, writeFileSync } from "node:fs";
 import type { Example } from "../src/content/schema.js";
 import { examplesPath, readExamplesFile } from "./lib/examplesFile.js";
@@ -97,7 +97,7 @@ function main(): void {
   writeFileSync(path, lines.join("\n"), "utf-8");
   console.log(`${command}: repaired ${repaired} output block(s)`);
   for (const entry of leftAlone)
-    console.log(`  LEFT ALONE (differs in substance): ${entry.title} — ${entry.reason}`);
+    console.log(`  LEFT ALONE (differs in substance): ${entry.title}: ${entry.reason}`);
 }
 
 try {

@@ -10,7 +10,8 @@ Tags are the subject axis (ADR-0006), which makes them the site's de facto subje
 works if they are few enough to browse and populated enough to be worth clicking.
 
 Freeform tags fail both ways at once. They multiply toward one tag per page, and each new one is a
-listing page with a single entry — a dead end for the reader who clicked it expecting a subject.
+listing page with a single entry, which is a dead end for the reader who clicked it expecting a
+subject.
 
 ## Decision
 
@@ -40,5 +41,5 @@ navigation improvement available on the subject axis and it is worth keeping pop
 
 ## Revisit when
 
-The registry stops being browsable — roughly, when it no longer fits on a screen. The answer then
-is retiring dead tags, not a hierarchy of them.
+The registry stops being browsable, which roughly means when it no longer fits on a screen. The
+answer then is retiring dead tags, not a hierarchy of them.

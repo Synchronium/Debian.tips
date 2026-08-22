@@ -34,7 +34,7 @@ export interface SourceFile {
 
 export interface PageSources {
   files: SourceFile[];
-  /** Whether `scripts/fixtures/<slug>.sh` exists — the file that opts a page into the replay,
+  /** Whether `scripts/fixtures/<slug>.sh` exists, the file that opts a page into the replay,
    *  and therefore whether `npm run replay -- <slug>` has anything to run. A page without one
    *  says so rather than printing a command that would report it as unverified. */
   replayable: boolean;

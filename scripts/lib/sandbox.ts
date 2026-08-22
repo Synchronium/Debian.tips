@@ -66,13 +66,13 @@ export interface Sandbox {
 }
 
 /** How a sandbox is booted. `systemd` costs `--privileged` and the host's cgroup tree, so it is
- *  asked for per page — see `SETUP_DIRECTIVE` in `replayMetadata.ts` — rather than applied to
+ *  asked for per page (see `SETUP_DIRECTIVE` in `replayMetadata.ts`) rather than applied to
  *  everything. */
 export const SANDBOX_FLAVOUR = { default: "default", systemd: "systemd" } as const;
 export type SandboxFlavour = (typeof SANDBOX_FLAVOUR)[keyof typeof SANDBOX_FLAVOUR];
 
 /** The tools that open a sandbox. The value names the tool's working directory inside the
- *  container, which is what keeps two of them running at once out of each other's files — so
+ *  container, which is what keeps two of them running at once out of each other's files, so
  *  the set is named here rather than left to a string literal at each call site. */
 export const SANDBOX_TOOL = {
   commandPage: "verify",
@@ -147,8 +147,8 @@ export function openSandbox(options: OpenOptions): Sandbox {
   writeFile(exec, setupPath, setupInSandbox);
 
   // Run once with its output shown and its exit status honoured. The per-example restores
-  // discard both, so without this a setup script that fails — a missing package, a port
-  // already taken — is indistinguishable from a page whose every example is wrong.
+  // discard both, so without this a setup script that fails on a missing package or a port
+  // already taken is indistinguishable from a page whose every example is wrong.
   let setupOut = "";
   try {
     setupOut = exec(`cd ${workdir} && bash ${setupInSandbox} 2>&1 && echo ${SETUP_OK}`);
@@ -158,7 +158,7 @@ export function openSandbox(options: OpenOptions): Sandbox {
   }
   if (!setupOut.includes(SETUP_OK)) {
     throw new ReplayError(
-      `${setupPath} failed inside the sandbox — no fixtures were created:\n${setupOut.trim()}`,
+      `${setupPath} failed inside the sandbox: no fixtures were created:\n${setupOut.trim()}`,
     );
   }
 

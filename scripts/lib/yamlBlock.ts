@@ -29,8 +29,8 @@ function titleOnLine(line: string): string | null {
   return raw;
 }
 
-/** Why a lookup failed. A missing output block is routine — plenty of examples document
- *  none — while a title matching zero or several lines means the file is not what the
+/** Why a lookup failed. A missing output block is routine, since plenty of examples document
+ *  none, while a title matching zero or several lines means the file is not what the
  *  caller believes it to be. */
 export type BlockLookup =
   | { found: true; block: OutputBlock }

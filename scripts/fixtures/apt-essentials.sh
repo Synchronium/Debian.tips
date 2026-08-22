@@ -46,7 +46,7 @@ fi
 # is printed above it whenever anything is auto-installed and unreferenced. The page would then
 # show the wrong first line, with no hint that a different notice had matched.
 #
-# Nothing on this page creates an orphan — it takes another page marking a package auto and a
+# Nothing on this page creates an orphan. It takes another page marking a package auto and a
 # third removing what depended on it. Assert the state the output depends on rather than relying
 # on the ordering.
 apt-get autoremove -y >/dev/null 2>&1

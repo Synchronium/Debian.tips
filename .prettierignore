@@ -3,8 +3,8 @@ dist/
 node_modules/
 public/
 
-# CONTENT IS NEVER FORMATTED. This is not a style preference — the whitespace in these files
-# is load-bearing, and reformatting them would silently change what the site claims:
+# CONTENT IS NEVER FORMATTED. This is not a style preference. The whitespace in these files
+# decides what the site claims, so reformatting them would change it silently:
 #
 #   * `examples.yaml` uses `output: |2` blocks to preserve the column padding of commands that
 #     right-align their output (`wc`, `uniq -c`). A reformat that re-indents a block changes

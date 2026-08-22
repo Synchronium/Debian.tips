@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { copyPublic, writeHashedCss } from "../src/assets.js";
 
 /* The stylesheet and the static scripts are minified with a source map beside them. None of it
- * is visible in the rendered HTML — the page links a hashed filename either way — so a break
+ * is visible in the rendered HTML (the page links a hashed filename either way) so a break
  * here ships an unreadable stylesheet with no way back to the source, or a broken map comment
  * that costs nothing at runtime and quietly disables devtools for a year. */
 

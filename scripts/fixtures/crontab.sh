@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fixtures for content/commands/crontab/examples.yaml — must match its `fixtures:` block.
+# Fixtures for content/commands/crontab/examples.yaml. Must match its `fixtures:` block.
 #
 # Run this page as root (no --user): most of it is about root's own crontab, `-u`, and
 # /var/spool/cron/crontabs, none of which an unprivileged user can reach.

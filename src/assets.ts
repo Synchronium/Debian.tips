@@ -6,13 +6,13 @@ import { PUBLIC_DIR, STYLES_DIR } from "./paths.js";
 
 /** Minified with a source map alongside, for both the stylesheet and the static scripts.
  *
- *  The saving is real and mostly comments: this project's CSS explains its own cascade at
+ *  Most of the saving is comments: this project's CSS explains its own cascade at
  *  length, which belongs in `styles/site.css` and not on the wire. 27.4K to 16.5K raw, 6.5K to
  *  3.6K gzipped, on every first visit.
  *
- *  The map is a separate file, so it costs a visitor nothing — a browser fetches it only when
- *  devtools are open — and it is what keeps the served file debuggable in the browser despite
- *  being unreadable.
+ *  The map is a separate file, so it costs a visitor nothing: a browser fetches it only when
+ *  devtools are open. It keeps the served file debuggable in the browser despite being
+ *  unreadable.
  *
  *  Deliberately not applied to the HTML. Post-gzip the saving is small, and a minifier that
  *  collapses whitespace would join the lines inside `<pre>`, which is where every documented
@@ -61,7 +61,7 @@ export function copyPublic(distDir: string): void {
 
   // public/ is copied verbatim first, then its scripts are replaced with minified builds.
   // Copying and then overwriting, rather than filtering the copy, keeps every other static
-  // file — CNAME, the favicon, .nojekyll — on the one path that has always handled them.
+  // file (CNAME, the favicon, .nojekyll) on the one path that has always handled them.
   const assetsDir = join(distDir, "assets");
   mkdirSync(assetsDir, { recursive: true });
   for (const script of ["search.js"]) {
@@ -76,7 +76,7 @@ export function copyPublic(distDir: string): void {
  *  rendered pages, so they only exist once the content has been rendered, and the hash has to
  *  cover them or a stale cached stylesheet would leave a page's code blocks uncoloured.
  *
- *  The hash is taken over the *minified* bytes, which are what gets served — hashing the source
+ *  The hash is taken over the *minified* bytes, which are what gets served, since hashing the source
  *  instead would leave the URL unchanged when only the minifier's output moved. */
 export function writeHashedCss(distDir: string, extraCss = ""): string {
   const base = readFileSync(join(STYLES_DIR, "site.css"), "utf-8");
