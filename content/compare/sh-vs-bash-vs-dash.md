@@ -3,7 +3,7 @@ title: "sh vs bash vs dash"
 description: "On Debian /bin/sh is dash, not bash. That one fact explains most scripts that work at your prompt and fail the moment something else runs them."
 category: compare
 tags: [scripting, debian, beginner]
-updated: 2026-08-20
+updated: 2026-08-22
 related: [variables-and-quoting, conditionals-and-test, your-first-script]
 ---
 
@@ -22,17 +22,17 @@ dash
 
 **On Debian, `/bin/sh` is dash.** It is not bash, and it has not been bash for over a decade.
 
-## What each of the three actually is
+## sh, dash and bash
 
-`sh` is not a program. It is a *specification* — the POSIX shell — and `/bin/sh` is a symlink
+`sh` is not a program. It is a *specification*, the POSIX shell, and `/bin/sh` is a symlink
 pointing at whichever installed shell the system has elected to satisfy it. Writing `#!/bin/sh`
 is a promise that your script needs nothing beyond that specification.
 
 `dash` is the Debian Almquist Shell: small, fast, and almost exactly POSIX and no more. Debian
-made it `/bin/sh` in Debian 6 for boot speed — every init script at the time was a shell script,
+made it `/bin/sh` in Debian 6 for boot speed. Every init script at the time was a shell script,
 and dash starts and runs measurably faster than bash.
 
-`bash` is the GNU shell, and on Debian it is what you actually get when you log in. It
+`bash` is the GNU shell, and on Debian it is what you get when you log in. It
 implements POSIX and then adds a great deal on top, and that extra is what people mean by
 "bashisms".
 
@@ -52,13 +52,11 @@ cat /etc/shells
 /usr/bin/dash
 ```
 
-## What actually differs
+## Four differences that break scripts
 
-Four that account for most real failures. In each, the first line is bash and the second is
-`/bin/sh`.
+In each, the first line is bash and the second is `/bin/sh`.
 
-**`[[ ]]` does not exist.** The single most common one, because `[[` is genuinely better than
-`[` and every tutorial uses it:
+**`[[ ]]` does not exist.** Every tutorial uses `[[`, because it is better than `[`:
 
 ```bash
 bash -c '[[ -n $HOME ]] && echo ok'
@@ -116,31 +114,24 @@ debian
 
 `.` works in bash too, so there is no reason to write `source` in a script at all.
 
-## When to use which
+## Which shebang to write
 
-Use `#!/bin/bash` whenever you want a bashism. This is not a compromise — bash is installed on
-every Debian system, and a script that says what it needs is correct. `[[ ]]`, arrays and
-`local` are worth having.
+Use `#!/bin/bash` whenever you want a bashism. Bash is installed on every Debian system, and a
+script that declares what it needs is correct. `[[ ]]`, arrays and `local` are worth having.
+While the portability you gain from POSIX can be useful sometimes, the risk of a script
+misbehaving under dash is likely to be a much bigger problem, so defaulting to bash is usually
+the right call.
 
-Use `#!/bin/sh` only when the script genuinely stays inside POSIX: something that has to run on
-a minimal system, in a container without bash, or as a package maintainer script, where Debian
-Policy requires it.
+Use `#!/bin/sh` only when the script stays inside POSIX: something that has to run on a minimal
+system, in a container without bash, or as a package maintainer script, where Debian Policy
+requires it. Test it by running it under dash, `dash script.sh`, rather than by reading it.
+`checkbashisms`, from the `devscripts` package, catches most of the rest.
 
 The one thing not to do is write `#!/bin/sh` and then use bashisms anyway. It works on systems
 where `/bin/sh` happens to be bash, which is why the bug reaches you from someone else's
 machine rather than your own.
 
-Test a `#!/bin/sh` script by actually running it under dash — `dash script.sh` — rather than by
-reading it. `checkbashisms`, from the `devscripts` package, catches most of the rest.
-
-## The honest verdict
-
-If you are writing a script for yourself on a Debian machine, use `#!/bin/bash` and stop
-thinking about it. The portability you gain from POSIX is real but you are unlikely to spend
-it, and a script that quietly misbehaves under dash costs more than one that declares bash.
-
-If you are writing something that ships — a maintainer script, an init script, anything that
-runs before the system is fully up — `#!/bin/sh` and dash, tested under dash.
+## Leave `/bin/sh` pointing at dash
 
 `dpkg-reconfigure dash` is what changes which shell `/bin/sh` points at. It is worth knowing it
 exists and worth leaving alone: the boot path expects dash, and pointing `/bin/sh` at bash to

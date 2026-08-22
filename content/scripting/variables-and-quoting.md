@@ -3,12 +3,12 @@ title: "Variables and quoting"
 description: "Why unquoted variables break bash scripts, when to use double vs single quotes, and how glob characters make it worse."
 category: scripting
 tags: [scripting, beginner]
-updated: 2026-07-05
+updated: 2026-08-22
 order: 2
 related: [your-first-script, conditionals-and-test, exit-codes-and-error-handling]
 ---
 
-This is the single biggest source of bash bugs, and the fix is one habit: **quote your
+Unquoted variables are where bash scripts break most often, but the fix is simple: **quote your
 variables.**
 
 ## Setting and using a variable
@@ -33,9 +33,10 @@ rm: cannot remove 'backup.tar.gz': No such file or directory
 ```
 
 Without quotes, bash performs *word splitting* on the variable's value before passing it to
-`rm`, so `rm $file` actually runs `rm my backup.tar.gz`: two arguments, neither of which is a
-file that exists. The file is untouched, but only by luck; if a file named `my` or `backup.tar.gz`
-had existed, this would have deleted the wrong thing.
+`rm`, so `rm $file` runs `rm my backup.tar.gz`, which treats `my` and `backup.tar.gz` as two
+separate arguments, pointing at individual files that don't exist. The file is untouched, but
+only by luck; if a file named `my` or `backup.tar.gz` had existed, this would have deleted the
+wrong thing.
 
 ```bash
 rm "$file"
@@ -44,9 +45,9 @@ rm "$file"
 Quoted, `$file` expands to a single argument, spaces and all, and the actual file gets removed.
 
 > [!WARNING]
-> This isn't just a style preference. Unquoted variables containing spaces or glob characters
-> can cause a script to delete or operate on the wrong files entirely. Quote by default, and
-> treat an unquoted variable expansion in a script as something to double-check, not skip past.
+> Unquoted variables containing spaces or glob characters can cause a script to delete or operate
+> on the wrong files entirely. Quote by default, and treat an unquoted variable expansion in a
+> script as something to double-check.
 
 ## Word splitting and globbing are two separate dangers
 
@@ -60,10 +61,9 @@ a.txt b.txt
 *.txt
 ```
 
-Unquoted, `$pattern` isn't just word-split, it's also handed to the shell's filename expansion
-(globbing), so `*.txt` turns into whatever files happen to match in the current directory.
-Quoted, it stays the literal string `*.txt`. This is a second, independent reason an unquoted
-variable can do something you didn't intend, on top of word splitting.
+Unquoted, `$pattern` is word-split and then handed to the shell's filename expansion (globbing),
+so `*.txt` turns into whatever files happen to match in the current directory. Quoted, it stays
+the literal string `*.txt`.
 
 ## Double quotes vs single quotes
 
@@ -82,7 +82,7 @@ entirely, treating everything between them as literal text. Use single quotes fo
 want passed through unexpanded, commonly an `awk` or `sed` script handed to those commands as an
 argument, where `$1` or `$name` should mean something to `awk`, not to bash.
 
-## Arrays need quoting too, and for the same reason
+## Arrays need quoting too
 
 ```bash
 arr=("one two" "three")
@@ -99,8 +99,7 @@ unquoted: three
 
 `"${arr[@]}"` (quoted) expands to each array element as its own word, spaces and all.
 `${arr[@]}` (unquoted) re-splits every element on whitespace first, turning two elements into
-three words. The same rule from the top of this lesson applies here without exception: quote
-the expansion.
+three words.
 
 ## Giving a variable a default value
 
@@ -155,5 +154,4 @@ environment variable that works whether or not the caller provided one.
 ## What's next
 
 [Conditionals and test](/scripting/conditionals-and-test/) covers `[` vs `[[` and how bash
-actually evaluates conditions — including what happens to an unquoted variable inside a test,
-which is this lesson's rule with sharper consequences.
+evaluates conditions, including what an unquoted variable does inside a test.

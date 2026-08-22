@@ -89,7 +89,7 @@ done < paths.list
 [/srv/data]
 ```
 
-Both parts of `IFS= read -r` are load-bearing, and leaving them off is the most common bug in
+`IFS=` and `-r` are both doing something, and leaving either off is the most common bug in
 shell scripts that process text. Without them:
 
 ```bash

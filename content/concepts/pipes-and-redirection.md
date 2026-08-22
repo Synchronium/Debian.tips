@@ -3,24 +3,24 @@ title: "Pipes and redirection"
 description: "How | connects commands together, and how >, >>, 2>&1, and <() route data to and from files, other commands, and each other."
 category: concepts
 tags: [terminal, one-liners, beginner]
-updated: 2026-07-05
+updated: 2026-08-22
 related: [grep, sed, exit-codes-and-error-handling, sort, uniq]
 ---
 
-You've typed `ls | grep foo` a hundred times. Here's what's actually happening, and why the
-order of `2>&1` in a command you copy-pasted from somewhere actually matters.
+Pipes and redirection both work by rewiring the file descriptors a process starts with, before
+the program runs, which is why the order of `2>&1` in a command changes what it does.
 
-## Everything is a stream
+## The three file descriptors
 
 Every process on Linux starts with three open file descriptors: **standard input** (fd 0),
 **standard output** (fd 1), and **standard error** (fd 2). By default, stdin reads from your
 keyboard and stdout/stderr both write to your terminal. Pipes and redirection don't change how a
-program reads or writes at all. They just rewire *where those three numbered file descriptors
-point*, before the program ever starts.
+program reads or writes. They rewire where those three numbered descriptors point, before the
+program ever starts.
 
-This is the single idea that explains almost everything else in this article: a program like
-`grep` doesn't know or care whether fd 1 is your terminal, a file, or another program's fd 0. It
-just writes to "file descriptor 1" and lets whatever's plumbed into that number handle the rest.
+A program like `grep` doesn't know or care whether fd 1 is your terminal, a file, or another
+program's fd 0. It writes to "file descriptor 1" and lets whatever's plumbed into that number
+handle the rest.
 
 ## The pipe: `|`
 
@@ -36,15 +36,15 @@ one end to `ls` as its stdout and the other to `grep` as its stdin.
 
 > [!NOTE]
 > Piping only connects stdout, not stderr. If a command's error messages seem to vanish into the
-> pipe unread, they're actually still going straight to your terminal. See "combining stdout and
-> stderr" below if you actually want to pipe both.
+> pipe unread, they're still going straight to your terminal. See "combining stdout and
+> stderr" below for piping both.
 
 Chains of pipes work the same way, one connection at a time: `cat access.log | sort | uniq -c |
-sort -rn` is three separate pipes, each just wiring one command's stdout to the next command's
-stdin — see [sort](/commands/sort/) and [uniq](/commands/uniq/) for more on what each stage
-actually does. Nothing about the last stage is special either: any command that reads stdin can
-take that position, whether it is [`wc`](/commands/wc/) counting the result or
-[`cowsay`](/commands/cowsay/) announcing it.
+sort -rn` is three separate pipes, each wiring one command's stdout to the next command's
+stdin. See [sort](/commands/sort/) and [uniq](/commands/uniq/) for what those stages do. Nothing
+about the last stage is special either: any command that reads stdin can take that position,
+whether it is [`wc`](/commands/wc/) counting the result or [`cowsay`](/commands/cowsay/)
+announcing it.
 
 ## Redirecting to and from files
 
@@ -75,9 +75,8 @@ out
 err
 ```
 
-Here, `> both.log` runs first (fd 1 now points at the file), then `2>&1` makes fd 2 point at
-*whatever fd 1 points to right now*: the file. Both streams end up in `both.log`, which is why
-`cat` prints both lines back.
+Here, `> both.log` runs first, so fd 1 now points at the file, and `2>&1` then makes fd 2 point
+at whatever fd 1 points to right now: the file. Both streams end up in `both.log`.
 
 ```bash
 { echo out; echo err >&2; } 2>&1 > both.log
@@ -88,13 +87,12 @@ err
 out
 ```
 
-Two identical-looking commands, two different results. Reversed, `2>&1` runs first, while fd 1
-still points at the terminal, so fd 2 gets pointed at the terminal. *Then* `> both.log`
-redirects fd 1 to the file. Read the output above in the order it was printed: `err` appeared
-straight away, on the terminal, because fd 2 had already locked in "the terminal" as its target
-before fd 1 moved. `out` appeared only when `cat` read it back out of the file. Bash also
-provides `&>` as a shorthand for "redirect both stdout and stderr to this file," sidestepping
-the ordering question entirely when that's genuinely what you want.
+Reversed, `2>&1` runs first, while fd 1 still points at the terminal, so fd 2 gets pointed at the
+terminal. *Then* `> both.log` redirects fd 1 to the file. Read that output in the order it was
+printed: `err` appeared straight away, on the terminal, because fd 2 had already locked in "the
+terminal" as its target before fd 1 moved. `out` appeared only when `cat` read it back out of the
+file. Bash also provides `&>` as a shorthand for "redirect both stdout and stderr to this file,"
+sidestepping the ordering question when that is what you want.
 
 ## Process substitution: `<(...)`
 
@@ -112,10 +110,9 @@ diff <(echo -e "a\nb\nc") <(echo -e "a\nx\nc")
 ```
 
 Bash runs each command, connects its output to a temporary file-like path (often
-`/dev/fd/63`-style), and substitutes that path into the command line, so `diff` compares two
-live command outputs without either one ever touching disk as a real file. Neither side was
-ever a file you could have listed with `ls`, yet [`diff`](/commands/diff/) compared them
-without knowing the difference.
+`/dev/fd/63`-style), and substitutes that path into the command line, so
+[`diff`](/commands/diff/) compares two live command outputs without either one ever touching disk
+as a real file.
 
 ## Heredocs and here-strings
 
@@ -168,11 +165,10 @@ including why `sudo echo x > /etc/file` fails and `tee` is the fix.
   [Exit codes and error handling](/concepts/exit-codes-and-error-handling/) for `PIPESTATUS` and
   `set -o pipefail`, which fix exactly this gap.
 
-## Why this matters
+## Composing small commands
 
-Small, single-purpose commands become powerful once you can chain them arbitrarily. `ps aux |
-grep nginx`, `cat access.log | sort | uniq -c | sort -rn`: each of these is a short pipeline of
-commands that individually do very little, connected by `|` and occasionally a file redirection.
-Learning to read a pipeline left to right, one file-descriptor rewire at a time, is most of what
-separates "I can copy commands from the internet" from "I can build the pipeline I actually
-need."
+Small, single-purpose commands become useful once you can chain them arbitrarily. `ps aux |
+grep nginx`, `cat access.log | sort | uniq -c | sort -rn`: each is a short pipeline of commands
+that individually do very little, connected by `|` and occasionally a file redirection. Reading
+one left to right, a descriptor rewire at a time, is most of what separates copying commands off
+the internet from building the pipeline you need.
