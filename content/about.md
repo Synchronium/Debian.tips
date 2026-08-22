@@ -19,7 +19,7 @@ of {{unreplayedCommandPages}} of the command pages and {{unreplayedProsePages}} 
 articles. The numbers on this page are counted from the content when the site is built, so they
 cannot drift either.
 
-## What "tested" actually means
+## What the replay does
 
 For each command page there is a setup script that creates the sample files, and a replay
 that runs every example against them:
@@ -35,15 +35,13 @@ fails. The container is destroyed afterwards, so nothing accumulates and no exam
 depend on something an earlier one left behind.
 
 The sample files get the same treatment. A page showing you a `report.txt` is showing you a
-block that was re-read from the container and diffed, not a description of it — otherwise
-the data would drift away from the outputs it is supposed to explain.
+block that was re-read from the container and diffed rather than a description of it.
+Otherwise the data drifts away from the outputs it is supposed to explain.
 
 This runs in CI on every change, alongside the type checks, the link checker and an
 accessibility pass. A page whose examples no longer reproduce does not reach the site.
 
-## What it does not mean
-
-Verification is a narrow claim, and it is worth being precise about its edges.
+## The limits of the claim
 
 **It means:** this command, on Debian trixie, in a container, with those sample files,
 printed exactly this.
@@ -54,10 +52,8 @@ versions with different output. A container is not a full system: no systemd unl
 asks for it, no real hardware, no other users.
 
 It also does not mean every block. A page opts into the replay by having a setup script that
-puts a container into the state it describes, and the counts above are of the pages that do;
-the number of command pages still without one is stated above, and a page whose blocks are
-every one of them exempt is not counted at all. The counts are of what is genuinely
-automated, never of what is intended.
+puts a container into the state it describes, and the counts above are of the pages that do. A
+page that has a script but whose blocks are every one of them exempt is not counted at all.
 
 Where an example needs something a container cannot provide, the page says so rather than
 inventing output. The {{exemptions}} exempt examples are ones a batch run cannot supply: a
@@ -67,16 +63,16 @@ is listed by name in the repository with a note on how it was checked by hand in
 
 ## Output that cannot be identical
 
-Some genuinely useful output contains a value nothing can pin: a process id, an uptime, a
+Some useful output contains a value nothing can pin: a process id, an uptime, a
 transfer rate, the amount of memory a service is using. Dropping those examples would make
 the site poorer, and faking them would make it dishonest.
 
 Those examples are marked. You will see a line above the output reading **"Your output will
 differ"**, naming which parts are specific to the machine that produced it. There are
-{{volatile}} of them. They are still checked on every run — the numbers are allowed to
+{{volatile}} of them. They are still checked on every run: the numbers are allowed to
 move, but a renamed field, a missing line or a changed status still fails the build.
 
-## The sample data problem
+## Why the sample files are checked too
 
 An output is only evidence if you can see what produced it. `wc -l report.txt` printing
 `40` tells you nothing unless you know what is in `report.txt`.
@@ -93,11 +89,11 @@ The generator, the content, the container definition, the replay harness and its
 all in one public repository. There is no hidden step.
 
 - [The repository](https://github.com/Synchronium/Debian.tips)
-- [The replay harness](https://github.com/Synchronium/Debian.tips/tree/main/scripts) — the
+- [The replay harness](https://github.com/Synchronium/Debian.tips/tree/main/scripts): the
   sandbox, the runner, and the code that decides what counts as a match
-- [The CI workflow](https://github.com/Synchronium/Debian.tips/blob/main/.github/workflows/ci.yml)
-  — where it runs on every change
-- [This page](https://github.com/Synchronium/Debian.tips/blob/main/content/about.md) — every
+- [The CI workflow](https://github.com/Synchronium/Debian.tips/blob/main/.github/workflows/ci.yml):
+  where it runs on every change
+- [This page](https://github.com/Synchronium/Debian.tips/blob/main/content/about.md): every
   figure above is a placeholder in it, filled in from a count of the content at build time
 
 Every other page on the site carries the same list at its foot, naming the files that produced

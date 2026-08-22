@@ -3,36 +3,31 @@ title: "The following packages have been kept back"
 description: "apt-get upgrade refuses to install new packages, so an upgrade that needs one is held back instead. What the message means and the three things that cause it."
 category: troubleshooting
 tags: [apt, debian, sysadmin, beginner]
-updated: 2026-08-18
+updated: 2026-08-22
 related: [apt, apt-vs-apt-get, apt-essentials, release-channels]
 ---
 
-You ran an upgrade, it did most of its work, and then said this:
+`apt-get upgrade` can finish successfully and still leave a package on its old version:
 
 ```
 The following packages have been kept back:
   tips-demo
 ```
 
-Nothing failed. Nothing is broken. But the package you probably cared about is still on its old
-version, and running the same command again changes nothing.
+Running it again changes nothing.
 
-## What it means
+## Why apt held the package back
 
-`apt-get upgrade` will upgrade packages you already have, and it will **never install a package
-you don't**. That rule is the whole feature: an upgrade run should not be able to quietly add
-software to a machine.
+`apt-get upgrade` upgrades packages you already have and **never installs a package you don't**.
+An upgrade run cannot quietly add software to a machine.
 
-So when a newer version of something needs a *new* dependency that isn't installed yet, apt has
-two choices — break its own rule, or leave that one package alone. It leaves it alone, and tells
-you it did. "Kept back" means "this had an upgrade available, and taking it would have needed
-more than an upgrade".
+So a newer version that needs a dependency you haven't got can't be installed under that rule.
+Apt leaves the package alone and says so. "Kept back" means the upgrade was available, and taking
+it would have needed more than an upgrade.
 
-The message is apt being careful, not apt being stuck.
+## Check whether a missing dependency explains it
 
-## Confirm that's the cause
-
-Two commands. First, that an upgrade really is available:
+Two commands. First, whether an upgrade is really available:
 
 ```bash
 apt-cache policy tips-demo | head -3
@@ -43,7 +38,7 @@ tips-demo:
   Candidate: 2.0-1
 ```
 
-Then, what the newer version wants that you don't have:
+Then what the newer version wants:
 
 ```bash
 apt-cache depends tips-demo=2.0-1
@@ -53,16 +48,15 @@ tips-demo
   Depends: tips-extra
 ```
 
-If `tips-extra` isn't installed, you have found it. That dependency is the entire reason the
-package is being held back.
+If `tips-extra` isn't installed, that's the dependency holding the upgrade back.
 
-## The fix
+## Three ways to let the upgrade through
 
 Any of these, in rough order of how much you should think first.
 
-**Use `apt` instead of `apt-get`.** The `apt` front end installs new packages during an upgrade
-by default — that difference, and not the resolver, is the main behavioural gap between the two
-commands:
+**Use `apt` instead of `apt-get`.** The `apt` front end installs new packages during an upgrade by
+default; `apt-get` does not. The resolver is the same in both, so that default is the important
+difference:
 
 ```bash
 sudo apt upgrade -s | grep -A1 "Installing dependencies"
@@ -85,17 +79,17 @@ Inst tips-demo [1.0-1] (2.0-1 stable [all])
 
 Drop the `-s` from either to do it for real.
 
-**Or run `apt full-upgrade`.** This also works, and is the advice you will most often find, but
-it is a bigger hammer than the problem needs: `full-upgrade` is additionally allowed to *remove*
+**Or run `apt full-upgrade`.** This also works, and is the advice you will most often find, but it
+is a bigger hammer than the problem needs: `full-upgrade` is additionally allowed to *remove*
 packages to resolve dependencies. On a routine update that is more permission than you meant to
-grant. Reach for it when upgrading between Debian releases, where it is the correct tool — see
+grant. Reach for it when upgrading between Debian releases, where it is the correct tool. See
 [Debian's release channels](/debian/release-channels/).
 
 > [!TIP]
 > Simulate first, whichever you choose. `-s` prints the plan and changes nothing, and the line
 > worth reading is anything under `REMOVING`.
 
-## The other two causes
+## Holds and phased updates
 
 The message is the same, so check these when the dependency explanation doesn't fit.
 
@@ -109,28 +103,26 @@ apt-mark showhold
 ca-certificates
 ```
 
-If the package you are chasing appears in that list, no amount of `--with-new-pkgs` will move
-it — a hold outranks all of the fixes above. Release the hold
-with `sudo apt-mark unhold <package>` and upgrade again. Holds are easy to set and easy to
-forget, especially in a provisioning script written by someone else.
+If the package you are chasing appears in that list, no amount of `--with-new-pkgs` will move it.
+A hold outranks every fix above. Release it with `sudo apt-mark unhold <package>` and upgrade
+again. Holds are easy to set and easy to forget, especially in a provisioning script written by
+someone else.
 
-**Phased updates.** Some updates are deliberately rolled out to a percentage of machines at a
-time, and a machine outside the current percentage reports the update as kept back until its
-turn arrives. This is mostly an Ubuntu behaviour; Debian stable does not generally phase its
-updates, so on Debian this is the least likely of the three. If you suspect it, waiting is the
-correct response — the update will arrive on its own.
+**Phased updates.** Some updates are released to a percentage of machines at a time, so a machine
+reports one as kept back purely because it hasn't been picked yet. This is an Ubuntu habit that
+Debian stable has largely declined to pick up, which makes it the least likely of the three here.
+The remedy is to wait until a rollout percentage somewhere decides you are worth including.
 
-## Should you just fix it?
+## When to leave it held back
 
-Usually yes, but read what it wants first. "Kept back" is the one apt message that is asking you
-a question rather than reporting a problem, and the question is *may I add something to this
-machine*. On a laptop the answer is almost always yes. On a server with a carefully controlled
-package set, the honest answer is sometimes no, and the right response is to leave it held back
-and find out why the new version needs what it needs.
+Usually you should just fix it, but read what it wants first. The question the message is really
+asking is *may I add something to this machine*. On a laptop, yes. On a server with a carefully
+controlled package set, sometimes no, and the right response is to leave it held back and find out
+why the new version needs what it needs.
 
 What you should not do is ignore it indefinitely. A package kept back is a package not receiving
-security updates, and [`unattended-upgrades`](/debian/release-channels/) will not resolve this
-for you — it has the same rule about new packages that `apt-get upgrade` does.
+security updates, and [`unattended-upgrades`](/debian/release-channels/) will not resolve this for
+you. It has the same rule about new packages that `apt-get upgrade` does.
 
 ## Avoiding it
 
@@ -141,5 +133,5 @@ for you — it has the same rule about new packages that `apt-get upgrade` does.
 - Audit holds when you inherit a machine: `apt-mark showhold` takes a second and explains a
   surprising amount.
 
-A different kind of upgrade failure — apt refusing a repository rather than a package — is
-covered in [The repository is not signed](/troubleshooting/repository-is-not-signed/).
+A different kind of upgrade failure, apt refusing a repository rather than a package, is covered
+in [The repository is not signed](/troubleshooting/repository-is-not-signed/).

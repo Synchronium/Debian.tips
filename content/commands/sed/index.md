@@ -4,24 +4,24 @@ tagline: "Edit text streams with a single pass, line by line"
 description: "Tested sed examples: substitution, addressing, deletion, in-place editing, and multi-command scripts."
 category: commands
 tags: [text-processing, regex]
-updated: 2026-08-17
+updated: 2026-08-22
 tier: flagship
 related: [grep, awk, tr, diff, pipes-and-redirection, exit-codes-and-error-handling]
 ---
 
 `sed` (**s**tream **ed**itor) reads input one line at a time, applies a script of editing
-commands to each line, and prints the result. Where [`grep`](/commands/grep/) only decides
-*which* lines to show, `sed` decides how to *transform* them: substitute text, delete lines,
-insert new ones, all without opening an editor or writing a program.
+commands to each line, and prints the result. Where [`grep`](/commands/grep/) decides which lines
+to show, `sed` changes them: substitute text, delete lines, insert new ones, without opening an
+editor or writing a program.
 
-## The mental model: the pattern space and the cycle
+## Why every command runs once per line
 
-For each input line, `sed` copies it into a working buffer called the **pattern space**, runs
-your whole script against that buffer, then (unless told otherwise) prints the pattern space and
-moves to the next line. This read-script-print loop is the "cycle." Almost every confusing `sed`
-behaviour makes sense once you remember every command in your script runs *once per line*, not
-once for the whole file. `s/foo/bar/` inside a script isn't "replace foo with bar in the file,"
-it's "replace foo with bar in *whatever line I'm looking at right now*."
+For each input line, `sed` copies it into a working buffer called the **pattern space**, runs your
+whole script against that buffer, then, unless told otherwise, prints the pattern space and moves
+to the next line. That read-script-print loop is the cycle.
+
+Every command in your script therefore runs once per line. `s/foo/bar/` does not mean "replace foo
+with bar in the file"; it means "replace foo with bar in the line currently in the pattern space".
 
 ## Substitution: `s/pattern/replacement/flags`
 
@@ -32,12 +32,12 @@ sed "s/ERROR/CRITICAL/" app.log        # first match per line
 sed "s/ERROR/CRITICAL/g" app.log       # every match per line (g = global)
 ```
 
-Without `g`, only the *first* match on each line is replaced, a constant source of "why didn't
-this replace everything" confusion. The `/` delimiters are conventional, not mandatory: if your
-pattern or replacement contains a lot of literal slashes (paths are the classic case), pick a
-different delimiter. `s#/etc/app#/opt/app#` reads far better than escaping every `/`.
+Without `g`, only the first match on each line is replaced, which accounts for most of the "why
+didn't that replace everything" questions. The `/` delimiters are conventional rather than
+mandatory: if the pattern or replacement is full of literal slashes, pick a different one.
+`s#/etc/app#/opt/app#` reads far better than escaping every `/`.
 
-## Addressing: deciding which lines a command applies to
+## Addressing: which lines a command applies to
 
 Every command can be prefixed with an **address** restricting it to specific lines:
 
@@ -49,12 +49,11 @@ sed "/DEBUG/d" file         # delete lines matching a regex
 sed "1!d" file              # everything EXCEPT line 1 ('!' negates)
 ```
 
-`-n` suppresses the default auto-print, which is why it pairs so naturally with `p`. Without
-`-n`, `sed -n "2p"` would print line 2 *twice* (once from `p`, once from the automatic print).
-GNU `sed` also supports a `first~step` address (`1~2` = every odd line) that POSIX `sed` doesn't
-have.
+`-n` suppresses the default auto-print, which is why it pairs with `p`. Without it, `sed "2p"`
+prints line 2 twice: once from `p`, once from the automatic print. GNU `sed` also supports a
+`first~step` address (`1~2` is every odd line) that POSIX `sed` doesn't have.
 
-## Basic regular expressions by default: same trap as grep
+## BRE by default, ERE with `-E`
 
 Plain `sed` uses BRE, where `+`, `?`, `|`, and `()` need backslash-escaping to mean anything
 special. `-E` (or `-r` on some systems) switches to ERE, letting you write
@@ -74,15 +73,15 @@ To see what an edit would change rather than reading the whole file, pipe the re
 [`diff`](/commands/diff/) against the original: `sed "s/ERROR/CRITICAL/g" app.log | diff app.log -`
 prints only the lines that differ, and prints nothing at all when the script matched nothing.
 
-## Beyond one line: the hold space
+## The hold space: carrying data between lines
 
-`sed` also has a second buffer, the **hold space**, that persists across cycles. Commands like
-`h` (copy pattern space to hold space), `H` (append instead of copy), `g`/`G` (copy back the
-other way), and `x` (swap the two) let a script remember something from an earlier line and use
-it later (reversing a file, joining consecutive lines, printing a line before a match). It's
-a small toolkit, but it's the reason `sed` can do more than pure per-line substitution. Reach
-for it when a single-pass [`awk`](/commands/awk/) script starts feeling more natural than a
-`sed` one-liner, since that's usually the sign the hold space is what you actually need.
+`sed` has a second buffer, the **hold space**, which persists across cycles. `h` copies the pattern
+space into it, `H` appends instead, `g` and `G` copy back the other way, and `x` swaps the two.
+That is enough to reverse a file, join consecutive lines, or print the line before a match.
+
+When a script starts wanting state that survives from one line to the next, the hold space is
+where `sed` keeps it. It is also the point at which an [`awk`](/commands/awk/) script is often the
+better tool.
 
 ## Chaining multiple commands
 
