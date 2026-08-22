@@ -66,8 +66,8 @@ Installing dependencies:
   tips-extra
 ```
 
-**Or tell `apt-get` to allow it**, which is the right choice in a script, where you want
-`apt-get`'s stable output but the same behaviour:
+**Or tell `apt-get` to allow it.** In a script you want `apt-get`'s stable output with the same
+behaviour:
 
 ```bash
 sudo apt-get upgrade -s --with-new-pkgs | grep "^Inst tips"

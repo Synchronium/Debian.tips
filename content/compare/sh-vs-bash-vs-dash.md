@@ -32,9 +32,8 @@ is a promise that your script needs nothing beyond that specification.
 made it `/bin/sh` in Debian 6 for boot speed. Every init script at the time was a shell script,
 and dash starts and runs measurably faster than bash.
 
-`bash` is the GNU shell, and on Debian it is what you get when you log in. It
-implements POSIX and then adds a great deal on top, and that extra is what people mean by
-"bashisms".
+`bash` is the GNU shell, and on Debian it is the shell you get when you log in. It
+implements POSIX and then adds a great deal on top. People call that extra "bashisms".
 
 All of them are installed, and the system knows about each:
 
@@ -133,6 +132,6 @@ machine rather than your own.
 
 ## Leave `/bin/sh` pointing at dash
 
-`dpkg-reconfigure dash` is what changes which shell `/bin/sh` points at. It is worth knowing it
-exists and worth leaving alone: the boot path expects dash, and pointing `/bin/sh` at bash to
-fix one script slows every script on the system to fix a bug you could have fixed in a line.
+`dpkg-reconfigure dash` changes which shell `/bin/sh` points at. Know that it exists, and leave
+it alone: the boot path expects dash, and pointing `/bin/sh` at bash to fix one script slows
+every script on the system to fix a bug you could have fixed in a line.

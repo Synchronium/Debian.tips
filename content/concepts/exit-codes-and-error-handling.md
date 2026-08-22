@@ -171,7 +171,7 @@ echo "jq not installed"`.
 ## Common misconceptions
 
 - **"A pipeline's exit status reflects whether the whole thing worked."** Only with
-  `pipefail` set. Otherwise it's just the last command's status, as shown above.
+  `pipefail` set. Otherwise it's just the last command's status.
 - **"`set -e` makes a script bulletproof."** It stops on unguarded failures, but conditions,
   negation, and the left side of `&&`/`||` are deliberately exempt, and a failing command
   inside a function called from a context that doesn't check its return can still slip through.

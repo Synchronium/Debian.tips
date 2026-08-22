@@ -72,7 +72,7 @@ rc  nano
 Run that on a machine a few years old and it usually prints more than you expect. Each line is a
 package whose binaries are gone and whose settings are not, sitting there costing nothing but
 disk and a little confusion. [`dpkg -l`](/commands/dpkg/) shows the same `rc` in its first
-column, which is the form you will see quoted most often.
+column, the form you will see quoted most often.
 
 You do not have to reinstall anything to finish the job. `purge` works directly on a package
 already in that state:
@@ -164,7 +164,7 @@ REMOVING:
   cowsay  cowsay-off
 ```
 
-One name in, two out, which is the other reason to run `--dry-run` first.
+One name in, two out. Another reason to run `--dry-run` first.
 [`apt full-upgrade`](/compare/apt-vs-apt-get/) is allowed to remove things for the same reason,
 where plain `upgrade` is not.
 

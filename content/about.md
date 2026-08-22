@@ -53,7 +53,7 @@ asks for it, no real hardware, no other users.
 
 It also does not mean every block. A page opts into the replay by having a setup script that
 puts a container into the state it describes, and the counts above are of the pages that do. A
-page that has a script but whose blocks are every one of them exempt is not counted at all.
+page that has a script but whose blocks are all exempt is not counted at all.
 
 Where an example needs something a container cannot provide, the page says so rather than
 inventing output. The {{exemptions}} exempt examples are ones a batch run cannot supply: a
@@ -78,8 +78,8 @@ An output is only evidence if you can see what produced it. `wc -l report.txt` p
 `40` tells you nothing unless you know what is in `report.txt`.
 
 So the pages that need it carry their sample files, in a collapsed block above the
-examples. Those files are created by a script in the repository, which is what the replay
-runs before each example. The block on the page and the script in the repository are
+examples. Those files are created by a script in the repository, and the replay runs that
+script before each example. The block on the page and the script in the repository are
 checked against each other, because sample data that has quietly diverged from the examples
 is worse than none: it looks like evidence.
 

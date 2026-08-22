@@ -179,7 +179,7 @@ problems, because a package from unstable drags in the libraries of unstable.
 - **"`apt upgrade` will move me to the next release."** Only if your sources name `stable` rather
   than a codename. Read the file rather than assuming either way.
 - **"Adding backports upgrades my system."** It adds nothing until you ask for a package with
-  `-t`. Priority 100 is what makes that true.
+  `-t`. Priority 100 prevents it.
 - **"sid will become stable eventually."** sid is always unstable. It is testing that gets frozen
   and released, and the codename travels with it.
 

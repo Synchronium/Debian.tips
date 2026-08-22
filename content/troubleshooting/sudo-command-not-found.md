@@ -30,7 +30,7 @@ Debian's installer asks you to set a root password. What you answer decides this
   so it does **not** install `sudo` and does not add your user to any admin group. This is the
   path that produces `sudo: command not found`.
 - **You left the root password empty.** The installer locks the root account, installs `sudo`,
-  and adds your user to the `sudo` group, which is the arrangement Ubuntu always uses.
+  and adds your user to the `sudo` group. Ubuntu always does it this way.
 
 Ubuntu only ever does the second, which is why every tutorial assumes `sudo` is there. On
 Debian it is an ordinary optional package like any other:
@@ -89,8 +89,8 @@ You need a root shell, and `sudo` is exactly what you do not have. Use `su`:
 su -
 ```
 
-It asks for the **root** password, which is the one you set during installation rather than your
-own. Then, depending on which problem you have:
+It asks for the **root** password, not yours. That is the one you set during installation. Then,
+depending on which problem you have:
 
 ```bash
 apt update && apt install sudo          # if it was not installed

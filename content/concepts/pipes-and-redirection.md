@@ -92,7 +92,7 @@ terminal. *Then* `> both.log` redirects fd 1 to the file. Read that output in th
 printed: `err` appeared straight away, on the terminal, because fd 2 had already locked in "the
 terminal" as its target before fd 1 moved. `out` appeared only when `cat` read it back out of the
 file. Bash also provides `&>` as a shorthand for "redirect both stdout and stderr to this file,"
-sidestepping the ordering question when that is what you want.
+sidestepping the ordering question when that is the behaviour you want.
 
 ## Process substitution: `<(...)`
 
@@ -130,8 +130,8 @@ Line one
 Line two: user
 ```
 
-The `$(whoami)` was expanded by the shell before `cat` ever saw it, which is the difference
-between `<<EOF` and the quoted `<<'EOF'` form that passes every line through untouched.
+The `$(whoami)` was expanded by the shell before `cat` ever saw it. The quoted `<<'EOF'` form
+passes every line through untouched instead.
 
 A here-string (`<<<`) is the single-line version: `cat <<< "some text"` feeds that one string in
 as stdin, without the multi-line `<<EOF ... EOF` ceremony.
@@ -155,8 +155,8 @@ including why `sudo echo x > /etc/file` fails and `tee` is the fix.
 - **"Piping connects everything."** It connects stdout to stdin, full stop. Errors, exit codes,
   and anything written directly to a file descriptor other than 1 or read from anywhere other
   than 0 are unaffected by a `|`.
-- **"`2>&1` always means combine them."** As shown above, it means "point fd 2 at fd 1's
-  *current* target": a snapshot at that moment in the command line, not an ongoing link.
+- **"`2>&1` always means combine them."** It means "point fd 2 at fd 1's *current* target": a
+  snapshot at that moment in the command line, not an ongoing link.
 - **"`>` and `>>` are interchangeable if the file doesn't exist yet."** True only in that one
   case. The moment the file exists, `>` silently discards its previous contents, which is a
   common way to accidentally lose a log file that took hours to accumulate.

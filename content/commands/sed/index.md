@@ -20,8 +20,9 @@ For each input line, `sed` copies it into a working buffer called the **pattern 
 whole script against that buffer, then, unless told otherwise, prints the pattern space and moves
 to the next line. That read-script-print loop is the cycle.
 
-Every command in your script therefore runs once per line. `s/foo/bar/` does not mean "replace foo
-with bar in the file"; it means "replace foo with bar in the line currently in the pattern space".
+Every command in your script therefore runs once per line. `s/foo/bar/` does not mean "replace
+foo with bar in the file". It means "replace foo with bar in the line currently in the pattern
+space".
 
 ## Substitution: `s/pattern/replacement/flags`
 
@@ -80,8 +81,7 @@ space into it, `H` appends instead, `g` and `G` copy back the other way, and `x`
 That is enough to reverse a file, join consecutive lines, or print the line before a match.
 
 When a script starts wanting state that survives from one line to the next, the hold space is
-where `sed` keeps it. It is also the point at which an [`awk`](/commands/awk/) script is often the
-better tool.
+where `sed` keeps it. An [`awk`](/commands/awk/) script is often the better tool at that point.
 
 ## Chaining multiple commands
 
