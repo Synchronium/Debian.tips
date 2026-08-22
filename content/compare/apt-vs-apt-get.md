@@ -25,14 +25,14 @@ apt: /usr/bin/apt-get
 ```
 
 Both binaries come out of the `apt` package, built from the same source, linked against the same
-`libapt-pkg` — see [`apt`](/commands/apt/) for what that front end can actually do. Anything
+`libapt-pkg`; see [`apt`](/commands/apt/) for what that front end can do. Anything
 `apt` can do, it does by calling the same code `apt-get` calls, and
 [`dpkg -S`](/debian/apt-essentials/) is what the query above is doing.
 
-## What actually differs: who each one is for
+## Who each one is written for
 
-`apt` is the end-user interface. It defaults to the things that help a person at a terminal —
-a progress bar, colour, a summary of what will change — and its command set is a curated subset
+`apt` is the end-user interface. It defaults to the things that help a person at a terminal (a
+progress bar, colour, a summary of what will change) and its command set is a curated subset
 of the most-used operations, gathered from `apt-get` and `apt-cache` into one place.
 
 `apt-get` is the stable interface. Its command set is complete rather than curated, its output
@@ -52,7 +52,7 @@ WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
 Listing...
 ```
 
-It prints that warning only when it detects that stdout is not a terminal — which is to say,
+It prints that warning only when it detects that stdout is not a terminal, which is to say
 only when it thinks you might be scripting it. `apt-get` never prints it, because for `apt-get`
 that is not a mistake. The manual puts it plainly under *"Script usage and differences from
 other APT tools"*:
@@ -83,7 +83,7 @@ apt-get --help | grep -E "^  (upgrade|dist-upgrade)"
 
 `apt full-upgrade` and `apt-get dist-upgrade` are the same operation under two names: upgrade
 everything, and remove packages if that is what it takes. The plain `upgrade` in each tool is
-where they genuinely differ — `apt upgrade` will install *new* packages when an upgrade needs
+where they genuinely differ: `apt upgrade` will install *new* packages when an upgrade needs
 them, and `apt-get upgrade` will not, holding those packages back instead. That single
 difference is behind most of the "why is apt-get not upgrading this" confusion, and behind
 [packages appearing to be kept back](/troubleshooting/packages-kept-back/).
@@ -94,7 +94,7 @@ difference is behind most of the "why is apt-get not upgrading this" confusion, 
 ## Which to use
 
 **At a terminal, use `apt`.** It is nicer to read, it needs less typing, and the instability the
-warning refers to is a change in output formatting between Debian releases — which matters to a
+warning refers to is a change in output formatting between Debian releases, which matters to a
 script and not to you.
 
 **In a script, a cron job, a systemd unit or a Dockerfile, use `apt-get`** (and `apt-cache` for

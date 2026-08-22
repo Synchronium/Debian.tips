@@ -1,6 +1,6 @@
 ---
 title: "Your first script"
-description: "Write, mark executable, and run your first bash script, plus what the shebang line and PATH lookup actually do."
+description: "Write, mark executable, and run your first bash script, plus what the shebang line and PATH lookup do."
 category: scripting
 tags: [scripting, beginner]
 updated: 2026-07-05
@@ -25,7 +25,7 @@ echo "Hello, $(whoami)"
 portable across systems where bash lives somewhere else.
 
 It says `bash` rather than `sh` deliberately. On Debian `/bin/sh` is dash, not bash, and a
-script that asks for `sh` and then uses bash syntax fails in ways that are hard to read — see
+script that asks for `sh` and then uses bash syntax fails in ways that are hard to read; see
 [sh vs bash vs dash](/compare/sh-vs-bash-vs-dash/).
 
 ## Making it executable
@@ -67,8 +67,7 @@ bash: hello.sh: command not found
 Without a path, bash searches only the directories listed in `$PATH`, and your current directory
 usually isn't one of them, deliberately: if it were, a malicious script dropped into any
 directory you `cd` into could shadow a real command by sharing its name. `./hello.sh` sidesteps
-the search entirely by naming the file's exact location, so this isn't a bug to work around,
-it's the safe default working as intended.
+the search entirely by naming the file's exact location.
 
 ## Arguments
 
@@ -96,7 +95,7 @@ needs to be written as `"$@"` (quoted) once arguments might contain spaces.
 
 > [!TIP]
 > If `./hello.sh` fails with "command not found" rather than "permission denied," check that
-> the file actually exists at that path and is spelled correctly. Both errors look similar at a
+> the file exists at that path and is spelled correctly. Both errors look similar at a
 > glance but mean different things: see
 > [Exit codes and error handling](/concepts/exit-codes-and-error-handling/).
 
@@ -146,4 +145,5 @@ needs to be written as `"$@"` (quoted) once arguments might contain spaces.
 
 ## What's next
 
-The next lesson covers the single biggest source of bash bugs: variables and quoting.
+[Variables and quoting](/scripting/variables-and-quoting/) comes next: why an unquoted `$f`
+breaks on a filename with a space, and the places where quoting is not optional.

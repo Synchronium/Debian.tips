@@ -1,6 +1,6 @@
 ---
 title: "Find the largest files on disk"
-description: "Locate what's actually eating your disk space, from a whole filesystem down to one directory."
+description: "Locate what is eating your disk space, from a whole filesystem down to one directory."
 category: recipes
 tags: [disk, files, one-liners]
 updated: 2026-08-22

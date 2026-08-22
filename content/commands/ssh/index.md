@@ -14,7 +14,7 @@ single command there and streams the output back. It's the tool behind logging i
 behind `scp`/`rsync` (which reuse the same connection), behind Git's `git@github.com:` URLs, and
 behind every "tunnel a port through a jump host" trick a sysadmin reaches for.
 
-## The mental model: an encrypted pipe with a shell on the end
+## An encrypted pipe with a shell on the end
 
 `ssh user@host` does three things in order: negotiate an encrypted channel, prove your identity
 to the server (and, less obviously, prove the server's identity to you), then attach that channel

@@ -14,7 +14,7 @@ you give it. Where `locate` searches a pre-built index of filenames (fast, but c
 only matches names), `find` inspects the filesystem live: name, type, size, age, permissions,
 ownership, all of it, right now.
 
-## The mental model: tests, actions, and an implicit AND
+## Tests and actions, combined with an implicit AND
 
 A `find` command is a directory to start from, followed by a chain of **tests** and
 **actions**:
@@ -35,12 +35,12 @@ By default the only "action" is `-print` (implied if you don't specify one), but
 `-delete`, and `-printf` let you act on or format each match directly, without piping to another
 command.
 
-## Tests evaluate left to right, and that's a feature
+## Tests evaluate left to right
 
 `find`'s expression is evaluated left to right with short-circuit logic, same as `&&`/`||` in
-a shell. This matters for both correctness and performance: put your cheapest, most-selective
-test first (usually `-name` or `-type`) so expensive tests like `-exec` only run against
-candidates that already passed the cheap filters. It also matters for `-prune`. To skip a whole
+a shell. The order affects both correctness and speed: put your cheapest, most-selective test
+first (usually `-name` or `-type`) so expensive tests like `-exec` only run against candidates
+that already passed the cheap filters. It also decides whether `-prune` works at all. To skip a whole
 directory, `-prune` has to come *before* whatever test would otherwise print or recurse into it
 (see the "skip a directory" example).
 
@@ -55,7 +55,7 @@ Three ways to act on matches, in order of how much you should trust yourself wit
 - **`-delete`** removes matches directly, no subprocess at all. The fastest option and the
   most dangerous, because there's no confirmation step.
 - **Piping to `xargs`** (`find ... -print0 | xargs -0 cmd`) is the classic
-  alternative to `-exec ... +`. Reach for it when you need `xargs`-specific features like
+  alternative to `-exec ... +`. Use it when you need `xargs`-specific features like
   `-P` (parallelism).
 
 > [!WARNING]

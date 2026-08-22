@@ -26,7 +26,7 @@ where a key lives and, more importantly, in what that key is allowed to vouch fo
 > command on this page can be run and checked rather than taken on trust. A real vendor's
 > repository differs only in the URL.
 
-## The part worth understanding first
+## A repository can offer any package it likes
 
 A repository is not a source of *its own* packages. It is a source of *packages*. Nothing stops
 a repository publishing a package called `curl`, or `openssh-server`, or `sudo`, and if its
@@ -55,8 +55,8 @@ Read those two lines together. `Installed:` is Debian's `curl`, the one running 
 was added to install something else entirely. Nothing was installed and nothing warned; the next
 `apt upgrade` would take it.
 
-That is not a flaw in `apt`. It is what a repository is, and it is the reason the rest of this
-page exists. `apt-key add` was removed because it made the problem worse: it put the vendor's key
+That is not a flaw in `apt`; it is what a repository is. `apt-key add` was removed because it
+made the problem worse: it put the vendor's key
 in a keyring trusted for every repository on the machine, so that key could then validly sign
 anything at all.
 
@@ -176,7 +176,7 @@ curl:
   Candidate: 8.14.1-2+deb13u4
 ```
 
-while the package you actually wanted is still available:
+while the package you wanted is still available:
 
 ```bash
 apt-cache policy hello-tips | head -3
@@ -205,22 +205,22 @@ supply the one thing I asked for".
 - **"I need `gpg --dearmor` first."** Not any more. Both the armoured and binary forms work in
   `Signed-By:`.
 - **"A repository I added for one tool can only affect that tool."** The `curl` example above is
-  what this page is for. Without pinning, it can affect anything.
+  exactly that happening. Without pinning, it can affect anything.
 - **"`apt update` succeeded, so the repository is fine."** It means the signature matched the key
   you supplied. Whether that key belongs to who you think is a question `apt` cannot answer.
 
 ## Go deeper
 
-- [APT essentials](/debian/apt-essentials/) — the everyday commands underneath this, including
+- [APT essentials](/debian/apt-essentials/): the everyday commands underneath this, including
   `apt-cache policy` for asking where a package would come from
-- [Debian's release channels](/debian/release-channels/) — the same priority machinery as it
+- [Debian's release channels](/debian/release-channels/): the same priority machinery as it
   applies to Debian's own suites, and why backports need asking for in the same way
-- [Managing services with systemd](/debian/systemd-services/) — what happens after you install
+- [Managing services with systemd](/debian/systemd-services/): what happens after you install
   something that ships a service, which on Debian is usually "it is already running"
-- [`curl`](/commands/curl/) — the tested reference for the fetch, including `-f` so a 404 fails
+- [`curl`](/commands/curl/): the tested reference for the fetch, including `-f` so a 404 fails
   loudly instead of saving an error page over your keyring
 
-When apt refuses a repository outright — `NO_PUBKEY`, a missing key, or
-`The repository is not signed` — the key and the signature have disagreed rather than the
+When apt refuses a repository outright, with `NO_PUBKEY`, a missing key, or
+`The repository is not signed`, the key and the signature have disagreed rather than the
 repository being broken. [The repository is not signed](/troubleshooting/repository-is-not-signed/)
 works through the diagnosis.

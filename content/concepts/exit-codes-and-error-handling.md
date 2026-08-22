@@ -1,6 +1,6 @@
 ---
 title: "Exit codes and error handling"
-description: "How $?, PIPESTATUS, set -e, and pipefail combine to tell a script what actually succeeded or failed, and where each one falls short."
+description: "How $?, PIPESTATUS, set -e, and pipefail combine to tell a script what succeeded and what failed, and where each one falls short."
 category: concepts
 tags: [scripting, beginner]
 updated: 2026-08-22

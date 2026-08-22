@@ -24,7 +24,7 @@ chain with `|`, exactly like the shell pipe you already know, and you build a wo
 adding one stage at a time and looking at what falls out.
 
 Two things trip up nearly everyone. The first is that **`jq` prints JSON, including when the
-result is a bare string** — you get `"Alice"`, with the quotes, because that is what the JSON
+result is a bare string**: you get `"Alice"`, with the quotes, because that is what the JSON
 value is. `-r` (`--raw-output`) strips them, and it is what you want any time the answer is
 heading into a shell variable or another command rather than into more JSON.
 

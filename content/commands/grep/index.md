@@ -10,11 +10,11 @@ related: [find, sed, pipes-and-redirection, exit-codes-and-error-handling, cut, 
 ---
 
 `grep` searches its input, one or more files, or whatever's piped to it, for lines that match
-a pattern, and prints those lines. It's the tool you reach for whenever you know roughly what
-you're looking for but not where it lives: which log line mentioned the failed request, which
+a pattern, and prints those lines. You want it whenever you know roughly what you're looking
+for but not where it lives: which log line mentioned the failed request, which
 source file still has a `TODO`, which config line sets the timeout.
 
-## The mental model: one line in, one line out
+## One line in, one line out
 
 `grep` reads its input **line by line**. For each line, it tests the pattern; if the line
 matches, it prints the whole line (by default) and moves on. It never looks across lines unless
@@ -22,9 +22,9 @@ you explicitly ask it to (`-A`/`-B`/`-C` for context, `-z` for NUL-separated inp
 `grep` is fast on huge files and why it composes so naturally in a pipeline. Like every classic
 Unix tool, it does one thing to a stream and lets the next command in the pipeline do the rest.
 
-Two numbers matter when you're using `grep` in a script rather than reading its output yourself:
-**exit status** (`0` if something matched, `1` if nothing matched, `2` on an actual error) and
-**line count** (`-c`). Both let you skip printing anything at all; see the scripting section
+Using `grep` in a script rather than reading its output yourself, two numbers do the work:
+**exit status** (`0` if something matched, `1` if nothing matched, `2` if something went wrong)
+and **line count** (`-c`). Both let you skip printing anything at all; see the scripting section
 below.
 
 ## Three regex flavours, one command
@@ -36,8 +36,8 @@ selected by flag:
   characters* unless you backslash-escape them (`\+`, `\?`, `\|`, `\(\)`).
 - **Extended regular expressions (ERE)**, enabled with `-E` (or run `egrep`, which is
   equivalent but deprecated). `+`, `?`, `|`, and `()` work the way you'd expect from most other
-  languages, unescaped. If you're writing anything beyond the simplest literal search, reach for
-  `-E`. It's one flag and it saves you from a backslash minefield.
+  languages, unescaped. If you're writing anything beyond the simplest literal search, use `-E`.
+  It's one flag and it saves you from a backslash minefield.
 - **Fixed strings**, enabled with `-F` (or run `fgrep`). No regex at all: every character in
   the pattern is literal. Use this when your search term might contain regex metacharacters
   you *don't* want interpreted (a literal `.`, `[`, or `*`). It's also measurably faster on
@@ -52,7 +52,7 @@ ERE genuinely can't express.
 > If you find yourself escaping lots of parentheses and pipes, that's the signal to add `-E` and
 > write the regex the way you'd expect.
 
-## What "matching" actually prints
+## The whole line, not just the match
 
 By default `grep` prints the *whole matching line*, not just the matched text. This surprises
 people used to regex functions in programming languages that return only the match. To get
@@ -74,7 +74,7 @@ something?" A common pattern is chaining them: `grep` to find the relevant lines
 it. See [Pipes and redirection](/concepts/pipes-and-redirection/) for why that composition
 works.
 
-## A note on performance
+## Making a big search faster
 
 For simple literal searches over large files, `-F` is faster than a regex search, and setting
 `LC_ALL=C` before a search on ASCII text can noticeably speed up both `-F` and regex matching.

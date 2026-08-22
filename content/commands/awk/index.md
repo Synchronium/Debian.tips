@@ -12,12 +12,12 @@ related: [grep, sed, pipes-and-redirection, sort, uniq]
 `awk` reads its input one record at a time (a line, by default), splits each record into
 **fields**, and runs a small program against them. Where [`grep`](/commands/grep/) answers "which
 lines match?" and [`sed`](/commands/sed/) answers "how do I transform matching lines?", `awk`
-answers "how do I pull *fields* out of a line and compute something with them?" It's the tool
-you reach for once a task stops being about lines and starts being about columns: totals,
+answers "how do I pull *fields* out of a line and compute something with them?" You want it
+once a task stops being about lines and starts being about columns: totals,
 averages, tallies, reordering, reformatting. It is not the tool for JSON, which has no columns
 and no fixed idea of where its lines go: [`jq`](/commands/jq/) is the equivalent there.
 
-## The mental model: pattern { action }
+## Every program is a list of `pattern { action }` pairs
 
 An `awk` program is a series of `pattern { action }` pairs. For every input record, `awk` tests
 each pattern in order; if a pattern matches (or there is no pattern, meaning "always"), it runs
@@ -78,10 +78,10 @@ hold-space trick or a shell loop around `grep` often fits in one `awk` line inst
 `print` is the quick option: it writes its arguments joined by `OFS` and terminated by `ORS`
 (a newline, by default), with sensible defaults for both. `printf` gives up those defaults in
 exchange for control: field widths, decimal places, zero-padding, no trailing newline unless you
-write `\n` yourself. Reach for `printf` the moment output needs to line up in columns or a number
+write `\n` yourself. Use `printf` the moment output needs to line up in columns or a number
 needs a fixed number of decimal places.
 
-## A Debian-specific note: mawk vs gawk
+## Debian's awk is mawk, not gawk
 
 Debian's `awk` is a symlink managed by `update-alternatives`, and on a fresh install it usually
 points at `mawk`, a smaller and faster implementation that covers the POSIX language well

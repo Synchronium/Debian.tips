@@ -13,7 +13,7 @@ related: [wget, jq, tar, exit-codes-and-error-handling]
 comes back. It's the tool behind "let me just check what this API returns," behind download
 scripts, behind health checks, and behind debugging why a webhook isn't firing.
 
-## The mental model: build a request, read a response
+## Build a request, read a response
 
 Every `curl` invocation assembles a request from pieces (method, URL, headers, body), sends
 it, and by default prints the response **body** to stdout. Everything else (status line,
@@ -27,10 +27,10 @@ curl -v https://example.com           # GET, print the whole conversation (conne
 ```
 
 `-i`/`-I`/`-v` are about **what curl shows you**, not what request it sends. A common
-confusion is meaning "make a HEAD request" but reaching for `-i`.
+confusion is meaning "make a HEAD request" and typing `-i`.
 
 > [!NOTE]
-> Nearly every example below talks to `http://127.0.0.1:8080` — a small test server kept
+> Nearly every example below talks to `http://127.0.0.1:8080`, a small test server kept
 > in this site's repository at `scripts/fixtures/http-mock.py`. Start it with
 > `python3 http-mock.py` and each of those results is reproducible on your own machine,
 > byte for byte, because the server answers with a fixed date and no request id. Public
@@ -54,12 +54,12 @@ often redundant but harmless, and worth keeping for readability. `-X` is *not* r
 - **`-d` / `--data`** sends `application/x-www-form-urlencoded` data (or literally whatever
   string you give it, if you set `Content-Type` yourself for a JSON body).
 - **`-F` / `--form`** sends `multipart/form-data`, the format browsers use for `<form>`
-  uploads, and the one you need for actually uploading a file (`-F "file=@report.pdf"`).
+  uploads, and the one you need to upload a file (`-F "file=@report.pdf"`).
 
-Mixing these up is the single most common reason a "curl works but the server doesn't seem to
-see the data" bug happens. Check whether the endpoint expects urlencoded or multipart.
+Mixing these up is the most common reason for a "curl works but the server doesn't see the
+data" bug. Check whether the endpoint expects urlencoded or multipart.
 
-## Exit codes tell scripts what actually happened
+## A 404 still exits zero
 
 By default, `curl` exits `0` even for a `404` or `500` response. As far as curl is concerned,
 it successfully transferred *something*. Two flags change that:

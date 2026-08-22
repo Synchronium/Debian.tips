@@ -1,6 +1,6 @@
 ---
 title: "Functions"
-description: "Defining bash functions, what return actually returns, how to hand a value back, and why local is the difference between a helper and a landmine."
+description: "Defining bash functions, why return gives a status not a value, how to hand data back, and why local separates a helper from a landmine."
 category: scripting
 tags: [scripting, beginner]
 updated: 2026-08-18

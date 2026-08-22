@@ -1,7 +1,7 @@
 ---
 title: "dpkg"
 tagline: "Install and inspect Debian packages directly"
-description: "Query what's installed, find which package owns a file, inspect a .deb before trusting it, and repair a half-finished install — the layer beneath apt."
+description: "Query what's installed, find which package owns a file, inspect a .deb before trusting it, and repair a half-finished install: the layer beneath apt."
 category: commands
 tier: flagship
 tags: [apt, debian, sysadmin]
