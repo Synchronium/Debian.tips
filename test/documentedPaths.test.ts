@@ -16,7 +16,7 @@ import { ROOT } from "../src/paths.js";
  *  Plain `js` is deliberately *not* here: TypeScript's NodeNext imports spell every neighbour
  *  `./thing.js`, and matching those finds a relative specifier rather than a repository path. */
 const REFERENCE =
-  /(?:\.claude|scripts|src|test|content|styles|public)\/[A-Za-z0-9._/-]+\.(?:ts|mjs|sh|md|py|yaml|yml|css)/g;
+  /(?:\.claude|scripts|src|test|content|styles|public)\/[A-Za-z0-9._/-]+\.(?:ts|mjs|sh|md|py|yaml|yml|css|json)/g;
 
 /** Extensions worth scanning: the tools themselves, the setup scripts that carry a lot of
  *  hard-won commentary, and the documentation, whose whole job since CLAUDE.md was split into

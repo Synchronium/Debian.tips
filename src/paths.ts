@@ -44,6 +44,10 @@ export const FEED_FILE = "feed.xml";
  *  on having been started from the repository root. */
 export const SANDBOX_SCRIPT = join(ROOT, "scripts", "sandbox.sh");
 
+/** What each page verified when it was last recorded. Compared by
+ *  `test/verificationBaseline.test.ts`, rewritten by `scripts/update-verification-baseline.ts`. */
+export const VERIFICATION_BASELINE_FILE = join(ROOT, "test", "verification-baseline.json");
+
 /** A page's setup script: creates its sample files, and is what opts it into the replay.
  *
  *  `fixtureDir` is a parameter for the same reason `contentDir` is one: a build over a synthetic
