@@ -66,8 +66,8 @@ always what you wanted:
 sudo apt-get -o DPkg::Lock::Timeout=120 install <package>
 ```
 
-That waits up to two minutes for the lock instead of failing immediately. Reach for it in a
-provisioning script that intermittently fails on a fresh machine.
+That waits up to two minutes for the lock instead of failing immediately, which is what you want
+in a provisioning script that intermittently fails on a fresh machine.
 
 ## When it really is stale
 
@@ -94,8 +94,8 @@ state. This is the command to repair it. See [`dpkg`](/commands/dpkg/) for readi
 reports. Most stale-lock cases end here, with the lock file never touched.
 
 > [!WARNING]
-> `sudo rm /var/lib/dpkg/lock-frontend` is the advice you will find most often and the one to
-> reach for last. If a process really is still running, deleting the lock lets a second dpkg run
+> `sudo rm /var/lib/dpkg/lock-frontend` is the advice you will find most often and the last
+> thing you should try. If a process really is still running, deleting the lock lets a second dpkg run
 > against the same database, which is exactly the corruption the lock exists to prevent. Delete
 > it only after `ps` has shown you the holder is gone, and run `dpkg --configure -a` afterwards
 > either way.

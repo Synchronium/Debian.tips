@@ -3,15 +3,15 @@ title: "Exit codes and error handling"
 description: "How $?, PIPESTATUS, set -e, and pipefail combine to tell a script what actually succeeded or failed, and where each one falls short."
 category: concepts
 tags: [scripting, beginner]
-updated: 2026-07-05
+updated: 2026-08-22
 related: [pipes-and-redirection, grep, curl]
 ---
 
-You've written `command && echo ok || echo fail` without thinking much about it. Here's what
-`$?` actually is, why a pipeline can hide a failure from you, and what `set -e` does and doesn't
-protect against.
+Every command sets an exit status when it finishes, and `$?` is where the shell keeps the most
+recent one. Pipelines, `set -e` and `trap` all read that number, and each of them has a case
+where it misses a failure.
 
-## Every command returns a number, not just output
+## Every command sets an exit status
 
 When any command finishes, it sets an **exit status**: an integer from 0 to 255, stored until
 the next command runs, readable via `$?`. Convention, not enforcement, says `0` means success and
@@ -35,7 +35,7 @@ status=$?
 echo "grep exited $status"
 ```
 
-## Specific numbers carry specific meanings
+## What 126, 127 and 128+N mean
 
 Beyond the generic 0/non-zero split, a handful of exit codes are conventional across most Unix
 tools:
@@ -79,9 +79,9 @@ echo $?
 0
 ```
 
-Only `true`'s exit status survives; `false`'s failure earlier in the pipe is invisible to `$?`.
-This is the single most common way a script's error handling misses a real failure: piping a
-command that might fail into `grep`, `sort`, or anything else silently discards its exit code.
+Only `true`'s exit status survives, and `false`'s failure earlier in the pipe is invisible to
+`$?`. Piping a command that might fail into `grep`, `sort`, or anything else silently discards
+its exit code, which is a common way for a script's error handling to miss a real failure.
 
 Two ways to see every stage's exit status instead of just the last one:
 
@@ -104,8 +104,8 @@ bash -c 'set -o pipefail; false | true; echo $?'
 1
 ```
 
-Most scripts benefit from `pipefail` turned on near the top; without it, a pipeline is only as
-reliable as its last stage.
+Most scripts benefit from `pipefail` turned on near the top. Without it, a pipeline only reports
+on its final stage.
 
 ## `set -e`: stop on the first failure, with real exceptions
 
@@ -136,9 +136,9 @@ still running
 ```
 
 Here `false` "fails" but the script keeps going, because `false` is being *tested*, not run for
-its own sake. This is correct and necessary (otherwise no script using `set -e` could ever check
-whether a command succeeds without aborting), but it means `set -e` alone is not a substitute for
-actually checking exit codes where they matter.
+its own sake. Without that exemption no script using `set -e` could check whether a command
+succeeded without aborting, so it has to work this way. It does mean `set -e` alone is not a
+substitute for checking exit codes yourself.
 
 ## Reacting to a failure without aborting: traps
 
@@ -179,7 +179,6 @@ echo "jq not installed"`.
   (not executable), `127` (not found), and `128+N` (killed by signal *N*) mean different things.
   Treating them identically in a script's error handling throws away information the shell
   already computed for you.
-- **"I need `$?` right after the command, or I've lost it."** True, and worth restating: any
-  command at all, including one you think of as a no-op like `echo` or `[[ ... ]]`, overwrites
-  `$?`. Capture it into a variable the moment you need it for anything other than an immediate
-  check.
+- **"I need `$?` right after the command, or I've lost it."** True. Any command at all,
+  including one you think of as a no-op like `echo` or `[[ ... ]]`, overwrites `$?`. Capture it
+  into a variable the moment you need it for anything other than an immediate check.

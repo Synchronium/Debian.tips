@@ -58,7 +58,7 @@ prints line 2 twice: once from `p`, once from the automatic print. GNU `sed` als
 Plain `sed` uses BRE, where `+`, `?`, `|`, and `()` need backslash-escaping to mean anything
 special. `-E` (or `-r` on some systems) switches to ERE, letting you write
 `s/([a-z]+),([0-9]+)/\2:\1/` instead of the backslash-heavy BRE equivalent. Same tradeoff as
-[grep](/commands/grep/): reach for `-E` the moment your pattern needs grouping or alternation.
+[grep](/commands/grep/): use `-E` the moment your pattern needs grouping or alternation.
 
 ## Rewriting a file instead of printing
 
