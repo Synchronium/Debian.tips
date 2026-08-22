@@ -3,7 +3,7 @@ title: "Find the largest files on disk"
 description: "Locate what's actually eating your disk space, from a whole filesystem down to one directory."
 category: recipes
 tags: [disk, files, one-liners]
-updated: 2026-07-05
+updated: 2026-08-22
 related: [find, tar, sort, head]
 ---
 
@@ -30,14 +30,14 @@ du -ah projects | sort -rh | head -6
   Point it at `/var` or `/` for the real investigation; a small tree is used here so the
   numbers on this page are ones you can reproduce.
 - `sort -rh` sorts that output by size, largest first (`-r` reverse, `-h` understands
-  human-readable sizes like "1.2G") — see [sort](/commands/sort/) for more, including the
+  human-readable sizes like "1.2G"). See [sort](/commands/sort/) for more, including the
   common mistake of using `-h` without also telling it which field to sort by.
 - `head -6` keeps just the top of the ranking (see [head and tail](/commands/head/)). Use
   `head -20` on a real filesystem, where there is far more to sift through.
 
 Note that directories and their contents both appear: `projects/archive` at 2.1M is the
-directory holding `backup.tar.gz` at 2.0M, not a second copy of it. That is `-a` doing what it
-was asked, and it is why the totals appear to add up to more than the disk actually holds.
+directory holding `backup.tar.gz` at 2.0M, not a second copy of it. `-a` was asked for every
+file, so the totals down the column add up to more than the disk holds.
 
 **Variations:**
 
@@ -57,9 +57,10 @@ rather than sorting through every individual file up front.
 > descends into mounted drives, network shares, and `/proc`, which is rarely what you want. See
 > [find](/commands/find/) for more on `-xdev` and other filters.
 
-If the culprit turns out to be an old backup archive rather than a single runaway file, checking
-what's actually inside it before deleting is worth the extra step: `tar -tzvf backup.tar.gz`
-lists contents with sizes without extracting anything (see [tar](/commands/tar/)). For repeated
-disk investigations, the interactive tool `ncdu` (not installed by default; `apt install ncdu`)
-gives the same information as the `du` command above but lets you navigate the tree interactively
-instead of re-running the command with a different path each time.
+If the culprit turns out to be an old backup archive rather than a single runaway file, look
+inside it before deleting: `tar -tzvf backup.tar.gz` lists contents with sizes without
+extracting anything (see [tar](/commands/tar/)).
+
+For repeated disk investigations, `ncdu` (not installed by default; `apt install ncdu`) gives
+the same information as the `du` command above and lets you walk the tree, instead of re-running
+the command with a different path each time.

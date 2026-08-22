@@ -3,28 +3,27 @@ title: "Debian's release channels"
 description: "What stable, testing, unstable and backports each mean, why the suite name in your sources file matters more than you think, and which to run."
 category: debian
 tags: [debian, apt, sysadmin]
-updated: 2026-08-18
+updated: 2026-08-22
 related: [apt-essentials, third-party-repositories, systemd-services]
 ---
 
-Debian does not have one repository, it has several running in parallel, and a package moves
-between them as it earns confidence. Knowing which one a machine is pointed at answers most
-questions about why a version is old, why an upgrade appeared unasked, and whether a security
-fix is going to arrive.
+Debian runs several repositories in parallel, and a package moves between them as it earns
+confidence. Which one a machine is pointed at answers most questions about why a version is old,
+why an upgrade appeared unasked, and whether a security fix is going to arrive.
 
 > [!NOTE]
 > The outputs below were captured on an arm64 machine. The architecture in the version-table
 > lines reads `amd64` on most desktops and servers, and nothing else about them changes.
 
-## The channels
+## unstable, testing, stable and experimental
 
 **unstable**, always codenamed **sid**, is where a new version of a package lands after the
 maintainer uploads it. Nothing is held back and things do break.
 
 **testing** is fed automatically from unstable. A package migrates after a waiting period of
 several days, which varies with the urgency the maintainer declared, provided it has picked up no
-new release-critical bugs and its dependencies are all present. Testing is unstable with the worst
-of the sharp edges filed off by time rather than by review.
+new release-critical bugs and its dependencies are all present. Nobody reviews a package during
+that wait. The delay simply gives release-critical bugs time to be reported.
 
 **stable** is testing at the moment it was frozen and released. After that its package versions
 do not change. Fixes are backported into the existing version rather than the version being
@@ -54,10 +53,9 @@ The `13.6` is the point release, a periodic reroll of the installation media wit
 fixes folded in. It is not a different version of Debian, and a machine kept current is already
 at the newest point release without doing anything.
 
-## The suite name in your sources file is a decision
+## Codename or role in your sources file
 
-This is the part that catches people, and it is one word. A source can name either the codename
-or the role:
+A source can name either the codename or the role, and the two behave differently:
 
 ```
 Suites: trixie      # this specific release, forever
@@ -91,7 +89,7 @@ inherit a machine, this file is the first thing to read.
 
 ## The suites hanging off stable
 
-Three more suites accompany a stable release, and they are not optional extras:
+Three more suites accompany a stable release, none of which are optional extras:
 
 - **`trixie-security`** carries security fixes from the Debian Security Team. Configure it or you
   do not get security updates. It is a separate archive, `deb.debian.org/debian-security`, so it
@@ -103,8 +101,7 @@ Three more suites accompany a stable release, and they are not optional extras:
 
 Security support is the reason to think twice about running testing on a server. Fixes reach
 unstable first and migrate to testing on the normal schedule, so testing can sit exposed for days
-after a fix exists. Stable gets it directly. This is a genuine difference in kind, not a
-preference.
+after a fix exists. Stable gets it directly.
 
 ## Backports, and why nothing installs from them by accident
 
@@ -139,8 +136,7 @@ Asking for the backport takes `-t`:
 sudo apt install -t trixie-backports golang-go
 ```
 
-Simulating both makes the difference explicit, and `-s` means neither actually installs
-anything:
+Simulating both makes the difference explicit, and `-s` means neither installs anything:
 
 <!-- verify: shape the versions and the point release move whenever either suite publishes -->
 ```bash
@@ -157,15 +153,14 @@ comparison, so the backport ranks below the same upstream version in the next re
 machine upgrading to Debian 14 moves cleanly onto the normal package rather than being stuck on a
 backport that looks newer.
 
-Backports get best-effort support from the people who maintain them, not the security team.
-Taking one is a considered trade for a specific package, which is what the opt-in design is
-encouraging.
+Backports get best-effort support from the people who maintain them, not the security team. Take
+one when a specific package needs to be newer, and leave the rest of the system on stable.
 
 ## Which should you run
 
 For anything you are responsible for, stable, with `-security` configured and backports used
-sparingly for the two or three things that genuinely need to be newer. The version numbers look
-old and the machine keeps working, which is the entire proposition.
+sparingly for the two or three things that need to be newer. The version numbers look old and
+the machine keeps working.
 
 For a personal desktop, testing or unstable are defensible if you accept the trade: you will
 occasionally get a broken morning, and you should know how to hold a package or roll one back
@@ -190,9 +185,9 @@ problems, because a package from unstable drags in the libraries of unstable.
 
 ## Go deeper
 
-- [APT essentials](/debian/apt-essentials/) — the commands for inspecting all of this, including
+- [APT essentials](/debian/apt-essentials/): the commands for inspecting all of this, including
   `apt-cache policy` and `apt-mark hold` for pinning a package you do not want moving
-- [Adding a third-party repository safely](/debian/third-party-repositories/) — the same
+- [Adding a third-party repository safely](/debian/third-party-repositories/): the same
   priority machinery, applied to repositories that are not Debian's at all
-- [Managing services with systemd](/debian/systemd-services/) — what an upgrade does to the
+- [Managing services with systemd](/debian/systemd-services/): what an upgrade does to the
   services running on the machine while it happens
