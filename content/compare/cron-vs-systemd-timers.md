@@ -92,14 +92,13 @@ your own `crontab -e` entries, which get no such treatment.
 Cron's five fields have no dry run. You write them, wait, and find out. A calendar expression
 can be asked directly:
 
-<!-- verify: shape the next elapse and the time remaining move with the clock -->
+<!-- verify: shape the next elapse moves with the clock -->
 ```bash
-systemd-analyze calendar 'Mon *-*-* 03:00:00'
+systemd-analyze calendar 'Mon *-*-* 03:00:00' | head -2
 ```
 ```
 Normalized form: Mon *-*-* 03:00:00
     Next elapse: Mon 2026-08-24 03:00:00 UTC
-       From now: 3 days left
 ```
 
 Being able to confirm what an expression means before trusting it to fire at 3am is worth more
