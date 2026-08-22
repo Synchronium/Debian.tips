@@ -5,8 +5,8 @@ import { html, raw } from "../../html.js";
  *  A tag can accumulate every page on the site, so tag pages and the flat category listings
  *  are bounded. `/commands/` deliberately is not: its `COMMAND_GROUPS` sectioning *is* its
  *  navigation, and splitting an index across page boundaries makes a specific command harder to
- *  find rather than easier. _PLANS/PLAN-CODE-IMPROVEMENTS.md carries that decision and the lever
- *  to pull when the index does get too heavy. */
+ *  find rather than easier. When that index does grow too heavy the lever is a compact one-line
+ *  listing rather than pagination, which keeps one URL to search. */
 export const PAGE_SIZE = 24;
 
 export interface PageSlice<T> {
