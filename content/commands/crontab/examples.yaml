@@ -191,7 +191,7 @@ sections:
           must be privileged to use -u
         level: intermediate
         tags: [permissions]
-      - title: "Where per-user crontabs actually live on disk"
+      - title: "Where per-user crontabs live on disk"
         code: |-
           crontab mycron.txt
           sudo stat -c '%A %U:%G %n' /var/spool/cron/crontabs/*

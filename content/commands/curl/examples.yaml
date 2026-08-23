@@ -256,7 +256,7 @@ sections:
         level: intermediate
       - title: "Upload a file as multipart form data"
         code: curl -F "file=@robots.txt" http://127.0.0.1:8080/post
-        description: "`-F` (`--form`) sends `multipart/form-data`, the format needed to actually upload a file. `-d` can't do this. The `@` prefix tells curl to read the named file's contents rather than sending the literal string."
+        description: "`-F` (`--form`) sends `multipart/form-data`, the format needed to upload a file. `-d` can't do this. The `@` prefix tells curl to read the named file's contents rather than sending the literal string."
         level: intermediate
         tags: [files]
   - title: "Headers and identity"

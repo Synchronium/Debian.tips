@@ -258,7 +258,7 @@ sections:
         tags: [disk, sysadmin]
       - title: "Delete entries older than a given age"
         code: journalctl --vacuum-time=30d
-        description: "The retention policy most people actually want. Set it permanently with `MaxRetentionSec=` in `/etc/systemd/journald.conf` rather than running this by hand."
+        description: "The retention policy most people want. Set it permanently with `MaxRetentionSec=` in `/etc/systemd/journald.conf` rather than running this by hand."
         level: intermediate
         tags: [disk, sysadmin]
       - title: "Check a journal file for corruption"

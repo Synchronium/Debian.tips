@@ -152,7 +152,7 @@ sections:
   - title: "Output formats"
     intro: "The default format is compact but hard to read. Three alternatives trade brevity for clarity."
     examples:
-      - title: "Unified format - the one everyone actually uses"
+      - title: "Unified format - the one everyone uses"
         code: diff -u nginx-old.conf nginx-new.conf
         description: "A few lines of shared context (unmarked), then - for removed lines and + for added ones. This is also exactly what patch expects as input, and the format git diff itself is built on."
         volatile: "the timestamps in the `---` and `+++` header lines are when the sample files were created"
@@ -309,7 +309,7 @@ sections:
         level: advanced
       - title: "Ignore line-ending differences between Unix and Windows files"
         code: diff crlf-a.txt crlf-b.txt
-        description: "Without any flag, a file with \\r\\n line endings looks completely different from the same content with plain \\n endings, even though every visible character matches - see the tr page for actually converting between them."
+        description: "Without any flag, a file with \\r\\n line endings looks completely different from the same content with plain \\n endings, even though every visible character matches - see the tr page for converting between them."
         output: |
           1,2c1,2
           < line1
@@ -320,7 +320,7 @@ sections:
         level: intermediate
       - title: "The fix: strip trailing carriage returns before comparing"
         code: diff --strip-trailing-cr crlf-a.txt crlf-b.txt
-        description: "Confirms the two files are actually identical in content once the CRLF-vs-LF line ending difference is discounted."
+        description: "Confirms the two files are identical in content once the CRLF-vs-LF line ending difference is discounted."
         level: advanced
         tags: [beginner]
 

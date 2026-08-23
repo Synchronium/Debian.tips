@@ -242,7 +242,7 @@ sections:
         level: intermediate
       - title: "Match an exact field value"
         code: awk -F, '$1=="alice"' employees.csv
-        description: "`==` on a field requires an exact match, unlike `~` which tests a regex. Faster and clearer when you're not actually matching a pattern."
+        description: "`==` on a field requires an exact match, unlike `~` which tests a regex. Faster and clearer when you are not matching a pattern."
         output: |
           alice,engineering,95000
         level: basic
@@ -351,7 +351,7 @@ sections:
         level: intermediate
       - title: "END still runs when nothing matched"
         code: awk '/nonexistent/{c++} END{print c+0}' app.log
-        description: "`c` is never touched if the pattern never matches, so `print c` alone would print an empty string, not `0`. Adding `0` forces numeric context, printing the `0` you actually want."
+        description: "`c` is never touched if the pattern never matches, so `print c` alone would print an empty string, not `0`. Adding `0` forces numeric context, printing the `0` you wanted."
         output: |
           0
         level: advanced

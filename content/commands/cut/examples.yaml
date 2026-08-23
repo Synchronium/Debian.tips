@@ -87,7 +87,7 @@ sections:
         tags: [beginner]
       - title: "Fields print in original order, not selection order"
         code: cut -d, -f3,1 users.csv
-        description: "Listing field 3 before field 1 doesn't reorder the output - cut always preserves the source column order regardless of how `-f` lists them. Reach for `awk` if you actually need columns rearranged."
+        description: "Listing field 3 before field 1 doesn't reorder the output - cut always preserves the source column order regardless of how `-f` lists them. Use `awk` if you need columns rearranged."
         output: |
           name,department
           Alice,Engineering

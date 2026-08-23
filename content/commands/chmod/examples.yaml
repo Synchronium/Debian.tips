@@ -360,7 +360,7 @@ sections:
         code: chmod -hv 644 notes-link
         description: >-
           `-h` asks `chmod` to affect the symlink rather than its target. On Linux this is a
-          no-op: the kernel has no `lchmod` syscall, so symlink permissions can't actually be
+          no-op: the kernel has no `lchmod` syscall, so symlink permissions cannot be
           set. `-v` shows the command noticing and skipping it rather than pretending to
           succeed.
         output: |2
@@ -379,7 +379,7 @@ sections:
         tags: [scripting]
       - title: "Only print a line when the mode actually changes"
         code: chmod -c 755 notes.txt
-        description: "`-c` (`--changes`) stays silent if the file was already at the target mode, and reports it like `-v` only when something was actually different."
+        description: "`-c` (`--changes`) stays silent if the file was already at the target mode, and reports it like `-v` only when something changed."
         output: |2
           mode of 'notes.txt' changed from 0644 (rw-r--r--) to 0755 (rwxr-xr-x)
         level: intermediate
@@ -446,7 +446,7 @@ sections:
       - title: "A directory missing its execute bit blocks access to files inside, even with read"
         code: ls -l locked/
         description: >-
-          Read on a directory lets you list filenames; execute is what lets you actually reach
+          Read on a directory lets you list filenames; execute is what lets you reach
           the files by name to open or stat them. Without it, even the owner sees every entry as
           inaccessible.
         output: |2

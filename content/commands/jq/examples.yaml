@@ -384,7 +384,7 @@ sections:
         tags: [beginner]
 
   - title: "Counting and aggregating"
-    intro: "The questions you actually want answered about a collection: how many, how much, which is biggest, how do they group."
+    intro: "The questions you want answered about a collection: how many, how much, which is biggest, how do they group."
     examples:
       - title: "Count the elements of an array"
         code: jq '.users | length' api-response.json

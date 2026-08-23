@@ -364,7 +364,7 @@ sections:
         code: find projects -not -path "*/vendor/*" -type f | sort
         description: >-
           For a single exclusion, `-not -path` is shorter than the
-          `-prune` idiom. Reach for `-prune` instead when you also need find
+          `-prune` idiom. Use `-prune` instead when you also need find
           to skip *descending into* a large excluded directory for performance.
         output: |2
           projects/.hidden/.env

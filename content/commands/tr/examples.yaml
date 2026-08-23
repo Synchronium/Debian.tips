@@ -119,10 +119,9 @@ sections:
       - title: "Squeezing newlines removes blank lines entirely, not just extras"
         code: printf 'a\n\nb\n\n\n\nc\n' | tr -s '\n'
         description: >-
-          Worth being precise about: a blank line is just two adjacent newlines, and `-s` squeezes
-          any run of them down to one - which eliminates the blank line completely rather than
-          leaving a single blank line the way `cat -s` does. Verified: three paragraphs separated
-          by blank lines come out with no blank lines at all, just adjacent text lines.
+          A blank line is just two adjacent newlines, and `-s` squeezes any run of them down to
+          one, which eliminates the blank line completely rather than leaving a single blank
+          line the way `cat -s` does.
         output: |
           a
           b
@@ -188,9 +187,9 @@ sections:
       - title: "Complementing a set includes the trailing newline"
         code: echo 'ABC' | tr --complement 'A' '_'
         description: >-
-          echo appends a trailing newline, and that newline is not 'A' either - so it's part of
-          the complement too. Verified: the output is A___ (four characters), not A__ (three) -
-          the line's own newline got translated along with B and C.
+          echo appends a trailing newline, and that newline is not 'A' either, so it's part of
+          the complement too. That is four characters back, not three: the line's own newline
+          got translated along with B and C.
         output: |
           A___
         level: advanced

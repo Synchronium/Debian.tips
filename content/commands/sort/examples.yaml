@@ -1,7 +1,7 @@
 command: sort
 fixtures:
   - name: wordlist.txt
-    note: "duplicates and mixed case, to show what -u and -f actually do"
+    note: "duplicates and mixed case, to show what -u and -f do"
     content: |
       banana
       apple
@@ -307,7 +307,7 @@ sections:
         code: sort -cn numbers.txt
         description: >-
           Same file, checked numerically instead: reports exactly where it breaks. This is the
-          check that actually matters for a file of numbers - `-c` alone checked the wrong thing.
+          check a file of numbers needs - `-c` alone checked the wrong thing.
         output: |
           sort: numbers.txt:2: disorder: 2
         level: intermediate
@@ -400,7 +400,7 @@ sections:
         level: advanced
       - title: "Multiple -k options without explicit end bounds"
         code: printf 'b 2 x\na 2 y\nc 1 z\n' | sort -k2 -k1
-        description: "Without a comma, each `-k` extends to the end of the line, so the second `-k1` only actually breaks ties left over after the first key already covered everything from field 2 onward. For precise multi-column sorts, always give explicit N,N ranges instead."
+        description: "Without a comma, each `-k` extends to the end of the line, so the second `-k1` only breaks ties left over after the first key already covered everything from field 2 onward. For precise multi-column sorts, always give explicit N,N ranges instead."
         output: |
           c 1 z
           b 2 x
@@ -425,7 +425,7 @@ sections:
     examples:
       - title: "Group log entries by HTTP status code"
         code: sort -k8 -n access.log
-        description: "Field 8 in a standard combined log line is the status code - the quoted request eats fields 5–7, so counting whitespace-separated fields by hand (not by meaning) is what actually finds it."
+        description: "Field 8 in a standard combined log line is the status code - the quoted request eats fields 5–7, so counting whitespace-separated fields by hand, rather than by meaning, is what finds it."
         output: |
           192.0.2.44 - - [13/Aug/2026:09:16:04] "GET /dashboard HTTP/1.1" 200 4021
           192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021

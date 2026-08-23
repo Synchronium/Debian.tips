@@ -304,7 +304,7 @@ sections:
         level: basic
       - title: "Accept a new host key automatically"
         code: ssh -o StrictHostKeyChecking=no user@deb1.example.com
-        description: "Skips the confirmation prompt and accepts whatever key the server presents, adding it straight to `known_hosts`. Convenient for scripted, one-off connections to freshly provisioned hosts; never use it for a host whose identity actually matters, since it also silently accepts a key that's changed for the wrong reasons."
+        description: "Skips the confirmation prompt and accepts whatever key the server presents, adding it straight to `known_hosts`. Convenient for scripted, one-off connections to freshly provisioned hosts; never use it for a host whose identity matters, since it also silently accepts a key that's changed for the wrong reasons."
         level: intermediate
         danger: true
         tags: [security]
@@ -355,7 +355,7 @@ sections:
         level: intermediate
       - title: "Sync a tree with rsync over ssh"
         code: rsync -avz -e ssh project/ deb1:/home/user/project/
-        description: "`-e ssh` is usually redundant (ssh is rsync's default remote shell) but useful for pinning a specific port or key: `-e \"ssh -p 2222\"`. rsync only transfers what actually changed, unlike scp's full re-copy."
+        description: "`-e ssh` is usually redundant (ssh is rsync's default remote shell) but useful for pinning a specific port or key: `-e \"ssh -p 2222\"`. rsync only transfers what changed, unlike scp's full re-copy."
         level: intermediate
         tags: [files]
       - title: "Copy directly between two remote hosts"
@@ -441,7 +441,7 @@ sections:
         tags: [security, scripting]
       - title: "Forward a graphical application's display"
         code: ssh -X user@deb1.example.com
-        description: "`-X` forwards X11 so a GUI application started remotely displays on your local screen. Requires a local X server and an X11-enabled sshd on the remote end to actually show anything; the connection itself is the only part verifiable without both."
+        description: "`-X` forwards X11 so a GUI application started remotely displays on your local screen. Requires a local X server and an X11-enabled sshd on the remote end to show anything; the connection itself is the only part verifiable without both."
         level: advanced
       - title: "Trust the forwarded display fully"
         code: ssh -Y user@deb1.example.com

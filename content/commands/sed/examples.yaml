@@ -192,7 +192,7 @@ sections:
         tags: [beginner]
       - title: "Edit a file in place with no backup"
         code: sed -i "s/8080/9090/" config.conf
-        description: "Same edit, no safety net. Reach for this only once you've verified the script's behaviour, ideally on a copy first."
+        description: "Same edit, no safety net. Use it only once you have checked the script's behaviour, ideally on a copy first."
         level: intermediate
         danger: true
   - title: "Inserting, appending, and changing lines"

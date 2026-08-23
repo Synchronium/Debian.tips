@@ -54,7 +54,7 @@ sections:
         tags: [beginner]
       - title: "Read a service's full status block"
         code: systemctl status cron --no-pager | head -9
-        description: "The command everyone reaches for. `head -9` stops before the control-group listing, which on this machine names the container it ran in; on yours it names the slice."
+        description: "The command everyone runs first. `head -9` stops before the control-group listing, which on this machine names the container it ran in; on yours it names the slice."
         volatile: "the date, uptime, invocation id, PID, task count and memory figures are all specific to your machine and the moment you run it"
         compare: shape
         output: |2
@@ -463,7 +463,7 @@ sections:
         tags: [beginner, monitoring]
       - title: "List the services that are running"
         code: systemctl list-units --type=service --state=running --no-pager --no-legend 'cron*' 'ssh*'
-        description: "`list-units` reports what systemd has loaded, filtered here to services that are actually up. Drop the patterns to list every running service, and add `--all` to include units that are loaded but inactive."
+        description: "`list-units` reports what systemd has loaded, filtered here to services that are up. Drop the patterns to list every running service, and add `--all` to include units that are loaded but inactive."
         output: |2
             cron.service loaded active running Regular background program processing daemon
             ssh.service  loaded active running OpenBSD Secure Shell server

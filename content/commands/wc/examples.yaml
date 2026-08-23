@@ -177,7 +177,7 @@ sections:
         tags: [beginner]
       - title: "The same content, with a trailing newline, counts correctly"
         code: printf 'a\nb\nc\n' | wc -l
-        description: "Identical visible content, one more trailing newline character, and the count matches what you'd actually expect. Most editors add this automatically; some hand-built files and command substitutions don't."
+        description: "Identical visible content, one more trailing newline character, and the count matches what you would expect. Most editors add this automatically; some hand-built files and command substitutions don't."
         output: |2
           3
         level: intermediate
