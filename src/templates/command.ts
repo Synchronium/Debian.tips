@@ -116,10 +116,12 @@ ${cards.map((c) => raw(c))}
 ${raw(breadcrumbs(page.category, page.title))}
 <article class="command-page">
 <div class="content">
+<header class="page-head">
 <h1>${page.title}</h1>
 <p class="tagline">${page.tagline}</p>
 <p class="meta">Updated ${dateStr}</p>
 ${raw(tagChips(page.tags))}
+</header>
 <div class="prose">${raw(page.html)}</div>
 ${raw(await fixturesHtml(examplesFile))}
 ${raw(outputToggle)}

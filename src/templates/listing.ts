@@ -1,10 +1,28 @@
 import { html, raw } from "../html.js";
 import { layout } from "./layout.js";
-import { pageCard } from "./partials/card.js";
+import { rowList } from "./partials/row.js";
 import { type PageSlice, paginationNav } from "./partials/pager.js";
 import { CATEGORY_META, COMMAND_GROUPS, COMMAND_GROUP_FALLBACK } from "../config.js";
 import type { Page } from "../content/loader.js";
 import type { Category } from "../content/schema.js";
+
+/** Filters the rows already on the page, by title and description.
+ *
+ *  A listing is the one place a reader arrives knowing roughly what they want, and typing three
+ *  letters beats reading down the topic groups. It filters what the page already contains rather
+ *  than querying the search index, so it costs no request and cannot disagree with the listing
+ *  it sits above; site-wide search is still the dialog in the header.
+ *
+ *  Scripted, so `styles/site.css` hides it when JS is not running. The listing below it is
+ *  complete either way, so nothing is lost with it. */
+function listingFilter(label: string): string {
+  return html`<div class="listing-filter" data-pagefind-ignore>
+<label class="visually-hidden" for="listing-filter-input">Filter ${label.toLowerCase()}</label>
+<span aria-hidden="true" class="search-trigger-icon">⌕</span>
+<input type="search" id="listing-filter-input" data-listing-filter placeholder="Filter ${label.toLowerCase()}…" autocomplete="off" spellcheck="false" />
+</div>
+<p class="visually-hidden" role="status" data-listing-filter-status></p>`;
+}
 
 /** The `/commands/` index, grouped by topic. Never paginated; see partials/pager.ts. */
 function groupedCommands(pages: Page[]): string {
@@ -20,25 +38,23 @@ function groupedCommands(pages: Page[]): string {
   if (leftover.length > 0) groups.push({ title: COMMAND_GROUP_FALLBACK, pages: leftover });
 
   return groups
-    .map(
-      (g) =>
-        html`<section><h2>${g.title}</h2><div class="card-grid">${g.pages.map((p) => raw(pageCard(p)))}</div></section>`,
-    )
+    .map((g) => html`<section class="listing-group"><h2>${g.title}</h2>${raw(rowList(g.pages))}</section>`)
     .join("");
 }
 
 export function listingPage(category: Category, slice: PageSlice<Page>, cssHref: string): string {
   const meta = CATEGORY_META[category];
-  const contentHtml =
-    category === "commands"
-      ? groupedCommands(slice.items)
-      : html`<div class="card-grid">${slice.items.map((p) => raw(pageCard(p, "h2")))}</div>`;
+  const contentHtml = category === "commands" ? groupedCommands(slice.items) : rowList(slice.items, "h2");
 
   const body = html`
 <nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li aria-current="page">${meta.label}</li></ol></nav>
+<header class="page-head">
 <h1>${meta.label}</h1>
 <p class="lede">${meta.description}</p>
+</header>
+${raw(listingFilter(meta.label))}
 ${raw(contentHtml)}
+<p class="listing-empty" hidden>Nothing on this page matches that. Try the site search for everything else.</p>
 ${raw(paginationNav(slice))}
 `;
 

@@ -46,6 +46,9 @@ interface BasePage {
   url: string;
   title: string;
   description: string;
+  /** Optional on every page but a command reference, which redeclares it required below. See
+   *  `taglineSchema` in `src/content/schema.ts` for what separates it from `description`. */
+  tagline?: string;
   tags: string[];
   updated: Date;
   /** `related:` exactly as authored, bare slugs and `category/slug` alike. Resolved forms are
@@ -374,6 +377,7 @@ export async function loadContent(
       url: urlFor(entry.category, entry.slug),
       title: entry.data.title,
       description: entry.data.description,
+      ...(entry.data.tagline !== undefined ? { tagline: entry.data.tagline } : {}),
       tags: entry.data.tags,
       updated: entry.data.updated,
       related: entry.data.related ?? [],

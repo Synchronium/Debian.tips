@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
-import { cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { transformSync } from "esbuild";
-import { PUBLIC_DIR, STYLES_DIR } from "./paths.js";
+import { FONT_FILE, FONT_SOURCE, PUBLIC_DIR, STYLES_DIR } from "./paths.js";
 
 /** Minified with a source map alongside, for both the stylesheet and the static scripts.
  *
@@ -68,6 +68,19 @@ export function copyPublic(distDir: string): void {
     const source = readFileSync(join(PUBLIC_DIR, "assets", script), "utf-8");
     writeMinified(assetsDir, script, minify(source, script, "js"), "js");
   }
+
+  // From node_modules rather than public/, so the font is a versioned dependency instead of a
+  // binary in git. woff2 is already compressed; copying it verbatim is the whole job.
+  //
+  // Checked first because the failure it replaces is a bare ENOENT naming a path, thrown a long
+  // way from the package bump that caused it. @fontsource decides both the directory and the
+  // filename, and either can move in a major.
+  if (!existsSync(FONT_SOURCE)) {
+    throw new Error(
+      `${FONT_SOURCE} does not exist: the @fontsource package layout has changed. Find the woff2 under node_modules/@fontsource/ and update FONT_SOURCE in src/paths.ts. ADR-0018 has what the file is for.`,
+    );
+  }
+  cpSync(FONT_SOURCE, join(assetsDir, FONT_FILE));
 }
 
 /** Copies styles/site.css into dist/assets/site.<hash8>.css and returns its href.

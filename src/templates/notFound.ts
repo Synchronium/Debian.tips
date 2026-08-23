@@ -8,10 +8,15 @@ export function notFoundPage(cssHref: string): string {
   );
 
   const body = html`
+<header class="page-head">
 <h1>Page not found</h1>
-<p>The page you're looking for doesn't exist or has moved. Try searching for it, or
+<p class="lede">The page you're looking for doesn't exist or has moved. Try searching for it, or
 browse a category below.</p>
-<p><button type="button" class="button" data-search-open>Search debian.tips</button></p>
+</header>
+<button type="button" class="search-field" data-search-open aria-haspopup="dialog" aria-controls="search-dialog">
+<span aria-hidden="true" class="search-trigger-icon">⌕</span>
+<span>Search commands and topics…</span>
+</button>
 <ul class="browse-categories">${categoryLinks}</ul>`;
 
   return layout({

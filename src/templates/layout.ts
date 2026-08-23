@@ -2,8 +2,16 @@ import { readFileSync } from "node:fs";
 import { transformSync } from "esbuild";
 import { join } from "node:path";
 import { html, raw, type Raw } from "../html.js";
-import { CATEGORY_META, FEED_PATH, NAV_ORDER, SITE, STANDALONE_PAGES } from "../config.js";
-import { CLIENT_DIR } from "../paths.js";
+import {
+  CATEGORY_META,
+  FEED_PATH,
+  NAV_GROUPS,
+  NAV_ORDER,
+  type NavGroup,
+  SITE,
+  STANDALONE_PAGES,
+} from "../config.js";
+import { CLIENT_DIR, FONT_HREF } from "../paths.js";
 import type { Category } from "../content/schema.js";
 
 export interface LayoutOptions {
@@ -87,25 +95,48 @@ function clientScript(filename: string): string {
   return code;
 }
 
+/** One nav item per `NAV_GROUPS` entry: a plain link when the group holds a single category, a
+ *  disclosure menu when it holds several. The menu is a nested `<details>` rather than scripted,
+ *  so it opens by keyboard and without JS, and so the mobile menu it sits inside needs no second
+ *  implementation of the same behaviour. */
+function navGroupHtml(group: NavGroup, activeCategory: Category | undefined): string {
+  const active = activeCategory !== undefined && group.categories.includes(activeCategory);
+
+  // A one-category group links straight to that listing, so on the listing itself the link is
+  // the current page. A summary only contains it. Screen readers announce "current page" for
+  // `page` and only "current" for `true`, so giving both the same word loses the specific one.
+  if (group.categories.length === 1) {
+    return html`<li><a href="${group.path}"${raw(active ? ' aria-current="page"' : "")}>${group.label}</a></li>`;
+  }
+
+  const items = group.categories.map((cat) =>
+    raw(
+      html`<li><a href="${CATEGORY_META[cat].path}"${raw(activeCategory === cat ? ' aria-current="page"' : "")}>${CATEGORY_META[cat].label}</a></li>`,
+    ),
+  );
+  return html`<li><details class="nav-menu">
+<summary${raw(active ? ' aria-current="true"' : "")}>${group.label}</summary>
+<ul>${items}</ul>
+</details></li>`;
+}
+
 function headerHtml(activeCategory: Category | undefined): string {
-  const navItems = NAV_ORDER.map((cat) => {
-    const current = activeCategory === cat ? ' aria-current="page"' : "";
-    return raw(
-      html`<li><a href="${CATEGORY_META[cat].path}"${raw(current)}>${CATEGORY_META[cat].label}</a></li>`,
-    );
-  });
+  const navItems = NAV_GROUPS.map((g) => raw(navGroupHtml(g, activeCategory)));
+  const standaloneItems = STANDALONE_PAGES.map((s) =>
+    raw(html`<li><a href="${s.path}">${s.headerLabel}</a></li>`),
+  );
   return html`<header class="site-header">
 <a class="skip-link" href="#main">Skip to content</a>
 <div class="header-inner">
 <a class="logo" href="/"><span class="logo-glyph" aria-hidden="true">&gt;_</span>debian<span class="accent">.tips</span></a>
 <details class="nav-disclosure">
-<summary>Menu</summary>
-<nav aria-label="Primary"><ul>${navItems}</ul></nav>
+<summary aria-label="Menu"><span aria-hidden="true" class="nav-disclosure-icon">☰</span></summary>
+<nav aria-label="Primary"><ul>${navItems}${standaloneItems}</ul></nav>
 </details>
 <div class="header-actions">
 <button type="button" class="search-trigger" data-search-open aria-haspopup="dialog" aria-controls="search-dialog" aria-label="Search">
 <span aria-hidden="true" class="search-trigger-icon">⌕</span>
-<span class="search-trigger-label">Search</span>
+<span class="search-trigger-label">Search tips…</span>
 <kbd class="search-trigger-kbd" aria-hidden="true">⌘K</kbd>
 </button>
 <button type="button" data-theme-toggle aria-label="Toggle color theme"><span aria-hidden="true" class="theme-toggle-icon">&#9680;</span><span class="theme-toggle-label">Theme</span></button>
@@ -201,6 +232,7 @@ ${opts.modified ? raw(html`<meta property="article:modified_time" content="${opt
 ${opts.prevPath ? raw(html`<link rel="prev" href="${SITE.url}${opts.prevPath}" />`) : ""}
 ${opts.nextPath ? raw(html`<link rel="next" href="${SITE.url}${opts.nextPath}" />`) : ""}
 <script>${raw(clientScript("theme-init.ts"))}</script>
+<link rel="preload" href="${FONT_HREF}" as="font" type="font/woff2" crossorigin />
 <link rel="stylesheet" href="${opts.cssHref}" />
 <script type="application/ld+json">${raw(safeJsonLd(websiteJsonLd))}</script>
 ${opts.jsonLd ? raw(html`<script type="application/ld+json">${raw(safeJsonLd(opts.jsonLd))}</script>`) : ""}

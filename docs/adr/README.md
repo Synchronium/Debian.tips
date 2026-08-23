@@ -73,6 +73,13 @@ command shown. These five records keep that claim honest.
 | [0013](0013-client-js-is-compiled-typescript.md) | Client JavaScript is compiled TypeScript, inlined into every page |
 | [0014](0014-minify-css-and-js-never-html.md) | CSS and JS are minified with source maps; HTML never is |
 
+### The design
+
+| # | Decision |
+| --- | --- |
+| [0018](0018-one-self-hosted-display-face.md) | One self-hosted display face, held to a byte budget |
+| [0019](0019-header-nav-is-grouped.md) | The header nav is grouped, not one item per category |
+
 ### The gates
 
 | # | Decision |

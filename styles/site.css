@@ -17,18 +17,39 @@
 :root {
   color-scheme: light dark;
 
-  --bg: light-dark(#ffffff, #101318);
-  --bg-surface: light-dark(#f6f7f9, #171c24);
-  --bg-inset: light-dark(#f0f1f4, #0b0e12);
-  --border: light-dark(#d8dce3, #2a3140);
-  --text: light-dark(#1c2430, #e6e9ef);
-  --text-muted: light-dark(#5b6572, #9aa4b2);
+  /* The dark page is a grey, not a near-black. At the bottom of the range there is nowhere left
+     for an inset panel to go, so a code block has to be black to read as sunken at all.
+     `--rule`, `--border` and `--accent-wash` are all set at a fixed distance from this value
+     rather than chosen on their own, so moving it means re-checking those three. */
+  --bg: light-dark(#ffffff, #16191e);
+  --bg-inset: light-dark(#f2f1ee, #0a0c0f);
+
+  /* The panel behind a hovered row, and it exists in one theme only. Light mode can tint a row
+     without lighting it up. Dark mode cannot: an inset panel there sits below the page rather
+     than above it, and at 1.04:1 against `--bg` the reader is being charged for a colour they
+     cannot see. Both themes say "this is the row you are on" the same way regardless, by turning
+     the title `--accent`, so dropping the panel loses nothing that was being read. */
+  --row-hover: light-dark(var(--bg-inset), transparent);
+
+  /* Two weights of line, and they are not interchangeable. `--rule` is the hairline that
+     separates rows and sections, and appears hundreds of times on a listing: it has to stay
+     quiet or the page reads as a table. `--border` is the edge of a thing that contains
+     something else, and has to be seen. One weight doing both jobs makes every surface on the
+     page look like a card.
+     Quiet is not the same as absent. The row separator is the only thing dividing one entry from
+     the next, so `--rule` is held at about 1.35:1 against `--bg` in both themes: below the
+     1.5-ish `--border` reads at, above the point where a reader has to look for it. */
+  --rule: light-dark(#dfdcd7, #2c313a);
+  --border: light-dark(#d6d3ce, #333942);
+
+  --text: light-dark(#17191c, #e8e6e3);
+  --text-muted: light-dark(#5f6672, #99a0aa);
   --accent: light-dark(#b3134f, #ff7aa2);
   --accent-hover: light-dark(#8f0f3f, #ffa3bf);
+  --accent-wash: light-dark(#fdf2f6, #241a21);
   --ok: light-dark(#1a7f43, #6fd08c);
   --warn: light-dark(#8a6100, #f2c14e);
   --danger: light-dark(#b42318, #ff8080);
-  --card-shadow: light-dark(0 1px 3px rgb(0 0 0 / 0.08), none);
 }
 
 /* The toggle's two states. Pinning `color-scheme` re-resolves every `light-dark()` above at
@@ -50,29 +71,62 @@
   --space-6: 32px;
   --space-7: 48px;
   --space-8: 64px;
+  --space-9: 96px;
 
-  --radius-s: 6px;
-  --radius-m: 10px;
+  --radius-s: 4px;
+  --radius-m: 6px;
 
-  /* Measured sticky header height, used to keep anchor-jumped headings and the sticky TOC
-     clear of the header instead of hidden behind it.
+  /* How much room an anchor-jumped heading and the sticky TOC leave for the sticky header, so
+     neither lands underneath it.
 
-     Measured, not computed: nothing checks it, and nothing can. If the header ever wraps to a
-     second line (an eighth nav category, a longer label, a narrow desktop window) every
-     anchor jump on the site lands under the header and the sticky TOC sits too high, with no
-     test that can see it. src/config.ts names the nav-overflow decision this depends on. */
-  --header-height: 61px;
+     Measured, then rounded up: the header is 63px at every width the site is read at, and this
+     is 64. The error only matters in one direction. A value larger than the header costs a pixel
+     of clearance nobody can see; a value smaller than it hides the top of every heading a reader
+     jumps to.
 
+     Nothing checks it, and nothing can. If the header ever wraps to a second line (a longer nav
+     label, a narrow desktop window) every anchor jump on the site breaks with no test that can
+     see it. `NAV_GROUPS` in src/config.ts keeps the header one line wide, so look there before
+     changing this number. */
+  --header-height: 64px;
+
+  /* Three families, three jobs, and a reader can tell them apart at a glance: display for
+     titles, sans for prose and interface, mono for anything they could type. Mono carrying
+     exactly one meaning is most of what distinguishes a command name from a noun here.
+
+     The display fallbacks are metric-similar oldstyle serifs rather than a generic `serif`,
+     which resolves to Times and reflows the headings when the webfont lands. */
+  --font-display: "Source Serif 4", Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
   --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
 
   --fs-xs: 0.75rem;
-  --fs-s: 0.875rem;
-  --fs-m: 1rem;
-  --fs-l: 1.25rem;
-  --fs-xl: 1.5rem;
-  --fs-2xl: 1.9rem;
-  --fs-3xl: 2.4rem;
+  --fs-s: 0.8125rem;
+  --fs-m: 1.0625rem;
+  --fs-l: 1.1875rem;
+
+  /* The display sizes are fluid, and the rest of the scale is not. A heading is the one
+     thing whose ideal size really does depend on how much width there is; body text has a
+     comfortable size and it is the same on every screen. */
+  --fs-display-s: clamp(1.45rem, 1.2rem + 1.1vw, 1.8rem);
+  --fs-display-m: clamp(1.9rem, 1.5rem + 1.8vw, 2.5rem);
+  --fs-display-l: clamp(2.3rem, 1.6rem + 3.4vw, 3.5rem);
+
+  --measure: 68ch;
+}
+
+/* Headings only, so a swap can never reflow a paragraph. `swap` with a preload in the document
+   head: the file is requested before the stylesheet finishes parsing, which keeps the swap
+   window short enough that the fallback is rarely the one painted. */
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/assets/source-serif-4-latin-600.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC,
+    U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 /* ==========================================================================
@@ -117,7 +171,8 @@ body {
   color: var(--text);
   font-family: var(--font-sans);
   font-size: var(--fs-m);
-  line-height: 1.65;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
 }
 
 code,
@@ -129,22 +184,22 @@ kbd {
 /* Inline code: a backticked flag, path or command in prose, an example
    description or a section intro. The child combinator excludes `pre > code`,
    where Shiki owns the colours and a box would sit inside the code block.
-   --bg-inset sits on the other side of --bg in both themes (darker in dark,
-   lighter in light), so the same rule reads as inset either way.
-   `color: var(--text)` is deliberate: these appear inside muted paragraphs,
-   and the whole point is that the flag stands out from the sentence. */
+
+   No border and no box, unlike the rest of the site's insets. At the density inline code
+   appears in this prose, a bordered chip per flag turns a paragraph into a fence; the tint
+   and the mono face are enough to set it apart. */
 :not(pre) > code {
   background: var(--bg-inset);
-  border: 1px solid var(--border);
   border-radius: var(--radius-s);
-  padding: 0.05em 0.35em;
-  font-size: 0.9em;
+  padding: 0.1em 0.3em;
+  font-size: 0.875em;
   color: var(--text);
   overflow-wrap: break-word;
 }
 
 a {
   color: var(--accent);
+  text-underline-offset: 3px;
 }
 a:hover {
   color: var(--accent-hover);
@@ -153,15 +208,16 @@ a:hover {
 .example-desc a,
 .callout a {
   text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 h1,
 h2,
 h3,
 h4 {
-  font-weight: 650;
-  line-height: 1.25;
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.011em;
 }
 /* Anchor-jump targets (TOC links, example permalinks) must clear the sticky
    header instead of landing underneath it. .example is included because its
@@ -171,18 +227,39 @@ h2,
 h3,
 h4,
 .example {
-  scroll-margin-top: calc(var(--header-height) + var(--space-4));
+  scroll-margin-top: calc(var(--header-height) + var(--space-5));
 }
 h1 {
-  font-size: var(--fs-2xl);
+  font-size: var(--fs-display-m);
 }
 h2 {
-  font-size: var(--fs-xl);
-  margin-top: var(--space-7);
+  font-size: var(--fs-display-s);
+  margin-top: var(--space-8);
 }
 h3 {
   font-size: var(--fs-l);
   margin-top: var(--space-6);
+}
+
+/* The page's own title block: heading, tagline, date, tags. The accent rule beneath it is the
+   site's one piece of ornament, and it marks where the page's identity ends and its content
+   begins. Section headings deliberately do not get one; if every heading carried a rule it
+   would separate nothing. */
+.page-head {
+  margin-bottom: var(--space-6);
+}
+.page-head::after {
+  content: "";
+  display: block;
+  width: 2.5rem;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  margin-top: var(--space-5);
+}
+.page-head h1 + .tagline,
+.page-head h1 + .lede {
+  margin-top: var(--space-3);
 }
 
 .prose {
@@ -203,10 +280,38 @@ h3 {
 .prose li + li {
   margin-top: var(--space-2);
 }
+.prose > p {
+  max-width: var(--measure);
+}
+
+/* Every prose heading is wrapped in a permalink by rehype-autolink-headings, so without this it
+   inherits the link colour and the underline `.prose a` gives the links in a paragraph, and a
+   page reads as a column of accent-coloured headings that look clicked. The heading keeps its own
+   colour; the anchor announces itself with a `#` in the margin on hover instead. */
+.prose :is(h2, h3, h4) > .heading-link {
+  color: inherit;
+  text-decoration: none;
+}
+.prose :is(h2, h3, h4) > .heading-link:hover {
+  color: var(--accent);
+}
+.prose :is(h2, h3, h4) > .heading-link::before {
+  content: "#";
+  position: absolute;
+  margin-inline-start: -1.1em;
+  color: var(--accent);
+  opacity: 0;
+  font-weight: 400;
+}
+.prose :is(h2, h3, h4):hover > .heading-link::before,
+.prose .heading-link:focus-visible::before {
+  opacity: 1;
+}
 
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+  border-radius: var(--radius-s);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -231,11 +336,14 @@ h3 {
   white-space: nowrap;
 }
 
+/* Opaque, because when it takes focus it sits on top of the logo. `--bg-inset` rather than the
+   page background so the panel has an edge of its own in light mode; the accent focus ring gives
+   it one in both. */
 .skip-link {
   position: absolute;
   left: -9999px;
   top: 0;
-  background: var(--bg-surface);
+  background: var(--bg-inset);
   color: var(--text);
   padding: var(--space-2) var(--space-4);
   border-radius: 0 0 var(--radius-s) 0;
@@ -246,32 +354,102 @@ h3 {
   top: 0;
 }
 
+/* Every icon on the site is a 24-unit symbol drawn in currentColor, so one rule sizes and
+   colours all of them and the sprite carries only path data. */
+.icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke: currentColor;
+  fill: none;
+}
+/* Present in the document but occupying nothing. Not `display: none`, which stops `<use>`
+   resolving against it in some browsers. */
+.icon-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* An uppercase label above a block: section headings on the home page, the TOC's title, the
+   footer's column heads. Small, tracked out and muted, so it names a region without competing
+   with the display face for the reader's attention. */
+.eyebrow {
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-4);
+}
+
+/* A button that looks like the search field it opens, used on the home page and on the 404.
+   Search is the site's primary action, and on the home page it is the only control: a
+   reference's front door is a search box and an index, not a pair of buttons that have to pick
+   two categories to favour over the rest. Both places it appears, it opens the same dialog, so
+   it is one control rather than a button in one and a field in the other.
+   It lives here rather than under either page, because a component filed under one of the two
+   page types that use it is a component the other one loses in a tidy-up. */
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: min(100%, 34rem);
+  margin-top: var(--space-6);
+  padding: var(--space-3) var(--space-4);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: var(--fs-m);
+  text-align: left;
+  cursor: pointer;
+}
+.search-field:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.search-field .search-trigger-kbd {
+  margin-inline-start: auto;
+}
+/* Scripted, so it is hidden without JS: a search field that cannot search is a dead end, and on
+   both pages that carry one there is a working way in immediately below it. */
+:root:not(.js) .search-field {
+  display: none;
+}
+
 /* ==========================================================================
    5. Global chrome: header & footer
    ========================================================================== */
 
+/* The header sits on the page background rather than a panel of its own, and is separated by a
+   hairline. A filled bar reads as an application's chrome; this site is a document. */
 .site-header {
   position: sticky;
   top: 0;
   z-index: 10;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-surface);
+  border-bottom: 1px solid var(--rule);
+  background: var(--bg);
 }
 .header-inner {
-  max-width: 1100px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: var(--space-3) var(--space-5);
   display: flex;
   align-items: center;
-  gap: var(--space-5);
+  gap: var(--space-6);
 }
 
 .logo {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
+  align-items: baseline;
+  gap: 0.1em;
   font-family: var(--font-mono);
+  font-size: var(--fs-m);
   font-weight: 600;
+  letter-spacing: -0.02em;
   text-decoration: none;
   color: var(--text);
   white-space: nowrap;
@@ -279,29 +457,26 @@ h3 {
 .logo .accent {
   color: var(--accent);
 }
+/* The prompt glyph, not a logotype. Kept deliberately plain: the site is unaffiliated with the
+   Debian Project, so it must not carry a mark that could be read as Debian's. */
 .logo-glyph {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.6em;
-  height: 1.6em;
-  border-radius: var(--radius-s);
-  background: var(--bg-inset);
   color: var(--accent);
-  font-size: 0.85em;
+  margin-inline-end: 0.4em;
 }
 
-.nav-disclosure summary {
+/* The child combinator matters: this is the mobile menu's own toggle, and a descendant selector
+   would also catch the `Guides` summary nested inside it, hiding that on desktop along with it. */
+.nav-disclosure > summary {
   cursor: pointer;
   list-style: none;
   font-size: var(--fs-s);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-s);
 }
-.nav-disclosure summary::-webkit-details-marker {
+.nav-disclosure > summary::-webkit-details-marker {
   display: none;
 }
-.nav-disclosure summary:hover {
+.nav-disclosure > summary:hover {
   background: var(--bg-inset);
 }
 .nav-disclosure nav ul {
@@ -312,30 +487,40 @@ h3 {
 .nav-disclosure nav a {
   display: block;
   padding: var(--space-2) var(--space-3);
-  color: var(--text);
+  color: var(--text-muted);
   text-decoration: none;
   border-radius: var(--radius-s);
   font-size: var(--fs-s);
 }
 .nav-disclosure nav a:hover {
+  color: var(--text);
   background: var(--bg-inset);
 }
 .nav-disclosure nav a[aria-current="page"] {
   color: var(--accent);
-  font-weight: 650;
 }
 
+/* Above this width the disclosure stops being a menu and its contents become the nav itself.
+   `display: contents` unwraps the <details>, but on its own it is not enough: a closed <details>
+   hides everything after the summary through a UA-generated `::details-content` box, which sits
+   *inside* the element and so survives unwrapping it. Without the second rule the entire desktop
+   nav is invisible in every browser that implements the pseudo-element, which is now all of
+   them. Browsers that do not support the selector drop that rule and are already correct. */
 @media (min-width: 720px) {
   .nav-disclosure {
     display: contents;
   }
-  .nav-disclosure summary {
+  .nav-disclosure::details-content {
+    content-visibility: visible;
+    display: contents;
+  }
+  .nav-disclosure > summary {
     display: none;
   }
   .nav-disclosure nav {
     display: block;
   }
-  .nav-disclosure nav ul {
+  .nav-disclosure nav > ul {
     flex-direction: row;
     gap: var(--space-2);
   }
@@ -346,15 +531,78 @@ h3 {
   }
   .nav-disclosure nav {
     position: absolute;
-    top: calc(100% + var(--space-2));
+    top: calc(100% + var(--space-3));
     left: 0;
-    min-width: 180px;
-    background: var(--bg-surface);
+    min-width: 200px;
+    background: var(--bg);
     border: 1px solid var(--border);
     border-radius: var(--radius-m);
     padding: var(--space-2);
-    box-shadow: var(--card-shadow);
+    z-index: 20;
   }
+}
+
+/* A nav group holding several categories. The disclosure is a nested `<details>`, so it opens by
+   keyboard and without JS; on desktop it is absolutely positioned under its own summary, and on
+   mobile it sits inline inside the menu that already contains it. */
+.nav-menu > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-s);
+  font-size: var(--fs-s);
+  color: var(--text-muted);
+}
+.nav-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.nav-menu > summary::after {
+  content: "";
+  display: inline-block;
+  width: 0.32rem;
+  height: 0.32rem;
+  margin-inline-start: 0.5em;
+  vertical-align: 0.15em;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+.nav-menu > summary:hover {
+  color: var(--text);
+  background: var(--bg-inset);
+}
+.nav-menu > summary[aria-current] {
+  color: var(--accent);
+}
+
+@media (min-width: 720px) {
+  .nav-menu {
+    position: relative;
+  }
+  .nav-menu > ul {
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    left: 0;
+    min-width: 190px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-m);
+    padding: var(--space-2);
+    z-index: 20;
+  }
+}
+@media (max-width: 719px) {
+  .nav-menu > ul {
+    padding-inline-start: var(--space-3);
+  }
+}
+
+.nav-disclosure-icon {
+  font-size: 1.15em;
+  line-height: 1;
 }
 
 .header-actions {
@@ -364,52 +612,50 @@ h3 {
   gap: var(--space-2);
 }
 
-[data-theme-toggle] {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  background: var(--bg-inset);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-s);
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--fs-s);
-  cursor: pointer;
-}
-[data-theme-toggle]:hover {
-  border-color: var(--accent);
-}
-.theme-toggle-icon {
-  font-size: 1.1em;
-}
-
+/* Both header controls are ghost buttons: no fill, no border until hovered. They are always
+   present on every page, and two filled chips beside the wordmark is more furniture than a
+   header needs. */
+[data-theme-toggle],
 .search-trigger {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  background: var(--bg-inset);
+  background: none;
   color: var(--text-muted);
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   border-radius: var(--radius-s);
   padding: var(--space-2) var(--space-3);
+  font-family: inherit;
   font-size: var(--fs-s);
   cursor: pointer;
 }
+[data-theme-toggle]:hover,
 .search-trigger:hover {
-  border-color: var(--accent);
   color: var(--text);
+  background: var(--bg-inset);
 }
+.search-trigger {
+  border-color: var(--rule);
+  min-width: 13rem;
+  justify-content: flex-start;
+}
+.search-trigger:hover {
+  border-color: var(--border);
+}
+.theme-toggle-icon,
 .search-trigger-icon {
-  font-size: 1.1em;
+  font-size: 1.05em;
 }
 .search-trigger-kbd {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-s);
-  padding: 0 var(--space-1);
+  margin-inline-start: auto;
+  font-family: var(--font-sans);
   font-size: var(--fs-xs);
   color: var(--text-muted);
 }
-@media (max-width: 719px) {
+@media (max-width: 899px) {
+  .search-trigger {
+    min-width: 0;
+  }
   .search-trigger-kbd {
     display: none;
   }
@@ -424,7 +670,7 @@ h3 {
     padding: var(--space-2);
   }
   .header-inner {
-    padding-inline: var(--space-3);
+    padding-inline: var(--space-4);
     gap: var(--space-3);
   }
   .header-actions {
@@ -442,32 +688,33 @@ h3 {
 }
 
 .site-footer {
-  border-top: 1px solid var(--border);
-  background: var(--bg-surface);
-  margin-top: var(--space-8);
-  padding: var(--space-6) var(--space-5) var(--space-5);
+  border-top: 1px solid var(--rule);
+  margin-top: var(--space-9);
+  padding: var(--space-8) var(--space-5) var(--space-6);
 }
 .footer-inner {
-  max-width: 1100px;
+  max-width: 1080px;
   margin: 0 auto;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-7);
+  gap: var(--space-8);
 }
 .footer-inner nav h2 {
+  font-family: var(--font-sans);
   font-size: var(--fs-xs);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   color: var(--text-muted);
-  margin-bottom: var(--space-2);
+  margin: 0 0 var(--space-3);
 }
 .footer-inner nav ul {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-2);
 }
 .footer-inner nav a {
-  color: var(--text);
+  color: var(--text-muted);
   text-decoration: none;
   font-size: var(--fs-s);
 }
@@ -477,11 +724,11 @@ h3 {
 .footer-tagline {
   color: var(--text-muted);
   font-size: var(--fs-s);
-  max-width: 32ch;
+  max-width: 30ch;
 }
 .footer-copyright {
-  max-width: 1100px;
-  margin: var(--space-6) auto 0;
+  max-width: 1080px;
+  margin: var(--space-8) auto 0;
   color: var(--text-muted);
   font-size: var(--fs-xs);
 }
@@ -491,14 +738,14 @@ h3 {
    ========================================================================== */
 
 main {
-  max-width: 1100px;
+  max-width: 1080px;
   margin: 0 auto;
-  padding: var(--space-6) var(--space-5) var(--space-8);
+  padding: var(--space-7) var(--space-5) var(--space-9);
 }
 
 .article,
 .command-page {
-  max-width: 72ch;
+  max-width: var(--measure);
   margin: 0 auto;
 }
 
@@ -508,41 +755,44 @@ main {
 }
 .lede {
   font-size: var(--fs-l);
-  margin-top: var(--space-2);
+  max-width: 60ch;
 }
 .tagline {
   color: var(--text-muted);
   font-size: var(--fs-l);
-  margin-top: var(--space-1);
+  max-width: 60ch;
 }
 .meta {
   font-size: var(--fs-s);
-  margin-top: var(--space-2);
+  margin-top: var(--space-3);
 }
 
+/* Unboxed on purpose. A table of contents is a list of links, and a bordered panel around it
+   competes with the content it points into for the same reader's attention. */
 .toc {
-  margin-top: var(--space-5);
-  padding: var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
-  background: var(--bg-surface);
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--rule);
 }
 .toc-title {
   font-size: var(--fs-xs);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   color: var(--text-muted);
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 .toc ul {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-2);
 }
 .toc a {
-  color: var(--text);
+  color: var(--text-muted);
   text-decoration: none;
   font-size: var(--fs-s);
+  line-height: 1.4;
+  display: block;
 }
 .toc a:hover {
   color: var(--accent);
@@ -551,7 +801,7 @@ main {
   padding-left: var(--space-4);
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1180px) {
   .article,
   .command-page {
     max-width: none;
@@ -561,37 +811,36 @@ main {
        auto-placed rows) forces browsers to inflate those rows to fit it,
        shoving the rest of the content down the page. Two items in a single
        row sidesteps that entirely. */
-    grid-template-columns: minmax(0, 72ch) 240px;
-    column-gap: var(--space-7);
+    grid-template-columns: minmax(0, var(--measure)) 220px;
+    column-gap: var(--space-9);
     align-items: start;
   }
   .article .toc,
   .command-page .toc {
     position: sticky;
-    top: calc(var(--header-height) + var(--space-4));
+    top: calc(var(--header-height) + var(--space-6));
     margin-top: 0;
-    align-self: start;
+    border-top: none;
+    padding-top: 0;
   }
 }
 
 .pager {
-  margin-top: var(--space-7);
+  margin-top: var(--space-8);
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: var(--space-4);
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--rule);
   padding-top: var(--space-5);
 }
 .pager a {
   color: var(--text);
   text-decoration: none;
   font-size: var(--fs-s);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-2) 0;
 }
 .pager a:hover {
-  border-color: var(--accent);
   color: var(--accent);
 }
 .pager-next {
@@ -601,44 +850,47 @@ main {
 /* Sits between the two arrows on a split listing; `.pager` is a flex row, so it needs no
    placement of its own beyond staying vertically centred with the links either side. */
 .pager-position {
-  align-self: center;
   color: var(--text-muted);
   font-size: var(--fs-s);
 }
 
 .related {
-  margin-top: var(--space-7);
+  margin-top: var(--space-8);
+  border-top: 1px solid var(--rule);
+  padding-top: var(--space-5);
 }
 .related ul {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
+  gap: var(--space-2) var(--space-5);
+  margin-top: var(--space-3);
 }
 .related a {
-  display: inline-block;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-s);
-  padding: var(--space-1) var(--space-3);
   text-decoration: none;
   font-family: var(--font-mono);
   font-size: var(--fs-s);
+}
+.related a:hover {
+  text-decoration: underline;
 }
 
 /* ==========================================================================
    7. Breadcrumbs
    ========================================================================== */
 
+.breadcrumbs {
+  margin-bottom: var(--space-5);
+}
 .breadcrumbs ol {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1);
+  gap: var(--space-2);
   font-size: var(--fs-s);
   color: var(--text-muted);
 }
 .breadcrumbs li:not(:last-child)::after {
   content: "/";
-  margin-inline-start: var(--space-1);
+  margin-inline-start: var(--space-2);
   color: var(--border);
 }
 .breadcrumbs a {
@@ -664,22 +916,22 @@ main {
 }
 .tags a {
   display: inline-block;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-s);
-  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--rule);
+  border-radius: 100px;
+  padding: var(--space-1) var(--space-3);
   font-size: var(--fs-xs);
   text-decoration: none;
   color: var(--text-muted);
-  background: var(--bg-surface);
 }
 .tags a:hover {
   color: var(--accent);
   border-color: var(--accent);
 }
 
-/* The 404 page's "browse a category" list. Shaped like the tag chips, but named for what it is:
-   reusing `.tags` for it meant one class meaning two different things, and a change to chip
-   styling silently restyling a page nobody looks at until they are already lost. */
+/* The 404 page's "browse a category" list. Shaped like the tag chips, and deliberately not
+   sharing a rule with them: one selector list meant one class meaning two different things, and a
+   change to chip styling silently restyling a page nobody looks at until they are already lost.
+   The repeated declarations are the price of that, and they are the cheaper half of the trade. */
 .browse-categories {
   display: flex;
   flex-wrap: wrap;
@@ -688,13 +940,12 @@ main {
 }
 .browse-categories a {
   display: inline-block;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-s);
-  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--rule);
+  border-radius: 100px;
+  padding: var(--space-1) var(--space-3);
   font-size: var(--fs-xs);
   text-decoration: none;
   color: var(--text-muted);
-  background: var(--bg-surface);
 }
 .browse-categories a:hover {
   color: var(--accent);
@@ -706,6 +957,7 @@ main {
   flex-direction: column;
   gap: var(--space-3);
   margin-top: var(--space-6);
+  max-width: var(--measure);
 }
 .tag-count {
   color: var(--text-muted);
@@ -713,129 +965,333 @@ main {
 }
 
 /* ==========================================================================
-   9. Cards / listing shell
+   9. Rows: every list of pages on the site
    ========================================================================== */
 
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--space-5);
+/* One component for the home page's topics, both listings, the tag pages and search-adjacent
+   lists. A row is a full-width link separated from its neighbours by a hairline, and it stays
+   scannable at six entries or at eighty, which a grid of cards does not. The whole row is the
+   target, not the title inside it. */
+.row-list {
+  border-top: 1px solid var(--rule);
   margin-top: var(--space-4);
 }
-.card {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
-  background: var(--bg-surface);
-  box-shadow: var(--card-shadow);
+.row {
+  border-bottom: 1px solid var(--rule);
 }
-.card a {
-  display: block;
-  padding: var(--space-4);
+.row > a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-1) var(--space-5);
+  padding: var(--space-4) var(--space-2);
+  min-height: 56px;
   text-decoration: none;
   color: inherit;
-  height: 100%;
 }
-.card h3 {
-  font-size: var(--fs-l);
+.row > a:hover {
+  background: var(--row-hover);
+}
+/* Everything src/client/interaction.ts hides while filtering. The attribute alone would do it,
+   since the UA stylesheet gives `[hidden]` a `display: none`, but only while nothing else sets
+   `display` on the element: a rule added later wins on specificity. Saying it here means such a
+   rule cannot quietly break filtering, which fails in the worst way available. The count says
+   the rows are gone and every one of them is still on screen. */
+.row[hidden],
+.listing-group[hidden],
+.listing-empty[hidden] {
+  display: none;
+}
+/* Sans, not the display face, even though these are headings. A row title is a label in a list,
+   not a title being announced, and forty serif headings down a listing reads as forty
+   interruptions. The display face is reserved for the one heading that names the page. */
+.row-title {
+  font-family: var(--font-sans);
+  font-size: var(--fs-m);
+  font-weight: 600;
+  letter-spacing: 0;
   color: var(--text);
+  margin: 0;
+  line-height: 1.35;
 }
-.card p {
-  margin-top: var(--space-2);
+.row > a:hover .row-title {
+  color: var(--accent);
+}
+.row-desc {
+  grid-column: 1;
   color: var(--text-muted);
   font-size: var(--fs-s);
+  line-height: 1.5;
+  margin: 0;
 }
-.card a:hover h3 {
+
+/* A command page's title is something the reader will type, so it is set in mono and in the
+   accent colour, the same way a command reads inside prose. Every other kind of page gets the
+   sans title: `bulk-rename-files` is a slug, not a command, and setting it in mono would
+   promise a shell it does not have. */
+.row-mono .row-title {
+  font-family: var(--font-mono);
+  font-size: var(--fs-s);
+  font-weight: 600;
   color: var(--accent);
+  letter-spacing: -0.01em;
+}
+
+/* The chevron. Drawn from two borders rather than an icon file or a glyph: it costs no request,
+   no markup and nothing for a screen reader to announce, since it is a decorative half of a
+   link whose text already says where it goes. */
+.row > a::after {
+  content: "";
+  grid-column: 2;
+  grid-row: 1 / -1;
+  align-self: center;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-right: 1.5px solid var(--text-muted);
+  border-top: 1.5px solid var(--text-muted);
+  transform: rotate(45deg);
+}
+.row > a:hover::after {
+  border-color: var(--accent);
+}
+
+/* Two columns once there is room: title in a fixed measure, description beside it. Below this
+   the two stack, because a description squeezed into what is left of a narrow screen wraps to
+   four words a line. */
+@media (min-width: 640px) {
+  .row > a {
+    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr) auto;
+  }
+  .row-desc {
+    grid-column: 2;
+  }
+  .row > a::after {
+    grid-column: 3;
+  }
 }
 
 section + section {
+  margin-top: var(--space-8);
+}
+
+.listing-group + .listing-group {
   margin-top: var(--space-7);
+}
+.listing-group h2 {
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-top: 0;
+}
+
+/* Filters the rows already on the page. Sized and placed like the hero's search field, because
+   it does the same kind of job in a narrower scope, and a reader who has used one should
+   recognise the other. */
+.listing-filter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: min(100%, 34rem);
+  margin-bottom: var(--space-7);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  color: var(--text-muted);
+}
+.listing-filter:focus-within {
+  border-color: var(--accent);
+}
+.listing-filter input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--fs-m);
+}
+.listing-filter input:focus {
+  outline: none;
+}
+.listing-filter input::-webkit-search-cancel-button {
+  display: none;
+}
+:root:not(.js) .listing-filter {
+  display: none;
+}
+
+.listing-empty {
+  margin-top: var(--space-6);
+  color: var(--text-muted);
 }
 
 /* ==========================================================================
    10. Home page
    ========================================================================== */
 
+/* Top only. The gap below the hero is the one `section + section` already gives every other
+   section boundary on the page; padding here as well made the first gap on the home page twice
+   the size of every gap under it. */
 .hero {
-  padding: var(--space-7) 0 var(--space-6);
-  text-align: center;
+  padding-top: var(--space-8);
 }
+/* Held to a narrow measure so it breaks into two or three lines rather than running the full
+   width of the page as one. A display line that long stops being a statement and becomes a
+   banner, and the eye has too far to travel back for the second line. */
 .hero h1 {
-  font-size: var(--fs-3xl);
+  font-size: var(--fs-display-l);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  max-width: 15ch;
+}
+.hero h1::after {
+  content: "";
+  display: block;
+  width: 2.5rem;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  margin-top: var(--space-5);
 }
 .hero-tagline {
   color: var(--text-muted);
   font-size: var(--fs-l);
-  margin-top: var(--space-3);
-  max-width: 48ch;
-  margin-inline: auto;
+  margin-top: var(--space-5);
+  max-width: 46ch;
 }
-.hero-cta {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-4);
-  margin-top: var(--space-6);
-  flex-wrap: wrap;
+.home-section h2 {
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin: 0;
 }
 
-.button {
-  display: inline-block;
-  padding: var(--space-3) var(--space-5);
-  border-radius: var(--radius-s);
+/* Browse by topic: the subject axis, and the widest door into the site. Two columns as soon as
+   there is room for them, because the topics in a single column push everything else off the
+   first screen. `auto-fit` rather than a fixed count so an added topic never needs a new
+   breakpoint. */
+.topic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 0 var(--space-7);
+  margin-top: var(--space-4);
+  border-top: 1px solid var(--rule);
+}
+.topic {
+  border-bottom: 1px solid var(--rule);
+}
+.topic > a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-2);
+  min-height: 64px;
   text-decoration: none;
-  font-weight: 650;
+  color: inherit;
+}
+.topic-icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-m);
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+.topic-icon .icon {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+.topic-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.topic-label {
+  font-weight: 600;
+  line-height: 1.3;
+}
+.topic-desc {
+  color: var(--text-muted);
+  font-size: var(--fs-s);
+  line-height: 1.4;
+}
+.topic > a:hover .topic-label {
+  color: var(--accent);
+}
+.topic > a:hover .topic-icon {
   background: var(--accent);
   color: var(--bg);
 }
-.button:hover {
-  background: var(--accent-hover);
-  color: var(--bg);
+/* The chevron, matching the rows. Pushed to the end of the flex row rather than a grid column. */
+.topic > a::after {
+  content: "";
+  margin-inline-start: auto;
+  flex: 0 0 auto;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-right: 1.5px solid var(--text-muted);
+  border-top: 1.5px solid var(--text-muted);
+  transform: rotate(45deg);
 }
-.button-secondary {
-  background: transparent;
-  color: var(--text);
-  border: 1px solid var(--border);
-}
-.button-secondary:hover {
+.topic > a:hover::after {
   border-color: var(--accent);
-  color: var(--accent);
 }
 
-.start-here {
-  margin-top: var(--space-7);
+/* The site's argument for itself, rather than more content to browse: set as a statement in the
+   display face, at the foot of the page where a reader who has scrolled the whole index arrives
+   with the question it answers. */
+.tested {
+  margin-top: var(--space-9);
+  border-top: 1px solid var(--rule);
+  padding-top: var(--space-7);
 }
-.home-category h2 {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
+.tested h2 {
+  margin-top: 0;
+  max-width: 20ch;
 }
-.home-category h2 a {
-  color: inherit;
+.tested p {
+  margin-top: var(--space-4);
+  max-width: var(--measure);
+  color: var(--text-muted);
+}
+.tested-more a {
   text-decoration: none;
+  font-weight: 600;
 }
-.home-category h2 a:hover {
-  color: var(--accent);
+.tested-more a:hover {
+  text-decoration: underline;
 }
 
 /* ==========================================================================
    11. Callouts
    ========================================================================== */
 
+/* A rule on the inline-start edge and nothing else: no fill, no rounding. The colour of the
+   rule and the label carry the severity, and the prose stays on the page's own background so
+   a callout inside a lesson does not read as a different kind of document. */
 .callout {
-  border-left: 3px solid var(--accent);
-  background: var(--bg-surface);
-  border-radius: 0 var(--radius-m) var(--radius-m) 0;
-  padding: var(--space-4) var(--space-5);
+  border-inline-start: 2px solid var(--accent);
+  padding: var(--space-1) 0 var(--space-1) var(--space-5);
   margin-top: var(--space-5);
 }
 .callout > * + * {
   margin-top: var(--space-2);
 }
 .callout-label {
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   font-size: var(--fs-xs);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
+  color: var(--accent);
 }
 .callout-note {
   border-color: var(--accent);
@@ -865,11 +1321,11 @@ section + section {
 
 pre {
   border-radius: var(--radius-m);
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   padding: var(--space-4);
   overflow-x: auto;
   font-size: var(--fs-s);
-  line-height: 1.6;
+  line-height: 1.65;
 }
 
 /* Shiki bakes the *light* theme as plain color/background-color and stashes
@@ -907,23 +1363,29 @@ pre[data-prompt] .line::before {
   position: relative;
   margin-top: var(--space-4);
 }
-.example-code .copy {
+/* Every copy button on the site, in the top-right of the block it copies.
+
+   Always visible, not revealed on hover. Copying a command is the single most common thing a
+   reader does here, and a control that appears only under the pointer is invisible on touch and
+   undiscoverable to everyone else. It is kept quiet instead: no fill, muted until hovered. */
+.copy {
   position: absolute;
   top: var(--space-2);
   right: var(--space-2);
-  background: var(--bg-surface);
+  background: var(--bg);
   color: var(--text-muted);
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   border-radius: var(--radius-s);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font-sans);
   font-size: var(--fs-xs);
   cursor: pointer;
 }
-.example-code .copy:hover {
+.copy:hover {
   color: var(--accent);
   border-color: var(--accent);
 }
-:root:not(.js) .example-code .copy {
+:root:not(.js) .copy {
   display: none;
 }
 
@@ -931,11 +1393,18 @@ pre[data-prompt] .line::before {
    13. Examples
    ========================================================================== */
 
+.example-section {
+  margin-top: var(--space-8);
+}
 .example {
-  margin-top: var(--space-6);
+  margin-top: var(--space-7);
 }
 .example-title {
-  font-size: var(--fs-l);
+  font-family: var(--font-sans);
+  font-size: var(--fs-m);
+  font-weight: 600;
+  letter-spacing: 0;
+  margin-top: 0;
 }
 .example-title a {
   color: inherit;
@@ -947,6 +1416,7 @@ pre[data-prompt] .line::before {
 .example-desc {
   margin-top: var(--space-3);
   color: var(--text-muted);
+  max-width: var(--measure);
 }
 .example-output {
   margin-top: var(--space-3);
@@ -956,32 +1426,20 @@ pre[data-prompt] .line::before {
   font-size: var(--fs-s);
   color: var(--text-muted);
 }
+.example-output summary:hover {
+  color: var(--accent);
+}
 .example-output pre {
   margin-top: var(--space-2);
 }
 .example-danger {
-  border-left: 3px solid var(--danger);
-  padding-left: var(--space-4);
+  border-inline-start: 2px solid var(--danger);
+  padding-inline-start: var(--space-5);
 }
 .section-intro {
   color: var(--text-muted);
-  margin-top: var(--space-2);
-}
-
-/* The homepage's claim about verification. Set apart from the category sections above it,
-   since it is the site's argument for itself rather than more content to browse. */
-.tested {
-  margin: var(--space-6) 0 var(--space-4);
-  padding: var(--space-4);
-  background: var(--bg-inset);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
-}
-.tested h2 {
-  margin-top: 0;
-}
-.tested p:last-child {
-  margin-bottom: 0;
+  margin-top: var(--space-3);
+  max-width: var(--measure);
 }
 
 /* Sits above a volatile example's output: the block is a real capture, but the reader's
@@ -989,34 +1447,36 @@ pre[data-prompt] .line::before {
    rather than styled as a warning, since nothing is wrong, it just isn't byte-for-byte. */
 .output-varies {
   margin: 0 0 var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  background: var(--bg-inset);
-  border-left: 3px solid var(--border);
-  border-radius: var(--radius-s);
-  font-size: 0.9rem;
+  padding-inline-start: var(--space-4);
+  border-inline-start: 2px solid var(--border);
+  font-size: var(--fs-s);
   color: var(--text-muted);
 }
 .output-varies strong {
   color: var(--text);
+  font-weight: 600;
 }
 
 /* Sample data the examples were run against, collapsed so it orients a reader who
    needs it without pushing the examples themselves below the fold. */
 .fixtures {
-  margin-top: var(--space-5);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
-  background: var(--bg-surface);
-  padding: var(--space-3) var(--space-4);
+  margin-top: var(--space-6);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: var(--space-4) 0;
 }
 .fixtures summary {
   cursor: pointer;
+  font-size: var(--fs-s);
   font-weight: 600;
+}
+.fixtures summary:hover {
+  color: var(--accent);
 }
 .fixtures-intro {
   color: var(--text-muted);
   font-size: var(--fs-s);
-  margin-top: var(--space-2);
+  margin-top: var(--space-3);
 }
 .fixture {
   margin-top: var(--space-4);
@@ -1044,11 +1504,12 @@ pre[data-prompt] .line::before {
   margin-top: var(--space-5);
 }
 .toggle-outputs {
-  background: var(--bg-surface);
+  background: none;
   color: var(--text-muted);
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   border-radius: var(--radius-s);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font-sans);
   font-size: var(--fs-xs);
   cursor: pointer;
 }
@@ -1065,18 +1526,13 @@ pre[data-prompt] .line::before {
 }
 
 /* The foot of every page: which files produced it, what the replay checks here, and how to
-   run it. Given the callout treatment from section 11 (an inset panel with a coloured rule)
-   because it is the site's own claim about the page rather than more of the page, and the
-   reader should be able to see at a glance where the content ended.
-
-   `--ok` rather than `--accent`: the same green the Tip callout uses, since what this block
-   says is that the page above it has been checked. */
+   run it. Marked with the same green the Tip callout uses, since what it says is that the page
+   above it has been checked, and set apart by a rule rather than a panel so a reader can see
+   where the content ended without the block claiming to be content itself. */
 .page-sources {
-  margin-top: var(--space-6);
-  border-left: 3px solid var(--ok);
-  border-radius: 0 var(--radius-m) var(--radius-m) 0;
-  background: var(--bg-surface);
-  padding: var(--space-4) var(--space-5);
+  margin-top: var(--space-8);
+  border-top: 1px solid var(--rule);
+  padding-top: var(--space-5);
   color: var(--text-muted);
   font-size: var(--fs-s);
 }
@@ -1084,10 +1540,11 @@ pre[data-prompt] .line::before {
   margin-top: var(--space-3);
 }
 .page-sources h2 {
+  font-family: var(--font-sans);
   font-size: var(--fs-xs);
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   color: var(--ok);
   margin-top: 0;
 }
@@ -1097,9 +1554,6 @@ pre[data-prompt] .line::before {
 .page-checks {
   padding: var(--space-3) var(--space-4);
   background: var(--bg-inset);
-  /* --bg-surface and --bg-inset are four hex points apart in light mode, so the panel needs an
-     edge to read as one; in dark mode the fill alone is enough and the border is barely there. */
-  border: 1px solid var(--border);
   border-radius: var(--radius-s);
   color: var(--text);
 }
@@ -1120,28 +1574,9 @@ pre[data-prompt] .line::before {
   margin: 0;
   padding: var(--space-3) var(--space-4);
   background: var(--bg-inset);
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   border-radius: var(--radius-m);
   overflow-x: auto;
-}
-.source-replay .copy {
-  position: absolute;
-  top: var(--space-2);
-  right: var(--space-2);
-  background: var(--bg-surface);
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-s);
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--fs-xs);
-  cursor: pointer;
-}
-.source-replay .copy:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-:root:not(.js) .source-replay .copy {
-  display: none;
 }
 
 /* ==========================================================================
@@ -1149,28 +1584,28 @@ pre[data-prompt] .line::before {
    ========================================================================== */
 
 #search-dialog {
-  width: min(600px, calc(100vw - var(--space-6)));
-  max-height: min(500px, 80vh);
+  width: min(620px, calc(100vw - var(--space-6)));
+  max-height: min(520px, 80vh);
   padding: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius-m);
-  background: var(--bg-surface);
+  background: var(--bg);
   color: var(--text);
 }
 #search-dialog::backdrop {
-  background: rgb(0 0 0 / 0.5);
+  background: light-dark(rgb(23 25 28 / 0.35), rgb(0 0 0 / 0.6));
 }
 .search-dialog-inner {
   display: flex;
   flex-direction: column;
-  max-height: min(500px, 80vh);
+  max-height: min(520px, 80vh);
 }
 .search-input-row {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--border);
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--rule);
 }
 .search-input-row .search-trigger-icon {
   color: var(--text-muted);
@@ -1180,7 +1615,8 @@ pre[data-prompt] .line::before {
   border: none;
   background: none;
   color: var(--text);
-  font-size: var(--fs-m);
+  font-family: inherit;
+  font-size: var(--fs-l);
 }
 #search-input:focus {
   outline: none;
@@ -1189,11 +1625,12 @@ pre[data-prompt] .line::before {
   display: none;
 }
 [data-search-close] {
-  background: var(--bg-inset);
+  background: none;
   color: var(--text-muted);
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   border-radius: var(--radius-s);
   padding: var(--space-1) var(--space-3);
+  font-family: var(--font-sans);
   font-size: var(--fs-xs);
   cursor: pointer;
   flex-shrink: 0;
@@ -1223,7 +1660,7 @@ pre[data-prompt] .line::before {
   background: var(--bg-inset);
 }
 .search-result-title {
-  font-weight: 650;
+  font-weight: 600;
 }
 .search-result-excerpt {
   color: var(--text-muted);
@@ -1232,10 +1669,10 @@ pre[data-prompt] .line::before {
 .search-result-excerpt mark {
   background: none;
   color: var(--accent);
-  font-weight: 650;
+  font-weight: 600;
 }
 .search-empty {
-  padding: var(--space-4);
+  padding: var(--space-5);
   color: var(--text-muted);
   text-align: center;
 }
@@ -1252,14 +1689,19 @@ pre[data-prompt] .line::before {
    15. Print
    ========================================================================== */
 
+/* Anything scripted prints as furniture that cannot be operated: an empty bordered box where the
+   filter was, a search field nobody can type into. The `:root:not(.js)` rules elsewhere hide the
+   same two controls for the same reason, and paper is the other place they do nothing. */
 @media print {
   .site-header,
   .site-footer,
   .toc,
-  .example-code .copy,
-  .source-replay .copy,
+  .copy,
   .examples-toolbar,
-  .draft-banner {
+  .listing-filter,
+  .search-field,
+  .draft-banner,
+  .row > a::after {
     display: none;
   }
   body {

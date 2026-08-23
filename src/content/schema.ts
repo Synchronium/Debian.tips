@@ -78,12 +78,24 @@ const dateSchema = z.union([z.string(), z.date()]).transform((v, ctx) => {
   return d;
 });
 
+/** The one-line summary shown under a page's title.
+ *
+ *  Separate from `description`, which is the search-result snippet and is written for a reader
+ *  who has not arrived yet: it repeats the page's subject because it has to stand alone in a
+ *  result list. A tagline is read directly beneath the title it belongs to, so it says what the
+ *  title cannot rather than restating it, and it is short enough not to compete with the heading.
+ *
+ *  Required on command pages, optional everywhere else. The length limit keeps it to one line at
+ *  the width the design gives it. */
+const taglineSchema = z.string().min(1).max(60, "tagline must be at most 60 characters");
+
 const baseFrontmatter = {
   title: z.string().min(1, "title is required"),
   description: z
     .string()
     .min(50, "description must be at least 50 characters")
     .max(160, "description must be at most 160 characters"),
+  tagline: taglineSchema.optional(),
   tags: z
     .array(z.string().min(1))
     .min(1, "at least one tag is required")
@@ -96,7 +108,9 @@ const baseFrontmatter = {
 export const commandFrontmatterSchema = z.object({
   ...baseFrontmatter,
   category: z.literal("commands"),
-  tagline: z.string().min(1).max(60, "tagline must be at most 60 characters"),
+  // Required here, overriding the optional one in `baseFrontmatter`: a command page's title is a
+  // command name, so without a line saying what it does the page opens with `tr` and nothing else.
+  tagline: taglineSchema,
   tier: z.enum(TIERS),
 });
 

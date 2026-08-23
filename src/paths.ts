@@ -26,6 +26,25 @@ export const CLIENT_DIR = join(ROOT, "src", "client");
 /** Setup scripts, `.skip` lists and the Python helpers a page's examples need. */
 export const FIXTURE_DIR = join(ROOT, "scripts", "fixtures");
 
+/** The one webfont the site serves: Source Serif 4, Latin subset, semibold, used for headings
+ *  and nothing else. Taken from the npm package rather than committed as a binary, so the version
+ *  is in `package.json` where Dependabot can see it.
+ *
+ *  Served under a fixed name rather than a content hash, unlike the stylesheet. The stylesheet has
+ *  to name this URL, so hashing the font would mean substituting the hash into the CSS before
+ *  hashing *that*, leaving `styles/site.css` something other than a stylesheet. The file changes
+ *  only when the package does; when it does, change the name here. */
+export const FONT_SOURCE = join(
+  ROOT,
+  "node_modules",
+  "@fontsource",
+  "source-serif-4",
+  "files",
+  "source-serif-4-latin-600-normal.woff2",
+);
+export const FONT_FILE = "source-serif-4-latin-600.woff2";
+export const FONT_HREF = `/assets/${FONT_FILE}`;
+
 /** Filenames fixed by the content contract rather than by configuration. */
 export const PAGE_EXTENSION = ".md";
 export const INDEX_FILE = "index.md";
