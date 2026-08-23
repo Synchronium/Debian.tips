@@ -1,0 +1,557 @@
+command: ls
+fixtures:
+  - name: projects/
+    note: "the same sample tree the find page uses: nested directories, two symlinks (one broken), a hidden directory, and files of deliberately different sizes, modes and ages"
+    from: "ls -lAR projects"
+    content: |
+      projects:
+      total 20
+      drwxr-xr-x 2 user user 4096 Jun 26 10:00 .hidden
+      drwxr-xr-x 2 user user 4096 Jun 26 10:00 backups
+      drwxr-xr-x 2 user user 4096 Jun 26 10:00 empty-dir
+      drwxr-xr-x 2 user user 4096 Jun 26 10:00 logs
+      drwxr-xr-x 3 user user 4096 Jun 26 10:00 src
+
+      projects/.hidden:
+      total 4
+      -rw-r--r-- 1 user user 13 Jun 24 10:00 .env
+
+      projects/backups:
+      total 16
+      -rw------- 1 user user 5120 May 31  2025 site-2026-01-01.tar.gz
+      -rw-r--r-- 1 user user 5120 Jun 15 15:30 site-2026-06-01.tar.gz
+
+      projects/empty-dir:
+      total 0
+
+      projects/logs:
+      total 6156
+      -rw-r--r-- 1 user user   10240 Jun 21 10:00 app.log
+      -rw-r--r-- 1 user user 6291456 Jun 20 10:00 big.log
+      lrwxrwxrwx 1 user user      14 Jun 25 10:00 main-link.js -> ../src/main.js
+      lrwxrwxrwx 1 user user      12 Jun 25 10:00 rotated-link -> app.log.1.gz
+
+      projects/src:
+      total 12
+      -rwxrwxrwx 1 user user    8 Jun 23 10:00 main.js
+      -rw-r--r-- 1 user user    8 Jun  1 09:00 util.js
+      drwxr-xr-x 2 user user 4096 Jun 26 10:00 vendor
+
+      projects/src/vendor:
+      total 4
+      -rw-r--r-- 1 user user 7 Jun 22 10:00 lib.js
+  - name: Meeting Notes (final).docx
+    note: "an empty file whose name contains spaces and brackets, beside the tree rather than inside it"
+    from: "ls -l 'Meeting Notes (final).docx'"
+    content: |
+      -rw-r--r-- 1 user user 0 Jun 27 11:00 Meeting Notes (final).docx
+sections:
+  - title: "Listing a directory"
+    intro: "Remember that every listing on this page arrived through a pipe, so `ls` used its one-name-per-line form. At a terminal the same commands print in columns."
+    examples:
+      - title: "List the current directory"
+        code: ls
+        description: "With no arguments, the working directory. The sample tree and one loose file are all that is here."
+        output: |2
+          Meeting Notes (final).docx
+          projects
+        level: basic
+        tags: [beginner]
+      - title: "List a named directory"
+        code: ls projects
+        description: "Given a directory, `ls` lists what is inside it rather than the directory itself. The hidden `.hidden` entry is left out."
+        output: |2
+          backups
+          empty-dir
+          logs
+          src
+        level: basic
+        tags: [beginner]
+      - title: "Force one name per line"
+        code: ls -1 projects
+        description: "`-1` states the one-per-line layout rather than leaving it to be inferred from where the output is going, which is what a script should do."
+        output: |2
+          backups
+          empty-dir
+          logs
+          src
+        level: basic
+      - title: "Force columns even into a pipe"
+        code: ls -C projects
+        description: "`-C` is the other half of the pair: columns even when standard output is not a terminal. Comparing this against the example above is the clearest way to see the rule."
+        output: |2
+          backups  empty-dir  logs  src
+        level: intermediate
+      - title: "Fill rows instead of columns"
+        code: ls -x projects
+        description: "`-C` orders entries down each column, `-x` orders them across each row. With four short names the difference is invisible; with a hundred it decides where any given name appears."
+        output: |2
+          backups  empty-dir  logs  src
+        level: advanced
+      - title: "Separate names with commas"
+        code: ls -m projects
+        description: "`-m` gives a comma-separated list, which suits pasting a set of names into something else."
+        output: |2
+          backups, empty-dir, logs, src
+        level: intermediate
+      - title: "List the directory itself rather than its contents"
+        code: ls -d projects
+        description: "`-d` stops `ls` descending into a directory it was given. On its own it just echoes the name back."
+        output: |2
+          projects
+        level: intermediate
+      - title: "Describe a directory without listing it"
+        code: ls -ld projects
+        description: "`-ld` together is the useful form: the directory's own mode, owner and size, with none of its contents. The usual way to check a directory's permissions."
+        output: |2
+          drwxr-xr-x 7 user user 4096 Jun 26 10:00 projects
+        level: intermediate
+        tags: [permissions]
+      - title: "List a single file"
+        code: ls -l projects/src/main.js
+        description: "Given a file rather than a directory, `ls` describes that file. Note the mode: this one is world-writable, which `ls -l` makes obvious at a glance."
+        output: |2
+          -rwxrwxrwx 1 user user 8 Jun 23 10:00 projects/src/main.js
+        level: basic
+      - title: "List two directories at once"
+        code: ls -l projects/src projects/backups
+        description: "Several arguments each get a heading and a blank line between them. The arguments are sorted, so `backups` is printed first whatever order they were typed in."
+        output: |2
+          projects/backups:
+          total 16
+          -rw------- 1 user user 5120 May 31  2025 site-2026-01-01.tar.gz
+          -rw-r--r-- 1 user user 5120 Jun 15 15:30 site-2026-06-01.tar.gz
+
+          projects/src:
+          total 12
+          -rwxrwxrwx 1 user user    8 Jun 23 10:00 main.js
+          -rw-r--r-- 1 user user    8 Jun  1 09:00 util.js
+          drwxr-xr-x 2 user user 4096 Jun 26 10:00 vendor
+        level: intermediate
+      - title: "List an empty directory"
+        code: 'ls projects/empty-dir; echo "exit: $?"'
+        description: "Nothing to print, and exit status 0. An empty listing is not an error."
+        output: |2
+          exit: 0
+        level: basic
+      - title: "Ask for something that is not there"
+        code: 'ls nosuchdir; echo "exit: $?"'
+        description: "`ls` exits 2 for a serious problem, not 1. Worth knowing when a script tests the status."
+        output: |2
+          ls: cannot access 'nosuchdir': No such file or directory
+          exit: 2
+        level: intermediate
+      - title: "Mix a real target with a missing one"
+        code: 'ls projects nosuchdir; echo "exit: $?"'
+        description: "The error comes first, on standard error, and the listing it could produce still follows on standard output. The exit status reports the failure even though most of the work succeeded."
+        output: |2
+          ls: cannot access 'nosuchdir': No such file or directory
+          projects:
+          backups
+          empty-dir
+          logs
+          src
+          exit: 2
+        level: advanced
+
+  - title: "The long format"
+    intro: "`-l` prints one entry per line with its type, permissions, link count, owner, group, size, timestamp and name."
+    examples:
+      - title: "Show the long format"
+        code: ls -l projects
+        description: "Five columns before the name, and a `total` line for the blocks the entries occupy. Every entry here is a directory, hence the leading `d` and the 4096 size."
+        output: |2
+          total 16
+          drwxr-xr-x 2 user user 4096 Jun 26 10:00 backups
+          drwxr-xr-x 2 user user 4096 Jun 26 10:00 empty-dir
+          drwxr-xr-x 2 user user 4096 Jun 26 10:00 logs
+          drwxr-xr-x 3 user user 4096 Jun 26 10:00 src
+        level: basic
+        tags: [beginner]
+      - title: "Read sizes as bytes"
+        code: ls -l projects/logs
+        description: "Sizes are exact byte counts by default, which is right for a script and hard work for a person once the numbers get long."
+        output: |2
+          total 6156
+          -rw-r--r-- 1 user user   10240 Jun 21 10:00 app.log
+          -rw-r--r-- 1 user user 6291456 Jun 20 10:00 big.log
+          lrwxrwxrwx 1 user user      14 Jun 25 10:00 main-link.js -> ../src/main.js
+          lrwxrwxrwx 1 user user      12 Jun 25 10:00 rotated-link -> app.log.1.gz
+        level: basic
+      - title: "Read sizes as human-readable units"
+        code: ls -lh projects/logs
+        description: "`-h` rounds to K, M and G using powers of 1024, and the `total` line is converted too. The single most-typed `ls` flag after `-l` itself."
+        output: |2
+          total 6.1M
+          -rw-r--r-- 1 user user  10K Jun 21 10:00 app.log
+          -rw-r--r-- 1 user user 6.0M Jun 20 10:00 big.log
+          lrwxrwxrwx 1 user user   14 Jun 25 10:00 main-link.js -> ../src/main.js
+          lrwxrwxrwx 1 user user   12 Jun 25 10:00 rotated-link -> app.log.1.gz
+        level: basic
+        tags: [beginner]
+      - title: "Use powers of 1000 instead"
+        code: ls --si -lh projects/logs
+        description: "`--si` switches to powers of 1000, matching how drive manufacturers count. The same file is 6.0M either way here only because the rounding hides the difference."
+        output: |2
+          total 6.1M
+          -rw-r--r-- 1 user user  10K Jun 21 10:00 app.log
+          -rw-r--r-- 1 user user 6.0M Jun 20 10:00 big.log
+          lrwxrwxrwx 1 user user   14 Jun 25 10:00 main-link.js -> ../src/main.js
+          lrwxrwxrwx 1 user user   12 Jun 25 10:00 rotated-link -> app.log.1.gz
+        level: advanced
+      - title: "Report every size in a fixed unit"
+        code: ls -l --block-size=K projects/logs
+        description: "`--block-size` rounds every size to the unit you name, so the column stays comparable instead of mixing K and M. Note that a 14-byte symlink rounds up to 1K."
+        output: |2
+          total 6156K
+          -rw-r--r-- 1 user user   10K Jun 21 10:00 app.log
+          -rw-r--r-- 1 user user 6144K Jun 20 10:00 big.log
+          lrwxrwxrwx 1 user user    1K Jun 25 10:00 main-link.js -> ../src/main.js
+          lrwxrwxrwx 1 user user    1K Jun 25 10:00 rotated-link -> app.log.1.gz
+        level: advanced
+      - title: "Show allocated blocks rather than byte counts"
+        code: ls -s projects/logs
+        description: "`-s` prints the blocks each entry occupies on disk. `app.log` holds 10240 bytes and occupies 12 blocks, and the symlinks occupy none at all, because their targets fit inside the inode."
+        output: |2
+          total 6156
+            12 app.log
+          6144 big.log
+             0 main-link.js
+             0 rotated-link
+        level: advanced
+      - title: "Drop the group column"
+        code: ls -lG projects/logs
+        description: "`-G` suppresses the group, which is noise whenever every file belongs to its owner's own group."
+        output: |2
+          total 6156
+          -rw-r--r-- 1 user   10240 Jun 21 10:00 app.log
+          -rw-r--r-- 1 user 6291456 Jun 20 10:00 big.log
+          lrwxrwxrwx 1 user      14 Jun 25 10:00 main-link.js -> ../src/main.js
+          lrwxrwxrwx 1 user      12 Jun 25 10:00 rotated-link -> app.log.1.gz
+        level: intermediate
+      - title: "Use the long format without the group in one flag"
+        code: ls -l -o projects/logs
+        description: "`-o` is `-l` with the group column already dropped, so it does the same job as `-lG` in fewer characters."
+        output: |2
+          total 6156
+          -rw-r--r-- 1 user   10240 Jun 21 10:00 app.log
+          -rw-r--r-- 1 user 6291456 Jun 20 10:00 big.log
+          lrwxrwxrwx 1 user      14 Jun 25 10:00 main-link.js -> ../src/main.js
+          lrwxrwxrwx 1 user      12 Jun 25 10:00 rotated-link -> app.log.1.gz
+        level: intermediate
+      - title: "Read just the total line"
+        code: ls -l projects | head -1
+        description: "The `total` counts blocks used by the entries in this directory only, ignoring what the subdirectories contain. See [head](/commands/head/) for why the pipeline stops there."
+        output: |2
+          total 16
+        level: intermediate
+      - title: "See a directory that contains nothing"
+        code: ls -l projects/empty-dir
+        description: "An empty directory still prints a `total`, and it is 0."
+        output: |2
+          total 0
+        level: basic
+
+  - title: "Hidden files"
+    intro: "A leading dot keeps an entry out of the default listing. It is a naming convention that `ls` honours rather than a filesystem attribute."
+    examples:
+      - title: "Show every entry, including . and .."
+        code: ls -a projects
+        description: "`-a` holds nothing back, so `.` (this directory) and `..` (its parent) appear alongside the hidden `.hidden`."
+        output: |2
+          .
+          ..
+          .hidden
+          backups
+          empty-dir
+          logs
+          src
+        level: basic
+        tags: [beginner]
+      - title: "Show hidden entries without . and .."
+        code: ls -A projects
+        description: "`-A` is `-a` minus the two entries every directory has. Almost always the one you actually want, particularly when piping the result into something that would try to descend into `..`."
+        output: |2
+          .hidden
+          backups
+          empty-dir
+          logs
+          src
+        level: basic
+      - title: "Look inside a hidden directory"
+        code: ls -lA projects/.hidden
+        description: "Naming a hidden directory lists it normally; the dot only affects whether it shows up in its parent's listing. `-A` is needed again for the hidden file inside it."
+        output: |2
+          total 4
+          -rw-r--r-- 1 user user 13 Jun 24 10:00 .env
+        level: intermediate
+
+  - title: "Changing the order"
+    intro: "The default is by name in the locale's collation order. Every other order is a flag, and `-r` reverses whichever one is in effect."
+    examples:
+      - title: "Sort by modification time, newest first"
+        code: ls -lt projects/logs
+        description: "`-t` orders by mtime rather than name. The symlinks were touched last, so they come first."
+        output: |2
+          total 6156
+          lrwxrwxrwx 1 user user      14 Jun 25 10:00 main-link.js -> ../src/main.js
+          lrwxrwxrwx 1 user user      12 Jun 25 10:00 rotated-link -> app.log.1.gz
+          -rw-r--r-- 1 user user   10240 Jun 21 10:00 app.log
+          -rw-r--r-- 1 user user 6291456 Jun 20 10:00 big.log
+        level: intermediate
+        tags: [beginner]
+      - title: "Sort by time with the newest last"
+        code: ls -ltr projects/logs
+        description: "`-r` reverses it, so the most recent entry is the final line. The form to use on a long listing, where the top scrolls away and the bottom does not."
+        output: |2
+          total 6156
+          -rw-r--r-- 1 user user 6291456 Jun 20 10:00 big.log
+          -rw-r--r-- 1 user user   10240 Jun 21 10:00 app.log
+          lrwxrwxrwx 1 user user      12 Jun 25 10:00 rotated-link -> app.log.1.gz
+          lrwxrwxrwx 1 user user      14 Jun 25 10:00 main-link.js -> ../src/main.js
+        level: intermediate
+        tags: [one-liners]
+      - title: "Sort by size, largest first"
+        code: ls -lS projects/logs
+        description: "`-S` orders by byte count. Symlinks sort by their own size rather than their target's, which is why both land at the bottom."
+        output: |2
+          total 6156
+          -rw-r--r-- 1 user user 6291456 Jun 20 10:00 big.log
+          -rw-r--r-- 1 user user   10240 Jun 21 10:00 app.log
+          lrwxrwxrwx 1 user user      14 Jun 25 10:00 main-link.js -> ../src/main.js
+          lrwxrwxrwx 1 user user      12 Jun 25 10:00 rotated-link -> app.log.1.gz
+        level: intermediate
+      - title: "Sort by size, smallest first"
+        code: ls -lSr projects/logs
+        description: "The same reversal applies to `-S`, which finds the smallest files rather than the largest."
+        output: |2
+          total 6156
+          lrwxrwxrwx 1 user user      12 Jun 25 10:00 rotated-link -> app.log.1.gz
+          lrwxrwxrwx 1 user user      14 Jun 25 10:00 main-link.js -> ../src/main.js
+          -rw-r--r-- 1 user user   10240 Jun 21 10:00 app.log
+          -rw-r--r-- 1 user user 6291456 Jun 20 10:00 big.log
+        level: intermediate
+      - title: "Sort by extension"
+        code: ls -lX projects/src
+        description: "`-X` groups by whatever follows the final dot, with entries that have no extension first. Directories have none, so `vendor` leads."
+        output: |2
+          total 12
+          drwxr-xr-x 2 user user 4096 Jun 26 10:00 vendor
+          -rwxrwxrwx 1 user user    8 Jun 23 10:00 main.js
+          -rw-r--r-- 1 user user    8 Jun  1 09:00 util.js
+        level: advanced
+      - title: "Reverse the default name order"
+        code: ls -lr projects
+        description: "With no other sort flag, `-r` simply reverses the alphabetical listing."
+        output: |2
+          total 16
+          drwxr-xr-x 3 user user 4096 Jun 26 10:00 src
+          drwxr-xr-x 2 user user 4096 Jun 26 10:00 logs
+          drwxr-xr-x 2 user user 4096 Jun 26 10:00 empty-dir
+          drwxr-xr-x 2 user user 4096 Jun 26 10:00 backups
+        level: basic
+      - title: "Sort names containing numbers naturally"
+        code: ls -lv projects/logs
+        description: "`-v` compares runs of digits as numbers, so `app10.log` would follow `app9.log` instead of preceding it. With no numbered names here it matches the default order."
+        output: |2
+          total 6156
+          -rw-r--r-- 1 user user   10240 Jun 21 10:00 app.log
+          -rw-r--r-- 1 user user 6291456 Jun 20 10:00 big.log
+          lrwxrwxrwx 1 user user      14 Jun 25 10:00 main-link.js -> ../src/main.js
+          lrwxrwxrwx 1 user user      12 Jun 25 10:00 rotated-link -> app.log.1.gz
+        level: advanced
+      - title: "Put directories before files"
+        code: ls --group-directories-first projects
+        description: "Sorts directories into their own block ahead of everything else, keeping alphabetical order within each block. A GNU extension, so not available on a BSD or macOS `ls`."
+        output: |2
+          backups
+          empty-dir
+          logs
+          src
+        level: intermediate
+
+  - title: "Timestamps"
+    intro: "Every file carries three times and `ls` can show any of them, but none of the three is a creation time."
+    examples:
+      - title: "See how the date format changes with age"
+        code: ls -l projects/backups
+        description: "Both files are the same size and mode. The 2025 one is older than six months, so `ls` prints its year in place of the time; the recent one keeps its `15:30`."
+        output: |2
+          total 16
+          -rw------- 1 user user 5120 May 31  2025 site-2026-01-01.tar.gz
+          -rw-r--r-- 1 user user 5120 Jun 15 15:30 site-2026-06-01.tar.gz
+        level: intermediate
+      - title: "Print dates in a consistent format"
+        code: ls -l --time-style=long-iso projects/logs
+        description: "`long-iso` gives `2026-06-21 10:00` for every entry regardless of age, which is what you want whenever the output will be sorted, compared or parsed."
+        output: |2
+          total 6156
+          -rw-r--r-- 1 user user   10240 2026-06-21 10:00 app.log
+          -rw-r--r-- 1 user user 6291456 2026-06-20 10:00 big.log
+          lrwxrwxrwx 1 user user      14 2026-06-25 10:00 main-link.js -> ../src/main.js
+          lrwxrwxrwx 1 user user      12 2026-06-25 10:00 rotated-link -> app.log.1.gz
+        level: intermediate
+        tags: [one-liners]
+      - title: "Print the full timestamp with timezone"
+        code: ls -l --time-style=full-iso projects/backups
+        description: "Nanosecond precision and an explicit offset, which is more than a person needs and exactly what a script comparing two machines needs."
+        output: |2
+          total 16
+          -rw------- 1 user user 5120 2025-05-31 12:00:00.000000000 +0000 site-2026-01-01.tar.gz
+          -rw-r--r-- 1 user user 5120 2026-06-15 15:30:00.000000000 +0000 site-2026-06-01.tar.gz
+        level: advanced
+      - title: "Choose the date format yourself"
+        code: ls -l --time-style=+%Y-%m-%d projects/logs
+        description: "A leading `+` takes a `date`-style format string, so the timestamp can be cut down to just the part being read."
+        output: |2
+          total 6156
+          -rw-r--r-- 1 user user   10240 2026-06-21 app.log
+          -rw-r--r-- 1 user user 6291456 2026-06-20 big.log
+          lrwxrwxrwx 1 user user      14 2026-06-25 main-link.js -> ../src/main.js
+          lrwxrwxrwx 1 user user      12 2026-06-25 rotated-link -> app.log.1.gz
+        level: advanced
+      - title: "Show the access time instead"
+        code: ls -lu projects/logs
+        description: "`-u` reports when each file was last read rather than last written. Most systems mount with `relatime`, which only updates it once a day, so it is a weaker signal than it looks."
+        output: |2
+          total 6156
+          -rw-r--r-- 1 user user   10240 Jun 21 10:00 app.log
+          -rw-r--r-- 1 user user 6291456 Jun 20 10:00 big.log
+          lrwxrwxrwx 1 user user      14 Jun 25 10:00 main-link.js -> ../src/main.js
+          lrwxrwxrwx 1 user user      12 Jun 25 10:00 rotated-link -> app.log.1.gz
+        level: advanced
+      - title: "Show the inode change time"
+        code: ls -lc projects/logs
+        description: "`-c` reports when the inode last changed, which a `chmod`, a rename or a new hard link updates without touching the contents. It cannot be set with `touch`, so here it is when the sandbox created these files rather than the dates the other examples show."
+        volatile: "the change time is when your copy of these files was created, so it will be today's date rather than the one below"
+        compare: shape
+        output: |2
+          total 6156
+          -rw-r--r-- 1 user user   10240 Aug 23 14:08 app.log
+          -rw-r--r-- 1 user user 6291456 Aug 23 14:08 big.log
+          lrwxrwxrwx 1 user user      14 Aug 23 14:08 main-link.js -> ../src/main.js
+          lrwxrwxrwx 1 user user      12 Aug 23 14:08 rotated-link -> app.log.1.gz
+        level: advanced
+
+  - title: "Symlinks and entry types"
+    intro: "`ls` describes a symlink itself unless told otherwise, which is usually what you want and occasionally the opposite."
+    examples:
+      - title: "See where a symlink points"
+        code: ls -l projects/logs/main-link.js
+        description: "The `l` in the first column marks a symlink, and the arrow gives its target. The size, 14, is the length of the target path rather than the size of the file it names."
+        output: |2
+          lrwxrwxrwx 1 user user 14 Jun 25 10:00 projects/logs/main-link.js -> ../src/main.js
+        level: intermediate
+      - title: "Describe the target instead of the link"
+        code: ls -lL projects/logs/main-link.js
+        description: "`-L` dereferences, so the mode, size and time all belong to `main.js`. The name printed is still the one you asked for, which makes this easy to misread."
+        output: |2
+          -rwxrwxrwx 1 user user 8 Jun 23 10:00 projects/logs/main-link.js
+        level: advanced
+      - title: "List a symlink whose target is gone"
+        code: ls -l projects/logs/rotated-link
+        description: "A broken link lists exactly like a working one, with no error and no marker. `ls -lL` on this would fail instead, which is one way to find them."
+        output: |2
+          lrwxrwxrwx 1 user user 12 Jun 25 10:00 projects/logs/rotated-link -> app.log.1.gz
+        level: advanced
+      - title: "Mark each entry with its type"
+        code: ls -F projects
+        description: "`-F` appends a character saying what each entry is: `/` for a directory, `@` for a symlink, `*` for an executable, nothing for a plain file."
+        output: |2
+          backups/
+          empty-dir/
+          logs/
+          src/
+        level: basic
+        tags: [beginner]
+      - title: "Mark only the directories"
+        code: ls -p projects
+        description: "`-p` adds the trailing slash for directories and leaves everything else alone, which keeps the names copy-pasteable in a way `-F` does not."
+        output: |2
+          backups/
+          empty-dir/
+          logs/
+          src/
+        level: intermediate
+
+  - title: "Recursion"
+    intro: "`-R` walks the whole tree, printing a heading for each directory it reaches."
+    examples:
+      - title: "List a tree"
+        code: ls -R projects
+        description: "Each directory gets a `path:` heading and a blank line before the next. `.hidden` is missing because `-R` does not imply `-a`."
+        output: |2
+          projects:
+          backups
+          empty-dir
+          logs
+          src
+
+          projects/backups:
+          site-2026-01-01.tar.gz
+          site-2026-06-01.tar.gz
+
+          projects/empty-dir:
+
+          projects/logs:
+          app.log
+          big.log
+          main-link.js
+          rotated-link
+
+          projects/src:
+          main.js
+          util.js
+          vendor
+
+          projects/src/vendor:
+          lib.js
+        level: intermediate
+      - title: "Walk a tree in long format"
+        code: ls -lR projects/src
+        description: "`-lR` is what the sample-file block at the top of this page is captured with, since it records modes, sizes and dates for a whole tree in one command."
+        output: |2
+          projects/src:
+          total 12
+          -rwxrwxrwx 1 user user    8 Jun 23 10:00 main.js
+          -rw-r--r-- 1 user user    8 Jun  1 09:00 util.js
+          drwxr-xr-x 2 user user 4096 Jun 26 10:00 vendor
+
+          projects/src/vendor:
+          total 4
+          -rw-r--r-- 1 user user 7 Jun 22 10:00 lib.js
+        level: intermediate
+
+  - title: "Names that need quoting"
+    intro: "A filename may contain spaces, quotes and newlines. Since coreutils 8.25 `ls` quotes such names by default when writing to a terminal, and this is one of the few places where its piped output differs in substance rather than layout."
+    examples:
+      - title: "List a name containing spaces"
+        code: ls *.docx
+        description: "Through a pipe the name is printed literally, exactly as it would need to be typed back. At a terminal `ls` would wrap it in single quotes instead."
+        output: |2
+          Meeting Notes (final).docx
+        level: intermediate
+      - title: "Escape the spaces instead of quoting"
+        code: ls -b *.docx
+        description: "`-b` backslash-escapes anything awkward, which is the form to paste straight back into a shell command."
+        output: |2
+          Meeting\ Notes\ (final).docx
+        level: advanced
+      - title: "Wrap names in double quotes"
+        code: ls -Q *.docx
+        description: "`-Q` is the C-style quoting shell scripts and other programs tend to expect."
+        output: |2
+          "Meeting Notes (final).docx"
+        level: advanced
+      - title: "Turn quoting off entirely"
+        code: ls --quoting-style=literal *.docx
+        description: "`literal` prints the raw bytes with no escaping at all. Correct when feeding a single known name to something else, and a hazard on names you have not inspected."
+        output: |2
+          Meeting Notes (final).docx
+        level: advanced
+      - title: "Describe an awkward name in full"
+        code: ls -l 'Meeting Notes (final).docx'
+        description: "The quoting on the command line is the shell's business rather than `ls`'s: without it the shell would pass three separate arguments."
+        output: |2
+          -rw-r--r-- 1 user user 0 Jun 27 11:00 Meeting Notes (final).docx
+        level: intermediate

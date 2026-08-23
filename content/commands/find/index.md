@@ -63,6 +63,9 @@ Three ways to act on matches, in order of how much you should trust yourself wit
 > `-print` (or no action at all) first and read the list. `find` doesn't ask "are you sure?"
 > A name test that's broader than you intended deletes broader than you intended, too.
 
+See [`ls`](/commands/ls/) for reading the tree `find` walks, including the `-lAR` listing that
+this page's own sample-file block is captured with.
+
 ## Filenames with spaces and newlines
 
 Piping `find`'s default newline-separated output into a loop or [`xargs`](/commands/xargs/)

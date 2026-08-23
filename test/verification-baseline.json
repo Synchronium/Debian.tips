@@ -97,6 +97,13 @@
     "fixtures": 5,
     "unpaired": 0
   },
+  "commands/ls": {
+    "checked": 52,
+    "byShape": 1,
+    "exempt": 0,
+    "fixtures": 2,
+    "unpaired": 0
+  },
   "commands/sed": {
     "checked": 26,
     "byShape": 0,

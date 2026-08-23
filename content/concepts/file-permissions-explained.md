@@ -17,7 +17,7 @@ For the flags themselves rather than the model behind them, see [`chmod`](/comma
 
 Every file and directory has one **owner** (a user) and one **group**, plus a category for
 **everyone else**. Each of those three gets its own set of three permissions: **r**ead,
-**w**rite, and e**x**ecute. `ls -l` shows all nine bits in a row:
+**w**rite, and e**x**ecute. [`ls -l`](/commands/ls/) shows all nine bits in a row:
 
 <!-- verify: shape the size, timestamp and link count are this file's, not a fixed value -->
 ```bash
