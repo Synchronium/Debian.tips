@@ -54,7 +54,7 @@ Three ways to act on matches, in order of how much you should trust yourself wit
   invocations. Faster, but only works when `cmd`'s argument order doesn't matter.
 - **`-delete`** removes matches directly, no subprocess at all. The fastest option and the
   most dangerous, because there's no confirmation step.
-- **Piping to `xargs`** (`find ... -print0 | xargs -0 cmd`) is the classic
+- **Piping to [`xargs`](/commands/xargs/)** (`find ... -print0 | xargs -0 cmd`) is the classic
   alternative to `-exec ... +`. Use it when you need `xargs`-specific features like
   `-P` (parallelism).
 

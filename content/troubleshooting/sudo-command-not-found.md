@@ -121,7 +121,8 @@ newbie sudo
 
 With the dash you get root's environment, including root's `PATH`. Without it you keep your own,
 and a normal user's `PATH` on Debian does not include the `sbin` directories where `usermod`
-lives:
+lives ([environment variables and PATH](/concepts/environment-variables-and-path/) covers which
+file sets which value):
 
 ```bash
 su - newbie -c 'echo $PATH'

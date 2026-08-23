@@ -109,7 +109,9 @@ echo "${myvar:-default value}"
 
 `${var:-default}` expands to `$var` if it's set and non-empty, or the literal `default`
 otherwise, without changing `$var` itself. It is a common way to write a script argument or
-environment variable that works whether or not the caller provided one.
+environment variable that works whether or not the caller provided one, and
+[environment variables and PATH](/concepts/environment-variables-and-path/) covers how one
+reaches a script in the first place.
 
 ## Exercises
 

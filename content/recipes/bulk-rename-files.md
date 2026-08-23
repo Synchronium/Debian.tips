@@ -35,7 +35,9 @@ IMG_0003.jpg
 - `mv -- "$f" "..."` renames the file. The `--` tells `mv` that no more flags follow, which
   matters if a filename happens to start with a `-`. Quoting `"$f"` is what makes this safe for
   filenames containing spaces (see
-  [Variables and quoting](/scripting/variables-and-quoting/)).
+  [Variables and quoting](/scripting/variables-and-quoting/)). The same job built as a pipeline
+  needs [`xargs -0`](/commands/xargs/) and `find -print0` for that, since a bare pipe splits
+  those names apart.
 
 **Variations:**
 

@@ -1,0 +1,620 @@
+command: xargs
+fixtures:
+  - name: hosts.txt
+    note: "four hostnames, one per line"
+    content: |
+      web1.example.com
+      web2.example.com
+      db1.example.com
+      cache1.example.com
+  - name: packages.txt
+    note: "three package names, one per line"
+    content: |
+      curl
+      jq
+      rsync
+  - name: users.csv
+    note: "a header row plus 6 records"
+    content: |
+      name,age,department
+      Alice,34,Engineering
+      Bob,29,Sales
+      Carol,41,Engineering
+      Dave,25,Marketing
+      Erin,38,Sales
+      Frank,31,Engineering
+  - name: logs/
+    note: "five log files, one of them with a space in its name"
+    from: "find logs -type f | sort"
+    content: |
+      logs/api.log
+      logs/app.log
+      logs/archive/2026-07.log
+      logs/error.log
+      logs/last week.log
+  - name: logs/app.log
+    content: |
+      boot: starting
+      boot: ready
+  - name: logs/error.log
+    content: |
+      ERROR: disk full
+      ERROR: retry failed
+      WARN: slow query
+  - name: logs/api.log
+    content: |
+      GET /index.html 200
+      GET /missing 404
+  - name: logs/last week.log
+    note: "the file that every separator example on this page depends on"
+    from: 'cat "logs/last week.log"'
+    content: |
+      ERROR: old failure
+  - name: logs/archive/2026-07.log
+    content: |
+      archived
+sections:
+  - title: "From standard input to arguments"
+    intro: "`xargs` reads items from standard input and appends them to a command as arguments. Everything else on this page is a variation on how those items are split up and where they are placed."
+    examples:
+      - title: "Watch a pipeline fail because the command ignores standard input"
+        code: find logs -name "*.log" | rm
+        description: "`rm` takes filenames as arguments and never reads standard input, so the pipeline hands it nothing it can use. The error is accurate rather than confusing once you know that: `rm` really was called with no operands."
+        output: |2
+          rm: missing operand
+          Try 'rm --help' for more information.
+        level: basic
+        tags: [beginner]
+      - title: "Turn a file of items into one command line"
+        code: xargs echo < hosts.txt
+        description: "The four lines arrive as four arguments to a single `echo`, which prints them space-separated on one line."
+        output: |2
+          web1.example.com web2.example.com db1.example.com cache1.example.com
+        level: basic
+        tags: [beginner]
+      - title: "Leave the command out and get echo"
+        code: xargs < hosts.txt
+        description: "With no command given, `xargs` runs `echo`. Useful for seeing exactly what it will pass on before putting a real command there."
+        output: |2
+          web1.example.com web2.example.com db1.example.com cache1.example.com
+        level: basic
+        tags: [beginner]
+      - title: "Read from a pipe instead of a file"
+        code: cat packages.txt | xargs
+        description: "Standard input is standard input, whatever produced it. See [pipes and redirection](/concepts/pipes-and-redirection/) for the difference between `<` and `|` here."
+        output: |2
+          curl jq rsync
+        level: basic
+        tags: [beginner]
+      - title: "Read from a named file without a redirect"
+        code: xargs -a hosts.txt
+        description: "`-a` names an input file directly, which keeps standard input free for something else."
+        output: |2
+          web1.example.com web2.example.com db1.example.com cache1.example.com
+        level: basic
+      - title: "Use the long form of -a in a script"
+        code: 'xargs --arg-file=hosts.txt -n1 echo host:'
+        description: "`--arg-file` is the same flag spelled out, which reads better in a script someone else will maintain."
+        output: |2
+          host: web1.example.com
+          host: web2.example.com
+          host: db1.example.com
+          host: cache1.example.com
+        level: basic
+      - title: "Pass filenames to a command that counts them"
+        code: echo "logs/app.log logs/error.log" | xargs wc -l
+        description: "Both filenames reach [`wc`](/commands/wc/) in one invocation, so it prints a total as well as a line for each file."
+        output: |2
+           2 logs/app.log
+           3 logs/error.log
+           5 total
+        level: basic
+      - title: "Flatten a directory listing onto one line"
+        code: ls logs | xargs
+        description: "A quick way to see a listing as a single line. Note that `last week.log` appears here as two apparent names, which is the subject of a later section."
+        output: |2
+          api.log app.log archive error.log last week.log
+        level: basic
+
+  - title: "How many items go on each command line"
+    intro: "By default `xargs` packs as many items as will fit onto one command line, which is what makes it fast. These flags override that when the command needs a fixed number."
+    examples:
+      - title: "Run the command once per item"
+        code: xargs -n1 < hosts.txt
+        description: "`-n1` gives one item per invocation, so this runs four separate `echo` commands rather than one."
+        output: |2
+          web1.example.com
+          web2.example.com
+          db1.example.com
+          cache1.example.com
+        level: basic
+        tags: [beginner]
+      - title: "Run the command once per pair of items"
+        code: xargs -n2 < hosts.txt
+        description: "`-n2` takes two items per invocation. The last run gets whatever is left over, which may be fewer."
+        output: |2
+          web1.example.com web2.example.com
+          db1.example.com cache1.example.com
+        level: basic
+      - title: "Add a fixed argument before each item"
+        code: xargs -n1 echo Deploying < hosts.txt
+        description: "Arguments you write yourself come first, and `xargs` appends the item after them."
+        output: |2
+          Deploying web1.example.com
+          Deploying web2.example.com
+          Deploying db1.example.com
+          Deploying cache1.example.com
+        level: basic
+      - title: "Batch a numbered list three at a time"
+        code: seq 1 10 | xargs -n3
+        description: "Ten items in batches of three gives four runs, the last one short."
+        output: |2
+          1 2 3
+          4 5 6
+          7 8 9
+          10
+        level: basic
+      - title: "Count how many invocations a batch size produces"
+        code: seq 1 10 | xargs -n3 | wc -l
+        description: "One output line per invocation, so counting lines counts the runs. Worth checking before pointing a slow command at a long list."
+        output: |2
+          4
+        level: intermediate
+      - title: "Split on input lines rather than on a count"
+        code: xargs -L1 echo < hosts.txt
+        description: "`-L1` runs the command once per input *line*. With one item per line the result matches `-n1`, and it diverges as soon as a line holds several items."
+        output: |2
+          web1.example.com
+          web2.example.com
+          db1.example.com
+          cache1.example.com
+        level: intermediate
+      - title: "Keep the items from each line together"
+        code: 'printf "a b c\nd e\n" | xargs -L1 echo LINE:'
+        description: "Here `-L1` and `-n1` differ: the first line carries three items and the second carries two, and each line becomes exactly one invocation."
+        output: |2
+          LINE: a b c
+          LINE: d e
+        level: intermediate
+      - title: "Cap the command line by length instead of by count"
+        code: xargs -s 40 < hosts.txt
+        description: "`-s` sets the maximum number of characters per command line. The kernel imposes its own much larger limit, and `xargs` stays under that one automatically."
+        output: |2
+          web1.example.com web2.example.com
+          db1.example.com cache1.example.com
+        level: advanced
+      - title: "Stop reading at a marker line"
+        code: 'printf "web1\nweb2\nEND\nweb3\n" | xargs -E END'
+        description: "`-E` sets an end-of-file string. Everything after that line is ignored, which lets one file hold both a list and a trailing note."
+        output: |2
+          web1 web2
+        level: advanced
+      - title: "Split on a delimiter of your own"
+        code: 'printf "one;two;three" | xargs -d";" -n1 echo'
+        description: "`-d` replaces whitespace splitting with a single delimiter, so spaces inside items no longer break them apart."
+        output: |2
+          one
+          two
+          three
+        level: intermediate
+      - title: "See what a trailing newline does to -d"
+        code: 'printf "one;two;three\n" | xargs -d";" -n1 echo | cat -A'
+        description: "With `-d`, the newline is no longer a separator, so it stays inside the final item. `cat -A` marks line ends with `$`, showing the extra one that `echo` then prints."
+        output: |2
+          one$
+          two$
+          three$
+          $
+        level: advanced
+      - title: "Split a quoted string into separate arguments"
+        code: 'echo "a b c" | xargs -d" " -n1 echo item:'
+        description: "A space delimiter with `-n1` turns one line into one invocation per word."
+        output: |2
+          item: a
+          item: b
+          item: c
+        level: intermediate
+
+  - title: "Placing each item with -I"
+    intro: "`-I` names a placeholder and replaces it with the incoming item, so the item can sit in the middle of a command or appear more than once. It implies one item per run."
+    examples:
+      - title: "Build a command around each item"
+        code: xargs -I{} echo "ssh {} uptime" < hosts.txt
+        description: "The placeholder can go anywhere in the command, which is what `-n1` alone cannot do."
+        output: |2
+          ssh web1.example.com uptime
+          ssh web2.example.com uptime
+          ssh db1.example.com uptime
+          ssh cache1.example.com uptime
+        level: basic
+      - title: "Use the same item twice in one command"
+        code: 'xargs -I{} echo "{}: backing up to {}.bak" < packages.txt'
+        description: "Every occurrence of the placeholder is replaced, which is the usual way to build a source and destination pair."
+        output: |2
+          curl: backing up to curl.bak
+          jq: backing up to jq.bak
+          rsync: backing up to rsync.bak
+        level: basic
+      - title: "Choose a different placeholder"
+        code: xargs -I@ echo "host @ checked" < hosts.txt
+        description: "`{}` is a convention rather than a requirement. Pick another when the command itself contains braces."
+        output: |2
+          host web1.example.com checked
+          host web2.example.com checked
+          host db1.example.com checked
+          host cache1.example.com checked
+        level: intermediate
+      - title: "Copy a file once per item"
+        code: xargs -I{} cp logs/app.log {}.copy < packages.txt && ls *.copy
+        description: "A placeholder in the destination position gives one copy per name in the list."
+        output: |2
+          curl.copy
+          jq.copy
+          rsync.copy
+        level: intermediate
+      - title: "Number a sequence of generated commands"
+        code: seq 1 3 | xargs -I{} echo "item {} of the batch"
+        description: "`-I` accepts any input, not only filenames."
+        output: |2
+          item 1 of the batch
+          item 2 of the batch
+          item 3 of the batch
+        level: basic
+      - title: "Do arithmetic on each item"
+        code: printf "1\n2\n3\n" | xargs -I{} sh -c 'echo $(( {} * 2 ))'
+        description: "Wrapping the command in `sh -c` gives you shell features that `xargs` itself has none of. Beware that the substitution is textual: it is safe here only because the input is known to be numbers."
+        output: |2
+          2
+          4
+          6
+        level: advanced
+      - title: "Feed the item to sh -c safely"
+        code: find logs -name "*.log" -print0 | sort -z | xargs -0 -I{} sh -c 'echo "== $1"; cat "$1"' _ {}
+        description: "Passing the item as a positional parameter and quoting it as `\"$1\"` is what keeps a filename with a space intact inside the child shell. The `_` supplies `$0`."
+        output: |2
+          == logs/api.log
+          GET /index.html 200
+          GET /missing 404
+          == logs/app.log
+          boot: starting
+          boot: ready
+          == logs/archive/2026-07.log
+          archived
+          == logs/error.log
+          ERROR: disk full
+          ERROR: retry failed
+          WARN: slow query
+          == logs/last week.log
+          ERROR: old failure
+        level: advanced
+      - title: "Watch the same command break when the item is substituted directly"
+        code: find logs -name "*.log" -print0 | sort -z | xargs -0 -I{} sh -c 'echo "== {}"; cat {}'
+        description: "`-0` protected the filename on its way into `xargs`, and the placeholder then pasted it unquoted into a shell command line, where the space splits it again. The header prints correctly because it is inside double quotes; the `cat` beside it does not."
+        output: |2
+          == logs/api.log
+          GET /index.html 200
+          GET /missing 404
+          == logs/app.log
+          boot: starting
+          boot: ready
+          == logs/archive/2026-07.log
+          archived
+          == logs/error.log
+          ERROR: disk full
+          ERROR: retry failed
+          WARN: slow query
+          == logs/last week.log
+          cat: logs/last: No such file or directory
+          cat: week.log: No such file or directory
+        level: advanced
+      - title: "Loop over a whole batch inside one shell"
+        code: find logs -name "*.log" -print0 | sort -z | xargs -0 sh -c 'for f in "$@"; do echo "== $f"; done' _
+        description: "Without `-I`, the batch arrives as `$@` and the shell loops over it. One shell for many files rather than one shell each, and the quoting stays correct."
+        output: |2
+          == logs/api.log
+          == logs/app.log
+          == logs/archive/2026-07.log
+          == logs/error.log
+          == logs/last week.log
+        level: advanced
+
+  - title: "Filenames with spaces, and the NUL separator"
+    intro: "Whitespace separates items by default, and a filename may contain whitespace. Every example in this section runs against a `logs/` directory containing a file called `last week.log`."
+    examples:
+      - title: "See a filename split into two items"
+        code: find logs -name "*.log" | sort | xargs -n1 echo
+        description: "Six lines out for five files in: `last week.log` became `logs/last` and `week.log`, neither of which exists."
+        output: |2
+          logs/api.log
+          logs/app.log
+          logs/archive/2026-07.log
+          logs/error.log
+          logs/last
+          week.log
+        level: intermediate
+      - title: "Keep the filename intact with -print0 and -0"
+        code: find logs -name "*.log" -print0 | sort -z | xargs -0 -n1 echo
+        description: "`find -print0` ends each name with a NUL byte, `sort -z` keeps that framing, and `xargs -0` splits on it. A NUL cannot occur inside a filename, so the split is exact."
+        output: |2
+          logs/api.log
+          logs/app.log
+          logs/archive/2026-07.log
+          logs/error.log
+          logs/last week.log
+        level: intermediate
+        tags: [files]
+      - title: "Watch a count come out wrong rather than fail"
+        code: find logs -name "*.log" | sort | xargs wc -l
+        description: "The two errors are easy to miss in a long run, and the total at the bottom is wrong rather than absent: 8 lines counted across four files, when there are 9 across five."
+        output: |2
+            2 logs/api.log
+            2 logs/app.log
+            1 logs/archive/2026-07.log
+            3 logs/error.log
+          wc: logs/last: No such file or directory
+          wc: week.log: No such file or directory
+            8 total
+        level: intermediate
+      - title: "Get the right count with NUL separation"
+        code: find logs -name "*.log" -print0 | sort -z | xargs -0 wc -l
+        description: "The same pipeline with `-print0` and `-0` reaches all five files, and the total is 9."
+        output: |2
+            2 logs/api.log
+            2 logs/app.log
+            1 logs/archive/2026-07.log
+            3 logs/error.log
+            1 logs/last week.log
+            9 total
+        level: intermediate
+      - title: "Find which files match a pattern"
+        code: find logs -name "*.log" -print0 | sort -z | xargs -0 grep -l ERROR
+        description: "[`grep -l`](/commands/grep/) prints the name of each file containing a match, and the spaced filename is one of them."
+        output: |2
+          logs/error.log
+          logs/last week.log
+        level: intermediate
+      - title: "Count matches per file"
+        code: find logs -name "*.log" -print0 | sort -z | xargs -0 grep -c ERROR
+        description: "`grep -c` reports a count for every file it is given, including the zeros."
+        output: |2
+          logs/api.log:0
+          logs/app.log:0
+          logs/archive/2026-07.log:0
+          logs/error.log:2
+          logs/last week.log:1
+        level: intermediate
+      - title: "Take NUL-separated input straight from grep"
+        code: grep -rlZ ERROR logs | sort -z | xargs -0 -n1 basename
+        description: "`grep -rlZ` emits NUL-terminated filenames, so `find` is not needed when the selection is by content."
+        output: |2
+          error.log
+          last week.log
+        level: advanced
+      - title: "Strip directories off a list of paths"
+        code: find logs -name "*.log" -print0 | sort -z | xargs -0 -n1 basename
+        description: "`basename` takes one path at a time, so `-n1` is required rather than optional here."
+        output: |2
+          api.log
+          app.log
+          2026-07.log
+          error.log
+          last week.log
+        level: intermediate
+      - title: "Collect the distinct directories in a tree"
+        code: find logs -type f -print0 | sort -z | xargs -0 -n1 dirname | sort -u
+        description: "`dirname` per file, then `sort -u`, gives the set of directories that actually contain files."
+        output: |2
+          logs
+          logs/archive
+        level: advanced
+      - title: "Watch a quote in the input stop xargs outright"
+        code: echo "it's here" | xargs echo
+        description: "Without `-0`, quotes and backslashes in the input are syntax to `xargs`, and an unbalanced one is fatal. This is the loud version of the splitting problem."
+        output: |2
+          xargs: unmatched single quote; by default quotes are special to xargs unless you use the -0 option
+        level: intermediate
+      - title: "Read input literally with -0"
+        code: printf "it's here\0" | xargs -0 echo
+        description: "`-0` takes every byte literally, so quotes and backslashes lose their special meaning along with whitespace."
+        output: |2
+          it's here
+        level: intermediate
+
+  - title: "Parallel runs with -P"
+    intro: "`-P` runs commands concurrently. Output from concurrent runs arrives in whatever order the runs finish, so every example here sorts its output to be reproducible."
+    examples:
+      - title: "Run up to four commands at a time"
+        code: xargs -P4 -I{} sh -c "echo {} done" < hosts.txt | sort
+        description: "`-P4` allows four concurrent children. The `sort` is not decoration: without it the order depends on which run finishes first."
+        output: |2
+          cache1.example.com done
+          db1.example.com done
+          web1.example.com done
+          web2.example.com done
+        level: advanced
+      - title: "Combine batching with parallelism"
+        code: 'seq 1 6 | xargs -n2 -P3 sh -c ''echo pair: $@'' _ | sort'
+        description: "Three concurrent runs of two items each. `-n` and `-P` compose, where `-I` and `-n` do not."
+        output: |2
+          pair: 1 2
+          pair: 3 4
+          pair: 5 6
+        level: advanced
+      - title: "Let xargs choose the parallelism"
+        code: seq 1 5 | xargs -n1 -P0 echo host | sort
+        description: "`-P0` runs as many at once as the system allows. Reasonable for short I/O-bound work, and a good way to overwhelm a machine with anything heavier."
+        output: |2
+          host 1
+          host 2
+          host 3
+          host 4
+          host 5
+        level: advanced
+      - title: "Keep batched output stable"
+        code: seq 1 4 | xargs -n2 -P2 echo | sort
+        description: "Each invocation writes one line, and sorting afterwards makes the result independent of which finished first."
+        output: |2
+          1 2
+          3 4
+        level: advanced
+
+  - title: "Seeing what will run"
+    intro: "`xargs` builds command lines you did not type, so being able to print them before they run is worth the two extra characters."
+    examples:
+      - title: "Print each command before running it"
+        code: xargs -t -n1 touch < packages.txt
+        description: "`-t` writes each command to standard error as it goes. `touch` prints nothing itself, so the trace is all the output here."
+        output: |2
+          touch curl
+          touch jq
+          touch rsync
+        level: intermediate
+      - title: "Trace a command built with a placeholder"
+        code: xargs -t -I{} mkdir -p backup/{} < packages.txt
+        description: "The trace shows the command after substitution, which is what you want to check before pointing the same pipeline at something destructive."
+        output: |2
+          mkdir -p backup/curl
+          mkdir -p backup/jq
+          mkdir -p backup/rsync
+        level: intermediate
+      - title: "Delete files, having seen the command first"
+        code: touch logs/old.bak logs/stale.bak && find logs -name "*.bak" -print0 | sort -z | xargs -0 -t rm && ls logs
+        description: "`rm` with `-t` prints exactly what it removed. Build any deletion this way, and run it once with `echo` in place of `rm` before you trust the file list."
+        danger: true
+        output: |2
+          rm logs/old.bak logs/stale.bak
+          api.log
+          app.log
+          archive
+          error.log
+          last week.log
+        level: advanced
+        tags: [files]
+      - title: "Discard the trace and keep the output"
+        code: xargs -n1 -t echo < packages.txt 2>/dev/null
+        description: "The trace goes to standard error and the command's own output to standard output, so the two can be separated when a script only wants one of them."
+        output: |2
+          curl
+          jq
+          rsync
+        level: advanced
+
+  - title: "Exit status and empty input"
+    intro: "`xargs` reports on the batch rather than passing through the status of any one command, and it runs the command once even when given nothing at all."
+    examples:
+      - title: "See the batch exit code after a command fails"
+        code: 'echo missing.txt | xargs wc -l; echo "exit: $?"'
+        description: "`wc` exited 1, and `xargs` reports 123, which is its code for \"something in the batch failed\"."
+        output: |2
+          wc: missing.txt: No such file or directory
+          exit: 123
+        level: intermediate
+      - title: "Confirm 123 does not depend on the command's own status"
+        code: 'printf "a\nb\n" | xargs -n1 sh -c "exit 1"; echo "exit: $?"'
+        description: "Both runs exited 1 and the batch still reports 123. A script testing `$?` against the command's own codes will not see them."
+        output: |2
+          exit: 123
+        level: advanced
+      - title: "Abort the whole batch from a command"
+        code: 'printf "a\nb\n" | xargs -n1 sh -c "exit 255"; echo "exit: $?"'
+        description: "Exiting 255 tells `xargs` to stop immediately rather than continue through the input, and it then exits 124. Useful for a command that knows the remaining work is pointless."
+        output: |2
+          xargs: sh: exited with status 255; aborting
+          exit: 124
+        level: advanced
+      - title: "Watch a command run with no arguments at all"
+        code: 'printf "" | xargs echo "nothing to do:"'
+        description: "Empty input still runs the command once. Harmless for `echo`, and not harmless for anything that treats \"no arguments\" as \"everything\"."
+        output: |2
+          nothing to do:
+        level: intermediate
+      - title: "Suppress the run when there is no input"
+        code: 'printf "" | xargs -r echo "nothing to do:"; echo "exit: $?"'
+        description: "`-r` skips the command entirely when input is empty, and still exits 0. It is a GNU extension, so a portable script tests for empty input itself."
+        output: |2
+          exit: 0
+        level: intermediate
+      - title: "Spell -r out in a script"
+        code: 'printf "" | xargs --no-run-if-empty echo "nothing to do:"; echo "exit: $?"'
+        description: "`--no-run-if-empty` is the same flag, and says what it does to anyone reading the script later."
+        output: |2
+          exit: 0
+        level: basic
+
+  - title: "Everyday pipelines"
+    intro: "Gluing a command that produces a list to one that wants arguments, which is most of what `xargs` gets used for."
+    examples:
+      - title: "Turn a column of a CSV into one argument list"
+        code: cut -d, -f1 users.csv | tail -n +2 | xargs
+        description: "[`cut`](/commands/cut/) selects the column, `tail -n +2` drops the header, and `xargs` collapses what is left onto one line."
+        output: |2
+          Alice Bob Carol Dave Erin Frank
+        level: intermediate
+      - title: "Run a command once per row"
+        code: 'cut -d, -f1 users.csv | tail -n +2 | xargs -n1 echo user:'
+        description: "The same pipeline with `-n1` becomes one invocation per name."
+        output: |2
+          user: Alice
+          user: Bob
+          user: Carol
+          user: Dave
+          user: Erin
+          user: Frank
+        level: intermediate
+      - title: "Build an address from each field"
+        code: awk -F, 'NR>1 {print $1}' users.csv | xargs -I{} echo "mail {}@example.com"
+        description: "[`awk`](/commands/awk/) does the field selection and the header skip in one step, and `-I` places the result inside a longer string."
+        output: |2
+          mail Alice@example.com
+          mail Bob@example.com
+          mail Carol@example.com
+          mail Dave@example.com
+          mail Erin@example.com
+          mail Frank@example.com
+        level: intermediate
+      - title: "Install a list of packages in one transaction"
+        code: xargs -n1 -a packages.txt echo installing
+        description: "Dropping the `-n1` and putting `apt install` in place of `echo` is the real form of this, and one transaction handles dependencies better than three do."
+        output: |2
+          installing curl
+          installing jq
+          installing rsync
+        level: intermediate
+        tags: [apt]
+      - title: "Strip the newline off a single value"
+        code: 'grep -c ERROR logs/error.log | xargs echo "error lines:"'
+        description: "A one-item pipeline into bare `xargs` is a common way to trim surrounding whitespace from a captured value."
+        output: |2
+          error lines: 2
+        level: intermediate
+        tags: [one-liners]
+      - title: "Back up every log file beside itself"
+        code: find logs -name "*.log" -print0 | sort -z | xargs -0 -I{} cp {} {}.bak && ls logs
+        description: "`-I` twice in one command gives the source and the destination. The spaced filename survives because `cp` receives it as a single argument."
+        output: |2
+          api.log
+          api.log.bak
+          app.log
+          app.log.bak
+          archive
+          error.log
+          error.log.bak
+          last week.log
+          last week.log.bak
+        level: advanced
+      - title: "Count files one at a time rather than in a batch"
+        code: find logs -name "*.log" -print0 | sort -z | xargs -0 -n1 wc -l
+        description: "`wc` pads its counts into a column when given several files and does not when given one, so `-n1` changes the shape of the output as well as the number of runs."
+        output: |2
+          2 logs/api.log
+          2 logs/app.log
+          1 logs/archive/2026-07.log
+          3 logs/error.log
+          1 logs/last week.log
+        level: advanced
+      - title: "Count the invocations a pipeline will make"
+        code: xargs -n1 echo < hosts.txt | wc -l
+        description: "Piping into [`wc -l`](/commands/wc/) before substituting the real command is a cheap way to find out how many times it is about to run."
+        output: |2
+          4
+        level: basic

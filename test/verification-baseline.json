@@ -167,6 +167,13 @@
     "fixtures": 3,
     "unpaired": 0
   },
+  "commands/xargs": {
+    "checked": 62,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 9,
+    "unpaired": 0
+  },
   "compare/apt-vs-apt-get": {
     "checked": 4,
     "byShape": 0,
@@ -190,6 +197,13 @@
   },
   "compare/sh-vs-bash-vs-dash": {
     "checked": 7,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
+  "concepts/environment-variables-and-path": {
+    "checked": 13,
     "byShape": 0,
     "exempt": 0,
     "fixtures": 0,

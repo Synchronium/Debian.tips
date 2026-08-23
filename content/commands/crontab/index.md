@@ -35,7 +35,9 @@ The most common failure mode is environment rather than syntax. A job that works
 you type it yourself can fail silently under cron, because cron runs commands with a minimal
 environment: no `.bashrc`, no interactive `$PATH`, none of the aliases or functions your shell
 normally has. Always use full paths to scripts and binaries inside a crontab, and set `PATH`
-explicitly at the top of the crontab if you rely on anything outside `/usr/bin` and `/bin`.
+explicitly at the top of the crontab if you rely on anything outside `/usr/bin` and `/bin`. See
+[environment variables and PATH](/concepts/environment-variables-and-path/) for where the
+interactive value you are comparing against comes from.
 
 By default `crontab` edits your own crontab. Root can manage anyone's with `-u <user>`; anyone
 else gets `must be privileged to use -u`. System-wide jobs that need to run as a specific user
