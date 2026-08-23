@@ -49,12 +49,11 @@ already marked cowsay manual before any of it could happen.
 
 So the order is a parameter. `alpha` stays the default and the reference, so that when a shuffled
 run fails and the default passes, the difference is the ordering rather than a regression. CI runs
-the
-full site twice on a push to `main`, `alpha` and `random:<commit sha>`, as two jobs on two runners:
-genuinely parallel, so it costs no wall clock and no CPU contention. Seeding from the commit means
-the permutation varies from commit to commit while re-running a job on the same commit rolls the
-same dice, so a failure is reproducible rather than flaky, and the run prints the argument that
-repeats it.
+the full site twice on a push to `main`, `alpha` and `random:<commit sha>`, as two jobs on two
+runners: genuinely parallel, so it costs no wall clock and no CPU contention. Seeding from the
+commit means the permutation varies from commit to commit while re-running a job on the same
+commit rolls the same dice, so a failure is reproducible rather than flaky, and the run prints
+the argument that repeats it.
 
 It is slower than it could be. A full replay is 215 seconds for 50 pages (2026-08-21). CI keeps
 pull requests short by replaying only what the diff touches, shuffled, since that costs nothing

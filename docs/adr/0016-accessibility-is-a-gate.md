@@ -25,8 +25,8 @@ Nobody maintains it by hand.
 ## Consequences
 
 A new category or a new page shape is covered the day it exists, rather than the day someone
-remembers to add it. The list is currently 19 URLs and grows with the site's shapes rather than with
-its page count.
+remembers to add it. The list is 19 URLs against 51 pages (2026-08-23), because it grows with the
+site's shapes rather than with its page count.
 
 Contrast is checked, which matters because two `github-light` Shiki token colours **fail WCAG AA
 against this site's light background** and are patched after rendering (`LIGHT_CONTRAST_FIXES` in

@@ -62,9 +62,9 @@ sanctioned way to turn a path into a link. The footer used to spell the URL out;
 **A third class of link, and neither existing gate can reach it.** ADR-0015 records two checks:
 `src/linkcheck.ts` resolves internal links against `dist/`, and `scripts/link-audit.ts` reasons
 about the page graph. Neither fetches anything, and neither should: a build that depends on
-github.com being up fails for reasons unrelated to the change. So a renamed setup
-script, or a page moved between categories, would put a dead link on every page carrying it, and
-nothing would notice.
+github.com being up fails for reasons unrelated to the change. So a renamed setup script, or a
+page moved between categories, would put a dead link on every page carrying it, and nothing
+would notice.
 
 `test/sourceLinks.test.ts` stands in for the check a link checker cannot run: it asserts every
 generated path resolves in the working tree, that the paths are repository-relative with forward
@@ -92,10 +92,10 @@ only to a counter on `/about/`.
 **A page's figures are a claim like any other.** They are counted from what the page carries, not
 from a replay run, since the build has no sandbox. That is the same basis `/about/` has always
 used, and it holds because the replay passes: the numbers are what the command *will* print.
-`test/pageChecks.test.ts` asserts the per-page figures fold up to
-the site totals, that each of the four sentence shapes is exercised by real content, and that
-by-shape is not quietly conflated with `volatile:`, two figures close enough in meaning to be
-merged by someone tidying up, and answering different questions.
+`test/pageChecks.test.ts` asserts that the per-page figures fold up to the site totals, that each
+of the four sentence shapes is exercised by real content, and that by-shape is not quietly
+conflated with `volatile:`, two figures close enough in meaning to be merged by someone tidying
+up, and answering different questions.
 
 **A page's provenance is now part of the page.** Moving content between categories, renaming a
 slug, or splitting a command page changes what the block says, and the test fails until the block

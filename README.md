@@ -17,8 +17,9 @@ figures counted from the content at build time.
 A static site generator built from scratch in TypeScript (no framework): Markdown + YAML content,
 validated against a Zod schema, rendered through hand-written templates, syntax-highlighted with
 Shiki (dual light/dark themes), and indexed for client-side search with Pagefind. Output is plain
-HTML/CSS/JS deployed to GitHub Pages: the only JavaScript a visitor downloads is Pagefind's search
-and a short script for the theme toggle and the copy buttons.
+HTML/CSS/JS deployed to GitHub Pages: the only JavaScript is a short script inlined into each page
+for the theme toggle and copy buttons, plus Pagefind's search bundle, fetched when someone opens
+the search dialog and not before.
 
 ## Local development
 
@@ -83,7 +84,7 @@ npm run replay -- wget curl # just these
 
 # the same thing one page at a time, if you want to keep the sandbox around
 name=$(scripts/sandbox.sh start)
-npx tsx scripts/replay-command-page.ts "$name" wc scripts/fixtures/wc.sh   # -> "wc (as root): 25/25 ..."
+npx tsx scripts/replay-command-page.ts "$name" wc scripts/fixtures/wc.sh   # prints that page's score
 scripts/sandbox.sh stop "$name"
 ```
 
