@@ -46,7 +46,7 @@ sections:
     intro: >-
       Everything after the options is the message, joined with spaces. With no message at all,
       `cowsay` reads standard input instead - which is the form that makes it a filter rather
-      than a toy, and the one the rest of this page is mostly about.
+      than a toy.
     examples:
       - title: Say a message
         code: cowsay 'Hello, world'

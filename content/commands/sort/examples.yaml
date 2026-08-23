@@ -328,7 +328,7 @@ sections:
         tags: [beginner]
       - title: "Sort NUL-separated input safely"
         code: find . -maxdepth 1 -name '*.txt' -print0 | sort -z
-        description: "`-z` reads and writes NUL-terminated records instead of newline-terminated ones - the correct pairing with `find -print0` and `xargs -0` for filenames that might contain newlines."
+        description: "`-z` reads and writes NUL-terminated records instead of newline-terminated ones - the correct pairing with `find -print0` and [`xargs -0`](/commands/xargs/) for filenames that might contain newlines."
         level: advanced
         tags: [beginner]
       - title: "Force byte-order sorting regardless of locale"

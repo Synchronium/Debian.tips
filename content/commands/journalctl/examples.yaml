@@ -221,7 +221,7 @@ sections:
         tags: [scripting]
 
   - title: "Following the log as it happens"
-    intro: "`-f` behaves like `tail -f`, printing new entries until you stop it with Ctrl-C."
+    intro: "`-f` behaves like [`tail -f`](/commands/tail/), printing new entries until you stop it with Ctrl-C."
     examples:
       - title: "Watch new entries arrive"
         code: journalctl -f

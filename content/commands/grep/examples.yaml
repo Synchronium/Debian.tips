@@ -69,7 +69,7 @@ fixtures:
       export const util = () => {};
 sections:
   - title: "Basic matching"
-    intro: "Plain-text searches, the bread and butter."
+    intro: "Plain-text searches, with no regex syntax involved yet."
     examples:
       - title: "Search a file for a string"
         code: grep "error" app.log
@@ -118,12 +118,12 @@ sections:
           2
         level: basic
       - title: "Count non-blank lines"
-        code: grep -c "^$" config.conf
+        code: grep -vc "^$" config.conf
         description: >-
-          An empty-pattern-for-blank-lines trick: `^$` matches only lines with
-          nothing between start and end. Here it's `0`, since the file has no blank lines.
+          `^$` matches only lines with nothing between start and end, so `-v` inverts that
+          to everything else. All 5 lines here have content, so none is excluded.
         output: |2
-          0
+          5
         level: intermediate
       - title: "Check for a match without printing anything"
         code: |-
@@ -154,8 +154,8 @@ sections:
           grep "error" no-such-file.log
           echo "exit=$?"
         description: >-
-          Exit status `2` means something actually went wrong (missing file, bad
-          option), different from the `1` a clean no-match returns. A script
+          Exit status `2` means something went wrong (missing file, bad option),
+          which is different from the `1` a clean no-match returns. A script
           that only checks `$? -ne 0` treats both the same; check for `2`
           specifically if you need to tell them apart.
         output: |2
@@ -373,7 +373,7 @@ sections:
         level: intermediate
       - title: "List filenames that contain a match"
         code: grep -l "error" *.log
-        description: "`-l` (`--files-with-matches`) prints filenames only, once each, instead of matching lines. Handy for `grep -l ... | xargs`."
+        description: "`-l` (`--files-with-matches`) prints filenames only, once each, instead of matching lines. Handy for `grep -l ... | xargs`, though [xargs](/commands/xargs/) explains why that pairing needs `-Z` and `-0` once a filename can contain a space."
         output: |2
           app.log
         level: intermediate

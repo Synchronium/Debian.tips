@@ -54,7 +54,7 @@ sections:
         tags: [scripting]
       - title: "Force a pseudo-terminal for a command that expects one"
         code: ssh -t user@deb1.example.com "sudo systemctl status ssh"
-        description: "ssh only allocates a pseudo-terminal automatically for an interactive login. Commands that need one, `sudo` prompting for a password, an interactive `top`, need `-t` explicitly when run as a one-off command."
+        description: "ssh only allocates a pseudo-terminal automatically for an interactive login. A command that needs one anyway, such as `sudo` prompting for a password or an interactive `top`, needs `-t` stated explicitly when run as a one-off."
         level: intermediate
   - title: "Key-based authentication"
     intro: "Generating a key pair, installing the public half on a server, and letting an agent hold the unlocked key for the session."
@@ -422,7 +422,7 @@ sections:
         tags: [performance]
       - title: "Close a multiplexed master connection"
         code: ssh -O exit deb1
-        description: "`-O exit` tells the control master to shut down, closing every session still riding on it. Useful after changing a key or config value that a live multiplexed connection would otherwise keep using stale."
+        description: "`-O exit` tells the control master to shut down, closing every session still riding on it. Useful after changing a key or a config value, which a live multiplexed connection would otherwise carry on using."
         level: advanced
         tags: [performance]
   - title: "Agent and X11 forwarding"

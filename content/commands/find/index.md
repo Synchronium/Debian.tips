@@ -65,9 +65,10 @@ Three ways to act on matches, in order of how much you should trust yourself wit
 
 ## Filenames with spaces and newlines
 
-Piping `find`'s default newline-separated output into a loop or `xargs` breaks the moment a
-filename contains a space or newline. `-print0` separates matches with a NUL byte instead, which
-can't appear in a filename; pair it with `xargs -0` or `while IFS= read -r -d '' f`. This isn't
+Piping `find`'s default newline-separated output into a loop or [`xargs`](/commands/xargs/)
+breaks the moment a filename contains a space or newline. `-print0` separates matches with a NUL
+byte instead, which can't appear in a filename; pair it with `xargs -0` or
+`while IFS= read -r -d '' f`. This isn't
 a hypothetical edge case. It bites the first time your script meets a file like `Meeting Notes
 (final).docx`. [Bulk rename a batch of files](/recipes/bulk-rename-files/) is that pairing
 written out in full, for a job where getting it wrong renames the wrong thing.
