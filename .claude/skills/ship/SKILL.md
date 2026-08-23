@@ -45,9 +45,9 @@ it to 413s. Both of those pages stand up a local apt repository and wait for it,
 gives under load. A replay that says a true page is lying is worse than a slow one, and it is the one
 result on this project nobody can afford to start discounting.
 
-The replay needs Docker and takes about a minute, which is why it is a separate CI job and not
-part of `check`. A green `check` says the generator works; only the replay says the pages are
-true.
+The replay needs Docker and is much the slower of the two, which is why it is a separate CI job
+and not part of `check`. A green `check` says the generator works; only the replay says the pages
+are true.
 
 ## 2. Write the commit message this repo writes
 
@@ -57,6 +57,10 @@ was verified and how. A bump in the count of passing examples is not a commit me
 
 If the change was prompted by something breaking, say what broke and how it was proven fixed.
 If a claim was checked in the sandbox, say so. If something was left undone, say that too.
+
+A message written that way is several paragraphs of prose that GitHub publishes beside the code,
+so `.claude/reference/voice.md` applies to it. The closer is the one to watch, since a commit
+message invites a final sentence that restates the change as a lesson.
 
 End with the trailer:
 

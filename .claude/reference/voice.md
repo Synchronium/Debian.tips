@@ -3,12 +3,21 @@
 What this site's prose sounds like, and what it must not sound like.
 
 It applies to **every sentence this repository publishes**: page bodies and headings under
-`content/`, `README.md`, `docs/adr/`, this document and its neighbours, and **code comments**,
-which ADR-0017 puts one click away from every page they helped produce.
+`content/`, example captions and section intros, `README.md`, `docs/adr/`, this document and its
+neighbours, **code comments**, which ADR-0017 puts one click away from every page they helped
+produce, and **commit messages**, which this project writes at length and GitHub publishes beside
+the code.
 
-It does not apply to example captions, `tagline`, frontmatter `description`, `volatile:` notes, or
-anything inside an `output:` block. Those are labels and captured text, and they are fine as they
-are.
+The one exception is text that was captured rather than written. Anything inside an `output:` or
+`fixtures:` block is what a command printed, and editing it for style would be falsifying it.
+
+**A caption is a hard case, not an exempt one.** `title`, `tagline` and frontmatter `description`
+are short and constrained, so most of §4 has no room to appear in them, but §3 and §5 hold
+everywhere: a tagline can still assert significance instead of showing it. An example
+`description` is a sentence or three of ordinary prose and is held to all of this. Note that the
+existing corpus was audited across its page bodies but only partially across its captions, so a
+caption that reads like a section closer is more likely to predate this document than to be
+sanctioned by it.
 
 ## 1. Permission
 
