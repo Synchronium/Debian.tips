@@ -10,7 +10,7 @@ fixtures:
           Port 2222
           IdentityFile ~/.ssh/id_ed25519
   - name: "~/.ssh/known_hosts"
-    note: "two saved host keys, for the lookup and removal examples — host keys are public, so nothing secret is shown"
+    note: "two saved host keys, for the lookup and removal examples - host keys are public, so nothing secret is shown"
     from: "cut -c1-72 ~/.ssh/known_hosts"
     content: |
       |1|54lfM/zb+rQclYh4kZPZwbDAJXY=|0nF4Tq2N1xiwJDS540Be7ylsvKU= ssh-ed25519

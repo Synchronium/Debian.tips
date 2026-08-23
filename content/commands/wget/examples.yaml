@@ -1,7 +1,7 @@
 command: wget
 fixtures:
   - name: "the local test server"
-    note: "start it with `python3 http-mock.py` before running the examples — the script is in the site repo at `scripts/fixtures/http-mock.py`, and the `curl` page uses the same one"
+    note: "start it with `python3 http-mock.py` before running the examples - the script is in the site repo at `scripts/fixtures/http-mock.py`, and the `curl` page uses the same one"
     from: "curl -s http://127.0.0.1:8080/"
     content: |
       Local test server for the curl and wget pages.

@@ -71,7 +71,7 @@ fixtures:
       xCCCa
       xBBBz
   - name: setA.txt / setB.txt
-    note: "two overlapping sets, for the comm example — b and a are in both"
+    note: "two overlapping sets, for the comm example - b and a are in both"
     from: "tail -n +1 setA.txt setB.txt"
     content: |
       ==> setA.txt <==
@@ -119,7 +119,7 @@ sections:
         tags: [beginner]
       - title: "Watch plain numbers sort wrong without -n"
         code: sort numbers.txt
-        description: "10 comes before 2 here because '1' is a smaller character than '2' — sort has no idea these are meant to be numbers."
+        description: "10 comes before 2 here because '1' is a smaller character than '2' - sort has no idea these are meant to be numbers."
         output: |
           10
           2
@@ -164,16 +164,16 @@ sections:
       - title: "The mistake: -h without picking the size field"
         code: sort -h sizes.txt
         description: >-
-          Without `-k2`, `sort -h` compares from the start of each line — the filename — which isn't
+          Without `-k2`, `sort -h` compares from the start of each line - the filename - which isn't
           a number at all, so this silently falls back to sorting alphabetically by filename
           instead of by size. Verified: this produces access.log, backup.sql, notes.txt,
-          photos.tar.gz, report.txt — alphabetical order, not size order.
+          photos.tar.gz, report.txt - alphabetical order, not size order.
         danger: true
         level: advanced
         tags: [beginner]
       - title: "Sort filenames with embedded numbers correctly"
         code: printf 'file10.txt\nfile2.txt\nfile1.txt\n' | sort -V
-        description: "`-V` (version sort) treats digit runs as numbers, so file2.txt sorts before file10.txt instead of after it — the opposite of what plain sort would do."
+        description: "`-V` (version sort) treats digit runs as numbers, so file2.txt sorts before file10.txt instead of after it - the opposite of what plain sort would do."
         output: |
           file1.txt
           file2.txt
@@ -203,7 +203,7 @@ sections:
         tags: [beginner]
       - title: "Same scoreboard, highest first"
         code: sort -k3 -rn scores.txt
-        description: "`-r` reverses whatever order the rest of the flags produce — combine it with `-n` rather than trying to sort ascending and pipe through `tac`."
+        description: "`-r` reverses whatever order the rest of the flags produce - combine it with `-n` rather than trying to sort ascending and pipe through `tac`."
         output: |
           Team Gamma 100
           Team Alpha 89
@@ -225,7 +225,7 @@ sections:
         tags: [beginner]
       - title: "Sort by one field, then break ties with another"
         code: (head -1 users.csv; tail -n +2 users.csv | sort -t, -k3,3 -k2,2n)
-        description: "Two `-k` options apply in order: group by department (field 3) first, then sort each group by age (field 2) numerically. `-k3,3` means 'field 3 to field 3' — without the end bound, `-k3` alone would sort by field 3 through the end of the line."
+        description: "Two `-k` options apply in order: group by department (field 3) first, then sort each group by age (field 2) numerically. `-k3,3` means 'field 3 to field 3' - without the end bound, `-k3` alone would sort by field 3 through the end of the line."
         output: |
           name,age,department
           Frank,31,Engineering
@@ -248,7 +248,7 @@ sections:
     examples:
       - title: "Sort and deduplicate in one pass"
         code: sort -u wordlist.txt
-        description: "`-u` drops duplicate lines after sorting — cheaper than `sort | uniq` when you don't need the two steps separately, and it needs the file sorted anyway."
+        description: "`-u` drops duplicate lines after sorting - cheaper than `sort | uniq` when you don't need the two steps separately, and it needs the file sorted anyway."
         output: |
           Cherry
           Elderberry
@@ -260,11 +260,11 @@ sections:
         tags: [beginner]
       - title: "The same thing, long-form flag"
         code: sort --unique wordlist.txt
-        description: "`--unique` is the exact same flag as `-u` — useful to know when reading someone else's script that spells it out."
+        description: "`--unique` is the exact same flag as `-u` - useful to know when reading someone else's script that spells it out."
         level: basic
       - title: "Sort a file in place safely"
         code: sort -u -o wordlist.txt wordlist.txt
-        description: "`-o` lets the output filename be the same as the input — sort reads the whole file into memory before opening the output, so this doesn't truncate the input out from under itself the way sort wordlist.txt > wordlist.txt would. It prints nothing: the result goes to the file."
+        description: "`-o` lets the output filename be the same as the input - sort reads the whole file into memory before opening the output, so this doesn't truncate the input out from under itself the way sort wordlist.txt > wordlist.txt would. It prints nothing: the result goes to the file."
         level: intermediate
         tags: [beginner]
       - title: "Reverse the sort order"
@@ -284,7 +284,7 @@ sections:
         tags: [beginner]
       - title: "Merge two files that are already sorted"
         code: sort -m -n numbers-sorted.txt other-sorted.txt
-        description: "`-m` merges pre-sorted inputs without re-sorting each one from scratch — much cheaper than cat-ing them together and sorting the result, on large files."
+        description: "`-m` merges pre-sorted inputs without re-sorting each one from scratch - much cheaper than cat-ing them together and sorting the result, on large files."
         output: |
           1
           2
@@ -300,25 +300,25 @@ sections:
     examples:
       - title: "Check whether a file is already sorted"
         code: sort -c numbers.txt
-        description: "`-c` prints nothing and exits 0 if the file is already in sorted order for the comparison rules given — here, default lexicographic order, under which 10, 2, 33, 4 happens to already qualify."
+        description: "`-c` prints nothing and exits 0 if the file is already in sorted order for the comparison rules given - here, default lexicographic order, under which 10, 2, 33, 4 happens to already qualify."
         level: intermediate
         tags: [beginner]
       - title: "Check with the comparison rule that actually matches the data"
         code: sort -cn numbers.txt
         description: >-
           Same file, checked numerically instead: reports exactly where it breaks. This is the
-          check that actually matters for a file of numbers — `-c` alone checked the wrong thing.
+          check that actually matters for a file of numbers - `-c` alone checked the wrong thing.
         output: |
           sort: numbers.txt:2: disorder: 2
         level: intermediate
       - title: "Write sorted output to a new file"
         code: sort -o wordlist-sorted.txt wordlist.txt
-        description: "`-o` is the safe way to 'sort in place' — `sort > wordlist.txt` would truncate the file before reading it, destroying the input. `-o` opens the output only after reading the input fully, so input and output can even be the same filename."
+        description: "`-o` is the safe way to 'sort in place' - `sort > wordlist.txt` would truncate the file before reading it, destroying the input. `-o` opens the output only after reading the input fully, so input and output can even be the same filename."
         level: intermediate
         tags: [beginner]
       - title: "Sort output from another command"
         code: find . -maxdepth 1 -name 'numbers*' | sort
-        description: "sort reads stdin when no filename is given, same as most Unix text tools — the standard way to get find's arbitrary directory-walk order into something predictable."
+        description: "sort reads stdin when no filename is given, same as most Unix text tools - the standard way to get find's arbitrary directory-walk order into something predictable."
         output: |
           ./numbers-pair.txt
           ./numbers-sci.txt
@@ -328,12 +328,12 @@ sections:
         tags: [beginner]
       - title: "Sort NUL-separated input safely"
         code: find . -maxdepth 1 -name '*.txt' -print0 | sort -z
-        description: "`-z` reads and writes NUL-terminated records instead of newline-terminated ones — the correct pairing with `find -print0` and `xargs -0` for filenames that might contain newlines."
+        description: "`-z` reads and writes NUL-terminated records instead of newline-terminated ones - the correct pairing with `find -print0` and `xargs -0` for filenames that might contain newlines."
         level: advanced
         tags: [beginner]
       - title: "Force byte-order sorting regardless of locale"
         code: LC_ALL=C sort wordlist.txt
-        description: "Sort order can change between locales (some locales fold case or ignore punctuation differently by default). LC_ALL=C forces plain byte-value comparison — the reproducible choice for scripts, even on a system whose default locale sorts differently."
+        description: "Sort order can change between locales (some locales fold case or ignore punctuation differently by default). LC_ALL=C forces plain byte-value comparison - the reproducible choice for scripts, even on a system whose default locale sorts differently."
         output: |
           Cherry
           Elderberry
@@ -361,7 +361,7 @@ sections:
         tags: [sysadmin]
       - title: "Sort on part of a field, not the whole thing"
         code: sort -k1.2,1.4 data.txt
-        description: "1.2,1.4 means field 1, characters 2 through 4 — sorts on a slice inside a field rather than the field boundary. Here it sorts by the 3-letter code embedded after a fixed 1-character prefix."
+        description: "1.2,1.4 means field 1, characters 2 through 4 - sorts on a slice inside a field rather than the field boundary. Here it sorts by the 3-letter code embedded after a fixed 1-character prefix."
         output: |
           xAAAy
           xBBBz
@@ -369,7 +369,7 @@ sections:
         level: advanced
       - title: "Keep equal-key rows in their original relative order"
         code: sort -s -t, -k2,2 people.csv
-        description: "Default sort doesn't guarantee what happens to rows that compare equal — `-s` (`--stable`) guarantees ties keep their original relative order, which matters when you sort by one field but still care about a secondary implicit order."
+        description: "Default sort doesn't guarantee what happens to rows that compare equal - `-s` (`--stable`) guarantees ties keep their original relative order, which matters when you sort by one field but still care about a secondary implicit order."
         output: |
           Carol,Eng
           Alice,Eng
@@ -378,7 +378,7 @@ sections:
         level: advanced
       - title: "Sort a tab-separated file"
         code: sort -t$'\t' -k2 data.tsv
-        description: "`$'\\t'` is bash's way of writing a literal tab in a single-quoted-feeling argument — plain `-t '	'` works too but is easy to mistype invisibly."
+        description: "`$'\\t'` is bash's way of writing a literal tab in a single-quoted-feeling argument - plain `-t '	'` works too but is easy to mistype invisibly."
         output: |
           b	a
           a	z
@@ -393,7 +393,7 @@ sections:
         level: advanced
       - title: "Deduplicate by one field, keeping one row per key"
         code: sort -t, -k2,2 -u people.csv
-        description: "`-u` after a `-k` range dedupes on just that field, not the whole line — one row per distinct field-2 value survives (whichever sorts first once the rest of the line is compared as the tiebreak)."
+        description: "`-u` after a `-k` range dedupes on just that field, not the whole line - one row per distinct field-2 value survives (whichever sorts first once the rest of the line is compared as the tiebreak)."
         output: |
           Carol,Eng
           Bob,Sales
@@ -408,7 +408,7 @@ sections:
         level: advanced
       - title: "See exactly what sort is comparing and why"
         code: sort -n --debug numbers-pair.txt
-        description: "`--debug` annotates the comparison it performed under each line — invaluable when a sort order looks wrong and you can't tell whether it's reading the field, locale, or numeric parsing you expect."
+        description: "`--debug` annotates the comparison it performed under each line - invaluable when a sort order looks wrong and you can't tell whether it's reading the field, locale, or numeric parsing you expect."
         output: |
           sort: text ordering performed using simple byte comparison
           sort: numbers use '.' as a decimal point in this locale
@@ -421,11 +421,11 @@ sections:
         level: advanced
 
   - title: "Sorting real log and system data"
-    intro: "Applying `-k` to data you didn't design yourself — a web server access log with quoted fields."
+    intro: "Applying `-k` to data you didn't design yourself - a web server access log with quoted fields."
     examples:
       - title: "Group log entries by HTTP status code"
         code: sort -k8 -n access.log
-        description: "Field 8 in a standard combined log line is the status code — the quoted request eats fields 5–7, so counting whitespace-separated fields by hand (not by meaning) is what actually finds it."
+        description: "Field 8 in a standard combined log line is the status code - the quoted request eats fields 5–7, so counting whitespace-separated fields by hand (not by meaning) is what actually finds it."
         output: |
           192.0.2.44 - - [13/Aug/2026:09:16:04] "GET /dashboard HTTP/1.1" 200 4021
           192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
@@ -450,7 +450,7 @@ sections:
         tags: [monitoring, beginner]
       - title: "Sort IPv4 addresses in actual numeric order"
         code: sort -t. -k1,1n -k2,2n -k3,3n -k4,4n access.log
-        description: "Four chained `-k` options, one per octet, each numeric. Plain sort on IPs compares them as text and gets 10.x ahead of 9.x — this is the fix."
+        description: "Four chained `-k` options, one per octet, each numeric. Plain sort on IPs compares them as text and gets 10.x ahead of 9.x - this is the fix."
         level: advanced
         tags: [networking]
 
@@ -505,7 +505,7 @@ sections:
           apple
           mango
           EOF
-        description: "sort reads stdin exactly the same whether it's piped, redirected from a file, or fed by a heredoc — useful when the data to sort is generated inline in a script."
+        description: "sort reads stdin exactly the same whether it's piped, redirected from a file, or fed by a heredoc - useful when the data to sort is generated inline in a script."
         output: |
           apple
           mango
@@ -514,12 +514,12 @@ sections:
         tags: [scripting]
       - title: "Confirm sort -u and sort | uniq agree"
         code: diff <(sort -u wordlist.txt) <(sort wordlist.txt | uniq)
-        description: "No output and exit 0 means the two files are identical — confirms `-u` is a safe shortcut for `sort | uniq` when you don't need the two steps split apart in a pipeline."
+        description: "No output and exit 0 means the two files are identical - confirms `-u` is a safe shortcut for `sort | uniq` when you don't need the two steps split apart in a pipeline."
         level: advanced
         tags: [beginner]
       - title: "Get the smallest value in a list"
         code: sort -n numbers.txt | head -n 1
-        description: "`sort` plus `head -n 1` is the standard shell idiom for a minimum — there's no separate 'min' utility."
+        description: "`sort` plus `head -n 1` is the standard shell idiom for a minimum - there's no separate 'min' utility."
         output: |
           2
         level: basic
@@ -533,14 +533,14 @@ sections:
         tags: [beginner]
       - title: "Count how many distinct values there are"
         code: sort -u wordlist.txt | wc -l
-        description: "Sort down to unique lines, then count them — the fastest way to answer 'how many different values' without writing a script."
+        description: "Sort down to unique lines, then count them - the fastest way to answer 'how many different values' without writing a script."
         output: |
           6
         level: basic
         tags: [beginner, one-liners]
       - title: "Compare two sorted sets to see what's only in one"
         code: comm -3 <(sort setA.txt) <(sort setB.txt)
-        description: "comm isn't sort, but it requires sorted input to work correctly — a common reason to run sort even when the sorted order itself isn't what you want to keep. -3 suppresses lines common to both, leaving only what's unique to each side."
+        description: "comm isn't sort, but it requires sorted input to work correctly - a common reason to run sort even when the sorted order itself isn't what you want to keep. -3 suppresses lines common to both, leaving only what's unique to each side."
         output: |
           c
           	d
@@ -551,7 +551,7 @@ sections:
     examples:
       - title: "Use multiple CPU cores for the sort"
         code: sort --parallel=2 -n numbers.txt
-        description: "`--parallel` caps how many sort threads run at once — helps on large files, does nothing measurable on a file this small."
+        description: "`--parallel` caps how many sort threads run at once - helps on large files, does nothing measurable on a file this small."
         output: |
           2
           4
@@ -571,7 +571,7 @@ sections:
         tags: [performance]
       - title: "Compress the temporary files a large external sort spills to disk"
         code: sort --compress-program=gzip -n numbers.txt
-        description: "Only matters once a sort is big enough to spill to disk (see `-S` above) — compressing those temporary files trades CPU time for disk I/O on genuinely large sorts."
+        description: "Only matters once a sort is big enough to spill to disk (see `-S` above) - compressing those temporary files trades CPU time for disk I/O on genuinely large sorts."
         output: |
           2
           4

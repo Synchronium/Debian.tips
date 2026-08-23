@@ -1,7 +1,7 @@
 command: journalctl
 fixtures:
   - name: "what is in the journal for these examples"
-    note: "a failing `backup-sync.service`, plus three entries tagged `deploy-agent` at different priorities — written fresh before each example, so they are always the most recent entries"
+    note: "a failing `backup-sync.service`, plus three entries tagged `deploy-agent` at different priorities - written fresh before each example, so they are always the most recent entries"
     from: "journalctl -t deploy-agent -n 3 --no-pager -o cat; journalctl -u backup-sync -n 3 --no-pager -o cat"
     content: |
       deploy 4a91c2 finished in 4.2s
@@ -90,7 +90,7 @@ sections:
         tags: [sysadmin]
       - title: "Filter by the program's name rather than its unit"
         code: journalctl -t deploy-agent -n 3 --no-pager -o cat
-        description: "`-t` (`--identifier`) matches the syslog identifier — the name the program logged under, which is not always the unit's. Use it for anything logging through `logger` or `systemd-cat`."
+        description: "`-t` (`--identifier`) matches the syslog identifier - the name the program logged under, which is not always the unit's. Use it for anything logging through `logger` or `systemd-cat`."
         output: |2
           deploy 4a91c2 finished in 4.2s
           retrying upload, attempt 2 of 3
@@ -199,7 +199,7 @@ sections:
         tags: [sysadmin]
       - title: "Print entries as JSON for another program to read"
         code: journalctl -t deploy-agent -n 1 --no-pager -o json | grep -o '"MESSAGE":"[^"]*"'
-        description: "`-o json` emits one object per entry with every field the journal holds — cursors, boot ids, the lot. Extract the field you want rather than reading it whole. `grep -o` is fine for one field on one line; [jq](/commands/jq/) is what you want the moment the query gets more interesting than that."
+        description: "`-o json` emits one object per entry with every field the journal holds - cursors, boot ids, the lot. Extract the field you want rather than reading it whole. `grep -o` is fine for one field on one line; [jq](/commands/jq/) is what you want the moment the query gets more interesting than that."
         output: |2
           "MESSAGE":"upload failed: no space left on device"
         level: advanced

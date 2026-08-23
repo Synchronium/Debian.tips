@@ -54,7 +54,7 @@ fixtures:
       carol
       dave
   - name: "projects/"
-    note: "a small tree for the recursive examples — two of the three files contain a TODO"
+    note: "a small tree for the recursive examples - two of the three files contain a TODO"
     from: "tail -n +1 projects/app/README.md projects/app/src/main.ts projects/app/src/util.ts"
     content: |
       ==> projects/app/README.md <==

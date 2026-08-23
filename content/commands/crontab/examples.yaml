@@ -1,7 +1,7 @@
 command: crontab
 fixtures:
   - name: mycron.txt
-    note: "the file the install and syntax-check examples read — a comment header plus five jobs"
+    note: "the file the install and syntax-check examples read - a comment header plus five jobs"
     content: |
       # m h  dom mon dow   command
       0 3 * * * /usr/bin/find /var/log -name '*.log' -mtime +7 -delete
@@ -47,7 +47,7 @@ sections:
         level: basic
       - title: "Remove your crontab entirely"
         code: crontab -r
-        description: "Deletes the whole crontab in one step, no confirmation, no undo. Only removes jobs — never touches the scripts those jobs point to."
+        description: "Deletes the whole crontab in one step, no confirmation, no undo. Only removes jobs - never touches the scripts those jobs point to."
         danger: true
         level: basic
       - title: "Confirm what -r just did"
@@ -70,7 +70,7 @@ sections:
         level: basic
       - title: "Install a crontab from stdin"
         code: cat mycron.txt | crontab -
-        description: "Same replace semantics as passing a filename, but reads from stdin — the shape you want when generating a crontab in a script."
+        description: "Same replace semantics as passing a filename, but reads from stdin - the shape you want when generating a crontab in a script."
         level: intermediate
         tags: [scripting]
       - title: "Check a crontab file's syntax without installing it"
@@ -113,7 +113,7 @@ sections:
         level: basic
       - title: "Twice an hour, at :15 and :45"
         code: "15,45 * * * * /usr/local/bin/twice-hourly.sh"
-        description: "Lists work on any field, not just hour — this fires at quarter-past and quarter-to every hour."
+        description: "Lists work on any field, not just hour - this fires at quarter-past and quarter-to every hour."
         level: intermediate
       - title: "Once a year"
         code: 0 0 1 1 * /usr/local/bin/new-year.sh
@@ -121,7 +121,7 @@ sections:
         level: intermediate
       - title: "Day-of-month and day-of-week combine with OR, not AND"
         code: 0 0 1 * 1 /usr/local/bin/first-or-monday.sh
-        description: "When both day-of-month and day-of-week are restricted (not `*`), the job runs if either matches — here, the 1st of the month, or any Monday. Easy to misread as 'the first Monday.'"
+        description: "When both day-of-month and day-of-week are restricted (not `*`), the job runs if either matches - here, the 1st of the month, or any Monday. Easy to misread as 'the first Monday.'"
         level: advanced
         tags: [beginner]
       - title: "Use month or weekday names instead of numbers"
@@ -130,7 +130,7 @@ sections:
         level: intermediate
       - title: "Run a command directly, no wrapper script"
         code: 0 4 * * * find /var/log -name "*.log" -mtime +30 -delete
-        description: "The command field is handed to `/bin/sh -c` verbatim — pipes, redirects, and multiple commands all work exactly as they would in a shell script."
+        description: "The command field is handed to `/bin/sh -c` verbatim - pipes, redirects, and multiple commands all work exactly as they would in a shell script."
         level: intermediate
 
   - title: "Special time strings"
@@ -138,7 +138,7 @@ sections:
     examples:
       - title: "Run once at startup"
         code: "@reboot /usr/local/bin/startup-check.sh"
-        description: "Fires once when cron itself starts — in practice, once per boot. Doesn't wait for other services; add your own readiness check if the job depends on one."
+        description: "Fires once when cron itself starts - in practice, once per boot. Doesn't wait for other services; add your own readiness check if the job depends on one."
         level: basic
       - title: "Run once a day"
         code: "@daily /usr/local/bin/daily-digest.sh"
@@ -195,14 +195,14 @@ sections:
         code: |-
           crontab mycron.txt
           sudo stat -c '%A %U:%G %n' /var/spool/cron/crontabs/*
-        description: "One file per user who has a crontab, named after the username, owned root:crontab, mode 600. Never edit these directly — always go through crontab so cron notices the change."
+        description: "One file per user who has a crontab, named after the username, owned root:crontab, mode 600. Never edit these directly - always go through crontab so cron notices the change."
         output: |2
           -rw------- root:crontab /var/spool/cron/crontabs/root
         level: advanced
         tags: [permissions]
 
   - title: "Environment and PATH inside cron"
-    intro: "cron runs jobs with a deliberately minimal environment — not the one your interactive shell has."
+    intro: "cron runs jobs with a deliberately minimal environment - not the one your interactive shell has."
     examples:
       - title: "See how thin cron's PATH really is"
         code: "* * * * * env > /tmp/cron-env.txt"
@@ -240,7 +240,7 @@ sections:
         level: intermediate
       - title: "Silence a noisy job's mail without touching the script"
         code: "*/5 * * * * /usr/local/bin/heartbeat.sh > /dev/null 2>&1"
-        description: "Redirect both streams in the crontab line itself rather than editing the script — the fastest fix for 'why am I getting a mail every 5 minutes.'"
+        description: "Redirect both streams in the crontab line itself rather than editing the script - the fastest fix for 'why am I getting a mail every 5 minutes.'"
         level: basic
         tags: [beginner]
       - title: "The classic silent failure: an unescaped % in the command"
@@ -268,11 +268,11 @@ sections:
         tags: [beginner]
       - title: "Prevent a slow job from overlapping with its own next run"
         code: 0 1 * * * flock -n /tmp/backup.lock /usr/local/bin/backup.sh
-        description: "`flock -n` takes a lock and exits immediately (rather than waiting) if another instance already holds it — so if last night's backup is still running, tonight's invocation just skips instead of piling up."
+        description: "`flock -n` takes a lock and exits immediately (rather than waiting) if another instance already holds it - so if last night's backup is still running, tonight's invocation just skips instead of piling up."
         level: advanced
       - title: "Find where cron itself is logging"
         code: grep -i cron /var/log/syslog | tail -5
-        description: "cron logs each job it starts, plus crontab install/remove events, to syslog — separate from whatever the job's own command writes."
+        description: "cron logs each job it starts, plus crontab install/remove events, to syslog - separate from whatever the job's own command writes."
         output: |
           2026-08-13T20:33:54+00:00 host cron[845]: (CRON) INFO (pidfile fd = 3)
           2026-08-13T20:33:54+00:00 host cron[846]: (CRON) STARTUP (fork ok)
@@ -288,7 +288,7 @@ sections:
         tags: [systemd]
 
   - title: "System-wide cron"
-    intro: "`/etc/crontab` and `/etc/cron.d/` run as root by default but, unlike a per-user crontab, name the user to run as in an extra field — and you edit them directly, not through crontab."
+    intro: "`/etc/crontab` and `/etc/cron.d/` run as root by default but, unlike a per-user crontab, name the user to run as in an extra field - and you edit them directly, not through crontab."
     examples:
       - title: "Read the system crontab"
         code: cat /etc/crontab
@@ -320,17 +320,17 @@ sections:
         tags: [sysadmin]
       - title: "Add a system job as a drop-in file"
         code: sudo tee /etc/cron.d/backup-nightly <<< '0 3 * * * root /usr/local/bin/backup.sh'
-        description: "Each file in `/etc/cron.d/` is a mini crontab in its own right — same six fields (five time fields plus user), no need to touch `/etc/crontab` directly. Picked up automatically, no reload required. [tee](/commands/tee/) is here rather than a redirect because `sudo` does not extend to the shell's `>`."
+        description: "Each file in `/etc/cron.d/` is a mini crontab in its own right - same six fields (five time fields plus user), no need to touch `/etc/crontab` directly. Picked up automatically, no reload required. [tee](/commands/tee/) is here rather than a redirect because `sudo` does not extend to the shell's `>`."
         level: intermediate
         tags: [sysadmin]
       - title: "Drop a script into the daily run instead of scheduling it yourself"
         code: sudo install -m 755 cleanup.sh /etc/cron.daily/cleanup
-        description: "`run-parts` executes every executable file in `/etc/cron.daily/` once a day (via anacron on Debian, which also catches up on missed runs after downtime — a per-user crontab can't do that). No file extension, no scheduling syntax to get wrong."
+        description: "`run-parts` executes every executable file in `/etc/cron.daily/` once a day (via anacron on Debian, which also catches up on missed runs after downtime - a per-user crontab can't do that). No file extension, no scheduling syntax to get wrong."
         level: intermediate
         tags: [sysadmin]
       - title: "See what's already scheduled to run daily"
         code: ls /etc/cron.daily/
-        description: "Package installs commonly drop their own maintenance scripts here — log rotation, package index updates, man-db's search index."
+        description: "Package installs commonly drop their own maintenance scripts here - log rotation, package index updates, man-db's search index."
         volatile: "which jobs are here depends on what you have installed"
         output: |2
           apt-compat
@@ -343,7 +343,7 @@ sections:
     examples:
       - title: "Confirm the cron daemon is actually running"
         code: systemctl status cron
-        description: "No jobs fire at all if the daemon itself isn't up — worth ruling out first, before suspecting the crontab syntax."
+        description: "No jobs fire at all if the daemon itself isn't up - worth ruling out first, before suspecting the crontab syntax."
         level: basic
         tags: [beginner, systemd]
       - title: "Restart cron after editing a system crontab by hand"
@@ -358,6 +358,6 @@ sections:
         tags: [beginner]
       - title: "Check whether cron.allow or cron.deny is blocking a user"
         code: cat /etc/cron.allow /etc/cron.deny 2>/dev/null
-        description: "If cron.allow exists, only users listed in it may use crontab at all — everyone else gets a permission error before syntax is ever considered. Neither file exists by default on Debian, which allows all users."
+        description: "If cron.allow exists, only users listed in it may use crontab at all - everyone else gets a permission error before syntax is ever considered. Neither file exists by default on Debian, which allows all users."
         level: advanced
         tags: [permissions]

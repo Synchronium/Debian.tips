@@ -6,12 +6,12 @@ sections:
       None of these change anything, so none need `sudo`. All of them read the local cache built
       by `apt update` rather than asking the repositories directly. The examples on this page act
       on [`cowsay`](/commands/cowsay/) throughout, because it is small, it is
-      `Architecture: all` — so its output is identical on every machine — and removing it breaks
+      `Architecture: all` - so its output is identical on every machine - and removing it breaks
       nothing.
     examples:
       - title: Search for a package by name and description
         code: apt search 'talking cow' | head -6
-        description: Full-text search across names *and* descriptions — neither package here is called "talking cow". It matches generously, so pipe it through [`head`](/commands/head/).
+        description: Full-text search across names *and* descriptions - neither package here is called "talking cow". It matches generously, so pipe it through [`head`](/commands/head/).
         level: basic
         output: |2
           Sorting...
@@ -22,7 +22,7 @@ sections:
           cowsay-off/stable 3.03+dfsg2-8 all
       - title: Search package names only
         code: apt search --names-only '^cowsay'
-        description: Restricts the match to the package name, and takes a regular expression — `^` anchors it to the start. See [`grep`](/commands/grep/) for the syntax.
+        description: Restricts the match to the package name, and takes a regular expression - `^` anchors it to the start. See [`grep`](/commands/grep/) for the syntax.
         level: basic
         output: |2
           Sorting...
@@ -114,7 +114,7 @@ sections:
           Conf cowsay-off (3.03+dfsg2-8 Debian:13.6/stable [all])
       - title: Simulate a removal
         code: apt remove -s cowsay
-        description: The line to read is anything under `REMOVED` — this is where an unexpected cascade shows up before it happens rather than after.
+        description: The line to read is anything under `REMOVED` - this is where an unexpected cascade shows up before it happens rather than after.
         level: basic
         volatile: "the point release in `Debian:13.6` and the `Not Upgrading` count move as the archive does"
         compare: shape
@@ -165,7 +165,7 @@ sections:
     intro: >-
       All of these need root. `-y` answers the confirmation prompt in advance, which a script
       needs and which is worth omitting by hand so you get a chance to read the plan. Their
-      output is a live download — sizes, speeds, and the architecture of your own machine — so
+      output is a live download - sizes, speeds, and the architecture of your own machine - so
       it isn't reproduced here.
     examples:
       - title: Install a package
@@ -186,7 +186,7 @@ sections:
         level: intermediate
       - title: Install without the recommended extras
         code: sudo apt install --no-install-recommends cowsay-off
-        description: Keeps the install minimal — sensible in a container image, and on a desktop often removes something you wanted.
+        description: Keeps the install minimal - sensible in a container image, and on a desktop often removes something you wanted.
         level: intermediate
       - title: Download a package without installing it
         code: apt download cowsay
@@ -194,7 +194,7 @@ sections:
         level: intermediate
       - title: Install a .deb file you already have
         code: sudo apt install ./cowsay_3.03+dfsg2-8_all.deb
-        description: Prefer this over `dpkg -i`, because apt resolves the file's dependencies from the repositories. The `./` matters — without it, apt looks for a package with that name instead.
+        description: Prefer this over `dpkg -i`, because apt resolves the file's dependencies from the repositories. The `./` matters - without it, apt looks for a package with that name instead.
         level: intermediate
 
   - title: Removing packages
@@ -219,7 +219,7 @@ sections:
         level: intermediate
       - title: Remove packages nothing needs any more
         code: sudo apt autoremove
-        description: Deletes packages pulled in as dependencies that are now unreferenced. Read `apt autoremove -s` first — it occasionally proposes something you installed deliberately.
+        description: Deletes packages pulled in as dependencies that are now unreferenced. Read `apt autoremove -s` first - it occasionally proposes something you installed deliberately.
         level: intermediate
         danger: true
 
@@ -245,7 +245,7 @@ sections:
         danger: true
       - title: List the packages with upgrades waiting
         code: apt list --upgradable
-        description: Read-only, so no `sudo`. Shows the installed version and the candidate side by side — the quickest way to judge whether an upgrade is worth doing now.
+        description: Read-only, so no `sudo`. Shows the installed version and the candidate side by side - the quickest way to judge whether an upgrade is worth doing now.
         level: basic
       - title: Upgrade one package and nothing else
         code: sudo apt install --only-upgrade cowsay
@@ -262,7 +262,7 @@ sections:
           cowsay set on hold.
       - title: List every held package
         code: apt-mark showhold
-        description: Worth checking when an upgrade refuses to install something for no visible reason — a forgotten hold is a common cause.
+        description: Worth checking when an upgrade refuses to install something for no visible reason - a forgotten hold is a common cause.
         level: intermediate
         output: |2
           ca-certificates
@@ -288,7 +288,7 @@ sections:
         level: basic
       - title: Delete only the downloads that are now obsolete
         code: sudo apt autoclean
-        description: The conservative `clean` — drops cached `.deb` files that can no longer be downloaded, and keeps the current ones.
+        description: The conservative `clean` - drops cached `.deb` files that can no longer be downloaded, and keeps the current ones.
         level: intermediate
 
   - title: apt in scripts
@@ -302,7 +302,7 @@ sections:
         level: intermediate
       - title: Wait for the dpkg lock instead of failing
         code: sudo apt-get -o DPkg::Lock::Timeout=60 install -y cowsay-off
-        description: Waits up to a minute for another apt to finish rather than exiting immediately — the fix for a provisioning script that intermittently fails on a fresh machine. See [Could not get lock](/troubleshooting/could-not-get-lock-dpkg-frontend/).
+        description: Waits up to a minute for another apt to finish rather than exiting immediately - the fix for a provisioning script that intermittently fails on a fresh machine. See [Could not get lock](/troubleshooting/could-not-get-lock-dpkg-frontend/).
         level: advanced
       - title: Test whether a package is installed, by exit status
         code: dpkg -s cowsay >/dev/null 2>&1 && echo installed || echo missing

@@ -11,7 +11,7 @@ fixtures:
       Erin,38,Sales
       Frank,31,Engineering
   - name: crlf.txt
-    note: "two lines with Windows CRLF endings — 14 bytes, not 12"
+    note: "two lines with Windows CRLF endings - 14 bytes, not 12"
     from: 'sed "s/\r/␍/" crlf.txt'
     content: |
       line1␍
@@ -48,13 +48,13 @@ sections:
         level: intermediate
       - title: "ROT13-encode text"
         code: echo 'Attack at dawn' | tr 'A-Za-z' 'N-ZA-Mn-za-m'
-        description: "Each letter maps to the one 13 places later in the alphabet, wrapping around. Running the exact same command on the output decodes it back — ROT13 is its own inverse."
+        description: "Each letter maps to the one 13 places later in the alphabet, wrapping around. Running the exact same command on the output decodes it back - ROT13 is its own inverse."
         output: |
           Nggnpx ng qnja
         level: advanced
 
   - title: "Deleting characters with -d"
-    intro: "`-d` removes every character listed in SET1. No SET2 is given — there's nothing to translate them to."
+    intro: "`-d` removes every character listed in SET1. No SET2 is given - there's nothing to translate them to."
     examples:
       - title: "Delete specific characters"
         code: echo 'Hello, World!' | tr -d ','
@@ -79,7 +79,7 @@ sections:
       - title: "The mistake: trying [^...] for 'not this'"
         code: echo 'Hello123' | tr -d '[^0-9]'
         description: >-
-          Brackets have no special meaning in tr's SET syntax — this is parsed as the literal
+          Brackets have no special meaning in tr's SET syntax - this is parsed as the literal
           characters [, ^, ] plus the range 0-9, not "everything except a digit." Verified: this
           deletes the digits and keeps the letters, the exact opposite of what a regex habit
           would predict.
@@ -88,7 +88,7 @@ sections:
         tags: [beginner]
       - title: "The correct way to delete everything except a set"
         code: echo 'Hello123' | tr -cd '0-9'
-        description: "`-c` complements the set first, then `-d` deletes what's left after complementing — so this keeps only digits. This is the actual tr equivalent of grep's `[^...]`."
+        description: "`-c` complements the set first, then `-d` deletes what's left after complementing - so this keeps only digits. This is the actual tr equivalent of grep's `[^...]`."
         output: |
           123
         level: intermediate
@@ -99,20 +99,20 @@ sections:
     examples:
       - title: "Collapse repeated spaces into one"
         code: printf 'a   b     c\n' | tr -s ' '
-        description: "Whatever the run length — 3 spaces or 30 — `-s` reduces it to exactly one."
+        description: "Whatever the run length - 3 spaces or 30 - `-s` reduces it to exactly one."
         output: |
           a b c
         level: basic
         tags: [beginner]
       - title: "Fix column extraction on padded text"
         code: printf 'a   b     c\n' | tr -s ' ' | cut -d' ' -f2
-        description: "Squeeze first, then cut works correctly — this is the standard fix for cut's one-character-delimiter limitation on space-padded output like `ps` or `ls -l`. See the cut page."
+        description: "Squeeze first, then cut works correctly - this is the standard fix for cut's one-character-delimiter limitation on space-padded output like `ps` or `ls -l`. See the cut page."
         output: |
           b
         level: intermediate
       - title: "Squeeze repeated letters generically"
         code: echo 'aabbccdd' | tr -s 'a-z'
-        description: "Applies to any character in the given set, not just spaces — every run of the same letter collapses to one."
+        description: "Applies to any character in the given set, not just spaces - every run of the same letter collapses to one."
         output: |
           abcd
         level: intermediate
@@ -120,7 +120,7 @@ sections:
         code: printf 'a\n\nb\n\n\n\nc\n' | tr -s '\n'
         description: >-
           Worth being precise about: a blank line is just two adjacent newlines, and `-s` squeezes
-          any run of them down to one — which eliminates the blank line completely rather than
+          any run of them down to one - which eliminates the blank line completely rather than
           leaving a single blank line the way `cat -s` does. Verified: three paragraphs separated
           by blank lines come out with no blank lines at all, just adjacent text lines.
         output: |
@@ -143,7 +143,7 @@ sections:
     examples:
       - title: "A shorter SET2 repeats its last character"
         code: echo 'abcdef' | tr 'a-f' 'XY'
-        description: "By default, if SET2 is shorter than SET1, its final character is repeated to fill out the mapping — a maps to X, but b through f all map to Y."
+        description: "By default, if SET2 is shorter than SET1, its final character is repeated to fill out the mapping - a maps to X, but b through f all map to Y."
         output: |
           XYYYYY
         level: intermediate
@@ -155,7 +155,7 @@ sections:
         level: advanced
 
   - title: "Complementing a set with -c"
-    intro: "`-c` operates on every character NOT in SET1 — the actual way to express 'everything except.'"
+    intro: "`-c` operates on every character NOT in SET1 - the actual way to express 'everything except.'"
     examples:
       - title: "Keep only digits"
         code: echo 'Hello123World' | tr -cd '[:digit:]'
@@ -166,11 +166,11 @@ sections:
         tags: [beginner]
       - title: "Keep only letters and digits"
         code: echo 'Hello, World! 123' | tr -cd '[:alnum:]'
-        description: "[:alnum:] covers both letters and digits in one class — strips spaces and punctuation, keeps everything else."
+        description: "[:alnum:] covers both letters and digits in one class - strips spaces and punctuation, keeps everything else."
         output: |
           HelloWorld123
         level: intermediate
-      - title: "Strip non-printable characters — but watch what counts as printable"
+      - title: "Strip non-printable characters - but watch what counts as printable"
         code: printf 'Hello\aWorld\n' | tr -cd '[:print:]'
         description: >-
           [:print:] doesn't include the newline character. Verified: this strips the bell
@@ -188,8 +188,8 @@ sections:
       - title: "Complementing a set includes the trailing newline"
         code: echo 'ABC' | tr --complement 'A' '_'
         description: >-
-          echo appends a trailing newline, and that newline is not 'A' either — so it's part of
-          the complement too. Verified: the output is A___ (four characters), not A__ (three) —
+          echo appends a trailing newline, and that newline is not 'A' either - so it's part of
+          the complement too. Verified: the output is A___ (four characters), not A__ (three) -
           the line's own newline got translated along with B and C.
         output: |
           A___
@@ -199,7 +199,7 @@ sections:
     examples:
       - title: "Convert Windows line endings to Unix"
         code: tr -d '\r' < crlf.txt
-        description: "CRLF line endings are a trailing carriage-return byte before each newline — deleting \\r converts the file to plain Unix LF endings without touching anything else."
+        description: "CRLF line endings are a trailing carriage-return byte before each newline - deleting \\r converts the file to plain Unix LF endings without touching anything else."
         level: intermediate
         tags: [beginner]
       - title: "Convert tabs to spaces"
@@ -217,7 +217,7 @@ sections:
         tags: [beginner]
       - title: "Mask digits for a redacted display"
         code: echo 'Card 4111 2222 3333' | tr '[:digit:]' '#'
-        description: "Every digit becomes #, preserving the original grouping and spacing — useful for showing structure without showing the real numbers."
+        description: "Every digit becomes #, preserving the original grouping and spacing - useful for showing structure without showing the real numbers."
         output: |
           Card #### #### ####
         level: intermediate
@@ -229,13 +229,13 @@ sections:
         level: basic
       - title: "Translate using an octal character code"
         code: printf 'ABA\n' | tr '\101' 'X'
-        description: "\\101 is the octal escape for 'A' — useful for a character that's awkward to type literally or paste cleanly into a script."
+        description: "\\101 is the octal escape for 'A' - useful for a character that's awkward to type literally or paste cleanly into a script."
         output: |
           XBX
         level: advanced
       - title: "Convert a CSV file to tab-separated"
         code: tr ',' '\t' < users.csv | head -3
-        description: "Works fine for simple CSV with no quoted fields or embedded commas — for anything with quoting rules, use a real CSV-aware tool instead."
+        description: "Works fine for simple CSV with no quoted fields or embedded commas - for anything with quoting rules, use a real CSV-aware tool instead."
         output: |
           name	age	department
           Alice	34	Engineering
@@ -268,7 +268,7 @@ sections:
     examples:
       - title: "One word per line"
         code: printf 'the quick brown fox\n' | tr -cs '[:alpha:]' '\n'
-        description: "`-c` takes the complement of letters (everything that isn't a letter — spaces, in this case), `-s` squeezes runs of it, giving one word per output line. The starting point for the classic word-frequency pipeline below."
+        description: "`-c` takes the complement of letters (everything that isn't a letter - spaces, in this case), `-s` squeezes runs of it, giving one word per output line. The starting point for the classic word-frequency pipeline below."
         output: |
           the
           quick
@@ -293,14 +293,14 @@ sections:
         tags: [one-liners]
       - title: "Join multiple lines into one"
         code: printf 'one\ntwo\nthree\n' | tr '\n' ' '
-        description: "Translating every newline to a space collapses a whole file onto a single line — the opposite of the one-word-per-line trick above."
+        description: "Translating every newline to a space collapses a whole file onto a single line - the opposite of the one-word-per-line trick above."
         output: |
           one two three
         level: basic
         tags: [beginner]
       - title: "Confirm an explicit character list and a range behave identically"
         code: echo 'abc' | tr 'abc' 'xyz'
-        description: "For three specific characters, spelling them out and using the range a-c produce the exact same mapping — ranges are just shorthand for the equivalent list."
+        description: "For three specific characters, spelling them out and using the range a-c produce the exact same mapping - ranges are just shorthand for the equivalent list."
         output: |
           xyz
         level: basic

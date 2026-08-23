@@ -8,7 +8,7 @@ sections:
     examples:
       - title: Check whether a package is installed
         code: dpkg -l cowsay
-        description: The first column is the state — `ii` is installed and configured. The table truncates its description column to the terminal width, so treat it as something to read rather than to parse.
+        description: The first column is the state - `ii` is installed and configured. The table truncates its description column to the terminal width, so treat it as something to read rather than to parse.
         level: basic
         output: |2
           Desired=Unknown/Install/Remove/Purge/Hold
@@ -27,7 +27,7 @@ sections:
           ii  cowsay          3.03+dfsg2-8 all          configurable talking cow
       - title: Read everything dpkg knows about a package
         code: dpkg -s cowsay
-        description: The full database entry — state, version, dependencies and description. Unlike `dpkg -l` this is a stable field-per-line format, and it needs no terminal width to be readable.
+        description: The full database entry - state, version, dependencies and description. Unlike `dpkg -l` this is a stable field-per-line format, and it needs no terminal width to be readable.
         level: basic
         output: |2
           Package: cowsay
@@ -66,7 +66,7 @@ sections:
           /usr/share/cowsay
       - title: Find which package owns a file
         code: dpkg -S /usr/games/cowsay
-        description: The reverse lookup, and the fastest way to identify an unfamiliar file. It only knows about installed packages — for a file you don't have yet, `apt-file search` is the equivalent.
+        description: The reverse lookup, and the fastest way to identify an unfamiliar file. It only knows about installed packages - for a file you don't have yet, `apt-file search` is the equivalent.
         level: basic
         output: |2
           cowsay: /usr/games/cowsay
@@ -78,7 +78,7 @@ sections:
           gzip: /usr/bin/gzip
       - title: List a package's configuration files
         code: dpkg -s bash-completion | grep -A3 ^Conffiles
-        description: '`Conffiles` are the files dpkg treats as yours to edit — it will not overwrite a changed one on upgrade without asking. Shown here for a package in the `rc` state, whose programs are gone while every one of these files is still on disk.'
+        description: '`Conffiles` are the files dpkg treats as yours to edit - it will not overwrite a changed one on upgrade without asking. Shown here for a package in the `rc` state, whose programs are gone while every one of these files is still on disk.'
         level: advanced
         output: |2
           Conffiles:
@@ -120,7 +120,7 @@ sections:
           -rw-r--r-- root/root       584 1999-08-14 07:17 ./usr/share/cowsay/cows/beavis.zen.cow
       - title: Extract a package's files without installing it
         code: dpkg -x cowsay-off.deb /tmp/unpacked && find /tmp/unpacked -type f | sort | head -3
-        description: Unpacks the file tree into a directory of your choosing. No maintainer scripts run, nothing is registered and nothing is configured — useful for pulling one file out of a package. `find` reports in directory order, so `sort` is what makes the listing the same twice.
+        description: Unpacks the file tree into a directory of your choosing. No maintainer scripts run, nothing is registered and nothing is configured - useful for pulling one file out of a package. `find` reports in directory order, so `sort` is what makes the listing the same twice.
         level: intermediate
         output: |2
           /tmp/unpacked/usr/share/cowsay/cows/beavis.zen.cow
@@ -136,7 +136,7 @@ sections:
   - title: Installing and removing directly
     intro: >-
       All of these need root, and none of them resolve dependencies. Their output is a live
-      unpack — progress lines, sizes and your machine's architecture — so it isn't reproduced
+      unpack - progress lines, sizes and your machine's architecture - so it isn't reproduced
       here. Prefer `sudo apt install ./file.deb`, which does the same unpacking with the
       dependencies sorted out first.
     examples:
@@ -155,7 +155,7 @@ sections:
         level: basic
       - title: Remove a package, keeping its configuration
         code: sudo dpkg -r cowsay-off
-        description: Takes a package *name*, not a file name — a common slip immediately after installing from a file. Leaves the package in the `rc` state.
+        description: Takes a package *name*, not a file name - a common slip immediately after installing from a file. Leaves the package in the `rc` state.
         level: intermediate
       - title: Remove a package and its configuration
         code: sudo dpkg -P cowsay-off
@@ -170,7 +170,7 @@ sections:
     examples:
       - title: Finish configuring everything left half-done
         code: sudo dpkg --configure -a
-        description: Configures every package that was unpacked but never configured. Often the entire fix after an interrupted upgrade, and safe to run at any time — on a healthy system it prints nothing and does nothing.
+        description: Configures every package that was unpacked but never configured. Often the entire fix after an interrupted upgrade, and safe to run at any time - on a healthy system it prints nothing and does nothing.
         level: intermediate
       - title: Report packages that are installed but broken
         code: sudo dpkg --audit
@@ -178,7 +178,7 @@ sections:
         level: intermediate
       - title: Check what state every package is in
         code: dpkg -l | awk '$1 != "ii" && NR > 5 {print $1, $2}'
-        description: Anything whose state isn't `ii` — removed-but-not-purged packages and genuinely broken ones both show up here.
+        description: Anything whose state isn't `ii` - removed-but-not-purged packages and genuinely broken ones both show up here.
         level: advanced
         output: |2
           rc bash-completion

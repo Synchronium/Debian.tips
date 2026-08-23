@@ -1,7 +1,7 @@
 command: curl
 fixtures:
   - name: "the local test server"
-    note: "start it with `python3 http-mock.py` before running the examples — the script is in the site repo at `scripts/fixtures/http-mock.py`"
+    note: "start it with `python3 http-mock.py` before running the examples - the script is in the site repo at `scripts/fixtures/http-mock.py`"
     from: "curl -s http://127.0.0.1:8080/"
     content: |
       Local test server for the curl and wget pages.
@@ -359,7 +359,7 @@ sections:
         tags: [security]
       - title: "Skip TLS certificate verification"
         code: curl -sk https://127.0.0.1:8443/page.html -o /dev/null -w "%{http_code}\n"
-        description: "`-k` (`--insecure`) turns that refusal off and the same request succeeds. Fine for a self-signed cert on a box you control during setup, never for anything handling real traffic or credentials — it disables the check that would tell you someone is in the middle."
+        description: "`-k` (`--insecure`) turns that refusal off and the same request succeeds. Fine for a self-signed cert on a box you control during setup, never for anything handling real traffic or credentials - it disables the check that would tell you someone is in the middle."
         output: |2
           200
         level: advanced

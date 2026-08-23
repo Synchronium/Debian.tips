@@ -8,7 +8,7 @@ fixtures:
       14 files copied
       0 errors
   - name: "access.log"
-    note: "10 requests from 3 addresses, 7 of them 200s — the same sample log the text-processing pages use"
+    note: "10 requests from 3 addresses, 7 of them 200s - the same sample log the text-processing pages use"
     content: |
       203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
       203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
@@ -45,7 +45,7 @@ sections:
   - title: Saying something
     intro: >-
       Everything after the options is the message, joined with spaces. With no message at all,
-      `cowsay` reads standard input instead — which is the form that makes it a filter rather
+      `cowsay` reads standard input instead - which is the form that makes it a filter rather
       than a toy, and the one the rest of this page is mostly about.
     examples:
       - title: Say a message
@@ -63,7 +63,7 @@ sections:
                           ||     ||
       - title: Skip the quotes for plain words
         code: cowsay Hello world
-        description: Arguments are joined with a single space, so quoting only matters when the message contains something the shell would act on — a `;`, a `$`, a `*`, or the run of spaces you wanted kept.
+        description: Arguments are joined with a single space, so quoting only matters when the message contains something the shell would act on - a `;`, a `$`, a `*`, or the run of spaces you wanted kept.
         level: basic
         output: |2
            _____________
@@ -123,7 +123,7 @@ sections:
     examples:
       - title: Pipe a message in
         code: echo 'Backup finished' | cowsay
-        description: The form almost every real use takes. `cowsay` behaves like any other filter here — see [pipes and redirection](/concepts/pipes-and-redirection/) if the plumbing is the unfamiliar part.
+        description: The form almost every real use takes. `cowsay` behaves like any other filter here - see [pipes and redirection](/concepts/pipes-and-redirection/) if the plumbing is the unfamiliar part.
         level: basic
         output: |2
            _________________
@@ -396,7 +396,7 @@ sections:
                           ||     ||
       - title: Find out which wins
         code: cowsay -d -e '^^' 'Which one wins?'
-        description: The preset does, in either order. If a script sets a mode from a variable and also wants custom eyes, only one of the two can be honoured — so pick `-e` and set both characters yourself.
+        description: The preset does, in either order. If a script sets a mode from a variable and also wants custom eyes, only one of the two can be honoured - so pick `-e` and set both characters yourself.
         level: advanced
         output: |2
            _________________
@@ -409,7 +409,7 @@ sections:
                           ||     ||
       - title: Combine a face with cowthink
         code: cowthink -y -e 'oO' 'Thinking about it'
-        description: Same result — the preset overrides `-e` here too, and the only difference `cowthink` makes is the balloon and the bubbles.
+        description: Same result - the preset overrides `-e` here too, and the only difference `cowthink` makes is the balloon and the bubbles.
         level: intermediate
         output: |2
            ___________________
@@ -424,7 +424,7 @@ sections:
   - title: Choosing a cow
     intro: >-
       The figure comes from a *cowfile*. `-l` lists what is installed, `-f` picks one by name,
-      and `$COWPATH` is the colon-separated list of directories that `-f` searches — the same
+      and `$COWPATH` is the colon-separated list of directories that `-f` searches - the same
       shape as `PATH`, and defaulting to `/usr/share/cowsay/cows` when it is unset.
     examples:
       - title: List the cowfiles you have
@@ -447,7 +447,7 @@ sections:
           47
       - title: Pick one by name
         code: cowsay -f tux 'Debian'
-        description: '`-f` takes the name as `-l` printed it. The extension is optional — `-f tux` and `-f tux.cow` both work.'
+        description: '`-f` takes the name as `-l` printed it. The extension is optional - `-f tux` and `-f tux.cow` both work.'
         level: basic
         output: |2
            ________
@@ -500,13 +500,13 @@ sections:
                                |_____|        |_____|         ~ - . _ _ _ _ _>
       - title: See what a wrong name reports
         code: cowsay -f nosuch 'hello'
-        description: A clear error and nothing else — no balloon, no fallback to the default cow. Anything less obvious than this means the file was found and something inside it went wrong.
+        description: A clear error and nothing else - no balloon, no fallback to the default cow. Anything less obvious than this means the file was found and something inside it went wrong.
         level: intermediate
         output: |2
           cowsay: Could not find nosuch cowfile!
       - title: Use a cowfile by path
         code: cowsay -f ./cows/server.cow 'Backup finished'
-        description: Any `-f` value containing a `/` is treated as a path and `$COWPATH` is skipped entirely. The leading `./` is not optional — see the last section for what happens without it.
+        description: Any `-f` value containing a `/` is treated as a path and `$COWPATH` is skipped entirely. The leading `./` is not optional - see the last section for what happens without it.
         level: intermediate
         output: |2
            _________________
@@ -571,7 +571,7 @@ sections:
     examples:
       - title: Read the shipped default first
         code: cat /usr/share/cowsay/cows/default.cow
-        description: Eight lines, and every convention the format has. Note that the backslashes in the art are doubled — the heredoc interpolates, so a single one would be consumed before the art ever reached the screen.
+        description: Eight lines, and every convention the format has. Note that the backslashes in the art are doubled - the heredoc interpolates, so a single one would be consumed before the art ever reached the screen.
         level: intermediate
         output: |2
           $the_cow = <<"EOC";
@@ -627,7 +627,7 @@ sections:
     examples:
       - title: See the default width
         code: cowsay 'The quick brown fox jumps over the lazy dog and keeps on running'
-        description: 40 columns, which is narrow enough that most command output wraps. The balloon changes shape once it needs more than one line — the `< >` becomes a `/ \` and `\ /` frame.
+        description: 40 columns, which is narrow enough that most command output wraps. The balloon changes shape once it needs more than one line - the `< >` becomes a `/ \` and `\ /` frame.
         level: basic
         output: |2
            _________________________________________
@@ -682,7 +682,7 @@ sections:
                           ||     ||
       - title: Keep them
         code: printf 'one\ntwo\nthree\n' | cowsay -n
-        description: '`-n` passes the text through as it arrived. Nothing is wrapped, so a line longer than your terminal will still run off the edge — `-n` and `-W` are alternatives, not partners.'
+        description: '`-n` passes the text through as it arrived. Nothing is wrapped, so a line longer than your terminal will still run off the edge - `-n` and `-W` are alternatives, not partners.'
         level: basic
         output: |2
            _______
@@ -712,7 +712,7 @@ sections:
         level: intermediate
       - title: Announce it from a git hook
         code: printf '#!/bin/sh\ncowsay "Pushed to $(git branch --show-current)"\n' > .git/hooks/pre-push
-        description: Hooks run with your environment, so `/usr/games` is normally on the `PATH` here. Remember `chmod +x` — a hook that is not executable is skipped silently.
+        description: Hooks run with your environment, so `/usr/games` is normally on the `PATH` here. Remember `chmod +x` - a hook that is not executable is skipped silently.
         level: advanced
       - title: Give cron the full path
         code: 0 9 * * 1 /usr/games/cowsay 'Weekly report is due' | mail -s Reminder you
@@ -763,7 +763,7 @@ sections:
                     [-l] [-n] [-T tongue] [-W wrapcolumn] [message]
       - title: Run a cowfile you did not write
         code: cowsay -f ./downloaded.cow 'Nice cow'
-        description: A cowfile is executed, not parsed — `cowsay` loads it with Perl's `do`, so anything in the file runs with your privileges before a single character is drawn. Read a downloaded cowfile first; a legitimate one is a `$the_cow` assignment, a heredoc of art, and nothing else.
+        description: A cowfile is executed, not parsed - `cowsay` loads it with Perl's `do`, so anything in the file runs with your privileges before a single character is drawn. Read a downloaded cowfile first; a legitimate one is a `$the_cow` assignment, a heredoc of art, and nothing else.
         level: advanced
         danger: true
         output: |2

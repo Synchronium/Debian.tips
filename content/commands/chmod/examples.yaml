@@ -1,7 +1,7 @@
 command: chmod
 fixtures:
   - name: "./"
-    note: "the modes every example starts from — `ls -l`, before any of them run"
+    note: "the modes every example starts from - `ls -l`, before any of them run"
     from: "ls -l"
     content: |
       total 28
@@ -21,7 +21,7 @@ fixtures:
       drwxr-xr-x 2 user user 4096 Aug 12 21:45 shared
       -rwxr-xr-x 1 user user   20 Aug 12 21:45 tool
   - name: "project/"
-    note: "the tree the recursive and auditing examples walk — `oops.txt` is the world-writable one"
+    note: "the tree the recursive and auditing examples walk - `oops.txt` is the world-writable one"
     from: "ls -lR project"
     content: |
       project:

@@ -1,7 +1,7 @@
 command: diff
 fixtures:
   - name: nginx-old.conf
-    note: "the starting version — 10 lines"
+    note: "the starting version - 10 lines"
     content: |
       server {
           listen 80;
@@ -98,7 +98,7 @@ fixtures:
       onlyB.conf
 sections:
   - title: "Basic comparison and exit codes"
-    intro: "diff's exit code is as useful as its output — 0 for identical, 1 for different, 2 for an error."
+    intro: "diff's exit code is as useful as its output - 0 for identical, 1 for different, 2 for an error."
     examples:
       - title: "Compare two files"
         code: diff nginx-old.conf nginx-new.conf
@@ -121,23 +121,23 @@ sections:
         tags: [beginner]
       - title: "Identical files produce no output and exit 0"
         code: diff nginx-old.conf nginx-old.conf
-        description: "Comparing a file to itself (or to an identical copy) prints nothing — check the exit code, not the output, to know whether files matched."
+        description: "Comparing a file to itself (or to an identical copy) prints nothing - check the exit code, not the output, to know whether files matched."
         level: basic
         tags: [beginner]
       - title: "Just report whether files differ, not how"
         code: diff -q nginx-old.conf nginx-new.conf
-        description: "`-q` (`--brief`) skips the line-by-line detail entirely — useful in a script that only needs a yes/no answer."
+        description: "`-q` (`--brief`) skips the line-by-line detail entirely - useful in a script that only needs a yes/no answer."
         output: |
           Files nginx-old.conf and nginx-new.conf differ
         level: basic
         tags: [beginner]
       - title: "Brief mode on identical files stays silent"
         code: diff -q nginx-old.conf nginx-old.conf
-        description: "Same as full diff — no output at all when there's nothing to report, just exit 0."
+        description: "Same as full diff - no output at all when there's nothing to report, just exit 0."
         level: basic
       - title: "Comparing against a file that doesn't exist is an error, not a difference"
         code: diff nginx-old.conf missing.conf
-        description: "Exit code 2, not 1 — diff distinguishes 'these differ' from 'I couldn't actually compare them.' Worth checking for in a script rather than assuming any non-zero exit means a content difference."
+        description: "Exit code 2, not 1 - diff distinguishes 'these differ' from 'I couldn't actually compare them.' Worth checking for in a script rather than assuming any non-zero exit means a content difference."
         output: |
           diff: missing.conf: No such file or directory
         level: intermediate
@@ -152,7 +152,7 @@ sections:
   - title: "Output formats"
     intro: "The default format is compact but hard to read. Three alternatives trade brevity for clarity."
     examples:
-      - title: "Unified format — the one everyone actually uses"
+      - title: "Unified format - the one everyone actually uses"
         code: diff -u nginx-old.conf nginx-new.conf
         description: "A few lines of shared context (unmarked), then - for removed lines and + for added ones. This is also exactly what patch expects as input, and the format git diff itself is built on."
         volatile: "the timestamps in the `---` and `+++` header lines are when the sample files were created"
@@ -180,7 +180,7 @@ sections:
         tags: [beginner]
       - title: "Control how many context lines unified format shows"
         code: diff -U1 nginx-old.conf nginx-new.conf
-        description: "`-U` takes a number — fewer context lines than the default 3, for a tighter diff when you only care about the exact change, not its surroundings."
+        description: "`-U` takes a number - fewer context lines than the default 3, for a tighter diff when you only care about the exact change, not its surroundings."
         volatile: "the timestamps in the `---` and `+++` header lines are when the sample files were created"
         output: |2
           --- nginx-old.conf	2026-08-15 10:09:33.149381006 +0000
@@ -199,9 +199,9 @@ sections:
           +    }
            }
         level: intermediate
-      - title: "Context format — the older alternative to unified"
+      - title: "Context format - the older alternative to unified"
         code: diff -c nginx-old.conf nginx-new.conf
-        description: "Shows both versions of each changed block in full, marked with !, rather than interleaving - and + lines — more verbose than unified, mostly seen in older codebases and some BSD tooling."
+        description: "Shows both versions of each changed block in full, marked with !, rather than interleaving - and + lines - more verbose than unified, mostly seen in older codebases and some BSD tooling."
         volatile: "the timestamps in the `***` and `---` header lines are when the sample files were created"
         output: |2
           *** nginx-old.conf	Sun Aug 16 09:29:21 2026
@@ -255,7 +255,7 @@ sections:
               }				    }
           }				}
         level: intermediate
-      - title: "ed script format — output you could feed back into ed"
+      - title: "ed script format - output you could feed back into ed"
         code: diff -e nginx-old.conf nginx-new.conf
         description: "A niche format: valid input for the ed line editor to transform the old file into the new one. Rarely used directly today, but it's a reminder that diff predates every format built on top of it."
         output: |
@@ -275,7 +275,7 @@ sections:
     examples:
       - title: "See whitespace-only changes flagged as real differences"
         code: diff sp1.txt sp2.txt
-        description: "'a  b' and 'a b' — two spaces versus one — count as a difference by default."
+        description: "'a  b' and 'a b' - two spaces versus one - count as a difference by default."
         output: |
           1c1
           < a  b
@@ -284,7 +284,7 @@ sections:
         level: basic
       - title: "Ignore whitespace differences entirely"
         code: diff -w sp1.txt sp2.txt
-        description: "`-w` (`--ignore-all-space`) treats any amount of whitespace as equivalent, including none at all — the strongest whitespace-ignoring option."
+        description: "`-w` (`--ignore-all-space`) treats any amount of whitespace as equivalent, including none at all - the strongest whitespace-ignoring option."
         level: intermediate
         tags: [beginner]
       - title: "Ignore changes in the amount of whitespace, but not its presence"
@@ -293,7 +293,7 @@ sections:
         level: intermediate
       - title: "Ignore case differences"
         code: diff -i c1.txt c2.txt
-        description: "`-i` treats `Hello` and `hello` as the same line — useful when comparing output that might differ only in casing conventions."
+        description: "`-i` treats `Hello` and `hello` as the same line - useful when comparing output that might differ only in casing conventions."
         level: intermediate
         tags: [beginner]
       - title: "See a blank-line-only change reported as a real difference"
@@ -305,11 +305,11 @@ sections:
         level: advanced
       - title: "Ignore changes that only add or remove blank lines"
         code: diff -B bl1.txt bl2.txt
-        description: "`-B` treats purely blank-line changes as no change at all, so this prints nothing and exits 0 — useful when reformatting shouldn't count as a content difference."
+        description: "`-B` treats purely blank-line changes as no change at all, so this prints nothing and exits 0 - useful when reformatting shouldn't count as a content difference."
         level: advanced
       - title: "Ignore line-ending differences between Unix and Windows files"
         code: diff crlf-a.txt crlf-b.txt
-        description: "Without any flag, a file with \\r\\n line endings looks completely different from the same content with plain \\n endings, even though every visible character matches — see the tr page for actually converting between them."
+        description: "Without any flag, a file with \\r\\n line endings looks completely different from the same content with plain \\n endings, even though every visible character matches - see the tr page for actually converting between them."
         output: |
           1,2c1,2
           < line1
@@ -347,7 +347,7 @@ sections:
         tags: [beginner]
       - title: "Recursively diff, but only list which files differ"
         code: diff -rq confA confB
-        description: "Combines `-r` with `-q` — a fast overview of an entire tree without the line-by-line detail for every changed file."
+        description: "Combines `-r` with `-q` - a fast overview of an entire tree without the line-by-line detail for every changed file."
         output: |
           Files confA/nginx.conf and confB/nginx.conf differ
           Only in confA: onlyA.conf
@@ -362,28 +362,28 @@ sections:
         level: intermediate
       - title: "Treat a missing file as empty instead of erroring"
         code: diff -N confA/onlyA.conf confB/onlyA.conf
-        description: "`-N` (`--new-file`) changes a missing file from an error into 'compare against nothing' — every line in the existing file shows as added or removed, depending on which side it's missing from."
+        description: "`-N` (`--new-file`) changes a missing file from an error into 'compare against nothing' - every line in the existing file shows as added or removed, depending on which side it's missing from."
         output: |
           1d0
           < only in A
         level: advanced
 
   - title: "Generating and applying a patch"
-    intro: "`diff -u`'s output isn't just for reading — it's a format patch understands directly."
+    intro: "`diff -u`'s output isn't just for reading - it's a format patch understands directly."
     examples:
       - title: "Save a unified diff to a patch file"
         code: diff -u nginx-old.conf nginx-new.conf > changes.patch
-        description: "Redirecting `-u` output to a file produces exactly the .patch/.diff format used everywhere — email patches, git diff output, code review tools."
+        description: "Redirecting `-u` output to a file produces exactly the .patch/.diff format used everywhere - email patches, git diff output, code review tools."
         level: intermediate
         tags: [beginner]
       - title: "Apply that patch to reproduce the change elsewhere"
         code: patch test-apply.conf < changes.patch
-        description: "Given a copy of the original file and the patch, patch reconstructs the new version — this is literally how the patch was generated: `diff old new` produces the patch, and `patch old < patchfile` reconstructs new from it."
+        description: "Given a copy of the original file and the patch, patch reconstructs the new version - this is literally how the patch was generated: `diff old new` produces the patch, and `patch old < patchfile` reconstructs new from it."
         output: |
           patching file test-apply.conf
         level: intermediate
       - title: "Confirm the patched file now matches the target exactly"
         code: diff test-apply.conf nginx-new.conf
-        description: "No output, exit 0 — the patch applied cleanly and the result is byte-for-byte the intended new version."
+        description: "No output, exit 0 - the patch applied cleanly and the result is byte-for-byte the intended new version."
         level: intermediate
         tags: [beginner]

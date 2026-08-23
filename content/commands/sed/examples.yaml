@@ -20,7 +20,7 @@ fixtures:
       debug=false
       timeout=30
   - name: "names.csv"
-    note: "three rows of name,age,role — no header"
+    note: "three rows of name,age,role - no header"
     content: |
       alice,30,engineer
       bob,25,designer

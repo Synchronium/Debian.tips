@@ -1,7 +1,7 @@
 command: tee
 fixtures:
   - name: wordlist.txt
-    note: "the same wordlist the [sort](/commands/sort/) and [uniq](/commands/uniq/) pages use — duplicates and mixed case"
+    note: "the same wordlist the [sort](/commands/sort/) and [uniq](/commands/uniq/) pages use - duplicates and mixed case"
     content: |
       banana
       apple
@@ -46,7 +46,7 @@ sections:
         tags: [beginner]
       - title: "Keep the file, skip the screen"
         code: sort -u wordlist.txt | tee unique.txt > /dev/null && cat unique.txt
-        description: "Redirecting `tee`'s own output to `/dev/null` throws away the copy that would have gone to the terminal. Pointless on its own — that is just `>` — but it is the standard shape for `sudo tee`, further down."
+        description: "Redirecting `tee`'s own output to `/dev/null` throws away the copy that would have gone to the terminal. Pointless on its own - that is just `>` - but it is the standard shape for `sudo tee`, further down."
         output: |
           Cherry
           Elderberry
@@ -71,7 +71,7 @@ sections:
         level: intermediate
       - title: "Write the same stream to several files at once"
         code: head -3 wordlist.txt | tee copy-a.txt copy-b.txt
-        description: "Every filename argument gets its own complete copy. There is no flag for this — extra files are just extra arguments."
+        description: "Every filename argument gets its own complete copy. There is no flag for this - extra files are just extra arguments."
         output: |
           banana
           apple
@@ -143,7 +143,7 @@ sections:
         code: sudo echo 'vm.swappiness=10' > /etc/sysctl.d/99-swappiness.conf
         description: >-
           Exactly the same `Permission denied`, which is the surprising part. `sudo` elevates
-          `echo`, but the `>` is carried out by your shell before `sudo` is involved at all — and
+          `echo`, but the `>` is carried out by your shell before `sudo` is involved at all - and
           your shell has no more right to write `/etc` than it did a moment ago. Verified in the
           sandbox: the file is still not created.
         danger: true
@@ -151,7 +151,7 @@ sections:
         tags: [beginner]
       - title: "The fix: pipe into sudo tee"
         code: echo 'vm.swappiness=10' | sudo tee /etc/sysctl.d/99-swappiness.conf
-        description: "Now the process doing the writing is the one that was elevated. `tee` echoes what it wrote, which is why you see the line twice in a terminal — once from `tee`, and it is the only copy."
+        description: "Now the process doing the writing is the one that was elevated. `tee` echoes what it wrote, which is why you see the line twice in a terminal - once from `tee`, and it is the only copy."
         output: |
           vm.swappiness=10
         level: basic
@@ -180,7 +180,7 @@ sections:
         tags: [sysadmin, scripting]
       - title: "Check who ends up owning the file"
         code: echo 'vm.swappiness=10' | sudo tee /etc/sysctl.d/99-swappiness.conf > /dev/null && stat -c '%U %G %a %s' /etc/sysctl.d/99-swappiness.conf
-        description: "Owned by `root`, mode 644, because `tee` created it as the elevated user. `stat -c` is used here rather than `ls -l` because it prints no timestamp — see [chmod](/commands/chmod/) for what the mode means."
+        description: "Owned by `root`, mode 644, because `tee` created it as the elevated user. `stat -c` is used here rather than `ls -l` because it prints no timestamp - see [chmod](/commands/chmod/) for what the mode means."
         output: |
           root root 644 17
         level: advanced
@@ -254,7 +254,7 @@ sections:
         tags: [scripting]
       - title: "tee will not create a missing directory"
         code: echo hi | tee nodir/file.txt
-        description: "The error goes to stderr and `tee` still writes the stream to stdout, then exits 1. It creates files, never directories — `mkdir -p` first if the path might not exist."
+        description: "The error goes to stderr and `tee` still writes the stream to stdout, then exits 1. It creates files, never directories - `mkdir -p` first if the path might not exist."
         output: |
           tee: nodir/file.txt: No such file or directory
           hi
@@ -274,7 +274,7 @@ sections:
           `tee` truncates its output file as it starts, while the command on the left is still
           reading the same file, so the input is destroyed underneath it. Measured in the sandbox
           on a 200,000-line file: this reported **0** lines and left the file empty, and the
-          `cat` version of the same mistake kept 44,176 lines on one run — the amount that
+          `cat` version of the same mistake kept 44,176 lines on one run - the amount that
           survives is a race, which is why it can look harmless on a small file. Write to a
           temporary file and `mv` it into place instead.
         danger: true

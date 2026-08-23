@@ -1,7 +1,7 @@
 command: tar
 fixtures:
   - name: "site/"
-    note: "the directory every example archives — `ls -lAR site`"
+    note: "the directory every example archives - `ls -lAR site`"
     from: "ls -lAR site"
     content: |
       site:
@@ -18,7 +18,7 @@ fixtures:
       total 20
       -rw-r--r-- 1 user user 20480 Jul  5 15:35 logo.png
   - name: "the working directory"
-    note: "what sits alongside site/ — access.log for the compression comparison, two prebuilt archives, and empty restore targets"
+    note: "what sits alongside site/ - access.log for the compression comparison, two prebuilt archives, and empty restore targets"
     from: "ls -l"
     content: |
       total 224

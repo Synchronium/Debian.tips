@@ -1,7 +1,7 @@
 command: systemctl
 fixtures:
   - name: "/etc/systemd/system/deploy-agent.service"
-    note: "a unit that exists only for this page, standing in for whatever service you are working on. `Type=notify` means the agent tells systemd when it is ready, so `systemctl start` returns once it genuinely is — with the default `Type=simple`, `start` returns as soon as systemd has forked the process, which is why a command run straight afterwards can find a service that isn't up yet"
+    note: "a unit that exists only for this page, standing in for whatever service you are working on. `Type=notify` means the agent tells systemd when it is ready, so `systemctl start` returns once it genuinely is - with the default `Type=simple`, `start` returns as soon as systemd has forked the process, which is why a command run straight afterwards can find a service that isn't up yet"
     from: "cat /etc/systemd/system/deploy-agent.service"
     content: |
       [Unit]
@@ -32,7 +32,7 @@ sections:
     examples:
       - title: "Check whether a service is running"
         code: systemctl is-active cron
-        description: "Prints one word — `active`, `inactive` or `failed` — and exits `0` only when the service is active. The form to use in a script."
+        description: "Prints one word - `active`, `inactive` or `failed` - and exits `0` only when the service is active. The form to use in a script."
         output: |2
           active
         level: basic
@@ -111,7 +111,7 @@ sections:
     examples:
       - title: "Start a service now"
         code: sudo systemctl start deploy-agent
-        description: "Starts it immediately and says nothing on success. This does not make it start at boot — see the next section."
+        description: "Starts it immediately and says nothing on success. This does not make it start at boot - see the next section."
         level: basic
         tags: [beginner]
       - title: "Confirm a service started"
@@ -264,7 +264,7 @@ sections:
         code: |-
           sudo systemctl mask apt-daily.service
           systemctl is-enabled apt-daily.service
-        description: "Masking points the unit at `/dev/null`, so nothing can start it — not `start`, not another unit depending on it. Stronger than `disable`, and the right tool when something keeps starting a service you don't want."
+        description: "Masking points the unit at `/dev/null`, so nothing can start it - not `start`, not another unit depending on it. Stronger than `disable`, and the right tool when something keeps starting a service you don't want."
         output: |2
           Created symlink '/etc/systemd/system/apt-daily.service' → '/dev/null'.
           Masking 'apt-daily.service', but its triggering units are still active:
@@ -326,7 +326,7 @@ sections:
         code: |-
           sudo systemctl start backup-sync 2>/dev/null
           systemctl show backup-sync -p Result,ExecMainStatus
-        description: "`Result` says how systemd classified the failure and `ExecMainStatus` is the process's own exit code — the number the program chose, which its documentation will explain."
+        description: "`Result` says how systemd classified the failure and `ExecMainStatus` is the process's own exit code - the number the program chose, which its documentation will explain."
         output: |2
           Result=exit-code
           ExecMainStatus=1
@@ -445,7 +445,7 @@ sections:
           printf '[Unit]\nDescription=Report disk usage\n\n[Service]\nType=oneshot\nExecStart=/usr/bin/df -h /\n' | sudo tee /etc/systemd/system/disk-report.service >/dev/null
           sudo systemctl daemon-reload
           systemctl is-enabled disk-report.service
-        description: "A brand-new unit file is invisible to systemd until `daemon-reload`. `static` means the unit has no `[Install]` section, so it cannot be enabled — only started, or pulled in by something else."
+        description: "A brand-new unit file is invisible to systemd until `daemon-reload`. `static` means the unit has no `[Install]` section, so it cannot be enabled - only started, or pulled in by something else."
         output: |2
           static
         level: intermediate

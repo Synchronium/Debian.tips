@@ -22,7 +22,7 @@ fixtures:
       Jul  5 09:15:01 deb1 app[313]: error: connection refused
       Jul  5 09:15:05 deb1 app[313]: info: connected
   - name: "access.log"
-    note: "11 fields per line — combined log format plus a trailing response time"
+    note: "11 fields per line - combined log format plus a trailing response time"
     content: |
       198.51.100.7 - - [05/Jul/2026:09:12:01 +0000] "GET /index.html HTTP/1.1" 200 1024 0.021
       203.0.113.5 - - [05/Jul/2026:09:12:03 +0000] "GET /style.css HTTP/1.1" 200 512 0.008

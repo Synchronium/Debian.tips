@@ -87,7 +87,7 @@ sections:
         tags: [beginner]
       - title: "Fields print in original order, not selection order"
         code: cut -d, -f3,1 users.csv
-        description: "Listing field 3 before field 1 doesn't reorder the output — cut always preserves the source column order regardless of how `-f` lists them. Reach for `awk` if you actually need columns rearranged."
+        description: "Listing field 3 before field 1 doesn't reorder the output - cut always preserves the source column order regardless of how `-f` lists them. Reach for `awk` if you actually need columns rearranged."
         output: |
           name,department
           Alice,Engineering
@@ -104,7 +104,7 @@ sections:
     examples:
       - title: "Extract a fixed character range"
         code: echo 'Hello, World!' | cut -c1-5
-        description: "`-c1-5` keeps characters 1 through 5, however they're separated (or not) — no delimiter involved at all."
+        description: "`-c1-5` keeps characters 1 through 5, however they're separated (or not) - no delimiter involved at all."
         output: |
           Hello
         level: basic
@@ -117,7 +117,7 @@ sections:
         level: basic
       - title: "From the start to a character, shorthand"
         code: echo 'Hello, World!' | cut -c-5
-        description: "A leading dash with no start number means 'from the first character' — equivalent to `-c1-5`, just shorter to type."
+        description: "A leading dash with no start number means 'from the first character' - equivalent to `-c1-5`, just shorter to type."
         level: basic
       - title: "A single character position"
         code: echo 'Hello, World!' | cut -c1
@@ -127,13 +127,13 @@ sections:
         level: basic
       - title: "Multiple character ranges at once"
         code: echo 'Hello, World!' | cut -c1-3,8-12
-        description: "Comma-separated ranges work the same way as with `-f` — pull several disjoint slices in one pass."
+        description: "Comma-separated ranges work the same way as with `-f` - pull several disjoint slices in one pass."
         output: |
           HelWorld
         level: intermediate
       - title: "Byte positions instead of character positions"
         code: echo 'Hello, World!' | cut -b1-5
-        description: "`-b` counts bytes rather than characters — identical to `-c` for plain ASCII text like this, but they diverge on multi-byte UTF-8 characters, where one character can span several bytes."
+        description: "`-b` counts bytes rather than characters - identical to `-c` for plain ASCII text like this, but they diverge on multi-byte UTF-8 characters, where one character can span several bytes."
         output: |
           Hello
         level: advanced
@@ -172,7 +172,7 @@ sections:
         level: intermediate
       - title: "Change the delimiter used in the output"
         code: cut -d, -f1,3 --output-delimiter=' | ' users.csv
-        description: "`--output-delimiter` replaces the separator in the printed result without needing the input to use it — handy for turning CSV into a more readable aligned-looking list."
+        description: "`--output-delimiter` replaces the separator in the printed result without needing the input to use it - handy for turning CSV into a more readable aligned-looking list."
         output: |
           name | department
           Alice | Engineering
@@ -202,28 +202,28 @@ sections:
         level: intermediate
       - title: "Suppress lines that don't contain the delimiter"
         code: printf 'a,b,c\nno-delimiter-here\nd,e,f\n' | cut -d, -f2 -s
-        description: "`-s` (`--only-delimited`) drops non-matching lines entirely instead of passing them through — useful when a stray line without the expected structure should be treated as noise, not data."
+        description: "`-s` (`--only-delimited`) drops non-matching lines entirely instead of passing them through - useful when a stray line without the expected structure should be treated as noise, not data."
         output: |
           b
           e
         level: intermediate
       - title: "Requesting a field that doesn't exist returns an empty line"
         code: printf 'a,b\n' | cut -d, -f5
-        description: "No error, no warning — just a blank line, since there's nothing at field 5. Worth checking for explicitly in a script rather than assuming a non-empty result."
+        description: "No error, no warning - just a blank line, since there's nothing at field 5. Worth checking for explicitly in a script rather than assuming a non-empty result."
         level: intermediate
         tags: [beginner]
       - title: "The one-character delimiter limit, made visible"
         code: "printf 'a::b::c\\n' | cut -d: -f2"
         description: >-
           `cut`'s delimiter is exactly one character. `::` isn't treated as a single two-character
-          separator — it's two single-colon splits, so field 2 is the empty string between them,
+          separator - it's two single-colon splits, so field 2 is the empty string between them,
           not `b`. Field 3 is `b`; `c` is field 5.
         danger: true
         level: advanced
         tags: [beginner]
       - title: "Same limitation with padded whitespace columns"
         code: printf 'a   b     c\n' | cut -d' ' -f2
-        description: "Multiple consecutive spaces — exactly what `ps` or `ls -l` use to align columns — create the same empty-field problem. Field 2 here is empty; the real 'b' has shifted to a much later field number."
+        description: "Multiple consecutive spaces - exactly what `ps` or `ls -l` use to align columns - create the same empty-field problem. Field 2 here is empty; the real 'b' has shifted to a much later field number."
         level: advanced
         tags: [beginner]
       - title: "Work around it by squeezing repeated delimiters first"
@@ -234,7 +234,7 @@ sections:
         level: advanced
       - title: "Read from stdin via redirection instead of a filename argument"
         code: cut -d, -f1 < users.csv
-        description: "Same result as passing the filename directly — cut treats redirected stdin identically to a file argument."
+        description: "Same result as passing the filename directly - cut treats redirected stdin identically to a file argument."
         output: |
           name
           Alice
@@ -246,14 +246,14 @@ sections:
         level: basic
       - title: "Cut from several files as one combined stream"
         code: cut -d, -f1 users.csv users2.csv
-        description: "Multiple filename arguments are processed in sequence, each line cut the same way — the output doesn't distinguish which file a line came from."
+        description: "Multiple filename arguments are processed in sequence, each line cut the same way - the output doesn't distinguish which file a line came from."
         level: intermediate
 
   - title: "Pulling a column out of real data"
     examples:
       - title: "Extract just the IP addresses from an access log"
         code: cut -d' ' -f1 access.log
-        description: "Space-delimited, field 1: the standard combined log format puts the client IP first. Feed this into `sort | uniq -c` for a visitor frequency count — see the uniq page."
+        description: "Space-delimited, field 1: the standard combined log format puts the client IP first. Feed this into `sort | uniq -c` for a visitor frequency count - see the uniq page."
         output: |
           203.0.113.5
           203.0.113.5

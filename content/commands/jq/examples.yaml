@@ -1,11 +1,11 @@
 command: jq
 fixtures:
   - name: services.json
-    note: "a top-level array, and deliberately not pretty-printed — this is the shape an API hands you, and the reason the first example exists"
+    note: "a top-level array, and deliberately not pretty-printed - this is the shape an API hands you, and the reason the first example exists"
     content: |
       [{"name":"nginx","state":"running","restarts":0,"memory_mb":42},{"name":"postgres","state":"running","restarts":2,"memory_mb":310},{"name":"redis","state":"stopped","restarts":11,"memory_mb":0},{"name":"worker","state":"running","restarts":1,"memory_mb":128}]
   - name: api-response.json
-    note: "an object with the array buried inside it — the other shape, and the one that decides whether a filter starts `.users[]` or `.[]`"
+    note: "an object with the array buried inside it - the other shape, and the one that decides whether a filter starts `.users[]` or `.[]`"
     content: |
       {
         "page": 1,
@@ -53,14 +53,14 @@ fixtures:
         "workers": 4
       }
   - name: events.jsonl
-    note: "four separate JSON objects, one per line — not an array, which is what `-s` is for"
+    note: "four separate JSON objects, one per line - not an array, which is what `-s` is for"
     content: |
       {"ts":"2026-08-19T09:00:00Z","level":"info","msg":"started"}
       {"ts":"2026-08-19T09:01:12Z","level":"warn","msg":"slow query","ms":420}
       {"ts":"2026-08-19T09:02:03Z","level":"error","msg":"connection refused"}
       {"ts":"2026-08-19T09:04:44Z","level":"info","msg":"recovered"}
   - name: broken.json
-    note: "has a trailing comma, which JSON does not allow — for the example about what jq says when the input is not valid"
+    note: "has a trailing comma, which JSON does not allow - for the example about what jq says when the input is not valid"
     content: |
       {"name": "nginx", "state": "running",}
 sections:
