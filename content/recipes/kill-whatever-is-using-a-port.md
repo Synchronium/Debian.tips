@@ -25,9 +25,9 @@ python3  87 root 3u  IPv4 1792818      0t0  TCP *:9000 (LISTEN)
 
 - `-i :9000` filters `lsof`'s (list open files) output to sockets on port 9000, on any address.
 - The `PID` column is what you need next: `kill 87` stops that specific process. Try a plain
-  `kill` first (sends `SIGTERM`, letting the process shut down cleanly) before reaching for
+  `kill` first (sends `SIGTERM`, letting the process shut down cleanly) before escalating to
   `kill -9` (`SIGKILL`, immediate and unconditional).
-- `lsof` is not installed by default on Debian — `sudo apt install lsof` — which is the reason
+- `lsof` is not installed by default on Debian (`sudo apt install lsof`), which is the reason
   the `ss` variation below is worth knowing.
 
 **Variations:**
@@ -52,10 +52,10 @@ fuser -k 9000/tcp
 ```
 
 `ss` ships with the base system on Debian and doesn't require installing anything, making it the
-first thing to reach for on a box you don't control. `fuser -k` skips the two-step "find the PID,
+first thing to try on a box you don't control. `fuser -k` skips the two-step "find the PID,
 then kill it" process entirely, sending `SIGTERM` straight to whatever's using the port; useful
 for a quick cleanup, but skip it when you specifically need to inspect the process (its command
-line, working directory, or owner) before deciding whether killing it is actually the right call.
+line, working directory, or owner) before deciding whether killing it is the right call.
 
 > [!WARNING]
 > `fuser -k` kills every process using the port, not just the one you expect. On a shared or

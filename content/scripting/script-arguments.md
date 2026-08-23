@@ -31,7 +31,7 @@ for a in "$@"; do echo "at: [$a]"; done
 for a in "$*"; do echo "star: [$a]"; done
 ```
 
-Two arguments went in, and the difference between the two loops is the whole lesson.
+Two arguments went in, and the two loops disagree about how many there were.
 
 ## `"$@"` is almost always the one you want
 
@@ -41,9 +41,9 @@ iterations and preserved `two three` as one argument, while `"$*"` gave one iter
 everything.
 
 Unquoted, both behave the same and both are wrong: `$@` and `$*` are each split on whitespace, so
-`two three` becomes two arguments and the original grouping is lost for good. The rule is short.
-Write `"$@"` when passing arguments on to another command, and reach for `"$*"` only when you
-genuinely want one string, usually to print it.
+`two three` becomes two arguments and the original grouping is lost for good. Write `"$@"` when
+passing arguments on to another command, and `"$*"` only when you genuinely want one string,
+usually to print it.
 
 ```bash
 # Forwarding arguments to another command, correctly

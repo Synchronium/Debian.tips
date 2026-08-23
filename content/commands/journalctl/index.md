@@ -27,7 +27,7 @@ journalctl -p err            # errors and worse
 journalctl --since "1 hour ago"
 ```
 
-They combine, and combining them is the difference between reading a log and searching one.
+They combine, and most useful invocations use at least two of them together.
 
 ## Priorities
 
@@ -37,8 +37,8 @@ they are `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`.
 
 ## Who can read what
 
-Reading your own user's entries needs no privileges. Reading everything — other users'
-services, the kernel, most system units — means being root or a member of the
+Reading your own user's entries needs no privileges. Reading everything, meaning other users'
+services, the kernel and most system units, means being root or a member of the
 `systemd-journal` group:
 
 ```bash
@@ -46,8 +46,8 @@ sudo usermod -aG systemd-journal "$USER"   # log out and back in
 ```
 
 The examples below are shown as a root shell would run them. Prefix them with `sudo` if you
-are not root and not in that group — though note that `sudo` writes its own entry to the
-journal, so `sudo journalctl -n 3` shows you the command you just typed.
+are not root and not in that group. Note that `sudo` writes its own entry to the journal, so
+`sudo journalctl -n 3` shows you the command you just typed.
 
 > [!NOTE]
 > Every line the journal prints carries a timestamp, a hostname and a process id, so the

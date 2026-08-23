@@ -9,14 +9,14 @@ tier: standard
 related: [curl, tar, exit-codes-and-error-handling]
 ---
 
-`wget` retrieves things over HTTP, HTTPS and FTP and writes them to disk. It is the tool
-you reach for when you want a file on the filesystem rather than a response on your
-terminal, and the one that will walk an entire site and bring back every page it links to.
+`wget` retrieves things over HTTP, HTTPS and FTP and writes them to disk. Use it when you
+want a file on the filesystem rather than a response on your terminal, and when you want
+something that will walk an entire site and bring back every page it links to.
 
 ## wget or curl?
 
-They overlap heavily, and on Debian both are a package away. The difference that matters
-day to day is what each does by default:
+They overlap heavily, and on Debian both are a package away. Day to day, the difference is
+what each does by default:
 
 ```bash
 wget https://example.com     # saves the body to ./index.html
@@ -25,8 +25,8 @@ curl https://example.com     # prints the body to stdout
 
 Everything follows from that. `wget` has a progress bar, resumes interrupted transfers
 with `-c`, and can recurse through links with `-r`; [`curl`](/commands/curl/) has finer
-control over the request itself and pipes naturally into other commands. Reach for `wget`
-to fetch files and mirror sites, and `curl` to talk to an API.
+control over the request itself and pipes naturally into other commands. Use `wget` to
+fetch files and mirror sites, and `curl` to talk to an API.
 
 ## Output goes to stderr
 

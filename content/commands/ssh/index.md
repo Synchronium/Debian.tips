@@ -10,9 +10,9 @@ related: [copy-files-between-machines, file-permissions-explained, exit-codes-an
 ---
 
 `ssh` opens an encrypted connection to another machine and gives you a shell on it, or runs a
-single command there and streams the output back. It's the tool behind logging into a server,
-behind `scp`/`rsync` (which reuse the same connection), behind Git's `git@github.com:` URLs, and
-behind every "tunnel a port through a jump host" trick a sysadmin reaches for.
+single command there and streams the output back. It carries logins to servers, it is what
+`scp` and `rsync` run over, it is what Git's `git@github.com:` URLs use, and every "tunnel a
+port through a jump host" trick is built on it.
 
 ## An encrypted pipe with a shell on the end
 
@@ -38,7 +38,7 @@ wire. `ssh-keygen -t ed25519` generates a pair (Ed25519 is the current recommend
 and faster to verify than RSA, with no key-size decision to get wrong), and `ssh-copy-id` installs
 the public half on a server you can still log into by password.
 
-Keys can be encrypted at rest with a passphrase, which is where `ssh-agent` earns its keep: unlock
+Keys can be encrypted at rest with a passphrase, which is what `ssh-agent` is for: unlock
 a key once per session, hand it to the agent, and every subsequent `ssh` or `scp` call asks the
 agent for a signature instead of prompting you again. If a private key's permissions are too
 open (readable by group or other), `ssh` refuses to use it outright rather than risk a key that
@@ -53,7 +53,7 @@ belong above a catch-all `Host *` block, not below it. `ssh -G <host>` prints th
 configuration for a host without connecting, which is the fastest way to check *why* `ssh` is
 using the port, key, or jump host it's using.
 
-## Host keys: verifying you're talking to the right machine
+## Host keys prove the server is the one you saw last time
 
 Password or key checks prove who *you* are; a host key check proves who the *server* is. The
 first time you connect to a new host, `ssh` shows a fingerprint and asks you to confirm it, then
@@ -63,7 +63,7 @@ what happens if someone is intercepting the connection, or, far more often in pr
 server was rebuilt or a hosting provider recycled an IP address. `ssh-keygen -R <host>` removes a
 stale entry after you've confirmed the change is legitimate.
 
-## Forwarding: turning the tunnel into a general-purpose pipe
+## Forwarding sends something other than a shell down the tunnel
 
 `-L local:host:remote` opens a port on your machine that tunnels to a port reachable from the
 *server's* side, useful for reaching a database that only listens on a remote machine's loopback
@@ -72,7 +72,7 @@ turns `ssh` into a SOCKS proxy, routing arbitrary traffic through the connection
 single destination port up front. All three need the connection to stay open, so they're normally
 combined with `-N` (no remote command) or `-f` (background after connecting).
 
-## Multiplexing: reusing one connection for everything
+## Reusing one connection for everything
 
 Every fresh `ssh` connection repeats the full handshake, which is the noticeable delay before a
 prompt or `scp` transfer starts. `ControlMaster`/`ControlPath`/`ControlPersist` in the config file

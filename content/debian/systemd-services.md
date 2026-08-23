@@ -120,7 +120,7 @@ Restart=always
 RestartSec=5
 ```
 
-To confirm what is actually in force rather than what the files say, ask systemd for the resolved
+To confirm what is in force rather than what the files say, ask systemd for the resolved
 value:
 
 ```bash
@@ -161,9 +161,9 @@ rebuilding the man page index, none of it in a crontab. `systemctl list-timers` 
 set with the next and last run times filled in, which is the view you want when asking why
 something ran at four in the morning.
 
-Debian did not migrate away from cron, though — `/etc/cron.daily` is still there and still runs.
+Debian did not migrate away from cron, though. `/etc/cron.daily` is still there and still runs.
 [cron vs systemd timers](/compare/cron-vs-systemd-timers/) is the comparison, including which of
-the two a given job actually wants.
+the two a given job wants.
 
 For your own jobs, [`crontab`](/commands/crontab/) is still fewer keystrokes, and a timer costs
 two files instead of one line. What a timer buys is that its output goes to the journal with a
@@ -179,12 +179,12 @@ deleted by a `purge`, which produces a distinction worth knowing:
 ```bash
 sudo systemctl disable ssh
 sudo apt remove openssh-server && sudo apt install openssh-server
-systemctl is-enabled ssh        # disabled — your choice was remembered
+systemctl is-enabled ssh        # disabled, your choice was remembered
 ```
 
 ```bash
 sudo apt purge openssh-server && sudo apt install openssh-server
-systemctl is-enabled ssh        # enabled — back to the package default
+systemctl is-enabled ssh        # enabled, back to the package default
 ```
 
 This is the same `remove` versus `purge` split that governs configuration files in
@@ -211,11 +211,11 @@ explanation.
 
 ## Go deeper
 
-- [`systemctl`](/commands/systemctl/) — the tested command reference: starting, enabling, drop-in
-  overrides, reading a status block, and diagnosing a failed unit
-- [`journalctl`](/commands/journalctl/) — filtering the journal by unit, priority and time, which
+- [`systemctl`](/commands/systemctl/): the tested command reference for starting, enabling,
+  drop-in overrides, reading a status block, and diagnosing a failed unit
+- [`journalctl`](/commands/journalctl/): filtering the journal by unit, priority and time, which
   is where every question about a failed service ends up
-- [APT essentials](/debian/apt-essentials/) — the package layer underneath all of this, including
+- [APT essentials](/debian/apt-essentials/): the package layer underneath all of this, including
   what `remove` and `purge` each leave behind
-- [`crontab`](/commands/crontab/) — the other scheduler, and the one to reach for when a timer is
+- [`crontab`](/commands/crontab/): the other scheduler, and the one to use when a timer is
   more machinery than the job deserves

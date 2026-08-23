@@ -15,11 +15,11 @@ didn't. Almost every "is it running?" question on a Debian box is answered here.
 
 ## Enabled and active are different things
 
-This is the distinction that catches people, and most confusion about systemd comes from
-conflating the two. Every unit has two independent states:
+Every unit has two independent states, and conflating them is where most systemd confusion
+starts:
 
-- **active** — is it running *right now*?
-- **enabled** — will it start *at the next boot*?
+- **active**: is it running *right now*?
+- **enabled**: will it start *at the next boot*?
 
 Neither implies the other. A service you started by hand is active but not enabled, and vanishes
 on reboot. A service you enabled but never started is enabled but not active, and does nothing
@@ -47,9 +47,9 @@ stops. When you mean both, say both.
 ```
 
 The leading glyph is a quick health check: `●` for active or failed, `○` for stopped. `Loaded:`
-gives the unit file's path and whether it is enabled — that one line answers both state questions
-at once. `Active:` gives the current state and how long it has held it. Below that come the main
-PID, resource use, the process tree, and the last few journal lines for the unit —
+gives the unit file's path and whether it is enabled, so that one line answers both state
+questions at once. `Active:` gives the current state and how long it has held it. Below that come
+the main PID, resource use, the process tree, and the last few journal lines for the unit;
 [`journalctl -u`](/commands/journalctl/) is how you read the rest of them.
 
 Because the timestamps, PIDs and memory figures differ on every machine and every run, the
@@ -78,10 +78,10 @@ old settings until you restart it too.
 
 Three locations, in increasing order of authority:
 
-- `/usr/lib/systemd/system/` — units shipped by [Debian packages](/debian/apt-essentials/). Don't
+- `/usr/lib/systemd/system/`: units shipped by [Debian packages](/debian/apt-essentials/). Don't
   edit these; an upgrade overwrites them.
-- `/etc/systemd/system/` — units you write, and overrides. Wins over the package copy.
-- `/etc/systemd/system/<unit>.d/*.conf` — drop-ins, which change individual settings while
+- `/etc/systemd/system/`: units you write, and overrides. Wins over the package copy.
+- `/etc/systemd/system/<unit>.d/*.conf`: drop-ins, which change individual settings while
   leaving the rest of the package's unit intact. Usually what you want.
 
 `systemctl cat` shows the file and every drop-in applying to it, in the order systemd reads them,
@@ -98,6 +98,6 @@ user. Changing it needs root, so `start`, `stop`, `enable`, `mask` and `daemon-r
 
 > [!NOTE]
 > Examples that alter a service use `deploy-agent`, a unit that exists only for this page. The
-> commands are identical for a real service — substitute `ssh`, `nginx` or whatever you are
+> commands are identical for a real service, so substitute `ssh`, `nginx` or whatever you are
 > working on. A unit's `.service` suffix is optional on the command line: `systemctl status ssh`
 > and `systemctl status ssh.service` are the same request.

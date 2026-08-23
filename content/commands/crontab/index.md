@@ -9,8 +9,8 @@ tier: standard
 related: [chmod, find, systemctl, journalctl, exit-codes-and-error-handling]
 ---
 
-`crontab` edits and lists the scheduled jobs — the **crontab** — belonging to a user. `cron`,
-the daemon that actually runs them, wakes up once a minute, checks every installed crontab, and
+`crontab` edits and lists the scheduled jobs, the **crontab**, belonging to a user. `cron`,
+the daemon that runs them, wakes up once a minute, checks every installed crontab, and
 fires anything due. `crontab -e` opens your crontab in `$EDITOR` (falling back to `vi`), `-l`
 lists it without opening an editor, and `-r` deletes it outright, with no confirmation and no
 undo.
@@ -31,7 +31,7 @@ A bare `*` means "every value." Narrow it with a step (`*/15`), a range (`9-17`)
 (`1,15,30`), or combinations of those. `@reboot`, `@daily`, `@hourly`, `@weekly`, `@monthly`, and
 `@yearly` replace the five fields with a shorthand for the obvious schedule.
 
-The most common failure mode isn't syntax — it's environment. A job that works perfectly when
+The most common failure mode is environment rather than syntax. A job that works perfectly when
 you type it yourself can fail silently under cron, because cron runs commands with a minimal
 environment: no `.bashrc`, no interactive `$PATH`, none of the aliases or functions your shell
 normally has. Always use full paths to scripts and binaries inside a crontab, and set `PATH`
@@ -45,7 +45,7 @@ per-user crontab doesn't have.
 ## Finding out whether a job ran
 
 Cron mails a job's output to the owning user, and on a machine with no mail transfer agent
-installed — which most servers now are — that output is discarded. What survives is cron's own
+installed, which most servers now are, that output is discarded. What survives is cron's own
 record of starting the job, which goes to the journal:
 
 ```bash
@@ -60,7 +60,7 @@ redirect its own output somewhere you can read it. See
 
 A timer unit does the same job as a crontab entry, with a real log, a recorded exit status, and
 `systemctl list-timers` to show what is scheduled and when it next runs. The cost is two unit
-files instead of one line. Cron is still the faster thing to reach for, but for anything whose
+files instead of one line. Cron is still the faster thing to write, but for anything whose
 failure you would want to notice, [`systemctl`](/commands/systemctl/) covers the alternative, and
 [Managing services with systemd](/debian/systemd-services/) shows the timers Debian already runs
 on your machine without a crontab anywhere.

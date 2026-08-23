@@ -12,7 +12,7 @@ its own maintenance. The usual advice is that timers are the modern way, which i
 much help: cron is not deprecated, is not going anywhere, and is still the right answer for
 plenty of jobs.
 
-What actually separates them is smaller and more practical than "old versus new".
+The differences are smaller and more practical than "old versus new".
 
 ## The same job, two shapes
 
@@ -25,7 +25,7 @@ crontab -l
 30 3 * * 1 /usr/local/bin/weekly-report
 ```
 
-The same thing as a timer is two units — one describing *when*, one describing *what*:
+The same thing as a timer is two units, one describing *when* and one describing *what*:
 
 ```bash
 systemctl cat report.timer report.service
@@ -51,14 +51,13 @@ Type=oneshot
 ExecStart=/bin/echo report generated
 ```
 
-One line against fifteen. If that were the whole story, cron would win every time — and for a
-job this simple it broadly does. The three differences below are what you are buying with the
-extra ceremony.
+One line against fifteen. If that were the whole story, cron would win every time, and for a
+job this simple it broadly does. The extra ceremony buys three things.
 
 ## Where the output goes
 
-A cron job's output is emailed to you, and on a machine with no mail transport configured —
-which is most machines — it goes nowhere. This is the single most common way a broken cron job
+A cron job's output is emailed to you, and on a machine with no mail transport configured,
+which is most machines, it goes nowhere. This is the single most common way a broken cron job
 stays broken quietly.
 
 A timer's job is a service, so its output is captured in the journal against the unit that
@@ -84,7 +83,7 @@ If the machine is off at 03:30 on Monday, cron simply does not run the job. `Per
 on a timer records when it last fired and runs it on the next boot instead.
 
 Debian softens this for cron with `anacron`, which is why `/etc/cron.daily` still runs on a
-laptop that is asleep overnight — but that applies to the `/etc/cron.*` directories, not to
+laptop that is asleep overnight, but that applies to the `/etc/cron.*` directories, not to
 your own `crontab -e` entries, which get no such treatment.
 
 ## Whether you can check the schedule before it fires
@@ -101,19 +100,18 @@ Normalized form: Mon *-*-* 03:00:00
     Next elapse: Mon 2026-08-24 03:00:00 UTC
 ```
 
-Being able to confirm what an expression means before trusting it to fire at 3am is worth more
-than it sounds.
+`systemd-analyze calendar` will also reject an expression it cannot parse, so a typo surfaces
+when you write it rather than the following Monday.
 
-## One trap that catches everyone
+## A cron job gets a different PATH
 
-A user crontab job runs with `PATH=/usr/bin:/bin` — verified on a Debian trixie system, not
-quoted from memory. A systemd service gets systemd's own default, which includes
-`/usr/local/sbin` and `/usr/local/bin`. A script that works at your prompt and fails under cron
-is usually this, and neither tool warns you.
+A user crontab job runs with `PATH=/usr/bin:/bin`. A systemd service gets systemd's own default,
+which includes `/usr/local/sbin` and `/usr/local/bin`. A script that works at your prompt and
+fails under cron is usually this, and neither tool warns you.
 
 ## What Debian itself does
 
-Both, and it is worth seeing which jobs it trusts to which:
+Both, and which jobs it gives to which is worth a look:
 
 ```bash
 systemctl list-unit-files '*.timer' --no-pager
@@ -135,15 +133,15 @@ Package updates, the dpkg database backup, `fstrim` and the man page index are a
 `report.timer` is the one this page just created. Meanwhile `/etc/cron.daily` is still there and
 still runs. Debian did not migrate; it added.
 
-## The honest verdict
+## Which to use
 
 Use **cron** for a personal, simple, recurring job on a machine that stays on: a backup script,
 a sync, a cleanup. One line in `crontab -e` and you are done, and [crontab](/commands/crontab/)
 covers the syntax.
 
-Use **a timer** when the job matters to someone other than you — when you need its output kept,
+Use **a timer** when the job matters to someone other than you: when you need its output kept,
 when a missed run has to catch up, when it should wait for the network, or when it needs a
 memory or CPU limit. Those are all things a unit file expresses and cron has no vocabulary for.
 
-The tipping point is not complexity of the schedule. It is whether you will need to answer the
-question "did it run, and what did it say?" three weeks from now.
+The deciding question is whether you will need to answer "did it run, and what did it say?"
+three weeks from now, rather than how complicated the schedule is.
