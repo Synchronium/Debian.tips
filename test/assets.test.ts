@@ -1,8 +1,10 @@
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
+import { gzipSync } from "node:zlib";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { copyPublic, writeHashedCss } from "../src/assets.js";
+import { FONT_FILE } from "../src/paths.js";
 
 /* The stylesheet and the static scripts are minified with a source map beside them. None of it
  * is visible in the rendered HTML (the page links a hashed filename either way) so a break
@@ -47,6 +49,31 @@ describe("the stylesheet", () => {
     const again = writeHashedCss(dist, ".generated{color:red}");
     expect(again).toBe(cssHref);
     expect(writeHashedCss(dist, ".generated{color:blue}")).not.toBe(cssHref);
+  });
+});
+
+/* Every visitor pays for the stylesheet and the font on their first request, on whatever
+ * connection they have. The site's claim is that it is fast, and nothing else here checks that:
+ * one rule added to a long stylesheet is invisible in review, and a hundred of them is a
+ * different site. These are ceilings with room to work in rather than targets, so crossing one
+ * should be a decision somebody makes on purpose, in a diff that says so.
+ *
+ * The stylesheet is measured without the syntax-highlighting rules appended to it at build time,
+ * because those are derived from the content rather than written. ADR-0018 has the reasoning and
+ * the numbers as they stood when the budget was set. */
+describe("the byte budget", () => {
+  const gzipped = (source: string): number => gzipSync(Buffer.from(source), { level: 9 }).length;
+
+  it("keeps the stylesheet within budget", () => {
+    const css = readFileSync(join(dist, "assets", writeHashedCss(dist).replace("/assets/", "")), "utf-8");
+    expect(css.length).toBeLessThan(30_000);
+    expect(gzipped(css)).toBeLessThan(6_500);
+  });
+
+  it("ships one webfont, and only the Latin subset of it", () => {
+    const fonts = readdirSync(join(dist, "assets")).filter((f) => f.endsWith(".woff2"));
+    expect(fonts).toEqual([FONT_FILE]);
+    expect(statSync(join(dist, "assets", FONT_FILE)).size).toBeLessThan(30_000);
   });
 });
 

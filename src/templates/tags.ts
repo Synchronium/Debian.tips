@@ -1,6 +1,6 @@
 import { html, raw } from "../html.js";
 import { layout } from "./layout.js";
-import { pageCard } from "./partials/card.js";
+import { rowList } from "./partials/row.js";
 import { type PageSlice, paginationNav } from "./partials/pager.js";
 import { TAGS_PATH, tagPath } from "../config.js";
 import type { Page, TagInfo } from "../content/loader.js";
@@ -11,7 +11,10 @@ export function tagsIndexPage(tags: TagInfo[], pages: Page[], cssHref: string): 
 
   const body = html`
 <nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li aria-current="page">Tags</li></ol></nav>
+<header class="page-head">
 <h1>Tags</h1>
+<p class="lede">Every subject covered on debian.tips, across all kinds of page.</p>
+</header>
 <ul class="tag-index">
 ${tags.map((t) =>
   raw(
@@ -32,9 +35,11 @@ ${tags.map((t) =>
 export function tagPage(tag: TagInfo, slice: PageSlice<Page>, cssHref: string): string {
   const body = html`
 <nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><a href="${TAGS_PATH}">Tags</a></li><li aria-current="page">${tag.name}</li></ol></nav>
+<header class="page-head">
 <h1>${tag.name}</h1>
 <p class="lede">${tag.description}</p>
-<div class="card-grid">${slice.items.map((p) => raw(pageCard(p, "h2")))}</div>
+</header>
+${raw(rowList(slice.items, "h2"))}
 ${raw(paginationNav(slice))}`;
 
   return layout({

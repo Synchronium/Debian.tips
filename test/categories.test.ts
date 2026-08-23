@@ -1,7 +1,7 @@
 import { readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { CATEGORIES, PROSE_CATEGORIES } from "../src/content/schema.js";
-import { CATEGORY_META, COMMAND_GROUPS, NAV_ORDER } from "../src/config.js";
+import { CATEGORY_META, COMMAND_GROUPS, NAV_GROUPS, NAV_ORDER } from "../src/config.js";
 import { commandsDir } from "../src/paths.js";
 
 /* A category is declared in `schema.ts` and rendered from `config.ts`. Adding one to
@@ -27,6 +27,25 @@ describe("category configuration", () => {
   it("derives the prose categories as everything but commands", () => {
     expect(PROSE_CATEGORIES).not.toContain("commands");
     expect(PROSE_CATEGORIES.length).toBe(CATEGORIES.length - 1);
+  });
+
+  /* The header renders `NAV_GROUPS`, not `NAV_ORDER` (ADR-0019), so a category missing from the
+   * groups has a listing page, a sitemap entry and no way to reach it by navigating: it is
+   * findable only by search, or by a link from another page that may not exist yet. A category
+   * in two groups is the milder version, showing the same destination under two labels. */
+  it("puts every category in exactly one nav group", () => {
+    const grouped = NAV_GROUPS.flatMap((group) => group.categories);
+    expect([...grouped].sort()).toEqual([...CATEGORIES].sort());
+  });
+
+  it("points every nav group at a path its own categories cover", () => {
+    for (const group of NAV_GROUPS) {
+      expect(group.label.length).toBeGreaterThan(0);
+      expect(group.categories.length).toBeGreaterThan(0);
+      // The label is a link as well as a menu, so it has to land somewhere inside the group
+      // rather than on whichever listing happened to be first when it was written.
+      expect(group.categories.map((c) => CATEGORY_META[c].path)).toContain(group.path);
+    }
   });
 });
 

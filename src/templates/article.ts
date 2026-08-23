@@ -17,9 +17,12 @@ export function articlePage(page: ArticlePage | ScriptingPage, cssHref: string):
 ${raw(breadcrumbs(page.category, page.title))}
 <article class="article">
 <div class="content">
+<header class="page-head">
 <h1>${page.title}</h1>
+${page.tagline ? raw(html`<p class="tagline">${page.tagline}</p>`) : ""}
 <p class="meta">Updated ${dateStr}</p>
 ${raw(tagChips(page.tags))}
+</header>
 <div class="prose">${raw(page.html)}</div>
 ${raw(related(page.relatedLinks))}
 ${raw(series)}

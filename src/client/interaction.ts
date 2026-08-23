@@ -88,6 +88,36 @@ function toggleOutputs(button: HTMLElement): void {
   if (live) live.textContent = expand ? "All output expanded" : "All output collapsed";
 }
 
+/** Filters a listing's rows against what has been typed, matching on the text the row already
+ *  shows. Substring rather than fuzzy: on a page of command names, a reader typing "gr" means
+ *  the ones containing "gr", and anything cleverer starts returning `chgrp` for `grep`.
+ *
+ *  A group heading whose rows have all been hidden is hidden with them, so `/commands/` does not
+ *  leave a column of empty topic headings behind. `hidden` rather than a class, because it is
+ *  exactly what the attribute means and it takes the rows out of the accessibility tree too. */
+function filterListing(input: HTMLInputElement): void {
+  const query = input.value.trim().toLowerCase();
+  const rows = document.querySelectorAll<HTMLElement>(".row");
+  let shown = 0;
+
+  for (const row of rows) {
+    const match = query === "" || (row.textContent ?? "").toLowerCase().includes(query);
+    row.hidden = !match;
+    if (match) shown += 1;
+  }
+
+  for (const group of document.querySelectorAll<HTMLElement>(".listing-group")) {
+    group.hidden = group.querySelectorAll<HTMLElement>(".row:not([hidden])").length === 0;
+  }
+
+  const status = document.querySelector("[data-listing-filter-status]");
+  if (status) {
+    status.textContent =
+      query === "" ? "" : `${shown} of ${rows.length} shown${shown === 0 ? ". Try a shorter search." : ""}`;
+  }
+  document.querySelector(".listing-empty")?.toggleAttribute("hidden", shown > 0);
+}
+
 // The theme toggle's pressed state is set here rather than in the markup: the served HTML carries
 // no theme, so the button cannot know which way it points until theme-init has read the stored
 // preference.
@@ -113,6 +143,11 @@ document.addEventListener("click", (event) => {
   }
   const copyButton = target.closest<HTMLElement>("[data-copy]");
   if (copyButton) copy(copyButton);
+});
+
+document.addEventListener("input", (event) => {
+  const filter = (event.target as Element | null)?.closest<HTMLInputElement>("[data-listing-filter]");
+  if (filter) filterListing(filter);
 });
 
 document.addEventListener("keydown", (event) => {

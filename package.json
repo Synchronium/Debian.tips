@@ -20,6 +20,7 @@
     "format:check": "prettier --check \"src/**/*.ts\" \"scripts/**/*.ts\" \"test/**/*.ts\" \"styles/**/*.css\""
   },
   "devDependencies": {
+    "@fontsource/source-serif-4": "^5.3.0",
     "@types/node": "^26.2.0",
     "chokidar": "^5.0.0",
     "esbuild": "^0.28.2",
