@@ -120,6 +120,12 @@ review found. Git has the first, `docs/adr/` has the rest, and prose that has to
 reach the point is worse than no prose. A comment is also a claim that goes stale: no counts of
 examples or pages, no measurements that will move, no naming another page that might be renamed.
 
+A comment is prose the site publishes, so it is held to `.claude/reference/voice.md` like any
+sentence on a page, and its §8 is the half that only applies here. That is not a style preference:
+a reader who followed a link from a page to check whether a claim is really checked has landed on
+this comment, and prose that sounds generated undermines the thing they came to verify. The same
+goes for `README.md`, `docs/adr/` and the documents in `.claude/`.
+
 ```sh
 # Good: the rule, and what breaks without it.
 # cowsay-off adds three cowfiles, so `cowsay -l` lists 50 rather than 47 when it is installed.
@@ -155,6 +161,7 @@ This file is deliberately short. The detail lives next to the job that needs it:
 | Doing what | Read |
 | --- | --- |
 | Writing or fixing a content page | `.claude/skills/write-content-page/SKILL.md` |
+| Writing any prose: a page, a comment, an ADR, a README | `.claude/reference/voice.md` |
 | Cross-linking after a new page | `.claude/skills/cross-link-pages/SKILL.md` |
 | Committing, pushing, a CI failure | `.claude/skills/ship/SKILL.md` |
 | Reviewing a Dependabot PR | `.claude/skills/review-dependency-prs/SKILL.md` |

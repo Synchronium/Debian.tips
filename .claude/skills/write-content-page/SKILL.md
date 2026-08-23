@@ -209,14 +209,17 @@ Each must stay a single paragraph; a blank line or a leading `- ` fails the buil
 a page is markdown: `title`, `tagline` and frontmatter `description` are plain text, so a backtick
 there ships literally.
 
-Direct, second person, no fluff, no "In today's fast-paced world." **British English in all
-prose** (`colour`, `flavour`, `behaviour`, `sanitised`, `organise`, `-ise` not `-ize`) but never
-touch a real flag, command, package name, or captured output for spelling (`--color` stays
-`--color`; a real GNU grep flag). Realistic placeholders (`access.log`, `~/projects`), never
-`foo`/`file1`. Show the short flag in code; mention the long form in prose when it aids memory.
-Titles are outcomes ("Find files modified in the last 24 hours"), not syntax ("Using -mtime").
-Every page links ≥ 2 related pages using root-relative paths (`/concepts/pipes-and-redirection/`).
-Avoid common AI tropes: em dashes, "it's not X, it's Y", "here's why that matters", and similar.
+**How the prose has to sound is `.claude/reference/voice.md`**, which is the whole answer and is
+worth reading before writing a page rather than after. It covers the tells that make writing read
+as machine-generated, what is banned outright, and how a section is allowed to end.
+
+The rest is mechanical. **British English in all prose** (`colour`, `flavour`, `behaviour`,
+`sanitised`, `organise`, `-ise` not `-ize`) but never touch a real flag, command, package name, or
+captured output for spelling (`--color` stays `--color`; a real GNU grep flag). Realistic
+placeholders (`access.log`, `~/projects`), never `foo`/`file1`. Show the short flag in code;
+mention the long form in prose when it aids memory. Titles are outcomes ("Find files modified in
+the last 24 hours"), not syntax ("Using -mtime"). Every page links ≥ 2 related pages using
+root-relative paths (`/concepts/pipes-and-redirection/`).
 
 ## 6. Verify before calling it done
 
