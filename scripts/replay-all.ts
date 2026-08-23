@@ -7,8 +7,8 @@
 // The check `npm run check` can't make: that gate validates shape (schema, links, types)
 // and would pass a page claiming output no command ever produced.
 //
-// Separate from `npm run check` because it needs Docker: the whole run takes about half a
-// minute once the sandbox image exists, and a cold run is dominated by building that image.
+// Separate from `npm run check` because it needs Docker, and because "the generator is broken"
+// and "a page is lying" are different problems. A cold run is dominated by building the image.
 //
 //   npm run replay -- --order=reverse         # a different permutation, deterministically
 //   npm run replay -- --order=random:abc123   # and a seeded one, reproducible from the seed
@@ -16,11 +16,11 @@
 // Pages run one at a time, in one sandbox per flavour, and that is deliberate: every page
 // sharing one container is what tests CLAUDE.md's third rule, that a page's setup script
 // normalises what it needs rather than trusting what the last page left behind. See ADR-0002.
-// What *is* cheap is not paying for a TypeScript startup per page, so the two replays are
-// imported and called rather than spawned.
+// The two replays are imported and called rather than spawned, so a serial run at least does not
+// pay for a TypeScript startup per page.
 //
-// The order within that one sandbox is a `--order` away: a fixed order tests exactly one of the
-// possible orderings, and a page that passes only because of what ran before it passes anyway.
+// The order within that one sandbox is a parameter, because a fixed order tests exactly one of
+// the possible orderings, and a page that passes only because of what ran before it passes anyway.
 // The seed is always printed, so a shuffled failure names the command that reproduces it.
 //
 // Exit status: 0 when every page reproduces, 1 if any page fails, 2 if Docker is

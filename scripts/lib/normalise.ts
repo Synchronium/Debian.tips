@@ -97,8 +97,8 @@ const shellNoise = (s: string): string =>
     .replace(/^Pseudo-terminal will not be allocated because stdin is not a terminal\.\n/gm, "");
 
 /** Removes only the artifacts of running under the harness, leaving every real value
- *  intact. This is what gets written into a page: a reader typing the command sees
- *  exactly this, minus nothing they would actually have seen.
+ *  intact. This is what gets written into a page, so a page shows what a reader typing the
+ *  command would see and nothing else.
  *
  *  Whitespace handling is asymmetric on purpose: trailing spaces and surrounding blank
  *  lines go, but leading spaces on a content line stay. `wc` and `uniq -c` right-align
@@ -135,7 +135,7 @@ export function normalise(text: string): string {
  *    quantity   288K, 1.7M, 261ms, 2min   a number and its unit move together: a service
  *                                         up for 261ms today is up for 2min tomorrow, and
  *                                         masking only the digits would leave ms vs min
- *    duration   2min 30s → one quantity   a span systemd spells with as many units as it
+ *    duration   2min 30s -> one quantity  a span systemd spells with as many units as it
  *                                         needs, so the count of them is itself volatile
  *    weekday    Mon, Tue                  clock-derived, and not digits
  *    month      Jan, Feb                  the same

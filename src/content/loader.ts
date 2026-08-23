@@ -298,12 +298,12 @@ export async function loadContent(
     byQualified.set(qualify(entry.category, entry.slug), entry);
   }
 
-  // A slug no longer has to be unique across the whole site, since `related:` can say which
-  // page it means, and every URL is `/category/slug/` regardless. One thing still keys off the bare slug
-  // and cannot: the replay looks for a page's setup script at `scripts/fixtures/<slug>.sh`, so two
-  // pages sharing a slug would share a setup script, and the second would be replayed against the
-  // first one's fixtures while reporting a clean run. Caught here, in the cheap gate, rather than
-  // in the replay, which needs Docker.
+  // A slug no longer has to be unique across the whole site, since `related:` can say which page
+  // it means, and every URL is `/category/slug/` regardless. One thing still keys off the bare
+  // slug, and it is the reason this check exists: the replay looks for a page's setup script at
+  // `scripts/fixtures/<slug>.sh`, so two pages sharing a slug would share a setup script, and the
+  // second would be replayed against the first one's fixtures while reporting a clean run. Caught
+  // here, in the cheap gate, rather than in the replay, which needs Docker.
   for (const [slug, entries] of bySlug) {
     if (entries.length > 1 && existsSync(fixtureScript(slug))) {
       throw new ContentError(

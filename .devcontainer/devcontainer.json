@@ -7,32 +7,27 @@
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
-		// Lets Claude run content-example testing batches inside throwaway `docker run --rm`
-		// containers instead of directly in this persistent devcontainer, so installs/service
-		// state from testing (e.g. openssh-server, a spun-up sshd) don't accumulate here.
-		// Needs "privileged": true below — nested Docker won't start without it.
+		// Lets the example replay run inside throwaway `docker run --rm` containers rather than
+		// directly in this persistent devcontainer, so the packages and services a page needs to
+		// be verified (openssh-server, a running sshd) don't accumulate here.
+		// Needs "privileged": true below, without which nested Docker won't start.
 		// moby:false because the default moby-cli/moby-engine packages aren't published
 		// for Debian trixie yet; this makes the feature install real docker-ce instead.
 		"ghcr.io/devcontainers/features/docker-in-docker:4": {
 			"moby": false
 		},
-		// The GitHub CLI, for reading CI results from in here. A failing `replay` job's log
-		// needs authentication to fetch — the anonymous API returns 403 — so without `gh` the
-		// only way to see why a run failed is to paste it in by hand. It isn't in Debian's
-		// repositories, so this feature (upstream apt repo) rather than postCreateCommand.
-		// `gh auth login` is a one-off, not once per rebuild — the credential lives in
-		// ~/.config/gh, which is mounted as a volume below for exactly that reason.
+		// The GitHub CLI, for reading CI results from in here. Fetching a failing job's log needs
+		// authentication, since the anonymous API returns 403 for it, so without `gh` the only way
+		// to see why a run failed is to paste it in by hand. It isn't in Debian's repositories, so
+		// this feature (upstream apt repo) rather than postCreateCommand.
 		"ghcr.io/devcontainers/features/github-cli:1.1.1": {}
 	},
 	"privileged": true,
 
-	// Persists Claude Code session transcripts, memory, and config across container rebuilds.
-	// Without this, ~/.claude lives on the container's own writable layer and is discarded on
-	// every rebuild along with everything in it.
-	//
-	// The gh volume is the same problem: `gh auth login` writes ~/.config/gh/hosts.yml, which
-	// a rebuild discards, and the symptom is a CI log that can't be read at the moment you
-	// want it — the anonymous API returns 403 for job logs. One mount, one login, for good.
+	// Both directories would otherwise live on the container's own writable layer, which a
+	// rebuild discards along with everything in it: ~/.claude holds Claude Code's session
+	// transcripts, memory and config, and ~/.config/gh holds what `gh auth login` wrote, so
+	// without the volume that login has to be repeated after every rebuild.
 	"mounts": [
 		"source=debiantips-claude-home,target=/home/node/.claude,type=volume",
 		"source=debiantips-gh-config,target=/home/node/.config/gh,type=volume"
@@ -41,19 +36,17 @@
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
-	// Installs the real `chromium` apt package for pa11y-ci and any local Lighthouse run
-	// (accessibility/perf checks) to drive headlessly, instead of letting Puppeteer download its
-	// own separate "Chrome for Testing" build. An earlier, more restrictive sandboxed environment
-	// couldn't run apt's chromium at all — its crashpad self-test crashed with SIGTRAP on launch
-	// (a ptrace restriction) — hence downloading Puppeteer's own build as a workaround. Verified
-	// 2026-08-14 on this Mac-hosted devcontainer: apt's chromium launches cleanly, headless and
-	// sandboxed, both standalone and through a real `pa11y` run against a built page. containerEnv
-	// below points Puppeteer at it and skips its own download. CI (.github/workflows/ci.yml) runs
-	// outside this devcontainer on GitHub's runners and is unaffected — it still uses Puppeteer's
-	// own downloaded Chrome, which already works fine there.
-	// Both volumes above are created and owned by root on first mount, which blocks the node
-	// user from writing to them — ~/.claude for the Claude Code extension / CLI, ~/.config/gh
-	// for `gh auth login`. chown them back to node before anything else touches them.
+	// Two things, in the order the command does them.
+	//
+	// Both volumes above are created owned by root on first mount, which leaves the node user
+	// unable to write to them. They are chowned back before anything else touches them.
+	//
+	// Then the real `chromium` apt package, which pa11y-ci and any local Lighthouse run drive
+	// headlessly; containerEnv below points Puppeteer at it and skips Puppeteer's own separate
+	// "Chrome for Testing" download. That works here because the container permits ptrace, which
+	// chromium's crashpad self-test needs to launch at all. Where a sandbox forbids it, that test
+	// crashes with SIGTRAP and Puppeteer's own build is the way back. CI runs outside this
+	// devcontainer, on GitHub's runners, and downloads its own Chrome there.
 	"postCreateCommand": "sudo mkdir -p /home/node/.claude /home/node/.config/gh && sudo chown -R node:node /home/node/.claude /home/node/.config/gh && sudo apt-get update && sudo apt-get install -y chromium",
 
 	"containerEnv": {

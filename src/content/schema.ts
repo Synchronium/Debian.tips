@@ -151,7 +151,7 @@ export const exampleSchema = z.object({
    * time. The string says what will differ, and is shown to the reader above the output; a
    * bare flag would leave them guessing which parts to distrust.
    *
-   * Says what differs; it does not by itself change how the output is checked. Most
+   * `volatile:` says what differs; it does not by itself change how the output is checked. Most
    * volatile output is still compared exactly, because `scripts/lib/normalise.ts` masks the
    * specific line it appears on (a `diff` header's mtime, a wget transfer rate) and an
    * anchored mask is stricter than a general one. */
