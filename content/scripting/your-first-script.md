@@ -1,5 +1,6 @@
 ---
 title: "Your first script"
+tagline: "The shebang, the execute bit, and the PATH lookup"
 description: "Write, mark executable, and run your first bash script, plus what the shebang line and PATH lookup do."
 category: scripting
 tags: [scripting, beginner]

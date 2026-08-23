@@ -1,5 +1,6 @@
 ---
 title: "apt vs apt-get"
+tagline: "Two interfaces to one library, and only one is script-safe"
 description: "Both are shipped by the same package and do the same job. What differs is who each one is written for, and only one of them is safe in a script."
 category: compare
 tags: [apt, debian, sysadmin, beginner]

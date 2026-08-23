@@ -1,5 +1,6 @@
 ---
 title: "Loops"
+tagline: "for, while, until, and the pipeline that forgets"
 description: "for, while and until in bash, iterating over files without breaking on spaces, and why a while read loop in a pipeline forgets everything it did."
 category: scripting
 tags: [scripting, beginner]

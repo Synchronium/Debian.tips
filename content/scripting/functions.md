@@ -1,5 +1,6 @@
 ---
 title: "Functions"
+tagline: "Arguments, return status, and keeping variables local"
 description: "Defining bash functions, why return gives a status not a value, how to hand data back, and why local separates a helper from a landmine."
 category: scripting
 tags: [scripting, beginner]

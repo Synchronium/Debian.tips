@@ -1,5 +1,6 @@
 ---
 title: "Conditionals and test"
+tagline: "[ is a command, [[ is not, and that changes the rules"
 description: "The difference between [ and [[ in bash, why unquoted variables crash [ but not [[, and pattern matching with case."
 category: scripting
 tags: [scripting, beginner]

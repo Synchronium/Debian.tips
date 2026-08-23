@@ -1,5 +1,6 @@
 ---
 title: "Monitor a log file in real time"
+tagline: "Follow it live, filter it, and survive a rotation"
 description: "Watch a log file as new lines are written, filter it live, and keep watching across log rotation."
 category: recipes
 tags: [monitoring, sysadmin]

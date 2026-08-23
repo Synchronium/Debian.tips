@@ -1,5 +1,6 @@
 ---
 title: "Debian's release channels"
+tagline: "What stable, testing and unstable commit you to"
 description: "What stable, testing, unstable and backports each mean, why the suite name in your sources file matters more than you think, and which to run."
 category: debian
 tags: [debian, apt, sysadmin]

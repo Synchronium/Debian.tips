@@ -1,5 +1,6 @@
 ---
 title: "Adding a third-party repository safely"
+tagline: "apt-key is gone, and Signed-By scopes a vendor's key"
 description: "Why apt-key is gone, how Signed-By scopes a vendor's key to their repository alone, and how to stop that repository replacing the rest of your system."
 category: debian
 tags: [apt, debian, security]

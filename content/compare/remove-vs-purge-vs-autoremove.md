@@ -1,5 +1,6 @@
 ---
 title: "remove vs purge vs autoremove"
+tagline: "Configuration files, and packages you never asked for"
 description: "Not three strengths of one operation. Two of them differ over configuration files; the third acts only on packages you never asked for."
 category: compare
 tags: [apt, debian, sysadmin, beginner]

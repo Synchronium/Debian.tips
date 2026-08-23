@@ -1,5 +1,6 @@
 ---
 title: "File permissions explained"
+tagline: "Nine bits, and what they mean on a directory instead"
 description: "The rwx/owner-group-other model, numeric vs symbolic chmod, umask, and why setuid/setgid on directories behave differently than you'd expect."
 category: concepts
 tags: [permissions, beginner, sysadmin]

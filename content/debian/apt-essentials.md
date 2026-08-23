@@ -1,5 +1,6 @@
 ---
 title: "APT essentials"
+tagline: "update, upgrade, install, remove, and dpkg underneath"
 description: "The apt, apt-get, and dpkg commands that cover almost everything you'll do to manage packages on Debian, and how remove differs from purge."
 category: debian
 tags: [apt, debian, sysadmin]

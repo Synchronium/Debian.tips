@@ -1,5 +1,6 @@
 ---
 title: "sudo: command not found"
+tagline: "The installer decides this when you set a root password"
 description: "On Debian, sudo is often simply not installed, and your user is not in the sudo group. Why the installer does that, and how to fix it from a root shell."
 category: troubleshooting
 tags: [debian, permissions, sysadmin, beginner]

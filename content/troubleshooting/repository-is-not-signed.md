@@ -1,5 +1,6 @@
 ---
 title: "The repository is not signed"
+tagline: "NO_PUBKEY, Missing key, and why apt-key adv is not the fix"
 description: "apt cannot verify a repository's signature: the NO_PUBKEY and Missing key errors. What Debian 13 changed, and why apt-key adv is no longer the fix."
 category: troubleshooting
 tags: [apt, debian, security, sysadmin]

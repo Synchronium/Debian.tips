@@ -1,5 +1,6 @@
 ---
 title: "Find the largest files on disk"
+tagline: "du, sort and head, aimed at any directory"
 description: "Locate what is eating your disk space, from a whole filesystem down to one directory."
 category: recipes
 tags: [disk, files, one-liners]

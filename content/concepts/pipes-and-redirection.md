@@ -1,5 +1,6 @@
 ---
 title: "Pipes and redirection"
+tagline: "Rewiring three file descriptors before the program runs"
 description: "How | connects commands together, and how >, >>, 2>&1, and <() route data to and from files, other commands, and each other."
 category: concepts
 tags: [terminal, one-liners, beginner]

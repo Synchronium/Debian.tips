@@ -1,5 +1,6 @@
 ---
 title: "Variables and quoting"
+tagline: "Where scripts break most often, and how quoting fixes it"
 description: "Why unquoted variables break bash scripts, when to use double vs single quotes, and how glob characters make it worse."
 category: scripting
 tags: [scripting, beginner]

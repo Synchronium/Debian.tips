@@ -1,5 +1,6 @@
 ---
 title: "Bulk rename a batch of files"
+tagline: "A plain bash loop, spaces handled, previewed first"
 description: "Rename many files at once with a plain bash loop, safely handling spaces and previewing changes before committing."
 category: recipes
 tags: [files, scripting, one-liners]

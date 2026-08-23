@@ -1,5 +1,6 @@
 ---
 title: "cron vs systemd timers"
+tagline: "Output, missed runs, and whether you can test the schedule"
 description: "Debian ships both and uses both. What differs is where the output goes, what happens to a missed run, and whether you can test the schedule."
 category: compare
 tags: [cron, systemd, sysadmin, debian]

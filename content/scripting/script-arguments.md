@@ -1,5 +1,6 @@
 ---
 title: "Script arguments"
+tagline: "Positional parameters, \"$@\" versus \"$*\", and getopts"
 description: "How a script reads what it was called with: positional parameters, why \"$@\" and \"$*\" are not the same, shift, and parsing real flags with getopts."
 category: scripting
 tags: [scripting, beginner]

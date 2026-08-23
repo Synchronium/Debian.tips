@@ -1,5 +1,6 @@
 ---
 title: "Could not get lock /var/lib/dpkg/lock-frontend"
+tagline: "apt names the process holding the lock"
 description: "apt refuses to run because something else is already installing. Modern apt tells you exactly which process, and deleting the lock file is the wrong fix."
 category: troubleshooting
 tags: [apt, debian, sysadmin, beginner]

@@ -1,5 +1,6 @@
 ---
 title: "Environment variables and PATH"
+tagline: "Why a program you can run is still not found"
 description: "Why a program you can see and execute is still not found, how the environment is copied into each new process, and where PATH is really set on Debian."
 category: concepts
 tags: [environment, scripting, terminal]

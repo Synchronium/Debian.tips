@@ -1,5 +1,6 @@
 ---
 title: "Managing services with systemd"
+tagline: "What Debian's packaging does to a service behind your back"
 description: "How Debian ships, enables and starts systemd services, where unit files live, and how to override a packaged unit without ever editing it."
 category: debian
 tags: [systemd, debian, sysadmin]

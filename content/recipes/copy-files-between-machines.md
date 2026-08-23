@@ -1,5 +1,6 @@
 ---
 title: "Copy files between two machines over SSH"
+tagline: "scp for one file, rsync when it has to resume"
 description: "Transfer a file or directory tree between two machines with scp or rsync, and resume an interrupted transfer without starting over."
 category: recipes
 tags: [ssh, networking, files]

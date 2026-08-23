@@ -1,5 +1,6 @@
 ---
 title: "sh vs bash vs dash"
+tagline: "On Debian, /bin/sh is dash and not bash"
 description: "On Debian /bin/sh is dash, not bash. That one fact explains most scripts that work at your prompt and fail the moment something else runs them."
 category: compare
 tags: [scripting, debian, beginner]
