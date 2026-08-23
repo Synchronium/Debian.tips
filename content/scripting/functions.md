@@ -30,7 +30,7 @@ program. This is the same set of rules as
 [Script arguments](/scripting/script-arguments/), applied one level in.
 
 A function must be defined before it is called. Bash reads a script top to bottom, so a call
-placed above its definition fails with "command not found" — which is why helper definitions
+placed above its definition fails with "command not found", which is why helper definitions
 conventionally sit at the top and the work happens at the bottom.
 
 ## `return` gives back a status, not a value
@@ -129,7 +129,7 @@ later, in a completely different function. Declare every variable a function ass
 including loop counters.
 
 > [!WARNING]
-> `local` is itself a command, and its exit status is its own — not that of the command
+> `local` is itself a command, and its exit status is its own, not that of the command
 > substitution you assigned from. So `local out=$(some_command)` always succeeds, and
 > `set -e` will not catch a failure there. Declare first, assign second, when the status matters.
 
@@ -208,6 +208,6 @@ by reading, and it is worth knowing before you rely on
 ## What's next
 
 That is the core of the language: variables, conditions, loops, arguments and functions. From
-here the useful next steps are the pieces that make a script safe to run unattended — `trap` for
+here the useful next steps are the pieces that make a script safe to run unattended: `trap` for
 cleanup, `set -euo pipefail`, and the error-handling patterns in
 [Exit codes and error handling](/concepts/exit-codes-and-error-handling/).

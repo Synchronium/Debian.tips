@@ -165,7 +165,7 @@ sections:
 
   - title: Repairing a broken install
     intro: >-
-      What to reach for when an install was interrupted — a killed session, a machine that lost
+      What to run when an install was interrupted by a killed session, a machine that lost
       power mid-upgrade, or a full disk.
     examples:
       - title: Finish configuring everything left half-done

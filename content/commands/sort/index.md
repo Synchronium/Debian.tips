@@ -18,7 +18,7 @@ Plain `sort` on a file of numbers puts `10` before `2`, because it's comparing t
 same but also understands `K`/`M`/`G` suffixes, which is what you want when sorting `du -h` or
 `ls -lh` output.
 
-For anything with columns — CSV, `ps` output, `du` output — `-k` picks which field to sort by
+For anything with columns (CSV, `ps` output, `du` output) `-k` picks which field to sort by
 instead of the whole line: `-k2` sorts by the second field, `-t,` changes the field separator
 from whitespace to a comma. Combine `-k` with `-n` or `-h` to sort a specific numeric column
 correctly instead of falling back to lexicographic order on it by accident.
@@ -28,5 +28,5 @@ unsorted order preserved). `-r` reverses whatever order you asked for. `-c` chec
 is already sorted without printing anything, useful in scripts as a precondition check.
 
 Case matters too: default comparison is case-sensitive, so every uppercase letter sorts before
-every lowercase one in the ASCII table — `Cherry` lands before `apple`. `-f` folds case before
-comparing, which is almost always what you actually want for sorting words a human will read.
+every lowercase one in the ASCII table, so `Cherry` lands before `apple`. `-f` folds case before
+comparing, which is almost always what you want for sorting words a human will read.

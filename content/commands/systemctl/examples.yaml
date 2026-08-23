@@ -32,7 +32,7 @@ sections:
     examples:
       - title: "Check whether a service is running"
         code: systemctl is-active cron
-        description: "Prints one word — `active`, `inactive` or `failed` — and exits `0` only when the service is active. The form to reach for in a script."
+        description: "Prints one word — `active`, `inactive` or `failed` — and exits `0` only when the service is active. The form to use in a script."
         output: |2
           active
         level: basic

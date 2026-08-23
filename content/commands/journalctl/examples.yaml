@@ -64,7 +64,7 @@ sections:
     examples:
       - title: "Show one service's log"
         code: journalctl -u backup-sync -n 3 --no-pager -o cat
-        description: "`-u` takes a unit name, with or without the `.service` suffix. This is the command to reach for the moment a service misbehaves."
+        description: "`-u` takes a unit name, with or without the `.service` suffix. This is the command to run the moment a service misbehaves."
         output: |2
           backup-sync.service: Main process exited, code=exited, status=1/FAILURE
           backup-sync.service: Failed with result 'exit-code'.
@@ -199,7 +199,7 @@ sections:
         tags: [sysadmin]
       - title: "Print entries as JSON for another program to read"
         code: journalctl -t deploy-agent -n 1 --no-pager -o json | grep -o '"MESSAGE":"[^"]*"'
-        description: "`-o json` emits one object per entry with every field the journal holds — cursors, boot ids, the lot. Extract the field you want rather than reading it whole. `grep -o` is fine for one field on one line; [jq](/commands/jq/) is what to reach for the moment the query gets more interesting than that."
+        description: "`-o json` emits one object per entry with every field the journal holds — cursors, boot ids, the lot. Extract the field you want rather than reading it whole. `grep -o` is fine for one field on one line; [jq](/commands/jq/) is what you want the moment the query gets more interesting than that."
         output: |2
           "MESSAGE":"upload failed: no space left on device"
         level: advanced

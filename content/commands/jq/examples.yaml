@@ -428,7 +428,7 @@ sections:
         tags: [beginner]
       - title: "Sort records by a field"
         code: jq -c 'sort_by(.memory_mb) | map(.name)' services.json
-        description: "`sort_by(f)` orders an array by whatever `f` returns. For descending order, negate a numeric key with `sort_by(-.memory_mb)` rather than reaching for `reverse`."
+        description: "`sort_by(f)` orders an array by whatever `f` returns. For descending order, negate a numeric key with `sort_by(-.memory_mb)` rather than adding `reverse`."
         output: |
           ["redis","nginx","worker","postgres"]
         level: intermediate

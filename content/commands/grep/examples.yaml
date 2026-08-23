@@ -508,7 +508,7 @@ sections:
           `-v` plus `-F -f` turns grep into a quick diff-by-line tool: print every
           line of `current-users.txt` that does NOT appear anywhere in
           `allowed-users.txt`. Handy for spotting drift between two lists without
-          reaching for `diff`, which cares about line order.
+          involving `diff`, which cares about line order.
         output: |2
           alice
           carol
@@ -551,7 +551,7 @@ sections:
         code: grep -P "^(?!.*error).*warning" app.log
         description: >-
           Negative lookahead (`(?!...)`) has no equivalent in BRE/ERE. This is
-          the main reason to reach for `-P` at all. Here it matches lines with
+          the main reason to use `-P` at all. Here it matches lines with
           "warning" but not "error".
         output: |2
           Jul  5 09:14:23 deb1 app[312]: warning: retrying in 5s

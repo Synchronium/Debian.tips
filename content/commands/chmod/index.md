@@ -13,21 +13,20 @@ related: [file-permissions-explained, find]
 permission classes (owner, group, and everyone else), and `chmod` sets them either as a
 three-digit **numeric mode** (`chmod 644 file`) or as a targeted **symbolic** edit (`chmod u+x
 file`). For the full owner/group/other model, what each bit means on a directory, and how
-`umask` fits in, see [File permissions explained](/concepts/file-permissions-explained/); this
-page is the tested example bank.
+`umask` fits in, see [File permissions explained](/concepts/file-permissions-explained/).
 
-## Numeric mode: replace all nine bits at once
+## Numeric mode replaces all nine bits
 
 Numeric mode is one octal digit per class (owner, group, other), where `r`=4, `w`=2, and `x`=1
 sum together: `chmod 755 script.sh` gives the owner `rwx` (7) and group/other `r-x` (5) each.
 It's fast once the arithmetic is automatic, but it always sets all nine bits in one go,
 discarding whatever combination was there before.
 
-## Symbolic mode: change one thing, leave the rest
+## Symbolic mode changes one and leaves the rest
 
 Symbolic mode names a class (`u`, `g`, `o`, or `a`), an operator (`+`, `-`, `=`), and a
 permission letter: `chmod u+x script.sh` adds execute for the owner only, without touching
-anything else. Reach for symbolic mode when you want to flip one bit rather than recompute the
+anything else. Use symbolic mode when you want to flip one bit rather than recompute the
 whole three-digit number from scratch.
 
 ## Recursive changes need care
@@ -43,4 +42,4 @@ before the blunt `-R` version and the failure mode it produces.
 A permission-denied error doesn't always mean the file's own mode is wrong. Reading, writing, or
 deleting a file also depends on the permissions of every directory between it and the
 filesystem root, and deleting a file is governed by the *directory's* write permission, not the
-file's. The troubleshooting section below walks through both, with real output.
+file's. The troubleshooting section below walks through both.

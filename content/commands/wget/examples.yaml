@@ -576,7 +576,7 @@ sections:
           wget -q http://127.0.0.1:8080/site/b.html &
           wait
           ls *.html
-        description: "`wget` has no parallel mode of its own. Backgrounding each call and waiting is enough for a handful of files; reach for `xargs -P` for a long list."
+        description: "`wget` has no parallel mode of its own. Backgrounding each call and waiting is enough for a handful of files; use `xargs -P` for a long list."
         output: |2
           a.html
           b.html

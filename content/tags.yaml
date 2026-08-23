@@ -1,7 +1,7 @@
 # Curated tag registry. A tag used in any page's frontmatter or example
 # must exist here, or the build fails. Before adding a tag, check whether an
 # existing one already covers the concept, and don't add one until at least
-# two pages will plausibly use it — keeps this list small and browsable
+# two pages will plausibly use it. That keeps this list small and browsable
 # instead of one tag per page.
 tags:
   - name: text-processing

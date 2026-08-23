@@ -454,7 +454,7 @@ sections:
     examples:
       - title: "Get a step-by-step trace of the connection"
         code: ssh -v user@deb1.example.com
-        description: "`-v` prints each stage as it happens: config file lines read, key exchange, which keys were offered and in what order, and where the process actually stopped. The first thing to reach for when a connection fails for a reason that isn't obvious."
+        description: "`-v` prints each stage as it happens: config file lines read, key exchange, which keys were offered and in what order, and where the process stopped. The first thing to try when a connection fails for a reason that isn't obvious."
         output: |
           debug1: OpenSSH_10.0p2 Debian-7+deb13u4, OpenSSL 3.5.6 7 Apr 2026
           debug1: Reading configuration data /etc/ssh/ssh_config

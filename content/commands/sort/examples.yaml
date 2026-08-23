@@ -540,7 +540,7 @@ sections:
         tags: [beginner, one-liners]
       - title: "Compare two sorted sets to see what's only in one"
         code: comm -3 <(sort setA.txt) <(sort setB.txt)
-        description: "comm isn't sort, but it requires sorted input to work correctly — a common reason to reach for sort even when the sorted order itself isn't what you actually want to keep. -3 suppresses lines common to both, leaving only what's unique to each side."
+        description: "comm isn't sort, but it requires sorted input to work correctly — a common reason to run sort even when the sorted order itself isn't what you want to keep. -3 suppresses lines common to both, leaving only what's unique to each side."
         output: |
           c
           	d

@@ -26,7 +26,7 @@ deploying to prod
 
 The list is words, split the way the shell splits any other words, which is why the loop
 variable needs quoting when you use it and why an unquoted list is a trap. `for` does not know
-about files, numbers or ranges — it iterates over whatever words it is given.
+about files, numbers or ranges; it iterates over whatever words it is given.
 
 ## `for` over files
 
@@ -45,7 +45,7 @@ found report.txt
 The shell expands `*.txt` into a sorted list of real filenames, one word each, spaces and all.
 `for f in $(ls *.txt)` looks equivalent and is not: `ls` prints its results as text, the shell
 then splits that text on whitespace, and a file called `meeting notes.txt` arrives as two
-iterations. The glob never has that problem, so reach for it every time.
+iterations. The glob never has that problem, so use it every time.
 
 One thing to know: a glob that matches nothing is left as the literal pattern, so the loop body
 runs once with `f` set to `*.txt`. Guard it when that matters:
@@ -61,7 +61,7 @@ echo "done"
 done
 ```
 
-## Counting, when you actually need a number
+## Counting, when you need a number
 
 ```bash
 for i in 1 2 3; do echo "attempt $i"; done
@@ -111,8 +111,8 @@ the second lost its backslashes entirely. Nothing warned, and the data is simply
 > A `while read` loop on the wrong side of a pipe runs in a subshell, so anything it assigns is
 > discarded when the loop ends. `cat file | while read line; do count=$((count + 1)); done` leaves
 > `count` empty afterwards. Redirect from the file with `< file`, as above, or feed the loop with
-> `< <(command)` process substitution. This is the single most confusing thing about loops in
-> bash, because the loop does run, and the variable does not change.
+> `< <(command)` process substitution. It confuses people precisely because the loop does run,
+> and the variable does not change.
 
 Here is the difference, in one script:
 
