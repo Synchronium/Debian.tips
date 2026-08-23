@@ -4,7 +4,7 @@ description: "Watch a log file as new lines are written, filter it live, and kee
 category: recipes
 tags: [monitoring, sysadmin]
 updated: 2026-07-05
-related: [grep, journalctl, exit-codes-and-error-handling, head]
+related: [tail, grep, journalctl, exit-codes-and-error-handling]
 ---
 
 **Problem:** You need to watch a log file as new entries arrive, instead of repeatedly reopening
@@ -54,8 +54,8 @@ opened at startup, it re-opens the file by name, so it keeps working when a log 
 from under it (moved aside and replaced with a fresh, empty file), which is exactly what tools
 like `logrotate` do on a schedule. Plain `-f` (lowercase) keeps watching the original,
 now-renamed file instead, and silently stops seeing new entries once the application switches to
-writing the new one. See [head and tail](/commands/head/) for more on that distinction, plus
-`-n0` to start from the current end of a file instead of printing its last 10 lines first.
+writing the new one. See [tail](/commands/tail/) for more on that distinction, plus `-n0` to
+start from the current end of a file instead of printing its last 10 lines first.
 
 > [!TIP]
 > `tail -f` on its own doesn't tell you whether the file even exists yet. `tail -F` also implies

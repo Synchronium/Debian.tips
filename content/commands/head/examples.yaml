@@ -19,20 +19,8 @@ fixtures:
       Dave,25,Marketing
       Erin,38,Sales
       Frank,31,Engineering
-  - name: wordlist.txt
-    note: "duplicates and mixed case, so -u / -f / -i have something to do"
-    content: |
-      banana
-      apple
-      Cherry
-      apple
-      date
-      banana
-      apple
-      Elderberry
-      cherry
   - name: access.log
-    note: "10 requests in the standard combined log format; IP is field 1"
+    note: "10 requests in the standard combined log format"
     content: |
       203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
       203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
@@ -44,14 +32,18 @@ fixtures:
       198.51.100.7 - - [13/Aug/2026:09:18:51] "GET /index.html HTTP/1.1" 200 512
       203.0.113.5 - - [13/Aug/2026:09:19:10] "GET /api/status HTTP/1.1" 500 89
       192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
+  - name: bytes.txt
+    note: "ten bytes, no trailing newline, so the -c examples have something exact to cut"
+    content: |
+      abcdefghij
 sections:
-  - title: "The basics: first and last N lines"
-    intro: "Both default to 10 lines with no flags at all."
+  - title: "The first N lines"
+    intro: "With no flags at all, `head` prints 10 lines."
     examples:
       - title: "Show the first 10 lines of a file"
         code: head report.txt
-        description: "No flags needed - 10 lines is the default for both head and tail."
-        output: |
+        description: "The default count, and the reason `head file` is a habit for looking at something unfamiliar."
+        output: |2
           line 1 of the report
           line 2 of the report
           line 3 of the report
@@ -65,9 +57,9 @@ sections:
         level: basic
         tags: [beginner]
       - title: "Show the first 5 lines"
-        code: head -n5 report.txt
-        description: "`-n` takes the exact count."
-        output: |
+        code: head -n 5 report.txt
+        description: "`-n` takes the count. This is the portable spelling, and the one to write in a script."
+        output: |2
           line 1 of the report
           line 2 of the report
           line 3 of the report
@@ -75,243 +67,261 @@ sections:
           line 5 of the report
         level: basic
         tags: [beginner]
-      - title: "Same thing, older shorthand syntax"
+      - title: "Use the older shorthand for the same thing"
         code: head -5 report.txt
-        description: "A bare number after the dash, with no n, is an older but still-supported spelling of `-n5`."
+        description: "`-5` means `-n 5`. Obsolescent in POSIX terms, universally supported in practice, and shorter to type at a prompt."
+        output: |2
+          line 1 of the report
+          line 2 of the report
+          line 3 of the report
+          line 4 of the report
+          line 5 of the report
         level: basic
-      - title: "Show the last 10 lines of a file"
-        code: tail report.txt
-        description: "tail's default mirrors head's - the last 10 lines."
-        output: |
-          line 31 of the report
-          line 32 of the report
-          line 33 of the report
-          line 34 of the report
-          line 35 of the report
-          line 36 of the report
-          line 37 of the report
-          line 38 of the report
-          line 39 of the report
-          line 40 of the report
+      - title: "Show just the first line"
+        code: head -n1 report.txt
+        description: "`head -n1` is how you read a header row, a shebang line, or the first line of a generated file."
+        output: |2
+          line 1 of the report
         level: basic
         tags: [beginner]
-      - title: "Show the last 5 lines"
-        code: tail -n5 report.txt
-        description: "Same `-n` flag as head, counting from the end instead."
-        output: |
-          line 36 of the report
-          line 37 of the report
-          line 38 of the report
-          line 39 of the report
-          line 40 of the report
+      - title: "Read a CSV header and the first records"
+        code: head -n 3 users.csv
+        description: "Enough to see the column names and confirm the delimiter before writing anything that parses the file."
+        output: |2
+          name,age,department
+          Alice,34,Engineering
+          Bob,29,Sales
+        level: basic
+      - title: "Take the first lines of a pipeline"
+        code: sort access.log | head -3
+        description: "With no filename, `head` reads standard input. Note that `sort` has to read all of its input before it can emit any, so this stops `head` early without saving `sort` any work."
+        output: |2
+          192.0.2.44 - - [13/Aug/2026:09:16:03] "POST /login HTTP/1.1" 302 0
+          192.0.2.44 - - [13/Aug/2026:09:16:04] "GET /dashboard HTTP/1.1" 200 4021
+          192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
         level: basic
         tags: [beginner]
-      - title: "Read from stdin instead of a file"
-        code: cat report.txt | head -n3
-        description: "Both commands work the same on a pipe as on a named file."
-        output: |
+      - title: "Cut a long search short"
+        code: grep 200 access.log | head -2
+        description: "Here the early exit does save work: `head` closes the pipe once it has two lines, and [`grep`](/commands/grep/) stops searching rather than reading to the end of the file."
+        output: |2
+          203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
+          203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
+        level: intermediate
+        tags: [one-liners]
+      - title: "Read from a redirect rather than a named file"
+        code: head -n 3 < report.txt
+        description: "The shell opens the file and hands `head` its standard input, so no filename appears in the output. Identical result, different plumbing: see [pipes and redirection](/concepts/pipes-and-redirection/)."
+        output: |2
+          line 1 of the report
+          line 2 of the report
+          line 3 of the report
+        level: intermediate
+      - title: "Take the first lines of generated output"
+        code: seq 100 | head -4
+        description: "Anything that writes to standard output can be trimmed this way, without a temporary file."
+        output: |2
+          1
+          2
+          3
+          4
+        level: basic
+      - title: "Take the first lines of literal text"
+        code: printf 'one\ntwo\nthree\nfour\n' | head -2
+        description: "Useful when testing what a pipeline will do to a small sample before pointing it at a real file."
+        output: |2
+          one
+          two
+        level: basic
+      - title: "Ask for nothing and get nothing"
+        code: head -n 0 report.txt; echo "(nothing)"
+        description: "`-n 0` is valid and prints no lines at all. Worth knowing when the count comes from a variable that might be zero."
+        output: |2
+          (nothing)
+        level: intermediate
+      - title: "Write the first lines to a new file"
+        code: head -n3 report.txt > first3.txt && cat first3.txt
+        description: "`head` prints to standard output like anything else, so the shell's `>` does the writing. The `cat` is only here to show the result."
+        output: |2
           line 1 of the report
           line 2 of the report
           line 3 of the report
         level: basic
 
-  - title: "Working in bytes instead of lines"
+  - title: "Several files at once"
+    intro: "Given more than one file, `head` labels each with a `==> filename <==` header and separates them with a blank line."
     examples:
-      - title: "Show the first N bytes"
-        code: head -c 20 report.txt
-        description: "`-c` switches from lines to raw bytes - cuts mid-line if the count lands there, with no regard for line boundaries at all."
-        output: |
-          line 1 of the report
-        level: intermediate
-      - title: "Show the last N bytes"
-        code: tail -c 20 report.txt
-        description: "Same byte-counting behaviour, from the end."
-        output: |
-          ne 40 of the report
-        level: intermediate
-
-  - title: "Multiple files and headers"
-    examples:
-      - title: "head on several files at once"
-        code: head -n2 users.csv wordlist.txt
-        description: "Each file gets a `==> filename <==` header before its output, with a blank line separating them."
-        output: |
-          ==> users.csv <==
-          name,age,department
-          Alice,34,Engineering
-
-          ==> wordlist.txt <==
-          banana
-          apple
-        level: intermediate
-        tags: [beginner]
-      - title: "tail on several files at once"
-        code: tail -n2 users.csv wordlist.txt
-        description: "Same header format as head, applied to each file's last lines instead of its first."
-        output: |
-          ==> users.csv <==
-          Erin,38,Sales
-          Frank,31,Engineering
-
-          ==> wordlist.txt <==
-          Elderberry
-          cherry
-        level: intermediate
-      - title: "Suppress the headers with multiple files"
-        code: head -n2 -q users.csv wordlist.txt
-        description: "`-q` (`--quiet`) drops the `==> filename <==` headers entirely, even with several files given - useful when you just want the lines, not which file they came from."
-        output: |
-          name,age,department
-          Alice,34,Engineering
-          banana
-          apple
-        level: intermediate
-      - title: "Force headers even for a single file"
-        code: head -n2 -v report.txt
-        description: "`-v` (`--verbose`) is the opposite of `-q`: always show the header, even with just one file - useful in a script that sometimes gets one filename and sometimes several, for consistent output either way."
-        output: |
+      - title: "Read the top of two files together"
+        code: head -n3 report.txt users.csv
+        description: "The headers are what make the combined output readable. They appear whenever there is more than one file."
+        output: |2
           ==> report.txt <==
           line 1 of the report
           line 2 of the report
+          line 3 of the report
+
+          ==> users.csv <==
+          name,age,department
+          Alice,34,Engineering
+          Bob,29,Sales
+        level: basic
+      - title: "Read the top of three files"
+        code: head -n2 report.txt users.csv access.log
+        description: "The pattern holds for any number of files, which makes `head -n2 *.conf` a quick way to see what a directory of config files starts with."
+        output: |2
+          ==> report.txt <==
+          line 1 of the report
+          line 2 of the report
+
+          ==> users.csv <==
+          name,age,department
+          Alice,34,Engineering
+
+          ==> access.log <==
+          203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
+          203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
+        level: basic
+      - title: "Suppress the headers"
+        code: head -q -n2 report.txt users.csv
+        description: "`-q` concatenates the results with nothing between them, which is what you want when the output is going into another command rather than to a person."
+        output: |2
+          line 1 of the report
+          line 2 of the report
+          name,age,department
+          Alice,34,Engineering
+        level: intermediate
+      - title: "Force a header for a single file"
+        code: head -v -n2 report.txt
+        description: "`-v` prints the header even when there is only one file, so a loop over filenames produces consistently labelled output."
+        output: |2
+          ==> report.txt <==
+          line 1 of the report
+          line 2 of the report
+        level: intermediate
+      - title: "See what happens when one file is missing"
+        code: 'head -n2 report.txt nosuchfile.txt; echo "exit: $?"'
+        description: "`head` reads the files it can, reports the one it cannot on standard error, and exits 1. A script checking the status will see the failure even though it also got real output."
+        output: |2
+          ==> report.txt <==
+          line 1 of the report
+          line 2 of the report
+          head: cannot open 'nosuchfile.txt' for reading: No such file or directory
+          exit: 1
+        level: intermediate
+      - title: "Read a file that is not there at all"
+        code: 'head nosuchfile.txt; echo "exit: $?"'
+        description: "The same error and status with nothing to print alongside it."
+        output: |2
+          head: cannot open 'nosuchfile.txt' for reading: No such file or directory
+          exit: 1
+        level: basic
+
+  - title: "Bytes instead of lines"
+    intro: "`-c` counts bytes, and stops mid-line without hesitation. On UTF-8 text that can cut a character in half, so it suits binary files and fixed-width records rather than prose."
+    examples:
+      - title: "Show the first N bytes"
+        code: head -c 20 report.txt
+        description: "Exactly 20 bytes, which here happens to land on a line boundary because each line is 20 characters plus its newline."
+        output: |2
+          line 1 of the report
+        level: intermediate
+      - title: "Take a fixed number of bytes from a short file"
+        code: head -c 5 bytes.txt; echo
+        description: "`bytes.txt` has no trailing newline, so the `echo` supplies one and keeps the shell prompt on its own line."
+        output: |2
+          abcde
+        level: intermediate
+      - title: "Take the whole file by byte count"
+        code: head -c 10 bytes.txt
+        description: "Asking for exactly the file's length gives the whole thing, and asking for more does the same rather than failing."
+        output: |2
+          abcdefghij
+        level: intermediate
+      - title: "Use a size suffix instead of a number"
+        code: head -c 1K report.txt | wc -c
+        description: "`K`, `M` and `G` multiply by 1024, and `KB`, `MB`, `GB` by 1000. The file is shorter than 1K here, so [`wc -c`](/commands/wc/) reports its real size."
+        output: |2
+          871
+        level: advanced
+      - title: "Combine -n and -c"
+        code: head -n 2 -c 8 report.txt
+        description: "They do not add up: whichever limit is reached first wins, and `-c` given last takes precedence over `-n`."
+        output: |2
+          line 1 o
         level: advanced
 
-  - title: "Negative and plus offsets"
-    intro: "Two GNU extensions that read almost like mirror images of each other."
+  - title: "Everything except the last N"
+    intro: "A negative count inverts the job. `head -n -5` prints the whole file apart from its final 5 lines, which is how to drop a trailer whose length you know when the file's length you do not."
     examples:
-      - title: "Show everything except the last N lines"
-        code: head -n -5 report.txt | tail -n3
-        description: "A negative count with head means 'stop N lines before the end' instead of 'stop after N lines' - the last 3 lines shown here are lines 33-35, five lines short of the file's actual end at line 40."
-        output: |
-          line 33 of the report
-          line 34 of the report
-          line 35 of the report
+      - title: "Drop the last N lines"
+        code: head -n -35 report.txt
+        description: "40 lines minus the last 35 leaves the first 5. Nothing here needed to know the file was 40 lines long."
+        output: |2
+          line 1 of the report
+          line 2 of the report
+          line 3 of the report
+          line 4 of the report
+          line 5 of the report
+        level: intermediate
+      - title: "Drop just the final line"
+        code: head -n -1 users.csv
+        description: "The everyday form: strip a summary row, a trailing marker, or the last record of a file being processed in batches."
+        output: |2
+          name,age,department
+          Alice,34,Engineering
+          Bob,29,Sales
+          Carol,41,Engineering
+          Dave,25,Marketing
+          Erin,38,Sales
+        level: intermediate
+        tags: [one-liners]
+      - title: "Drop trailing bytes"
+        code: head -c -5 bytes.txt; echo
+        description: "The byte form works the same way, taking everything but the final 5 bytes."
+        output: |2
+          abcde
         level: advanced
-        tags: [beginner]
-      - title: "Show everything from line N to the end"
-        code: tail -n +38 report.txt
-        description: "A + before the number with tail means 'start at line N' rather than 'show the last N lines' - the exact opposite framing from tail's usual behaviour."
-        output: |
-          line 38 of the report
-          line 39 of the report
-          line 40 of the report
-        level: advanced
-        tags: [beginner]
-      - title: "Pull a specific slice out of the middle of a file"
+
+  - title: "Everyday patterns"
+    intro: "Where `head` turns up in real pipelines, usually alongside something that produced more output than anyone wants to read."
+    examples:
+      - title: "Pull a slice out of the middle of a file"
         code: head -n15 report.txt | tail -n3
-        description: "head down to line 15, then tail the last 3 of those - lines 13 through 15. A common lightweight alternative to `sed -n 'N,Mp'` for a quick one-off slice."
-        output: |
+        description: "First 15 lines, then the last 3 of those, giving lines 13 to 15. [`tail`](/commands/tail/) approaches the same file from the other end."
+        output: |2
           line 13 of the report
           line 14 of the report
           line 15 of the report
         level: intermediate
-        tags: [beginner]
-      - title: "The byte equivalents work the same way"
-        code: printf 'abcdefghij' | head -c -3
-        description: "All but the last 3 bytes."
-        output: |
-          abcdefg
-        level: advanced
-      - title: "Start from a specific byte instead of a specific line"
-        code: printf 'abcdefghij' | tail -c +8
-        description: "From byte 8 to the end - the same `+N` convention as `tail -n`, applied to bytes."
-        output: |
-          hij
-        level: advanced
-      - title: "tail -n +1 is equivalent to cat"
-        code: printf 'a\nb\nc\n' | tail -n +1
-        description: "Starting from line 1 means the whole file - not a practical use on its own, but useful to know when generating this flag programmatically and 1 turns out to be the starting value."
-        output: |
-          a
-          b
-          c
+        tags: [one-liners]
+      - title: "Read the records after a header"
+        code: tail -n +2 users.csv | head -3
+        description: "`tail -n +2` starts at line 2, dropping the header, and `head -3` keeps the first three records after it."
+        output: |2
+          Alice,34,Engineering
+          Bob,29,Sales
+          Carol,41,Engineering
         level: intermediate
-      - title: "Requesting zero lines is valid and returns nothing"
-        code: head -n0 report.txt
-        description: "No error, just empty output - worth knowing if a variable holding the line count could legitimately be 0 in a script."
-        level: intermediate
-
-  - title: "Following a growing file"
-    intro: "tail's other job: watching a file as new lines are appended to it."
-    examples:
-      - title: "Follow a file in real time"
-        code: tail -f livelog.txt
-        description: >-
-          Blocks and prints new lines as they're appended, instead of exiting once it reaches
-          the current end of the file. Verified with a real background writer: two lines
-          appended after `tail -f` started both appeared in its output within a second, live.
-        output: |
-          first new line
-          second new line
-        level: intermediate
-        tags: [beginner]
-      - title: "Follow only new lines, skipping existing content"
-        code: tail -n0 -f watch.log
-        description: "`-n0` starts from the current end of the file instead of printing the last 10 lines first - the shape you want when you only care about what happens from now on, not history."
-        level: intermediate
-        tags: [beginner]
-      - title: "Filter a live-followed log for just the lines you care about"
-        code: tail -n0 -f watch.log | grep --line-buffered ERROR
-        description: >-
-          `grep --line-buffered` is needed here - grep normally buffers its output in blocks when
-          piped, which would delay matching lines from appearing until the buffer filled.
-          Verified live: an INFO line and a later INFO line were both filtered out, only the
-          ERROR line in between made it through, in real time.
-        output: |
-          ERROR: disk full
-        level: advanced
-        tags: [monitoring, beginner]
-      - title: "Stop following once a specific process exits"
-        code: tail -f --pid=1234 pidlog.txt
-        description: >-
-          `--pid` makes tail exit on its own once the given PID is no longer running, instead of
-          following forever - useful for tailing a service's log only for the duration of a
-          script that also manages that service. Verified: tail exited by itself immediately
-          after the watched process was killed, and did not pick up a line appended after that.
-        level: advanced
-
-  - title: "Handling log rotation: -f vs -F"
-    intro: "logrotate (and similar tools) renames the current log and starts a fresh file with the old name. Plain `-f` and capital `-F` react to that very differently."
-    examples:
-      - title: "Plain -f keeps watching the old file after rotation"
-        code: tail -f rotlog.txt
-        description: >-
-          Verified: after rotlog.txt was renamed aside and a new file created with the same
-          name, `tail -f` kept following the renamed (now-disconnected) file by its original
-          inode - it printed the content from before the rotation, but never saw the new file's
-          content at all, despite still technically running.
-        danger: true
-        output: |
-          before rotation
-        level: advanced
-        tags: [beginner]
-      - title: "-F notices the replacement and follows the new file"
-        code: tail -F --sleep-interval=1 rotlog4.txt
-        description: >-
-          Verified: `-F` detected that rotlog4.txt had been replaced, printed an explicit notice
-          to that effect, and picked up the new file's content - the correct choice for
-          following anything that might be log-rotated out from under it.
-        output: |
-          before rotation
-          tail: 'rotlog4.txt' has been replaced;  following new file
-          after rotation
-        level: advanced
-        tags: [beginner, sysadmin]
-
-  - title: "Practical patterns"
-    examples:
-      - title: "Sanity-check a CSV's structure without opening it"
-        code: |
-          head -n1 users.csv
-          tail -n2 users.csv
-        description: "Header row plus a couple of trailing rows is usually enough to confirm a data file has the shape you expect, without scrolling through the whole thing."
-        output: |
+      - title: "Read only the header"
+        code: head -1 users.csv
+        description: "The column names on their own, which is what you want before deciding which field number to cut."
+        output: |2
           name,age,department
-          Erin,38,Sales
-          Frank,31,Engineering
-        level: intermediate
-        tags: [beginner]
-      - title: "Preview a large file before committing to processing it"
-        code: head -n20 access.log
-        description: "Checking the shape of the first 20 lines before running a real awk/sed/grep pipeline over a file you haven't looked at yet catches format surprises early and cheaply."
         level: basic
         tags: [beginner]
+      - title: "Sample a column from the top of a log"
+        code: head -n5 access.log | cut -d' ' -f1
+        description: "[`cut`](/commands/cut/) takes field 1 from the first five requests. Enough to see the shape of the data without processing the whole file."
+        output: |2
+          203.0.113.5
+          203.0.113.5
+          198.51.100.7
+          198.51.100.7
+          203.0.113.5
+        level: intermediate
+      - title: "Count what head actually returned"
+        code: head -n2 report.txt | wc -l
+        description: "Worth doing when the count comes from elsewhere: `head` gives you fewer lines than asked for without complaint if the file is shorter."
+        output: |2
+          2
+        level: intermediate

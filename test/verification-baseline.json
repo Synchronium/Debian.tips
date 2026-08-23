@@ -77,9 +77,9 @@
     "unpaired": 0
   },
   "commands/head": {
-    "checked": 18,
+    "checked": 31,
     "byShape": 0,
-    "exempt": 4,
+    "exempt": 0,
     "fixtures": 4,
     "unpaired": 0
   },
@@ -123,6 +123,13 @@
     "byShape": 1,
     "exempt": 0,
     "fixtures": 2,
+    "unpaired": 0
+  },
+  "commands/tail": {
+    "checked": 46,
+    "byShape": 0,
+    "exempt": 4,
+    "fixtures": 5,
     "unpaired": 0
   },
   "commands/tar": {

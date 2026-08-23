@@ -1,0 +1,509 @@
+command: tail
+fixtures:
+  - name: report.txt
+    note: "40 numbered lines, each 5 words"
+    from: "head -3 report.txt; echo '…'; tail -1 report.txt"
+    content: |
+      line 1 of the report
+      line 2 of the report
+      line 3 of the report
+      …
+      line 40 of the report
+  - name: users.csv
+    note: "a header row plus 6 records"
+    content: |
+      name,age,department
+      Alice,34,Engineering
+      Bob,29,Sales
+      Carol,41,Engineering
+      Dave,25,Marketing
+      Erin,38,Sales
+      Frank,31,Engineering
+  - name: access.log
+    note: "10 requests in the standard combined log format"
+    content: |
+      203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
+      203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
+      198.51.100.7 - - [13/Aug/2026:09:14:22] "GET /index.html HTTP/1.1" 200 512
+      198.51.100.7 - - [13/Aug/2026:09:14:25] "GET /missing.html HTTP/1.1" 404 162
+      203.0.113.5 - - [13/Aug/2026:09:15:47] "GET /index.html HTTP/1.1" 200 512
+      192.0.2.44 - - [13/Aug/2026:09:16:03] "POST /login HTTP/1.1" 302 0
+      192.0.2.44 - - [13/Aug/2026:09:16:04] "GET /dashboard HTTP/1.1" 200 4021
+      198.51.100.7 - - [13/Aug/2026:09:18:51] "GET /index.html HTTP/1.1" 200 512
+      203.0.113.5 - - [13/Aug/2026:09:19:10] "GET /api/status HTTP/1.1" 500 89
+      192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
+  - name: bytes.txt
+    note: "ten bytes, no trailing newline, so the -c examples have something exact to cut"
+    content: |
+      abcdefghij
+  - name: livelog.txt
+    note: "empty, and there so the -f examples have a file to open"
+    from: "wc -c < livelog.txt"
+    content: |
+      0
+sections:
+  - title: "The last N lines"
+    intro: "With no flags at all, `tail` prints 10 lines."
+    examples:
+      - title: "Show the last 10 lines of a file"
+        code: tail report.txt
+        description: "The default count, and the reason `tail file` is the first thing to type when a log has gone wrong."
+        output: |2
+          line 31 of the report
+          line 32 of the report
+          line 33 of the report
+          line 34 of the report
+          line 35 of the report
+          line 36 of the report
+          line 37 of the report
+          line 38 of the report
+          line 39 of the report
+          line 40 of the report
+        level: basic
+        tags: [beginner]
+      - title: "Show the last 5 lines"
+        code: tail -n 5 report.txt
+        description: "`-n` takes the count. The portable spelling, and the one to write in a script."
+        output: |2
+          line 36 of the report
+          line 37 of the report
+          line 38 of the report
+          line 39 of the report
+          line 40 of the report
+        level: basic
+        tags: [beginner]
+      - title: "Use the older shorthand for the same thing"
+        code: tail -5 report.txt
+        description: "`-5` means `-n 5`. Obsolescent in POSIX terms, universally supported, and shorter at a prompt."
+        output: |2
+          line 36 of the report
+          line 37 of the report
+          line 38 of the report
+          line 39 of the report
+          line 40 of the report
+        level: basic
+      - title: "Write the count out in full"
+        code: tail --lines=4 report.txt
+        description: "`--lines` and `--bytes` are the long forms of `-n` and `-c`, worth the extra characters in a script someone else will read."
+        output: |2
+          line 37 of the report
+          line 38 of the report
+          line 39 of the report
+          line 40 of the report
+        level: basic
+      - title: "Show just the last line"
+        code: tail -n1 report.txt
+        description: "The single most common use: the last thing a file recorded."
+        output: |2
+          line 40 of the report
+        level: basic
+        tags: [beginner]
+      - title: "Write a negative count and get the same answer"
+        code: tail -n -5 report.txt
+        description: "`-n -5` and `-n 5` mean the same thing to `tail`. Only a `+` changes the direction, which is covered below."
+        output: |2
+          line 36 of the report
+          line 37 of the report
+          line 38 of the report
+          line 39 of the report
+          line 40 of the report
+        level: intermediate
+      - title: "Read the last records of a CSV"
+        code: tail -n 3 users.csv
+        description: "The header is long gone by this point in the file, so what comes back is records only."
+        output: |2
+          Dave,25,Marketing
+          Erin,38,Sales
+          Frank,31,Engineering
+        level: basic
+      - title: "Take the end of a pipeline"
+        code: sort access.log | tail -2
+        description: "With no filename, `tail` reads standard input. After a [`sort`](/commands/sort/) this is how you see the largest values rather than the smallest."
+        output: |2
+          203.0.113.5 - - [13/Aug/2026:09:15:47] "GET /index.html HTTP/1.1" 200 512
+          203.0.113.5 - - [13/Aug/2026:09:19:10] "GET /api/status HTTP/1.1" 500 89
+        level: basic
+        tags: [beginner]
+      - title: "Read from a redirect rather than a named file"
+        code: tail -n 3 < report.txt
+        description: "The shell opens the file and `tail` reads its standard input, so no filename appears anywhere. See [pipes and redirection](/concepts/pipes-and-redirection/)."
+        output: |2
+          line 38 of the report
+          line 39 of the report
+          line 40 of the report
+        level: intermediate
+      - title: "Take the end of generated output"
+        code: seq 100 | tail -4
+        description: "Anything writing to standard output can be trimmed this way, with no temporary file involved."
+        output: |2
+          97
+          98
+          99
+          100
+        level: basic
+      - title: "Take the end of literal text"
+        code: printf 'one\ntwo\nthree\nfour\n' | tail -2
+        description: "Useful for checking what a pipeline does to a small sample before pointing it at a real file."
+        output: |2
+          three
+          four
+        level: basic
+      - title: "Ask for nothing and get nothing"
+        code: tail -n 0 report.txt; echo "(nothing)"
+        description: "`-n 0` prints no lines. It matters mainly in combination with `-f`, where it means \"only what happens from now on\"."
+        output: |2
+          (nothing)
+        level: intermediate
+      - title: "Write the last lines to a new file"
+        code: tail -n3 report.txt > last3.txt && cat last3.txt
+        description: "`tail` writes to standard output like anything else, so the shell's `>` does the work. The `cat` is only here to show the result."
+        output: |2
+          line 38 of the report
+          line 39 of the report
+          line 40 of the report
+        level: basic
+      - title: "Count what tail actually returned"
+        code: tail -n2 report.txt | wc -l
+        description: "A file shorter than the requested count returns fewer lines without complaint, so a script that depends on getting exactly N should check."
+        output: |2
+          2
+        level: intermediate
+
+  - title: "Counting from the start with +N"
+    intro: "A `+` reverses what the number means. `tail -n +5` is not \"the last 5 lines\" but \"everything from line 5 onwards\", which makes `tail` the standard way to skip a header."
+    examples:
+      - title: "Skip the header row of a CSV"
+        code: tail -n +2 users.csv
+        description: "From line 2 to the end, so the column names are dropped and every record is kept. The idiom to reach for before piping a CSV into anything that would choke on its header."
+        output: |2
+          Alice,34,Engineering
+          Bob,29,Sales
+          Carol,41,Engineering
+          Dave,25,Marketing
+          Erin,38,Sales
+          Frank,31,Engineering
+        level: intermediate
+        tags: [one-liners]
+      - title: "Start from an arbitrary line"
+        code: tail -n +36 report.txt
+        description: "Line 36 onwards. Unlike `-n 5`, this counts from the start, so it gives the same answer however long the file grows."
+        output: |2
+          line 36 of the report
+          line 37 of the report
+          line 38 of the report
+          line 39 of the report
+          line 40 of the report
+        level: intermediate
+      - title: "Use the file's length to pick the starting line"
+        code: wc -l report.txt; tail -n +39 report.txt
+        description: "[`wc -l`](/commands/wc/) says the file has 40 lines, so `+39` gives the last two. The same result as `-n 2`, arrived at from the other direction."
+        output: |2
+          40 report.txt
+          line 39 of the report
+          line 40 of the report
+        level: intermediate
+      - title: "Reproduce cat with tail"
+        code: tail -n +1 report.txt | head -2
+        description: "`+1` means \"from the first line\", so it prints the whole file. `head -2` is only here to keep this example short."
+        output: |2
+          line 1 of the report
+          line 2 of the report
+        level: advanced
+      - title: "Count the records after a header"
+        code: tail -n +2 users.csv | wc -l
+        description: "Six records rather than the seven lines the file contains, which is the count almost every CSV question actually wants."
+        output: |2
+          6
+        level: intermediate
+      - title: "Extract a column from the records only"
+        code: tail -n +2 users.csv | cut -d, -f1
+        description: "Dropping the header first means the column name does not turn up in the middle of the data."
+        output: |2
+          Alice
+          Bob
+          Carol
+          Dave
+          Erin
+          Frank
+        level: intermediate
+      - title: "Sort records without disturbing the header"
+        code: tail -n +2 users.csv | sort -t, -k2 -n | head -2
+        description: "Skip the header, sort the rest by the second field numerically, and take the two youngest. Sorting the file directly would place the header wherever `name` happens to sort."
+        output: |2
+          Dave,25,Marketing
+          Bob,29,Sales
+        level: advanced
+        tags: [one-liners]
+
+  - title: "Several files at once"
+    intro: "Given more than one file, `tail` labels each with a `==> filename <==` header and separates them with a blank line."
+    examples:
+      - title: "Read the end of two files together"
+        code: tail -n3 report.txt users.csv
+        description: "The headers are what make the combined output readable, and they appear whenever there is more than one file."
+        output: |2
+          ==> report.txt <==
+          line 38 of the report
+          line 39 of the report
+          line 40 of the report
+
+          ==> users.csv <==
+          Dave,25,Marketing
+          Erin,38,Sales
+          Frank,31,Engineering
+        level: basic
+      - title: "Read the end of three files"
+        code: tail -n2 report.txt users.csv access.log
+        description: "`tail -n2 /var/log/*.log` is the everyday form of this, for seeing what several logs last recorded."
+        output: |2
+          ==> report.txt <==
+          line 39 of the report
+          line 40 of the report
+
+          ==> users.csv <==
+          Erin,38,Sales
+          Frank,31,Engineering
+
+          ==> access.log <==
+          203.0.113.5 - - [13/Aug/2026:09:19:10] "GET /api/status HTTP/1.1" 500 89
+          192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
+        level: basic
+        tags: [sysadmin]
+      - title: "Suppress the headers"
+        code: tail -q -n2 report.txt users.csv
+        description: "`-q` runs the results together with nothing between them, which suits output going to another command rather than to a person."
+        output: |2
+          line 39 of the report
+          line 40 of the report
+          Erin,38,Sales
+          Frank,31,Engineering
+        level: intermediate
+      - title: "Force a header for a single file"
+        code: tail -v -n2 report.txt
+        description: "`-v` prints the header even for one file, so a loop over filenames produces consistently labelled output."
+        output: |2
+          ==> report.txt <==
+          line 39 of the report
+          line 40 of the report
+        level: intermediate
+      - title: "See what happens when one file is missing"
+        code: 'tail -n2 report.txt nosuchfile.txt; echo "exit: $?"'
+        description: "`tail` reads what it can, reports what it cannot on standard error, and exits 1. A script checking the status sees the failure even though real output also arrived."
+        output: |2
+          ==> report.txt <==
+          line 39 of the report
+          line 40 of the report
+          tail: cannot open 'nosuchfile.txt' for reading: No such file or directory
+          exit: 1
+        level: intermediate
+      - title: "Read a file that is not there at all"
+        code: 'tail nosuchfile.txt; echo "exit: $?"'
+        description: "The same error and status, with nothing to print alongside it."
+        output: |2
+          tail: cannot open 'nosuchfile.txt' for reading: No such file or directory
+          exit: 1
+        level: basic
+
+  - title: "Bytes instead of lines"
+    intro: "`-c` counts bytes and stops mid-line without hesitation, which suits binary files and fixed-width records rather than prose. On UTF-8 text it will happily cut a character in half."
+    examples:
+      - title: "Show the last N bytes"
+        code: tail -c 20 report.txt
+        description: "Exactly 20 bytes from the end, which lands mid-word because the final line is 20 characters plus a newline."
+        output: |2
+          ne 40 of the report
+        level: intermediate
+      - title: "Take a fixed number of bytes from a short file"
+        code: tail -c 5 bytes.txt; echo
+        description: "`bytes.txt` has no trailing newline, so the `echo` supplies one and keeps the prompt on its own line."
+        output: |2
+          fghij
+        level: intermediate
+      - title: "Take the last few bytes"
+        code: tail -c 3 bytes.txt; echo
+        description: "Useful for checking how a file ends: whether it has a trailing newline, or which byte a truncated download stopped at."
+        output: |2
+          hij
+        level: intermediate
+      - title: "Write the byte count out in full"
+        code: tail --bytes=10 report.txt
+        description: "`--bytes` is the long form of `-c`, and reads better in a script than a bare number."
+        output: |2
+          he report
+        level: basic
+      - title: "Count bytes from the start instead"
+        code: tail -c +866 report.txt
+        description: "`+N` counts from the beginning of the file, and bytes are numbered from 1, so this starts at the 866th byte."
+        output: |2
+          eport
+        level: advanced
+      - title: "Read the whole file by byte offset"
+        code: tail -c +1 bytes.txt; echo
+        description: "`+1` is the first byte, so this prints everything. Byte offsets starting at 1 rather than 0 is the detail to remember here."
+        output: |2
+          abcdefghij
+        level: advanced
+
+  - title: "Following a growing file"
+    intro: "`-f` is what separates `tail` from `head`: instead of exiting at the current end of the file, it blocks and prints new lines as they arrive."
+    examples:
+      - title: "Follow a file in real time"
+        code: tail -f livelog.txt
+        description: >-
+          Blocks and prints new lines as they are appended, instead of exiting once it reaches
+          the current end of the file. Verified with a real background writer: two lines
+          appended after `tail -f` started both appeared in its output within a second, live.
+        output: |
+          first new line
+          second new line
+        level: intermediate
+        tags: [beginner]
+      - title: "Follow only new lines, skipping existing content"
+        code: tail -n0 -f watch.log
+        description: "`-n0` starts from the current end of the file instead of printing the last 10 lines first, which is the shape you want when only what happens from now on is interesting."
+        level: intermediate
+        tags: [beginner]
+      - title: "Filter a live-followed log"
+        code: tail -n0 -f watch.log | grep --line-buffered ERROR
+        description: >-
+          `grep --line-buffered` is needed here, because grep normally buffers its output in
+          blocks when piped, which would delay matching lines until the buffer filled. Verified
+          live: an INFO line and a later INFO line were both filtered out, and only the ERROR
+          line in between made it through, in real time.
+        output: |
+          ERROR: disk full
+        level: advanced
+        tags: [monitoring, beginner]
+      - title: "Stop following once a specific process exits"
+        code: tail -f --pid=1234 pidlog.txt
+        description: >-
+          `--pid` makes tail exit on its own once the given PID is no longer running, rather
+          than following forever, which suits tailing a service's log for the duration of a
+          script that also manages that service. Verified: tail exited by itself immediately
+          after the watched process was killed, and did not pick up a line appended after that.
+        level: advanced
+      - title: "Watch what a follow prints with nothing writing to the file"
+        code: 'timeout 1 tail -f livelog.txt; echo "exit: $?"'
+        description: "`livelog.txt` is empty and nothing appends to it, so `tail -f` prints nothing and keeps waiting. `timeout` ends it after a second, and 124 is `timeout`'s way of saying it had to."
+        output: |2
+          exit: 124
+        level: advanced
+      - title: "Show the existing tail before following"
+        code: 'printf ''a\nb\nc\n'' > livelog.txt && timeout 1 tail -f -n1 livelog.txt; echo "exit: $?"'
+        description: "`-f` prints the last lines first and only then waits, so a follow always starts with some context. `-n1` limits that context to one line."
+        output: |2
+          c
+          exit: 124
+        level: advanced
+      - title: "Skip the existing content entirely"
+        code: 'timeout 1 tail -f -n0 report.txt; echo "exit: $?"'
+        description: "Against a 40-line file, `-n0 -f` prints nothing at all: it starts at the end and waits. This is the difference between seeing history and seeing only what happens next."
+        output: |2
+          exit: 124
+        level: advanced
+      - title: "Change how often tail looks for new data"
+        code: 'timeout 2 tail -s 5 -f livelog.txt; echo "exit: $?"'
+        description: "`-s` sets the sleep interval in seconds between checks. On Linux `tail` uses inotify and reacts immediately anyway, so this matters mainly on filesystems where inotify does not work, such as NFS."
+        output: |2
+          exit: 124
+        level: advanced
+      - title: "Ask to retry a file that is not there"
+        code: 'tail --retry -n1 nosuchfile.txt; echo "exit: $?"'
+        description: "`--retry` only means anything alongside `-f`, and `tail` says so rather than silently ignoring it."
+        output: |2
+          tail: warning: --retry ignored; --retry is useful only when following
+          tail: cannot open 'nosuchfile.txt' for reading: No such file or directory
+          exit: 1
+        level: advanced
+
+  - title: "Log rotation, and why -f is not enough"
+    intro: "`logrotate` renames the current log and creates a fresh file with the old name. `-f` follows the file it opened, and `-F` follows the name, which is the whole difference."
+    examples:
+      - title: "Plain -f keeps watching the old file after rotation"
+        code: tail -f rotlog.txt
+        description: >-
+          Verified: after rotlog.txt was renamed aside and a new file created with the same
+          name, `tail -f` kept following the renamed file by its original inode. It printed the
+          content from before the rotation and never saw the new file's content at all, while
+          still running and reporting no error.
+        output: |
+          before rotation
+        level: advanced
+        tags: [beginner]
+      - title: "-F notices the replacement and follows the new file"
+        code: tail -F --sleep-interval=1 rotlog4.txt
+        description: >-
+          Verified: `-F` detected that rotlog4.txt had been replaced, printed an explicit notice
+          saying so, and picked up the new file's content. This is the correct choice for
+          following anything that might be rotated out from under it, which on Debian is most of
+          `/var/log`.
+        output: |
+          before rotation
+          tail: 'rotlog4.txt' has been replaced;  following new file
+          after rotation
+        level: advanced
+        tags: [beginner, sysadmin]
+
+  - title: "Everyday patterns"
+    intro: "Where `tail` turns up in real pipelines, usually pointed at something that is still being written."
+    examples:
+      - title: "Pull a slice out of the middle of a file"
+        code: head -n15 report.txt | tail -n3
+        description: "First 15 lines, then the last 3 of those, giving lines 13 to 15. [`head`](/commands/head/) approaches the same file from the other end."
+        output: |2
+          line 13 of the report
+          line 14 of the report
+          line 15 of the report
+        level: intermediate
+        tags: [one-liners]
+      - title: "Read the most recent requests from a log"
+        code: tail -n5 access.log
+        description: "The last five entries, which for a log being written to is the part anyone actually wants."
+        output: |2
+          192.0.2.44 - - [13/Aug/2026:09:16:03] "POST /login HTTP/1.1" 302 0
+          192.0.2.44 - - [13/Aug/2026:09:16:04] "GET /dashboard HTTP/1.1" 200 4021
+          198.51.100.7 - - [13/Aug/2026:09:18:51] "GET /index.html HTTP/1.1" 200 512
+          203.0.113.5 - - [13/Aug/2026:09:19:10] "GET /api/status HTTP/1.1" 500 89
+          192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
+        level: basic
+        tags: [sysadmin]
+      - title: "Pull one field out of the last entry"
+        code: tail -n1 access.log | cut -d' ' -f1
+        description: "The client address from the most recent request, which is the shape of a great many monitoring one-liners."
+        output: |2
+          192.0.2.44
+        level: intermediate
+        tags: [one-liners]
+      - title: "Extract the request line from recent entries"
+        code: tail -n2 access.log | cut -d'"' -f2
+        description: "Splitting on the quote character gives the request line itself, without the address and timestamp around it."
+        output: |2
+          GET /api/status HTTP/1.1
+          GET /dashboard HTTP/1.1
+        level: advanced
+      - title: "Take the last of a filtered set"
+        code: tail -n +2 users.csv | grep Engineering | tail -1
+        description: "Two `tail` calls doing different jobs in one pipeline: the first drops the header, the last takes one record from what survived the filter."
+        output: |2
+          Frank,31,Engineering
+        level: intermediate
+      - title: "Pick a single line by number"
+        code: tail -n +2 users.csv | head -3 | tail -1
+        description: "Skip the header, keep three records, take the last of them, giving the third record. `sed -n '4p' users.csv` does the same in one command."
+        output: |2
+          Carol,41,Engineering
+        level: advanced
+      - title: "See only the last part of the default output"
+        code: tail -n 10 report.txt | head -2
+        description: "Chaining the two the other way round takes the first lines of the last ten, so this gives lines 31 and 32."
+        output: |2
+          line 31 of the report
+          line 32 of the report
+        level: intermediate
+      - title: "Take the last records without the header"
+        code: tail -n +2 users.csv | tail -2
+        description: "The header is dropped first, so the two records returned are records rather than whatever the last two lines happen to be."
+        output: |2
+          Erin,38,Sales
+          Frank,31,Engineering
+        level: intermediate

@@ -2,7 +2,7 @@
 # can't reproduce them. Each was verified interactively in the sandbox when written
 # (background writer appending to the file while tail -f/-F watched it).
 Follow a file in real time
-Filter a live-followed log for just the lines you care about
+Filter a live-followed log
 Plain -f keeps watching the old file after rotation
 -F notices the replacement and follows the new file
 

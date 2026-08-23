@@ -22,8 +22,13 @@ From the request, work out:
   by comparing to existing pages in `content/commands/`: a big, commonly-reached-for command with
   real depth (grep, find, sed, curl) is flagship; an everyday command with modest scope (tar) is
   standard; a small single-purpose command is light.
-- for combined pages covering more than one command (e.g. "job control" covering `jobs`/`fg`/`bg`),
-  the primary command is the slug/title; the others get their own `##` sections within the same page
+- **one command per page, unless the commands are meaningless apart.** `jobs`/`fg`/`bg` are one
+  page called job control, because none of the three is usable without the others. Commands that
+  merely resemble each other get a page each: `head` and `tail` shared one for months, and the
+  cost was that `tail` had no URL of its own, its `-f` and rotation material sat under
+  `/commands/head/`, and every inbound link had to be titled "head and tail" to make sense. When
+  a combined page is right, the primary command is the slug and title, and the others get their
+  own `##` sections within it.
 
 If the category, slug, or tier isn't obvious from the request or from comparable existing
 content, stop and ask rather than guessing.

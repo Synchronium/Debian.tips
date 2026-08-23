@@ -32,7 +32,7 @@ du -ah projects | sort -rh | head -6
 - `sort -rh` sorts that output by size, largest first (`-r` reverse, `-h` understands
   human-readable sizes like "1.2G"). See [sort](/commands/sort/) for more, including the
   common mistake of using `-h` without also telling it which field to sort by.
-- `head -6` keeps just the top of the ranking (see [head and tail](/commands/head/)). Use
+- `head -6` keeps just the top of the ranking (see [head](/commands/head/)). Use
   `head -20` on a real filesystem, where there is far more to sift through.
 
 Note that directories and their contents both appear: `projects/archive` at 2.1M is the
