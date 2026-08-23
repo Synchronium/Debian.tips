@@ -26,6 +26,7 @@ npm run replay   # replay every page's examples in a sandbox (needs Docker, ~2.5
 npm run replay -- --changed        # only the pages your diff touches, which is what CI runs on a PR
 npm run replay -- --order=random   # a different ordering; the seed is printed, so it repeats
 npm run audit:links -- --verbose   # the link graph on its own, advisory findings included
+npm run voice    # prose against .claude/reference/voice.md; a hook runs it per file as you write
 ```
 
 Run `npm run check` before treating any change as done. It's also what CI runs

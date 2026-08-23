@@ -93,6 +93,12 @@ honest ("is about to finish" for "will likely finish"). The instinct being resis
 makes a sentence pleasing to have written. **The goal is plainness, not length**: padding an
 epigram out to avoid sounding neat is this rule misfiring.
 
+**`, and` where the second clause is a consequence.** "arrives as two items, `last` and
+`week.log`, and the command runs against two names that do not exist" flattens a causal chain into
+a list. `, so` states the relationship the sentence actually has. This one is frequent enough to
+be worth a pass of its own: leave the `, and` that joins genuine equals, and change the ones
+joining a cause to its effect.
+
 **Clefts.** "X is what Y", "what X does is Y", "it is X that Y". Occasionally the right emphasis,
 more often a way of making a plain fact sound consequential.
 
@@ -125,8 +131,8 @@ is the important one, its placement and the space given to it say so.
 
 **A verbal tic is the other half of this.** Nothing is wrong with "reach for", and the site would
 be fine with three of them; forty across fifty pages reads as one author with one gear, which is
-exactly the impression being fixed. No frame should repeat more than twice site-wide, and that
-applies to phrasing as much as to headings.
+exactly the impression being fixed. No rhetorical frame should repeat more than twice site-wide,
+and that applies to phrasing as much as to headings, with the exception §7 sets out.
 
 The adverbs of obviousness are the group to watch: *plainly*, *clearly*, *simply*, *obviously*, *of
 course*. Each tells the reader how apparent something is instead of stating it, so a sentence
@@ -162,6 +168,17 @@ times is as recognisable as the maxims were.
 Two tests: a heading should still make sense if every paragraph beneath it were deleted, and a
 reader scanning only the headings should be able to reconstruct the page.
 
+**A standard section name is not a frame, and should repeat.** `## Common misconceptions`,
+`## Go deeper`, `## Variations`, and the Problem / Solution / How it works spine of a recipe are
+navigation: a reader who learns the shape on one page can find that section on every page that
+has one. Reaching for a synonym to avoid the repetition makes the site harder to scan without
+making it any less patterned, so use the established name wherever the section genuinely exists,
+and check what sibling pages call it before inventing one.
+
+The repetition rule is about rhetorical frames instead: `## The mental model: X`, `## A note on
+X`. Those announce how to read a section rather than naming what is in it, which is why a third
+and fourth of them read as a template.
+
 ## 8. In a code comment
 
 Everything above holds. CLAUDE.md's "Writing code here" carries the rules that are specific to
@@ -182,7 +199,21 @@ describe what a thing is now. What follows is the way a comment goes wrong that 
   than prose is, so this is where unfinished sentences collect: `src/content/loader.ts` read "One
   thing still keys off the bare slug and cannot" for as long as nobody read past the first line.
 
-## 9. Before editing a page
+## 9. What the checker covers
+
+`npm run voice` reads this document's lexical half: everything §5 bans outright, and em dashes.
+Those are failures, and the corpus sits at zero, so a finding is something newly written. It also
+counts the phrases that are fine a few times and wrong as a habit, against a budget, which only a
+whole-corpus pass can judge. A `PostToolUse` hook runs it on each file as it is written, so a
+banned construction comes back in the same turn it was typed.
+
+**A green run says nothing about §4.** The tells that are shapes rather than spellings, a closer,
+a manufactured misconception, a section that comments on itself, are invisible to it, and the one
+rule that was tried both ways proves the boundary: `, and` joining a consequence matched 185 lines
+across the corpus with almost no true positives, because whether a clause follows from the one
+before it is a question about meaning. Those still need the page read.
+
+## 10. Before editing a page
 
 A voice edit that puts a sentence between a command fence and its output fence silently
 un-verifies the example, and a renamed example title breaks the `.skip` file that names it. Both

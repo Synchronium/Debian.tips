@@ -97,6 +97,14 @@ cheap to honour while writing and expensive to find later.
   block takes its indentation from the first line, so any later line indented *less* is silently
   re-indented (or errors), quietly changing what the page claims the command prints. Use the
   explicit indicator and keep the real padding.
+- **Anything an example writes to `~` outlives the example.** The restore before each one clears
+  the harness's working directory, and that directory sits *inside* `$HOME`
+  (`scripts/lib/sandbox.ts`), so `~/bin`, `~/.config` and `~/.bashrc` are all outside what gets
+  reset. A page that writes to `~` contaminates its own later examples first and every page after
+  it second: `~/bin` is the sharp case, because Debian's default `~/.profile` puts it on `PATH`
+  whenever it exists, so creating it silently changes what any later `bash -l` prints. Prefer
+  writing inside the working directory, and where the page's subject really is `$HOME`, have the
+  setup script normalise it (`rm -rf "$HOME/bin"`) so every example starts from the same state.
 
 ### 4b. Declare the sample data, then prove it
 

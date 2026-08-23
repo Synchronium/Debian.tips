@@ -13,6 +13,7 @@
     "replay": "tsx scripts/replay-all.ts",
     "baseline:update": "tsx scripts/update-verification-baseline.ts",
     "audit:links": "tsx scripts/link-audit.ts",
+    "voice": "tsx scripts/voice-check.ts",
     "check": "NODE_ENV=production npm run check:gate",
     "check:gate": "npm run format:check && tsc --noEmit && tsc -p tsconfig.client.json && vitest run && tsx src/build.ts && pagefind --site dist && tsx src/linkcheck.ts && tsx scripts/link-audit.ts",
     "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.ts\" \"test/**/*.ts\" \"styles/**/*.css\"",
