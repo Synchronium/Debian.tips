@@ -293,9 +293,18 @@ still mostly a text-processing reference.
 
 ### §8.2. Cost model
 
-Replay time scales as examples × releases, and it parallelises: CI already runs three replay jobs
-at once. At 170 pages and 2 releases the numbers stay ordinary. At 4 releases it is a matrix job
-and still ordinary.
+Replay time scales as examples × releases, and it parallelises across jobs, one runner each. At
+170 pages and 2 releases the numbers stay ordinary. At 4 releases it is a matrix job and still
+ordinary. Deleting `replay-shuffled` under ADR-0020 returned a runner, which is the slot stage 3
+wants.
+
+ADR-0020 also changed what a second column *means*, which matters more here than the timing. Every
+page is replayed in a container of its own, so a difference between the trixie run and the
+oldstable run of one page is caused by the release. Under the shared sandbox it could equally have
+been caused by another page: an install that fails on the older release changes what everything
+after it sees, on that image only. That is the difference between a signal to act on and one to
+triage, and it applies to §3's numbers too, which were measured before the change and are worth
+re-taking once stage 3 produces them as a by-product.
 
 **Authoring is the limit rather than compute.** Every difference the matrix finds is a human
 decision: mask it, annotate it, or accept that the page is wrong for that release. 18 decisions is
