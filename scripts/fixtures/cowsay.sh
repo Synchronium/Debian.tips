@@ -14,14 +14,6 @@
 # anything other than /usr/games/cowsay.
 . /tmp/fixtures-common.sh
 
-export DEBIAN_FRONTEND=noninteractive
-
-# cowsay is in the sandbox image, but other pages use it as their worked example and one of them
-# autoremoves it. Guarded rather than assumed.
-if ! dpkg -l cowsay 2>/dev/null | grep -q '^ii'; then
-  apt-get install -y cowsay >/dev/null 2>&1
-fi
-
 # Note for anyone extending this page: cowsay-off must stay absent. It adds three cowfiles to
 # /usr/share/cowsay/cows, so `cowsay -l` lists 50 rather than 47 whenever it is installed, and
 # this page documents both the list and the count. The image does not ship it, and no example

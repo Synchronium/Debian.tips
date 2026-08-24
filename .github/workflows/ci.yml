@@ -61,7 +61,7 @@ jobs:
       # which half to fix. Caching the image (docker buildx + actions/cache) is the next
       # lever if the build dominates; it isn't worth the failure modes until it does.
       - name: Build the sandbox image
-        run: docker build -t debian-tips-sandbox:trixie scripts/sandbox
+        run: scripts/sandbox.sh build
       # A pull request replays the pages its diff touches, and everything if it touched the
       # harness, where one change can move any page's output. A push to main always replays the
       # whole site, so nothing is deployed on the strength of a partial run.
