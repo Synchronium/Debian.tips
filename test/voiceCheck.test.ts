@@ -100,8 +100,10 @@ describe("voice-check scope", () => {
     expect(inScope(join(ROOT, "CLAUDE.md"))).toBe(true);
   });
 
-  it("leaves personal notes and non-prose alone", () => {
-    expect(inScope(join(ROOT, "_PLANS/roadmaps/PLAN-CONTENT.md"))).toBe(false);
+  // Scope is an allowlist, so the markdown path below needs no file behind it: any directory the
+  // guide does not claim answers false, which is what a session's own scratch notes rely on.
+  it("leaves untracked notes and non-prose alone", () => {
+    expect(inScope(join(ROOT, "scratch/notes/draft.md"))).toBe(false);
     expect(inScope(join(ROOT, "scripts/voice-check.ts"))).toBe(false);
     expect(inScope(join(ROOT, "content/commands/ls/notes.txt"))).toBe(false);
     expect(inScope("/etc/passwd.md")).toBe(false);
