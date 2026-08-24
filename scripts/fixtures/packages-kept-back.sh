@@ -21,10 +21,6 @@ umask 0022
 REPO=/srv/keptback
 KEY_EMAIL=keptback@example.com
 
-# Other pages' setups also configure apt and `npm run replay` runs them all in one sandbox.
-find /etc/apt/sources.list.d -name '*.sources' ! -name 'debian.sources' -delete 2>/dev/null
-rm -f /etc/apt/preferences.d/*
-
 # Silence apt's "not a stable CLI interface" warning, which it prints whenever stdout is not
 # a terminal, which in this harness is always. A reader running these commands at a prompt never sees
 # it, so capturing it would document a line the page's own audience cannot reproduce. This is
@@ -77,9 +73,9 @@ if [ ! -f "$REPO/dists/stable/InRelease" ]; then
   gpg --batch --yes --local-user "$KEY_EMAIL" --clearsign -o "$REPO/dists/stable/InRelease" "$REPO/dists/stable/Release"
 fi
 
-# Port 8082: 8080 is the curl/wget mock server and 8081 is third-party-repositories, and in a
-# full `npm run replay` all three pages share one sandbox. A silent bind failure here would
-# look like a page that had drifted, so the check below is a hard failure.
+# Port 8082, kept distinct from the other fixtures that serve HTTP even though each page now
+# has its own container. The check below is a hard failure because a silent bind failure leaves
+# apt finding no repository, which reads as a page that has drifted.
 if ! curl -sf http://127.0.0.1:8082/dists/stable/InRelease >/dev/null 2>&1; then
   ( python3 -m http.server 8082 --directory "$REPO" --bind 127.0.0.1 >/dev/null 2>&1 & )
   for _ in $(seq 1 50); do
@@ -120,15 +116,14 @@ echo packages-kept-back > /var/lib/apt/.fixture-page
 if ! dpkg -s tips-demo 2>/dev/null | grep -q '^Version: 1.0-1'; then
   apt-get install -y --allow-downgrades tips-demo=1.0-1 >/dev/null 2>&1
 fi
-if dpkg -s tips-extra >/dev/null 2>&1; then
-  apt-get purge -y tips-extra >/dev/null 2>&1
-fi
 
-# tips-demo must never be held: a hold produces the same "kept back" message, which would make
-# the dependency cause the page is actually demonstrating impossible to tell apart.
-apt-mark unhold tips-demo >/dev/null 2>&1
+# Note for anyone extending this page: tips-extra must stay absent and tips-demo must never be
+# held. tips-extra being installed is what the page's whole diagnosis rules out, and a hold
+# produces the same "kept back" message as the dependency cause it demonstrates, which would make
+# the two impossible to tell apart. Every command on the page is read-only or `-s`, so neither
+# state can arise; an example that changed that would have to reset it here.
 
-# ca-certificates held instead, so the hold example has something real to list. Chosen because
-# it has no upgrade pending. Holding a package that does (libexpat1, here) would add it to the
-# kept-back list and change the output of every other example on the page.
+# ca-certificates is what the hold example lists, chosen because it has no upgrade pending.
+# Holding a package that does (libexpat1, here) would add it to the kept-back list and change the
+# output of every other example on the page.
 apt-mark hold ca-certificates >/dev/null 2>&1

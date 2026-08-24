@@ -8,15 +8,13 @@
 export DEBIAN_FRONTEND=noninteractive
 umask 0022
 
-find /etc/apt/sources.list.d -name '*.sources' ! -name 'debian.sources' -delete 2>/dev/null
-rm -f /etc/apt/preferences.d/*
-
 # See scripts/fixtures/apt.sh: silencing apt's "not a stable CLI interface" warning is the
 # default for any page running apt, and this page runs it in its repair examples.
 cat > /etc/apt/apt.conf.d/99-replay-no-script-warning <<'EOF'
 APT::Cmd::Disable-Script-Warning "1";
 EOF
 
+# Fetched once per container rather than once per example; see apt.sh.
 STATE=/var/lib/apt/.fixture-page
 if [ "$(cat $STATE 2>/dev/null)" != "dpkg" ]; then
   apt-get update >/dev/null 2>&1
@@ -53,14 +51,7 @@ if ! ls "$CACHE"/cowsay-off_*.deb >/dev/null 2>&1; then
 fi
 cp "$CACHE"/cowsay-off_*.deb ./cowsay-off.deb
 
-# No holds: `dpkg --get-selections` prints the hold state, and a hold left by another page
-# would change what this page's examples show.
-apt-mark unhold cowsay ca-certificates >/dev/null 2>&1
-
-# bash-completion must be the *only* package in the `rc` state, because one example lists every
-# package whose state is not `ii` and would otherwise report whatever the previous page left
-# behind. apt-essentials puts nano into `rc` deliberately, and in a full `npm run replay` that
-# is still true by the time this page runs. Its own setup puts nano back when it needs it.
-if dpkg -l nano 2>/dev/null | grep -q "^rc"; then
-  apt-get purge -y nano >/dev/null 2>&1
-fi
+# Two examples read state that belongs to the whole package database rather than to a package
+# they name: one lists every package whose state is not `ii`, and one lists every held package.
+# Both are answered by the image alone, since nothing in this script or on this page holds a
+# package, and bash-completion above is the only thing it puts into `rc`.

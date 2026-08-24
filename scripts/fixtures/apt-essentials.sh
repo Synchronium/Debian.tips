@@ -10,13 +10,8 @@
 
 export DEBIAN_FRONTEND=noninteractive
 
-# Other pages' setups also configure apt, and every page shares one sandbox, so a source left
-# behind by an earlier one changes what this page sees. Normalise to exactly what it needs.
-find /etc/apt/sources.list.d -name '*.sources' ! -name 'debian.sources' -delete 2>/dev/null
-rm -f /etc/apt/preferences.d/*
-
-# Package lists are rebuilt when the previous page left different sources configured, which
-# is once per page rather than once per documented output.
+# Package lists are fetched once per container rather than once per documented output, which is
+# what this marker is for: the script runs before every one of them.
 STATE=/var/lib/apt/.fixture-page
 if [ "$(cat $STATE 2>/dev/null)" != "apt-essentials" ]; then
   apt-get update >/dev/null 2>&1
@@ -46,7 +41,6 @@ fi
 # is printed above it whenever anything is auto-installed and unreferenced. The page would then
 # show the wrong first line, with no hint that a different notice had matched.
 #
-# Nothing on this page creates an orphan. It takes another page marking a package auto and a
-# third removing what depended on it. Assert the state the output depends on rather than relying
-# on the ordering.
+# Removing nano above is enough to orphan something it pulled in, and this script runs before
+# every block, so the state has to be asserted here rather than assumed from a fresh container.
 apt-get autoremove -y >/dev/null 2>&1

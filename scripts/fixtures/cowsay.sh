@@ -22,13 +22,10 @@ if ! dpkg -l cowsay 2>/dev/null | grep -q '^ii'; then
   apt-get install -y cowsay >/dev/null 2>&1
 fi
 
-# cowsay-off absent. It adds three cowfiles to /usr/share/cowsay/cows, so `cowsay -l` lists 50
-# rather than 47 whenever it is installed, and this page documents both the list and the count.
-# Another page installs it. A page whose output depends on a package being *absent* has to assert
-# that, exactly as one depending on a package being present does.
-if dpkg -l cowsay-off 2>/dev/null | grep -q '^ii'; then
-  apt-get purge -y cowsay-off >/dev/null 2>&1
-fi
+# Note for anyone extending this page: cowsay-off must stay absent. It adds three cowfiles to
+# /usr/share/cowsay/cows, so `cowsay -l` lists 50 rather than 47 whenever it is installed, and
+# this page documents both the list and the count. The image does not ship it, and no example
+# here installs it, so nothing has to be undone; an example that installed it would have to.
 
 mk_access_log
 

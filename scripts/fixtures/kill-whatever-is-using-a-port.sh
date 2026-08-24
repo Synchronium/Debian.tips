@@ -3,9 +3,9 @@
 #
 # Stands up something to find: a listener the page then identifies and kills.
 #
-# Port 9000 rather than 8080. Every page shares one sandbox and the curl and wget pages hold
-# 8080, so `fuser -k 8080/tcp` here would kill *their* fixture, on a page whose whole subject is
-# killing whatever holds a port, and the failure would surface pages later, on curl.
+# Port 9000 rather than 8080, which is what the curl and wget mock server uses. Nothing forces
+# the choice now that each page has its own container, but a page whose whole subject is killing
+# whatever holds a port is the last place to reuse a number another fixture is known by.
 #
 # Restarted rather than started once: this runs before every example, and the page's own
 # `fuser -k` example kills the listener it is about to need again.

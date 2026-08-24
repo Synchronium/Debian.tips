@@ -106,14 +106,25 @@ A sandbox somebody started by hand to write a page with does not carry that mark
 swept. This was true of the shared sandbox too; one container per page makes it likelier to be met
 rather than worse when it is.
 
-**The 42 defensive lines are not removed here, and that is deliberate.** They fall into two
-classes that look identical in the file: undoing what *another page* did, which is now dead code,
-and undoing what *an earlier example on the same page* did, which is still required, because the
-setup script runs before every example and the restore only resets the page's working directory.
-Telling them apart is a judgement per line, so pruning them is a follow-up done page by page with
-the replay as the check, rather than a mechanical sweep folded into this change. One line is
-removed here as a demonstration: `scripts/fixtures/apt-vs-apt-get.sh` existed almost entirely to
-undo the `apt` page's `apt.conf`.
+**The defensive lines are pruned, in a separate commit.** They fell into two classes that look
+identical in the file: undoing what *another page* did, which is now dead, and undoing what *an
+earlier example on the same page* did, which is still required, because the setup script runs
+before every example and the restore only resets the page's working directory. Which one a line
+is cannot be read off its text, so each was decided by asking whether the page's own blocks
+perform the mutation, and the replay was the check.
+
+Most of the volume turned out to be the second class and stays: the `apt` page really does run
+`apt-mark hold cowsay`, `/compare/remove-vs-purge-vs-autoremove/` really does end by marking
+cowsay manual, and the three pages that add apt sources in their own blocks really do have to
+sweep the directory. What went: eight repetitions of a `sources.list.d` and `preferences.d` sweep
+on pages that never touch either, a `nano` purge undoing `apt-essentials`, a `cowsay-off` purge
+undoing the `apt` and `dpkg` pages, `bash-completion` and `ca-certificates` guards against state
+no page sets any more.
+
+The comments mattered more than the line count. A dozen of them explained a mechanism that no
+longer exists, and a page's setup script is linked from the page, so a reader who followed that
+link to check whether a claim is really checked was being taught a constraint that had stopped
+being true.
 
 **What this does not fix**, and should not be read as fixing:
 

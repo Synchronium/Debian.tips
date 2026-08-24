@@ -62,8 +62,8 @@ CTL
     -o "$REPO/dists/stable/InRelease" "$REPO/dists/stable/Release"
 fi
 
-# Port 8083: 8080 is the curl/wget mock, 8081 third-party-repositories, 8082 packages-kept-back,
-# and a full `npm run replay` shares one sandbox between all of them.
+# Port 8083, kept distinct from the other fixtures that serve HTTP even though each page now
+# has its own container.
 if ! curl -sf http://127.0.0.1:8083/dists/stable/InRelease >/dev/null 2>&1; then
   ( python3 -m http.server 8083 --directory "$REPO" --bind 127.0.0.1 >/dev/null 2>&1 & )
   for _ in $(seq 1 50); do
