@@ -1,8 +1,9 @@
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
-import { SEVERITY, checkFile, proseLines } from "../scripts/voice-check.js";
+import { SEVERITY, checkFile, inScope, proseLines } from "../scripts/voice-check.js";
+import { ROOT } from "../src/paths.js";
 
 /* The property worth a test is what the checker refuses to look at. `output:` and `fixtures:`
  * hold what a command really printed, so a finding there would invite editing captured text to
@@ -84,5 +85,30 @@ describe("voice-check scoping", () => {
 
     expect(findings).toHaveLength(1);
     expect(findings[0]?.rule.severity).toBe(SEVERITY.fail);
+  });
+});
+
+/* The hook is handed any path the session just wrote, so it decides scope on its own. Naming a
+ * file explicitly is still an instruction to check it, which is why only the hook consults this. */
+describe("voice-check scope", () => {
+  it("covers the prose the guide claims", () => {
+    expect(inScope(join(ROOT, "content/commands/ls/index.md"))).toBe(true);
+    expect(inScope(join(ROOT, "content/commands/ls/examples.yaml"))).toBe(true);
+    expect(inScope(join(ROOT, "docs/adr/0001-anything.md"))).toBe(true);
+    expect(inScope(join(ROOT, ".claude/reference/voice.md"))).toBe(true);
+    expect(inScope(join(ROOT, "README.md"))).toBe(true);
+    expect(inScope(join(ROOT, "CLAUDE.md"))).toBe(true);
+  });
+
+  it("leaves personal notes and non-prose alone", () => {
+    expect(inScope(join(ROOT, "_PLANS/roadmaps/PLAN-CONTENT.md"))).toBe(false);
+    expect(inScope(join(ROOT, "scripts/voice-check.ts"))).toBe(false);
+    expect(inScope(join(ROOT, "content/commands/ls/notes.txt"))).toBe(false);
+    expect(inScope("/etc/passwd.md")).toBe(false);
+  });
+
+  it("resolves a relative path before deciding", () => {
+    expect(inScope(join(ROOT, "content/commands/ls/index.md"))).toBe(true);
+    expect(inScope(relative(process.cwd(), join(ROOT, "content/commands/ls/index.md")))).toBe(true);
   });
 });

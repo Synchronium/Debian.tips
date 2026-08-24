@@ -24,7 +24,7 @@ across a line. Both are `ls` doing what it was asked. `-1` forces one per line a
 columns, so a script that cares should say which it wants rather than inherit the default.
 
 **Every example on this page was captured through a pipe**, so the listings below are the
-one-per-line form. At a terminal the short ones will appear in columns.
+one-per-line form. At a terminal, the short ones will appear in columns.
 
 ## The long format, column by column
 
@@ -52,9 +52,9 @@ sum of the size column, and it ignores subdirectory contents.
 
 ## Hidden files, and the two flags for them
 
-A leading dot hides an entry from a default listing. `-a` shows everything including the `.` and
-`..` entries that every directory contains; `-A` shows everything except those two. `-A` is
-almost always the one you want, and `-a` is the one everybody types.
+A leading dot in a filename hides that file from a default listing. `-a` shows everything
+including the `.` and `..` entries that every directory contains; `-A` shows everything except
+those two. `-A` is almost always the one you want, even though `-a` is the one everybody types.
 
 ## Sorting
 
@@ -74,14 +74,15 @@ time and `-c` the change time, which is when the inode last changed: a `chmod` o
 `ctime` without touching `mtime`. There is no creation time here, because most Linux filesystems
 did not record one until recently and `ls` still does not read it.
 
-The date format depends on the age. Files modified within the last six months show a month, day and
-time; older ones show a month, day and year, on the grounds that the year matters more than the
-minute once something is that old. `--time-style=long-iso` gives `2026-06-21 10:00` for everything
-and is the better choice whenever the output will be read by anything other than a person.
+The date format depends on the age. Files modified within the last six months show a month, day
+and time; older ones show a month, day and year, on the grounds that the year is more important
+than the minute once something is that old. `--time-style=long-iso` gives `2026-06-21 10:00` for
+everything and is the better choice whenever the output will be read by anything other than a
+person.
 
 ## Symlinks
 
 `ls -l` shows a symlink as `l` with an arrow to its target, and reports the size of the link
 itself rather than of what it points at. `-L` follows the link and describes the target instead.
-A link whose target no longer exists still lists without complaint, which is why a broken symlink
-is easy to miss.
+A link whose target no longer exists is still listed without complaint, which is why a broken
+symlink is easy to miss.

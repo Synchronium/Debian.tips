@@ -17,7 +17,7 @@
 // which is the status Claude Code feeds back to whoever wrote the line rather than to the human
 // watching the session.
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { isAbsolute, join, relative, resolve } from "node:path";
 import { CONTENT_DIR, EXAMPLES_FILE, ROOT } from "../src/paths.js";
 
 export const SEVERITY = {
@@ -185,15 +185,30 @@ function walk(dir: string, keep: (path: string) => boolean): string[] {
   });
 }
 
+/** Where the guide applies, and the only definition of it. Both entry points read these: the
+ *  corpus walk collects them, and the hook admits a written file only if it is one of them.
+ *
+ *  The hook needs the test as much as the walk does. It is handed whatever path was just written,
+ *  which is any file in the repository, and prose the guide was never written for is out of scope
+ *  rather than failing. Without the test, editing a personal note produces a wall of findings
+ *  against sentences nobody agreed to hold to this. */
+const VOICE_DIRS: readonly string[] = [CONTENT_DIR, join(ROOT, "docs"), join(ROOT, ".claude")];
+const VOICE_FILES: readonly string[] = [join(ROOT, "README.md"), join(ROOT, "CLAUDE.md")];
+
+const isProse = (path: string): boolean => path.endsWith(".md") || path.endsWith(EXAMPLES_FILE);
+
+export function inScope(path: string): boolean {
+  const absolute = resolve(path);
+  if (!isProse(absolute)) return false;
+  if (VOICE_FILES.includes(absolute)) return true;
+  return VOICE_DIRS.some((dir) => {
+    const within = relative(dir, absolute);
+    return within !== "" && !within.startsWith("..") && !isAbsolute(within);
+  });
+}
+
 function corpusFiles(): string[] {
-  const prose = (path: string): boolean => path.endsWith(".md") || path.endsWith(EXAMPLES_FILE);
-  return [
-    ...walk(CONTENT_DIR, prose),
-    ...walk(join(ROOT, "docs"), prose),
-    ...walk(join(ROOT, ".claude"), prose),
-    join(ROOT, "README.md"),
-    join(ROOT, "CLAUDE.md"),
-  ];
+  return [...VOICE_DIRS.flatMap((dir) => walk(dir, isProse)), ...VOICE_FILES];
 }
 
 /** The path a PostToolUse hook is reporting on, or null when the payload names none. */
@@ -247,8 +262,7 @@ function main(): void {
   let targets: string[];
   if (hookMode) {
     const target = hookTarget();
-    const prose = target !== null && (target.endsWith(".md") || target.endsWith(EXAMPLES_FILE));
-    targets = prose ? [target] : [];
+    targets = target !== null && inScope(target) ? [target] : [];
   } else {
     targets = named.length ? named.map((path) => join(ROOT, relative(ROOT, path))) : corpusFiles();
   }
