@@ -1,0 +1,479 @@
+command: ps
+fixtures:
+  - name: "three processes owned by user"
+    note: "the page needs something to select that is not part of the boot, so the setup script starts a small tree: `tips-supervisor` is a shell script that spawns two copies of `tips-backup` and waits. The examples run as `root`, which is why `-u user` matches these three and nothing else."
+    from: "ps -u user -o user,comm,args --no-headers"
+    content: |
+      user     tips-supervisor /bin/bash /usr/local/bin/tips-supervisor
+      user     tips-backup     /usr/local/bin/tips-backup 3600
+      user     tips-backup     /usr/local/bin/tips-backup 3600
+sections:
+  - title: "The two standard listings"
+    intro: "`aux` is BSD syntax and `-ef` is UNIX syntax. Both select every process; they differ in which columns they print. PIDs and times below are from one run and will differ on your machine."
+    examples:
+      - title: "List every process, BSD style"
+        code: ps aux | head -5
+        description: "The listing people reach for most. `a` drops the same-user restriction, `u` asks for the user-oriented columns, and `x` includes processes with no controlling terminal, which is most daemons."
+        volatile: "the PIDs, the start times and the CPU and memory figures are specific to your machine"
+        compare: shape
+        output: |2
+          USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+          root           1  0.0  0.3  23028 12996 ?        Ss   10:13   0:00 /lib/systemd/systemd
+          root          35  0.0  0.3  34788 12256 ?        Ss   10:13   0:00 /usr/lib/systemd/systemd-journald
+          root          93  0.0  0.0   4400  2464 ?        Ss   10:13   0:00 /usr/sbin/cron -f
+          root          99  0.0  0.0   4728  2156 tty1     Ss+  10:13   0:00 /sbin/agetty -o -- \u --noreset --noclear - linux
+        level: basic
+      - title: "List every process, UNIX style"
+        code: ps -ef | head -5
+        description: "The same set of processes with a different column choice. `-e` selects everything and `-f` asks for the full-format listing, whose distinguishing column is `PPID`, the parent process id."
+        volatile: "the PIDs and start times are specific to your machine"
+        compare: shape
+        output: |2
+          UID          PID    PPID  C STIME TTY          TIME CMD
+          root           1       0  0 10:13 ?        00:00:00 /lib/systemd/systemd
+          root          35       1  0 10:13 ?        00:00:00 /usr/lib/systemd/systemd-journald
+          root          93       1  0 10:13 ?        00:00:00 /usr/sbin/cron -f
+          root          99       1  0 10:13 tty1     00:00:00 /sbin/agetty -o -- \u --noreset --noclear - linux
+        level: basic
+      - title: "List everything the init system started"
+        code: ps --ppid 1 -o comm= | sort
+        description: "`--ppid 1` selects the children of PID 1, which is close to a list of the machine's daemons. `-o comm=` prints the name alone and the `=` suppresses the header, so the result needs no further tidying."
+        output: |
+          agetty
+          agetty
+          agetty
+          agetty
+          agetty
+          agetty
+          cron
+          sshd
+          systemd-journal
+          tips-supervisor
+        level: basic
+      - title: "Count how many processes are running"
+        code: ps -e --no-headers | wc -l
+        description: "`--no-headers` removes the column header so every line is a process. The count includes `ps` itself and the shell that ran it."
+        volatile: "the total depends on what your machine is running"
+        compare: shape
+        output: |
+          16
+        level: basic
+      - title: "Look at a single process by PID"
+        code: ps -o pid,comm -p 1
+        description: "`-p` selects by process id. PID 1 is the init system, which on Debian is `systemd`."
+        output: |2
+              PID COMMAND
+                1 systemd
+        level: basic
+      - title: "Show a process with its full command line"
+        code: ps -q 1 -o comm=,args=
+        description: "`-q` is `-p` without the reordering, and `args` is the command line as invoked. Here it shows that the `systemd` shown by `comm` was started as `/lib/systemd/systemd`."
+        output: |
+          systemd         /lib/systemd/systemd
+        level: basic
+      - title: "Check whether a named service is running"
+        code: ps -o comm= -C cron
+        description: "`-C` selects by command name. Nothing is printed and the exit status is non-zero when no process matches, which makes it usable in a test. For a service under systemd, [`systemctl is-active`](/commands/systemctl/) answers a more useful question."
+        output: |
+          cron
+        level: basic
+      - title: "List the virtual consoles waiting for a login"
+        code: ps -o tty=,comm= -C agetty | sort
+        description: "One `agetty` per virtual console, each holding a `tty` open for someone to log in on. `sort` is here because process order follows PID rather than terminal number."
+        output: |
+          tty1     agetty
+          tty2     agetty
+          tty3     agetty
+          tty4     agetty
+          tty5     agetty
+          tty6     agetty
+        level: basic
+      - title: "Count the processes belonging to one command"
+        code: ps -o comm= -C agetty | wc -l
+        description: "Piping a headerless listing into [`wc -l`](/commands/wc/) is the general way to count matches. `pgrep -c` does the same job in one command."
+        output: |
+          6
+        level: basic
+
+  - title: "Columns and fields"
+    intro: "`-o` replaces the default column set with the one you name. A trailing `=` on a field drops its header, and a field with nothing after the `=` produces output with nothing to strip before using it."
+    examples:
+      - title: "Print just the name of a process"
+        code: ps -o comm= -p 1
+        description: "The smallest useful `-o`: one field, no header, one line of output."
+        output: |
+          systemd
+        level: basic
+      - title: "Show who owns a process"
+        code: ps -o user=,group=,comm= -C tips-supervisor
+        description: "`user` and `group` are the effective ids, resolved to names. Add `ruser` and `rgroup` for the real ids, which differ for anything running setuid."
+        output: |
+          user     user     tips-supervisor
+        level: basic
+      - title: "Tell the executable apart from the command line"
+        code: ps -o comm=,args= -C tips-supervisor
+        description: "`comm` is the executable's name and `args` is how it was invoked. A shell script reports its own name under `comm` and its interpreter under `args`, so a search matching one can miss the other."
+        output: |
+          tips-supervisor /bin/bash /usr/local/bin/tips-supervisor
+        level: intermediate
+      - title: "Widen a column that is being truncated"
+        code: ps -o "pid,comm:20,nice" -C tips-backup --no-headers
+        description: "`comm:20` sets the field width. `comm` itself is capped at 15 characters by the kernel, so a longer name needs `args` rather than a wider column."
+        volatile: "the PIDs are specific to your machine"
+        compare: shape
+        output: |2
+              751 tips-backup            0
+              752 tips-backup            0
+        level: intermediate
+      - title: "Show the process state"
+        code: ps -o stat=,comm= -C tips-backup
+        description: "`S` is interruptible sleep, which is what a process waiting on something looks like. `R` is running, `Z` is a zombie, and a trailing `s` means session leader."
+        output: |
+          S    tips-backup
+          S    tips-backup
+        level: intermediate
+      - title: "Show a process's scheduling class and niceness"
+        code: ps -o cls=,ni=,comm= -C tips-backup
+        description: "`TS` is the ordinary time-sharing class and `ni` is the nice value, where 0 is the default and higher means lower priority."
+        output: |2
+           TS   0 tips-backup
+           TS   0 tips-backup
+        level: advanced
+      - title: "Count a process's threads"
+        code: ps -o thcount=,comm= -C tips-supervisor
+        description: "`thcount` (also spelled `nlwp`) is the number of threads. A single-threaded process reports 1."
+        output: |2
+              1 tips-supervisor
+        level: advanced
+      - title: "Show resident memory for one process"
+        code: ps -o comm=,rss= -C tips-supervisor
+        description: "`rss` is resident set size in kilobytes, meaning the memory actually in RAM. It double-counts pages shared between processes, so summing it across a system overstates the total."
+        volatile: "the memory figure depends on your machine"
+        compare: shape
+        output: |
+          tips-supervisor  2968
+        level: intermediate
+      - title: "Show CPU and memory percentages together"
+        code: ps -o comm=,pcpu=,pmem= -C tips-supervisor
+        description: "`pcpu` is the same figure `%CPU` shows in `ps aux`, averaged over the process's whole life rather than sampled now."
+        volatile: "the percentages depend on your machine"
+        compare: shape
+        output: |
+          tips-supervisor  0.0  0.0
+        level: intermediate
+      - title: "Show how long a process has been running"
+        code: ps -o etimes=,comm= -C tips-supervisor
+        description: "`etimes` is elapsed seconds, which sorts and compares numerically. `etime` gives the same span formatted as `[[dd-]hh:]mm:ss`, which reads better but does not sort."
+        volatile: "the elapsed time depends on when the process started"
+        compare: shape
+        output: |2
+              556 tips-supervisor
+        level: intermediate
+      - title: "Show the arguments a process was given"
+        code: ps -o args= -C tips-backup | sort -u
+        description: "Both copies were started the same way, so `sort -u` collapses them to one line. The arguments are read from the process's own memory, so a process that rewrites its argument vector can hide them."
+        output: |
+          /usr/local/bin/tips-backup 3600
+        level: intermediate
+
+  - title: "Selecting which processes"
+    intro: "Selection options combine as a union rather than an intersection: naming both a user and a command name gives you everything matching either, not the overlap."
+    examples:
+      - title: "Select every process owned by a user"
+        code: ps -u user -o user,comm --no-headers
+        description: "`-u` takes the effective user, which is the one that matters for permissions. `-U` selects by real user instead."
+        output: |
+          user     tips-supervisor
+          user     tips-backup
+          user     tips-backup
+        level: basic
+      - title: "Select by command name"
+        code: ps -C tips-backup -o pid,comm --no-headers
+        description: "`-C` matches the executable name exactly, so it neither needs nor accepts a pattern. It is the option that makes `ps | grep` unnecessary in most cases."
+        volatile: "the PIDs are specific to your machine"
+        compare: shape
+        output: |2
+              751 tips-backup
+              752 tips-backup
+        level: basic
+      - title: "Select several command names at once"
+        code: ps -o comm= -C tips-backup,tips-supervisor | sort
+        description: "`-C` takes a comma-separated list. `sort` makes the order predictable, since `ps` returns them in PID order."
+        output: |
+          tips-backup
+          tips-backup
+          tips-supervisor
+        level: intermediate
+      - title: "Select several PIDs at once"
+        code: ps -o comm= -p 1,$(pgrep -x tips-supervisor)
+        description: "`-p` also takes a list. Command substitution supplies a PID that is not known in advance, which is the shape most scripts need."
+        output: |
+          systemd
+          tips-supervisor
+        level: intermediate
+      - title: "List the children of a process"
+        code: ps --ppid "$(pgrep -x tips-supervisor)" -o comm=
+        description: "`--ppid` selects by parent, which answers what a supervisor has actually started rather than what it claims to manage."
+        output: |
+          tips-backup
+          tips-backup
+        level: intermediate
+      - title: "Count processes per user"
+        code: ps -eo user= | sort | uniq -c
+        description: "A quick way to see who is using a shared machine. The counts include the pipeline's own processes, which belong to whoever ran it."
+        volatile: "the counts depend on what your machine is running"
+        compare: shape
+        output: |2
+               14 root
+                3 user
+        level: intermediate
+      - title: "Count only the processes matching a name"
+        code: ps -e -o comm= | grep -c tips
+        description: "Counting with [`grep -c`](/commands/grep/) rather than listing. This one is safe from the usual `ps | grep` trap because `grep`'s own name does not contain the pattern."
+        output: |
+          3
+        level: intermediate
+      - title: "Show which terminals processes are attached to"
+        code: ps -e -o tty= | sort | uniq -c
+        description: "`?` means no controlling terminal, which is what every daemon looks like. The counts here are one virtual console each plus everything running without a terminal."
+        volatile: "the count of processes with no terminal depends on your machine"
+        compare: shape
+        output: |2
+               11 ?
+                1 tty1
+                1 tty2
+                1 tty3
+                1 tty4
+                1 tty5
+                1 tty6
+        level: intermediate
+
+  - title: "Sorting"
+    intro: "`--sort` takes a field name, and a leading `-` reverses it. It is a GNU long option, so it works alongside either of the other two syntaxes."
+    examples:
+      - title: "Find the processes using the most memory"
+        code: ps -eo comm=,rss= --sort=-rss | head -3
+        description: "Sorting by resident set size descending. This is the question `ps` answers better than anything else, because the sort happens before the truncation."
+        volatile: "which processes use most memory, and how much, depends on your machine"
+        compare: shape
+        output: |
+          systemd         12996
+          systemd-journal 12260
+          sshd             7704
+        level: basic
+      - title: "Find the processes using the most memory, as a percentage"
+        code: ps -eo comm,%mem --sort=-%mem --no-headers | head -3
+        description: "`%mem` is `rss` as a share of physical memory. A field name containing `%` works unquoted here, but quote it if your shell is configured to expand it."
+        volatile: "the processes and percentages depend on your machine"
+        compare: shape
+        output: |
+          systemd          0.3
+          systemd-journal  0.3
+          sshd             0.1
+        level: basic
+      - title: "Find the longest-running processes"
+        code: ps -eo comm,etime --sort=-etime --no-headers | head -4
+        description: "Sorting by elapsed time picks out whatever started earliest, which on a healthy machine is the boot sequence and on an unhealthy one is often the thing that has hung."
+        volatile: "the elapsed times depend on how long your machine has been up"
+        compare: shape
+        output: |2
+          systemd               25:30
+          systemd-journal       25:29
+          cron                  25:29
+          agetty                25:29
+        level: intermediate
+      - title: "Find which command has the most processes"
+        code: ps -eo comm= --sort=comm | uniq -c | sort -rn | head -2
+        description: "Sorting by name first is what makes [`uniq -c`](/commands/uniq/) able to count, since it only collapses adjacent lines. The second `sort` puts the largest count first."
+        volatile: "the commands and counts depend on what your machine is running"
+        compare: shape
+        output: |2
+                6 agetty
+                2 tips-backup
+        level: intermediate
+      - title: "Group processes by state"
+        code: ps -e -o stat=,comm= --sort=stat | head -4
+        description: "Sorting by state brings anything unusual together. `R` sorts first, and a run of `Z` entries in this listing means processes whose parent has not collected them."
+        volatile: "which processes are in which state depends on your machine"
+        compare: shape
+        output: |
+          R    ps
+          Ss   systemd
+          Ss   systemd-journal
+          Ss   cron
+        level: advanced
+      - title: "List the distinct daemons, in name order"
+        code: ps --ppid 1 -o comm= --sort=comm | uniq
+        description: "`--sort` orders the listing itself, so [`uniq`](/commands/uniq/) collapses the six `agetty` entries without a separate sort step."
+        output: |
+          agetty
+          cron
+          sshd
+          systemd-journal
+          tips-supervisor
+        level: intermediate
+      - title: "Order threads by count"
+        code: ps -e -o comm=,nlwp= --sort=-nlwp | head -3
+        description: "`nlwp` is the thread count. On a desktop this finds the browser; here everything is single-threaded, so the sort falls back to PID order."
+        volatile: "the thread counts depend on what your machine is running"
+        compare: shape
+        output: |
+          systemd            1
+          systemd-journal    1
+          cron               1
+        level: advanced
+
+  - title: "Parents and the process tree"
+    intro: "Every process except PID 1 has a parent, and a process whose parent exits is adopted by PID 1 rather than being killed. That is why a daemon started from a login shell survives the logout."
+    examples:
+      - title: "Show a process tree"
+        code: ps -u user -o pid,ppid,comm --forest --no-headers
+        description: "`--forest` draws the parent and child relationships with ASCII art. The supervisor's own parent is PID 1, because the shell that started it has already exited."
+        volatile: "the PIDs are specific to your machine"
+        compare: shape
+        output: |2
+              747       1 tips-supervisor
+              751     747  \_ tips-backup
+              752     747  \_ tips-backup
+        level: basic
+      - title: "Show the same processes without the tree"
+        code: ps -u user -o pid,ppid,comm --no-headers
+        description: "The same information as the previous example with the relationship left for you to read out of the `PPID` column. `--forest` is doing presentation, not selection."
+        volatile: "the PIDs are specific to your machine"
+        compare: shape
+        output: |2
+              747       1 tips-supervisor
+              751     747 tips-backup
+              752     747 tips-backup
+        level: basic
+      - title: "Find a process's parent"
+        code: ps -o comm=,ppid= -C tips-backup | sort -u
+        description: "Both copies have the same parent, so `sort -u` reduces the answer to one line. Following `ppid` upwards is how you find out what actually started something."
+        volatile: "the parent PID is specific to your machine"
+        compare: shape
+        output: |
+          tips-backup         747
+        level: intermediate
+      - title: "Indent a listing by hierarchy"
+        code: ps -H -u user -o comm=
+        description: "`-H` is the UNIX-syntax equivalent of `--forest`, indenting children without drawing the connectors."
+        output: |
+          tips-supervisor
+            tips-backup
+            tips-backup
+        level: intermediate
+
+  - title: "pgrep and pidof"
+    intro: "`pgrep` answers the question `ps | grep` is usually being asked, and it never matches itself. It matches against `comm` by default, and against the full command line with `-f`."
+    examples:
+      - title: "Count the processes matching a name"
+        code: pgrep -c tips-backup
+        description: "`-c` prints only the count. The exit status is non-zero when nothing matches, so this works as a test as well as a number."
+        output: |
+          2
+        level: basic
+      - title: "List the PIDs matching a name"
+        code: pgrep tips-backup | wc -l
+        description: "Bare `pgrep` prints one PID per line. The pattern is matched against `comm`, so the pipeline running the command cannot match it."
+        output: |
+          2
+        level: basic
+      - title: "Show names alongside the PIDs"
+        code: pgrep -l tips
+        description: "`-l` adds the process name. The pattern is a substring by default, so `tips` matches both `tips-backup` and `tips-supervisor`."
+        volatile: "the PIDs are specific to your machine"
+        compare: shape
+        output: |
+          747 tips-supervisor
+          751 tips-backup
+          752 tips-backup
+        level: basic
+      - title: "Show the full command line alongside the PIDs"
+        code: pgrep -a tips-backup
+        description: "`-a` prints the whole command line, which is what you want before killing anything, because it shows which of several similar processes you have found."
+        volatile: "the PIDs are specific to your machine"
+        compare: shape
+        output: |
+          751 /usr/local/bin/tips-backup 3600
+          752 /usr/local/bin/tips-backup 3600
+        level: basic
+      - title: "Require an exact name rather than a substring"
+        code: pgrep -x tips; echo "exit $?"
+        description: "`-x` demands that the whole name match, so the substring `tips` now matches nothing and the exit status is 1. Without `-x` the same pattern matches three processes."
+        output: |
+          exit 1
+        level: intermediate
+      - title: "Confirm pgrep never matches itself"
+        code: pgrep -c pgrep; echo "exit $?"
+        description: "`pgrep` excludes its own process, which is the whole reason to prefer it to `ps | grep`. The count is 0 and the exit status says nothing matched."
+        output: |
+          0
+          exit 1
+        level: intermediate
+      - title: "Check the exit status when nothing matches"
+        code: pgrep nosuchprocess; echo "exit $?"
+        description: "Nothing on stdout and exit 1. That makes `if pgrep -x sshd >/dev/null; then` a reliable test, and it is the reason [exit codes](/concepts/exit-codes-and-error-handling/) matter here."
+        output: |
+          exit 1
+        level: intermediate
+      - title: "Select a user's processes by name"
+        code: pgrep -u user -l . | sort -k2
+        description: "`-u` narrows the search to one user and `.` is a pattern matching any name. `sort -k2` orders by the second column, which is the process name."
+        volatile: "the PIDs are specific to your machine"
+        compare: shape
+        output: |
+          751 tips-backup
+          752 tips-backup
+          747 tips-supervisor
+        level: intermediate
+      - title: "Produce PIDs on one line for another command"
+        code: pgrep -x -d, tips-backup
+        description: "`-d` sets the delimiter instead of a newline. A comma-separated list is what `ps -p` and `renice` expect."
+        volatile: "the PIDs are specific to your machine"
+        compare: shape
+        output: |
+          751,752
+        level: intermediate
+      - title: "Find the newest and oldest process of a name"
+        code: pgrep -n tips-backup; pgrep -o tips-backup
+        description: "`-n` is the most recently started match and `-o` the oldest. Useful when several copies exist and only one of them is the one you just started."
+        volatile: "the PIDs are specific to your machine"
+        compare: shape
+        output: |
+          752
+          751
+        level: advanced
+      - title: "Get the PID of a single well-known process"
+        code: pidof systemd
+        description: "`pidof` is the older, simpler tool: exact name match, all PIDs on one space-separated line. `pidof -s` stops at the first."
+        output: |
+          1
+        level: basic
+      - title: "Count what pidof found"
+        code: pidof tips-backup | tr " " "\n" | wc -l
+        description: "`pidof` puts every PID on one line, so counting them means splitting on spaces first with [`tr`](/commands/tr/)."
+        output: |
+          2
+        level: intermediate
+      - title: "Search a process's full command line"
+        code: pgrep -u user -f "bin/tips-backup" | wc -l
+        description: "`-f` matches against the whole command line rather than just `comm`, which is the only way to find a process whose name is its interpreter. It is also the option that matches the shell running your script, since that shell's command line contains the pattern; narrowing by `-u` is one way to exclude it."
+        output: |
+          2
+        level: advanced
+      - title: "Filter a listing without matching the filter"
+        code: ps aux | grep "[t]ips-supervisor"
+        description: "The brackets make the pattern a character class matching one literal `t`, so the text `[t]ips-supervisor` in `grep`'s own command line no longer matches it. `pgrep` is clearer, but this trick is worth recognising in other people's scripts."
+        volatile: "the PID, the start time and the memory figures are specific to your machine"
+        compare: shape
+        output: |
+          user         747  0.0  0.0   3912  2968 ?        Ss   10:41   0:00 /bin/bash /usr/local/bin/tips-supervisor
+        level: advanced
+      - title: "Pass the PIDs of a process to another command"
+        code: ps -o pid= -C tips-backup | xargs echo
+        description: "`-o pid=` produces bare numbers with no header to strip, which is what makes it safe to pipe into [`xargs`](/commands/xargs/). Substitute the command you actually want for `echo` once the list looks right."
+        volatile: "the PIDs are specific to your machine"
+        compare: shape
+        output: |
+          751 752
+        level: advanced

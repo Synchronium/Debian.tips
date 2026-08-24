@@ -41,8 +41,8 @@ In order of how often it is the answer:
 
 ## Work out which, then wait
 
-The PID is in the message, so use `ps` to ask about it directly, substituting the number apt
-gave you:
+The PID is in the message, so use [`ps`](/commands/ps/) to ask about it directly, substituting
+the number apt gave you:
 
 ```bash
 ps -o pid=,comm=,etime= -p 2412

@@ -104,6 +104,13 @@
     "fixtures": 2,
     "unpaired": 0
   },
+  "commands/ps": {
+    "checked": 54,
+    "byShape": 26,
+    "exempt": 0,
+    "fixtures": 1,
+    "unpaired": 0
+  },
   "commands/sed": {
     "checked": 26,
     "byShape": 0,

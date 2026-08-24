@@ -18,10 +18,10 @@ Plain `sort` on a file of numbers puts `10` before `2`, because it's comparing t
 same but also understands `K`/`M`/`G` suffixes, which is what you want when sorting `du -h` or
 `ls -lh` output.
 
-For anything with columns (CSV, `ps` output, `du` output) `-k` picks which field to sort by
-instead of the whole line: `-k2` sorts by the second field, `-t,` changes the field separator
-from whitespace to a comma. Combine `-k` with `-n` or `-h` to sort a specific numeric column
-correctly instead of falling back to lexicographic order on it by accident.
+For anything with columns (CSV, [`ps`](/commands/ps/) output, `du` output) `-k` picks which
+field to sort by instead of the whole line: `-k2` sorts by the second field, `-t,` changes the
+field separator from whitespace to a comma. Combine `-k` with `-n` or `-h` to sort a specific
+numeric column correctly instead of falling back to lexicographic order on it by accident.
 
 `-u` deduplicates while sorting (cheaper than piping to `uniq` separately when you don't need the
 unsorted order preserved). `-r` reverses whatever order you asked for. `-c` checks whether a file

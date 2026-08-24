@@ -168,8 +168,8 @@ including why `sudo echo x > /etc/file` fails and `tee` is the fix.
 
 ## Composing small commands
 
-Small, single-purpose commands become useful once you can chain them arbitrarily. `ps aux |
-grep nginx`, `cat access.log | sort | uniq -c | sort -rn`: each is a short pipeline of commands
-that individually do very little, connected by `|` and occasionally a file redirection. Reading
-one left to right, a descriptor rewire at a time, is most of what separates copying commands off
-the internet from building the pipeline you need.
+Small, single-purpose commands become useful once you can chain them arbitrarily.
+[`ps aux | grep nginx`](/commands/ps/), `cat access.log | sort | uniq -c | sort -rn`: each is a
+short pipeline of commands that individually do very little, connected by `|` and occasionally a
+file redirection. Reading one left to right, a descriptor rewire at a time, is most of what
+separates copying commands off the internet from building the pipeline you need.
