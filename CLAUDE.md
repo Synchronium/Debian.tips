@@ -25,6 +25,7 @@ npm run check    # format, tsc --noEmit, vitest, build, pagefind, linkcheck, lin
 npm run replay   # replay every page's examples, one container each (needs Docker, ~4.5 min warm)
 npm run replay -- --changed        # only the pages your diff touches, which is what CI runs on a PR
 npm run replay -- ls du            # named pages; identical to how the full run replays them
+npm run replay -- --shard=2/4      # one quarter of the pages; CI runs the four in parallel
 npm run audit:links -- --verbose   # the link graph on its own, advisory findings included
 npm run voice    # prose against .claude/reference/voice.md; a hook runs it per file as you write
 ```

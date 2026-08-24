@@ -40,9 +40,25 @@ jobs:
   # people looking at them.
   replay:
     runs-on: ubuntu-latest
-    # The full replay measures ~4.5 minutes for the whole site (56 pages, 2026-08-24); a pull
-    # request replays only what it touched. The budget is for building the sandbox image on a
-    # cold runner, plus room for a hung example that somehow escapes the per-example timeout.
+    # Four shards, each on its own runner, replaying a quarter of the site. Serial it is 254
+    # seconds; split four ways the slowest shard is 64 (measured 2026-08-24). Four rather than
+    # more because the floor is one page: `apt` alone is 58 seconds, so no split beats it, and
+    # the four-way split lands on that floor almost exactly. Six shards measured the same 58 as
+    # four and spent two more runners doing it.
+    #
+    # Each shard is its own runner, so this is not the CPU contention that has produced false
+    # failures here before (.claude/skills/ship/SKILL.md): that is about two heavy jobs sharing
+    # one machine, which nothing here does.
+    #
+    # Which pages a shard takes is decided by scripts/lib/replayShard.ts, balanced from recorded
+    # timings. Deploy keys off the whole workflow's conclusion, so every shard has to pass.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    name: replay (${{ matrix.shard }}/4)
+    # The budget is for building the sandbox image on a cold runner, plus room for a hung example
+    # that somehow escapes the per-example timeout.
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
@@ -66,14 +82,18 @@ jobs:
       # harness, where one change can move any page's output. A push to main always replays the
       # whole site, so nothing is deployed on the strength of a partial run.
       #
-      # There is no second, differently-ordered job beside this one any more. Under ADR-0020
-      # every page gets its own container, so the order pages run in cannot reach any result,
-      # and a job that varied it would be a gate that can never fail.
+      # The pull-request run is sharded too. Most diffs give it fewer pages than there are
+      # shards, so most of these four report an empty shard and exit 0, which costs a runner
+      # doing nothing and keeps one code path rather than two.
+      #
+      # There is no second, differently-ordered job beside these any more. Under ADR-0020 every
+      # page gets its own container, so the order pages run in cannot reach any result, and a
+      # job that varied it would be a gate that can never fail.
       - name: Replay the changed pages
         if: github.event_name == 'pull_request'
-        run: npm run replay -- --changed
+        run: npm run replay -- --changed --shard=${{ matrix.shard }}/4
         env:
           REPLAY_DIFF_BASE: origin/${{ github.base_ref }}
       - name: Replay every page
         if: github.event_name != 'pull_request'
-        run: npm run replay
+        run: npm run replay -- --shard=${{ matrix.shard }}/4

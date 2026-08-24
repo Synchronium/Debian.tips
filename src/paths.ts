@@ -67,6 +67,13 @@ export const SANDBOX_SCRIPT = join(ROOT, "scripts", "sandbox.sh");
  *  `test/verificationBaseline.test.ts`, rewritten by `scripts/update-verification-baseline.ts`. */
 export const VERIFICATION_BASELINE_FILE = join(ROOT, "test", "verification-baseline.json");
 
+/** Seconds each page took on the last recorded full replay, used to balance `--shard`. Written by
+ *  `npm run replay -- --record-timings`, read by `scripts/lib/replayShard.ts`.
+ *
+ *  Advisory throughout: out of date, it balances worse; missing, every page still runs. Nothing
+ *  reads it to decide *whether* a page is replayed. */
+export const REPLAY_TIMINGS_FILE = join(ROOT, "scripts", "replay-timings.json");
+
 /** A page's setup script: creates its sample files, and is what opts it into the replay.
  *
  *  `fixtureDir` is a parameter for the same reason `contentDir` is one: a build over a synthetic

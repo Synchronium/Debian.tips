@@ -3,7 +3,7 @@
 - **Status:** Accepted, with a deferred follow-up
 - **Recorded:** 2026-08-24
 - **Supersedes:** [ADR-0002](0002-one-shared-sandbox-serial.md)
-- **Enforced by:** `scripts/replay-all.ts`, which starts and stops a sandbox around each page; `scripts/sandbox.sh`; the single `replay` job in `.github/workflows/ci.yml`
+- **Enforced by:** `scripts/replay-all.ts`, which starts and stops a sandbox around each page; `scripts/sandbox.sh`; the sharded `replay` job in `.github/workflows/ci.yml`; `test/replayShard.test.ts`, which holds the partition the sharding depends on
 
 ## Context
 
@@ -96,6 +96,12 @@ free rather than that it pays for itself.
 Deleting the `replay-shuffled` job returns a whole runner, so total CI machine time for replay
 work falls even though the one remaining job is slower.
 
+**Independent pages are shardable pages**, which is the second consequence and is why the
+"Revisit when" below was acted on the same day. `--shard=<i>/<n>` splits the run across runners,
+and it is sound only because of this record: a shard is a subset, and under the shared sandbox a
+subset was a different experiment from the whole, since the pages missing from it were also the
+pages that had been contaminating it.
+
 **A container can outlive an interrupted run, so the run sweeps before it starts.** Tearing down
 after each page covers the ordinary paths and a handler covers an interrupt between pages, but
 neither can cover one that arrives mid-example: the loop is blocked inside a synchronous
@@ -138,11 +144,21 @@ being true.
 
 ## Revisit when
 
-A full replay exceeds roughly ten minutes of CI wall clock. The lever is parallelising across
-several containers at once, which is now a much smaller change than ADR-0002 could contemplate:
-pages are already independent, so distributing them changes only speed, and none of the three
-prerequisites that record listed still applies. The ceiling is set by one page (`apt`), so expect
-roughly 3.5x rather than the worker count.
+**Taken already, 2026-08-24, ahead of the ten-minute trigger this record originally set.** The
+lever named here was parallelising across containers, and it turned out to be cheap enough not to
+wait for: pages are independent, so distributing them changes only speed. `npm run replay` grew
+`--shard=<i>/<n>`, and CI runs four shards on four runners, 254 seconds serial against 64 for the
+slowest shard.
+
+The prediction that the ceiling is one page held exactly. `apt` alone is 58 seconds, so four
+shards land on that floor and six measured the same number while spending two more runners. What
+this record got wrong is the shape of the risk: it framed parallelising as a change to *what is
+tested*, which was true of the shared sandbox and is not true now. The risk that replaced it is a
+page belonging to no shard, which is a partition problem rather than a contamination one, and
+`test/replayShard.test.ts` holds it.
+
+Revisit again when the slowest single page dominates the shard budget rather than merely setting
+it. At that point the lever is that page's setup script, not more runners.
 
 Also revisit if the per-page `apt-get update` grows beyond a few seconds. Baking the package lists
 into the image was considered and rejected: the lists would be as old as the last image build,

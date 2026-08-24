@@ -23,23 +23,54 @@
 // Exit status: 0 when every page reproduces, 1 if any page fails, 2 if Docker is
 // unavailable or an argument names no page.
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readdirSync, writeFileSync } from "node:fs";
+import { join, relative } from "node:path";
 import { ReplayError, readSetupDirectives } from "./lib/replayMetadata.js";
 import { PROSE_CATEGORIES } from "../src/content/schema.js";
-import { CONTENT_DIR, SANDBOX_SCRIPT, commandsDir, fixtureScript, proseSlug } from "../src/paths.js";
+import {
+  CONTENT_DIR,
+  REPLAY_TIMINGS_FILE,
+  ROOT,
+  SANDBOX_SCRIPT,
+  commandsDir,
+  fixtureScript,
+  proseSlug,
+} from "../src/paths.js";
 import { replayCommandPage } from "./replay-command-page.js";
 import { replayProsePage } from "./replay-prose-page.js";
 import { SANDBOX_FLAVOUR, type SandboxFlavour } from "./lib/sandbox.js";
+import { type Shard, ShardError, parseShard, readTimings, shardPages } from "./lib/replayShard.js";
 
 const args = process.argv.slice(2);
-const FLAGS = ["--changed"];
-const unknownFlags = args.filter((arg) => arg.startsWith("-") && !FLAGS.includes(arg));
+const FLAGS = ["--changed", "--record-timings"];
+const unknownFlags = args.filter(
+  (arg) => arg.startsWith("-") && !FLAGS.includes(arg) && !arg.startsWith("--shard="),
+);
 if (unknownFlags.length) {
-  console.error(`replay: unexpected argument ${unknownFlags[0]} (accepts ${FLAGS.join(", ")})`);
+  console.error(
+    `replay: unexpected argument ${unknownFlags[0]} (accepts ${FLAGS.join(", ")}, --shard=<i>/<n>)`,
+  );
   process.exit(2);
 }
 const onlyChanged = args.includes("--changed");
+const recordTimings = args.includes("--record-timings");
+
+let shard: Shard = { index: 1, total: 1 };
+try {
+  const flag = args.find((arg) => arg.startsWith("--shard="));
+  if (flag) shard = parseShard(flag.slice("--shard=".length));
+} catch (error) {
+  console.error(`replay: ${(error as ShardError).message}`);
+  process.exit(2);
+}
+
+// Recording a partial run would overwrite the times of every page not in it. The file balances
+// the shards, so a shard writing it is also the case where the damage is least visible.
+if (recordTimings && (shard.total > 1 || onlyChanged || args.some((a) => !a.startsWith("-")))) {
+  console.error("replay: --record-timings needs the full run, so it cannot be combined with");
+  console.error("  --shard, --changed, or named pages.");
+  process.exit(2);
+}
 
 const requestedPages = args.filter((arg) => !arg.startsWith("-"));
 
@@ -129,12 +160,20 @@ if (missing.length) {
 // comment saying so: an explicit "nothing to create here" beats an absence that reads as an
 // oversight, and it keeps this gate meaningful instead of permanently red.
 const unfixtured = pages.filter((name) => !existsSync(fixtureScript(name)));
+const replayable = pages.filter((name) => existsSync(fixtureScript(name)));
 // Sorted only so the report reads in a predictable order. Each page gets its own container, so
 // the order carries nothing else: it cannot change any page's result.
-const runnable = pages.filter((name) => existsSync(fixtureScript(name))).sort();
+const runnable = shardPages(replayable, shard, readTimings()).sort();
 
-if (runnable.length === 0) {
+if (replayable.length === 0) {
   console.log(onlyChanged ? "no changed page has examples to replay." : "nothing to replay.");
+  process.exit(0);
+}
+// An empty shard is a legitimate outcome, not an error: `--changed` over a small diff has fewer
+// pages than there are shards. Saying which shard was empty keeps a run that replayed nothing
+// distinguishable in the log from one that was never given anything.
+if (runnable.length === 0) {
+  console.log(`shard ${shard.index}/${shard.total} has no pages of the ${replayable.length} to replay.`);
   process.exit(0);
 }
 
@@ -244,11 +283,14 @@ for (const signal of ["SIGINT", "SIGTERM"]) {
 }
 
 sweepAbandoned();
-console.log(`replaying ${runnable.length} page(s), one container each\n`);
+const of = shard.total > 1 ? ` of ${replayable.length}, shard ${shard.index}/${shard.total}` : "";
+console.log(`replaying ${runnable.length} page(s)${of}, one container each\n`);
 
 const failed: string[] = [];
+const elapsed = new Map<string, number>();
 const started = Date.now();
 for (const name of runnable) {
+  const pageStarted = Date.now();
   const setupPath = fixtureScript(name);
   const startArgs = flavourOf(name) === SANDBOX_FLAVOUR.systemd ? ["start", "--systemd"] : ["start"];
   startArgs.push(containerFor(name));
@@ -277,6 +319,7 @@ for (const name of runnable) {
     failed.push(name);
   } finally {
     stopLive();
+    elapsed.set(name, Math.round((Date.now() - pageStarted) / 100) / 10);
   }
 }
 
@@ -284,6 +327,15 @@ const seconds = Math.round((Date.now() - started) / 1000);
 console.log(`\n${runnable.length - failed.length}/${runnable.length} pages replay exactly (${seconds}s)`);
 if (unfixtured.length) {
   console.log(`not replayed, no scripts/fixtures/<slug>.sh: ${unfixtured.join(", ")}`);
+}
+
+if (recordTimings) {
+  // Sorted by name rather than by duration, so the diff between two recordings reads as "what
+  // changed" rather than as a reordering.
+  const sorted = Object.fromEntries([...elapsed].sort(([a], [b]) => a.localeCompare(b)));
+  writeFileSync(REPLAY_TIMINGS_FILE, `${JSON.stringify(sorted, null, 2)}\n`);
+  console.log(`Recorded ${elapsed.size} page times in ${relative(ROOT, REPLAY_TIMINGS_FILE)}`);
+  console.log("These only balance --shard. A stale figure costs wall clock, never coverage.");
 }
 if (failed.length) {
   console.log(`\nfailing: ${failed.join(", ")}`);
