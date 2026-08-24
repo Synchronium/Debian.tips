@@ -41,6 +41,15 @@ function resolves(path: string): boolean {
   return /\.m?js$/.test(path) && existsSync(join(ROOT, path.replace(/\.m?js$/, ".ts")));
 }
 
+/** A superseded ADR names the files that enforced a decision the repository no longer holds, and
+ *  `docs/adr/README.md` requires it to be left otherwise intact: its reasoning is the useful
+ *  thing about it, and editing that to match the decision which replaced it destroys the record.
+ *  So the paths in one are history rather than a claim about the repository as it stands, and a
+ *  check that demands they still resolve is asking for the record to be falsified. */
+function isSupersededRecord(source: string): boolean {
+  return /^- \*\*Status:\*\* Superseded by /m.test(source);
+}
+
 describe("repository paths named in the tools", () => {
   it("all exist", () => {
     const missing: string[] = [];
@@ -61,6 +70,7 @@ describe("repository paths named in the tools", () => {
       // like repository paths (a deploy script under a scripts directory, an entry point under
       // a src one). Only the commentary is a claim about this repository.
       const raw = readFileSync(join(ROOT, file), "utf-8");
+      if (isSupersededRecord(raw)) continue;
       const source = file.endsWith(".sh")
         ? raw
             .split("\n")

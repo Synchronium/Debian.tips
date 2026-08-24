@@ -22,9 +22,9 @@ npm run dev      # dev server at http://localhost:4321, full rebuild on any file
 npm run build    # one-off production build to dist/
 npm test         # vitest run (unit + fixture-based build tests)
 npm run check    # format, tsc --noEmit, vitest, build, pagefind, linkcheck, link-audit: the full gate
-npm run replay   # replay every page's examples in a sandbox (needs Docker, ~2.5 min warm)
+npm run replay   # replay every page's examples, one container each (needs Docker, ~4.5 min warm)
 npm run replay -- --changed        # only the pages your diff touches, which is what CI runs on a PR
-npm run replay -- --order=random   # a different ordering; the seed is printed, so it repeats
+npm run replay -- ls du            # named pages; identical to how the full run replays them
 npm run audit:links -- --verbose   # the link graph on its own, advisory findings included
 npm run voice    # prose against .claude/reference/voice.md; a hook runs it per file as you write
 ```
@@ -80,14 +80,13 @@ Three rules follow from that, and all three have been broken here at least once:
   is what lets the `apt` and `dpkg` pages show `apt list` and `dpkg -l` at all.
   `test/architecture.test.ts` enforces this, and rejects an exemption whose stated reason is the
   architecture, since that is the defect rather than a record of how it was checked instead.
-- **Assume another page can see what your fixture changes.** `npm run replay` runs every page in
-  one sandbox, so a port, an apt source, an `apt.conf`, a GPG key, a new account or a package
-  state left behind changes what a later page sees. Seven failures so far have been exactly this,
-  every one of them invisible to a single-page run. Each page's setup script normalises what it
-  needs rather than trusting what it finds, **including state no page it can name creates**: the
-  seventh took three pages and only appeared in one direction, so `--order=reverse` found it and
-  the default order never would. `npm run replay -- --order=random` before shipping anything that
-  changes shared state.
+- **Your page starts from the image, and from nothing else.** Each page is replayed in a container
+  of its own (ADR-0020), so a port, an apt source, an `apt.conf`, a GPG key, a new account or a
+  package state another page leaves behind cannot reach yours. `npm run replay -- <page>` puts the
+  page in the same container the full run does, so it is authoritative rather than indicative.
+  What a setup script still owes is **the state its own earlier examples destroy**: it runs before
+  every example, but the restore only resets the page's working directory, so an example that
+  installs a package or writes to `/etc` has changed what every later example on that page sees.
 
 ## Writing code here
 
@@ -101,13 +100,13 @@ enough to be worth writing down.
 type derived from it, and every comparison goes through that:
 
 ```ts
-export const ORDER_MODE = { alpha: "alpha", reverse: "reverse", random: "random" } as const;
-export type OrderMode = (typeof ORDER_MODE)[keyof typeof ORDER_MODE];
-//  order.mode === ORDER_MODE.alpha        not  order.mode === "alpha"
+export const SANDBOX_FLAVOUR = { default: "default", systemd: "systemd" } as const;
+export type SandboxFlavour = (typeof SANDBOX_FLAVOUR)[keyof typeof SANDBOX_FLAVOUR];
+//  flavourOf(name) === SANDBOX_FLAVOUR.systemd     not  flavourOf(name) === "systemd"
 ```
 
-`COMPARISON`, `ORDER_MODE`, `EDGE_KIND`, `SANDBOX_FLAVOUR`, `SANDBOX_TOOL` and `SETUP_DIRECTIVE`
-are the existing ones; follow them. A union type is not enough on its own: `type X = "a" | "b"`
+`COMPARISON`, `EDGE_KIND`, `SANDBOX_FLAVOUR`, `SANDBOX_TOOL` and `SETUP_DIRECTIVE` are the
+existing ones; follow them. A union type is not enough on its own: `type X = "a" | "b"`
 still leaves the literal written out at every use, and a value that is validated in one place and
 re-spelled in another *fails open*, staying green while quietly doing nothing. The same goes for
 paths, filenames and routes: `src/paths.ts` owns where things are and `src/config.ts` owns the

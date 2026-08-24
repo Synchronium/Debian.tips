@@ -104,10 +104,8 @@ than being quietly dropped.
 
 - **check**: typecheck, tests, build, linkcheck, then `pa11y-ci` against the built site.
 - **replay**: every documented `output:` block re-run for real inside a disposable Debian
-  container and diffed against the page. Separate because it needs Docker, and because
-  "the generator is broken" and "a page is lying" are different problems.
-- **replay-shuffled**: the same thing in a seeded random order, on `main` only. A page can be
-  true on its own and false after another page has run, since they share one container.
+  container and diffed against the page, a container per page. Separate because it needs Docker,
+  and because "the generator is broken" and "a page is lying" are different problems.
 
 `.github/workflows/deploy.yml` then publishes to GitHub Pages, but only for a commit CI passed:
 it triggers on CI completing successfully and checks out that exact commit, so a red build

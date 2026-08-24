@@ -246,9 +246,11 @@ Two gates, and a command page needs both:
    scripts/fixtures/<command>.sh` is the same check against a sandbox you're already holding).
    `npm run check` validates *shape*; only the replay checks whether the outputs are true, which
    is the site's actual promise.
-3. **`npm run replay` with no arguments**, once the page passes on its own. Every page shares one
-   sandbox, so a fixture that changes system state can break a page you never touched, and that
-   only ever shows up in the full run. See §4d; it has happened six times.
+3. **`npm run replay` with no arguments** when the change reaches beyond the page: the shared
+   fixture bodies in `_common.sh`, anything under `scripts/lib/` or `src/content/`, or the sandbox
+   image. Each page runs in its own container (ADR-0020), so a new page cannot break a page you
+   never touched, and step 2 is the same check the full run makes. `.claude/skills/ship/SKILL.md`
+   has the table of what needs which.
 
 Both gates are also now visible to readers. Every page carries a block at its foot linking the
 files that produced it and the command that re-runs them, generated from the page's category and
@@ -283,48 +285,31 @@ root, or the reverse. The flag remains for a page that has no setup script yet.
 which is the right move after changing a page's fixtures wholesale. It honours the `.skip` file
 and matches titles exactly.
 
-### 4d. What your fixture changes that another page can see
+### 4d. What your own examples change, and what the restore does not undo
 
-The single most common way a finished page breaks. **`npm run replay` runs every page in one
-sandbox, in sequence.** Your setup script runs before each of your examples, but it only
-restores what *it* creates. Anything it changed elsewhere on the system is still changed when
-the next page starts, and anything an earlier page changed is already true when yours starts.
+Your page gets a container to itself (ADR-0020), so nothing another page installs, configures,
+binds or leaves running can reach it, and `npm run replay -- <slug>` is authoritative rather than
+indicative. **Everything below is about your page changing state on itself.**
 
-The tell is unmistakable once you know it: **the page scores N/N on its own and fails in the
-batch**, or fails on a line that has nothing to do with what you just wrote. Six failures here
-have been exactly this, and not one of them was visible in a single-page run.
+The restore before each example empties the page's working directory and re-runs your setup
+script. It does not undo anything either of them did elsewhere. So an example that installs a
+package, writes to `/etc`, adds a user or starts a background process has changed what every later
+example on the page sees, and the later example is the one that fails.
 
-Every one so far has been shared, mutable system state:
-
-| What leaked | How it surfaced |
-| --- | --- |
-| A **network port** | `third-party-repositories` bound 8080, already held by the curl/wget mock server left running by an earlier page. 4/4 alone, 2/4 in the batch, and the bind failed silently. |
-| **apt sources and pins** | Backports enabled by `release-channels` changed which versions a later page was offered. |
-| **An `apt.conf` fragment** | The `apt` page silences apt's "not a stable CLI interface" warning; `/compare/apt-vs-apt-get/` documents that warning. Whichever ran last decided the result. |
-| **The GPG default key** | `third-party-repositories` signed its repository with `gpg --clearsign` and no `--local-user`, which worked only while exactly one key existed. A second page building a repository made apt report the first as unsigned, naming a key id that appears nowhere on the system. |
-| **`/etc/passwd`** | The `sudo` page creates a user; the `wc` page counts accounts with `wc -l < /etc/passwd`. 21 became 22. |
-| **Package state** | `apt-essentials` leaves `nano` in the `rc` state on purpose; a `dpkg` example listing every package whose state is not `ii` faithfully reported it. |
-
-Two of those leaks exposed a **pre-existing defect on the other page** rather than a fault in the
-new one: `wc` was documenting a machine-specific count as exact, and the signing bug would have
-broken the next page to need a signed repository regardless. A leak is worth reading as evidence
-before assuming it is yours to suppress.
-
-**Writing a fixture, then:**
-
-- **Normalise what you need at the start; don't trust what you find.** The apt pages all begin by
-  deleting foreign `.sources` and `preferences.d` entries and rewriting the `apt.conf` fragment
-  they want, rather than assuming a clean machine. Reset marks and holds the same way, since an
-  `apt-mark auto` from three examples earlier is enough to change a later one.
-- **Prefer a page-local name over a shared one.** Your own port, your own package names, your own
-  user. `packages-kept-back` publishes `tips-demo` and `tips-extra` on 8082 precisely so no other
-  page can be affected by it, and so it cannot be affected by them.
-- **Assume nothing about order.** Which page runs first is not something to design around.
+- **Normalise what you need at the start; don't trust what the last example left.** The apt pages
+  rewrite the `apt.conf` fragment they want and reset their own marks and holds on every run,
+  because an `apt-mark auto` from three examples earlier is enough to change a later one.
 - **Check what you touch outside the working directory.** The working directory is emptied for
   you. `/etc`, `/var/lib`, the package database, the user database, the GPG keyring and any
-  background process you start are not.
+  background process an example starts are not.
+- **Prefer a page-local name.** Your own port, your own package names, your own user, as
+  `packages-kept-back` does with `tips-demo` and `tips-extra` on 8082. It costs nothing and it
+  keeps two examples on one page out of each other's way.
 
-**Then actually run the batch.** `npm run replay -- <slug>` proves your page is right;
-`npm run replay` proves it is right *alongside every other page*, which is what CI runs and the
-only place this class of defect appears. It takes about two and a half minutes. Do it before
-calling a page with a fixture done.
+Two lessons from the era when pages shared a container are worth keeping, because both were
+defects in a page rather than in the arrangement that exposed them. `wc` counted accounts with
+`wc -l < /etc/passwd` and published the answer as exact, which was a machine-specific number
+whoever read it would not reproduce. And `third-party-repositories` signed its repository with
+`gpg --clearsign` and no `--local-user`, which only ever worked while exactly one key existed.
+**Output that depends on how much has happened to the machine is wrong even when it reproduces**,
+and isolation makes that class quieter rather than absent. ADR-0002 has the rest of that history.

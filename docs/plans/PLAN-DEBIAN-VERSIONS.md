@@ -183,9 +183,9 @@ design here has to be proportionate to it.
   at all.
 - The 11 that differ mostly differ in one or two examples out of 40 or 60. The `curl` page differs
   in 9 of 28, and all nine are one string.
-- Cost scales as pages × releases. Today that is 54 × 2. The content plan's backlog is ~170 pages;
+- Cost scales as pages × releases. Today that is 56 × 2. The content plan's backlog is ~170 pages;
   at four supported releases that is ~680 page-versions, each needing its own replay. The full
-  replay is already about 2.5 minutes for 54 pages.
+  replay is already about four and a half minutes for 56 pages.
 - Every duplicated page is a place for the two copies to drift in ways nothing detects, because
   they are separate files and no gate compares them.
 
