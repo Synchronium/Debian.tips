@@ -44,7 +44,7 @@ the field is there so that you can see which ones those are.
 ### The promise
 
 The site's one differentiating claim is that every output it shows was really produced by the
-command shown. These five records keep that claim honest.
+command shown. These records keep that claim honest.
 
 | # | Decision |
 | --- | --- |

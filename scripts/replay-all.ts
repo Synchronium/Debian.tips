@@ -173,14 +173,26 @@ const containerFor = (page: string): string =>
  *
  *  Ownership is decided by the pid in the name, so a second replay running at the same time keeps
  *  its containers. Nothing here needs two replays to work, but silently destroying another one's
- *  sandboxes mid-run would report as a page failing. */
+ *  sandboxes mid-run would report as a page failing.
+ *
+ *  A pid the kernel has since handed to some unrelated process therefore reads as a live owner,
+ *  and that container survives the sweep. Telling that apart from a concurrent replay would take
+ *  the owner's start time as well, which is not portable. It costs a leaked container until the
+ *  next reboot, and it cannot cost a *result*: the one pid this run names containers with is its
+ *  own, so the only leftover that can ever collide with a name we are about to claim is one
+ *  carrying our pid, which is swept below whatever `process.kill` says about it. */
 function sweepAbandoned(): void {
-  const alive = (pid: number): boolean => {
+  // Nothing has been started yet when this runs, so a container in our own name is the residue of
+  // an earlier run the kernel has since given our pid to, never a container we are using. Left in
+  // place it takes the name that page is about to ask for, `docker run` exits 125, and the page
+  // reports as unreplayable for as long as the container is there.
+  const abandonedBy = (pid: number): boolean => {
+    if (pid === process.pid) return true;
     try {
       process.kill(pid, 0);
-      return true;
-    } catch {
       return false;
+    } catch {
+      return true;
     }
   };
 
@@ -196,7 +208,7 @@ function sweepAbandoned(): void {
       .split("\n")
       .filter((name) => {
         const owner = new RegExp(`^${RUN_PREFIX}(\\d+)-`).exec(name);
-        return owner?.[1] !== undefined && !alive(Number(owner[1]));
+        return owner?.[1] !== undefined && abandonedBy(Number(owner[1]));
       });
   } catch {
     return;
@@ -213,7 +225,6 @@ function sweepAbandoned(): void {
 // Whatever is running right now, so an interrupt takes it down with it. A container left behind
 // holds its name, its ports and its privileges until someone notices.
 let live = "";
-let stopped = false;
 const stopLive = (): void => {
   if (!live) return;
   const name = live;
@@ -224,10 +235,7 @@ const stopLive = (): void => {
     console.error(`could not stop ${name}: remove it with: docker rm -f ${name}`);
   }
 };
-process.on("exit", () => {
-  stopped = true;
-  stopLive();
-});
+process.on("exit", stopLive);
 for (const signal of ["SIGINT", "SIGTERM"]) {
   process.on(signal, () => {
     stopLive();
@@ -241,7 +249,6 @@ console.log(`replaying ${runnable.length} page(s), one container each\n`);
 const failed: string[] = [];
 const started = Date.now();
 for (const name of runnable) {
-  if (stopped) break;
   const setupPath = fixtureScript(name);
   const startArgs = flavourOf(name) === SANDBOX_FLAVOUR.systemd ? ["start", "--systemd"] : ["start"];
   startArgs.push(containerFor(name));

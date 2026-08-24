@@ -49,6 +49,7 @@ require_sandbox_name() {
 usage() {
   cat >&2 <<EOF
 Usage:
+  $0 build                               build the sandbox image if it is missing or stale
   $0 start [--systemd] [name]            start a disposable sandbox, prints its name
   $0 exec [-u user] <name> <command...>  run a command inside the sandbox (bash -c)
   $0 stop <name>                         stop and remove the sandbox
@@ -60,6 +61,12 @@ EOF
 cmd="${1:-}"; shift || true
 
 case "$cmd" in
+  # Exposed so a caller that wants the image built before it starts timing something can ask for
+  # it here rather than running `docker build` itself. A caller that builds its own way gets an
+  # image with no context label, which reads as stale, and the next `start` rebuilds it anyway.
+  build)
+    ensure_image
+    ;;
   start)
     ensure_image
     systemd=0

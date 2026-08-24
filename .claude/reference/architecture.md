@@ -127,13 +127,12 @@ than another `related:` entry.
 
 ## CI/deploy
 
-`.github/workflows/ci.yml` runs three jobs in parallel, on every PR and push to `main`:
+`.github/workflows/ci.yml` runs two jobs in parallel, on every PR and push to `main`:
 
 - `check`: format, typecheck (both configs), tests, build, pagefind, linkcheck, link audit, then
   `pa11y-ci` against the built site. Exactly what `npm run check` runs locally.
-- `replay`: the examples, for real, in a Docker sandbox. A PR replays what its diff touched; a
-  push to `main` replays everything.
-- `replay-shuffled`: the full replay again in a seeded random order, on `main` only.
+- `replay`: the examples, for real, each page in a Docker sandbox of its own. A PR replays what
+  its diff touched; a push to `main` replays everything.
 
 `.github/workflows/deploy.yml` builds and publishes `dist/` to GitHub Pages on `workflow_run` of
 CI, gated on the whole workflow succeeding and pinned to the same commit. All of it runs on

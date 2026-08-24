@@ -110,9 +110,9 @@ sed -i '/^# http:\/\/snapshot\.debian\.org/d' /etc/apt/sources.list.d/debian.sou
 apt-get update >/dev/null 2>&1
 echo packages-kept-back > /var/lib/apt/.fixture-page
 
-# tips-demo pinned at 1.0-1, so the upgrade to 2.0-1 is always pending. Reinstalled rather
-# than left alone, because the examples upgrade it for real and fixtures are restored by
-# re-running this script.
+# tips-demo pinned at 1.0-1, so the upgrade to 2.0-1 is always pending. Asserted rather than
+# assumed: the pending upgrade is the whole subject of the page, and a tips-demo already at
+# 2.0-1 would leave every example with nothing to report.
 if ! dpkg -s tips-demo 2>/dev/null | grep -q '^Version: 1.0-1'; then
   apt-get install -y --allow-downgrades tips-demo=1.0-1 >/dev/null 2>&1
 fi

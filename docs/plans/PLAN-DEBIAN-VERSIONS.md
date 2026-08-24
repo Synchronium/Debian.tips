@@ -235,8 +235,8 @@ mechanism that stops a point release turning a page red.
 
 ### Stage 3. Replay against oldstable, and report it
 
-Run the existing replay against the oldstable image, in CI, as a fourth job alongside `check`,
-`replay` and `replay-shuffled`. **Advisory, not gating**: it reports which examples do not
+Run the existing replay against the oldstable image, in CI, as a third job alongside `check` and
+`replay`. **Advisory, not gating**: it reports which examples do not
 reproduce, and a failure there is information rather than a broken build.
 
 That alone answers "does this page also work on bookworm" with evidence, and it produces the data
