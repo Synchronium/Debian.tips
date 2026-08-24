@@ -34,7 +34,7 @@ validates shape, not truth. `scripts/replay-command-page.ts` replays every examp
 the sandbox and diffs the real result against what the page claims:
 
 ```sh
-npm run replay              # every page: starts one sandbox, runs them all, stops it
+npm run replay              # every page, each in a sandbox of its own (ADR-0020)
 npm run replay -- wget curl # just these
 
 # or drive one page directly, which is what the above does per page:
@@ -46,7 +46,7 @@ npx tsx scripts/replay-command-page.ts "$name" wc scripts/fixtures/wc.sh   # -> 
 `check` job, because "the generator is broken" and "a page is lying" want different people looking
 at them. It stays out of `npm run check` so that command needs nothing but Node: the replay needs
 Docker, and a check you can't run without a daemon isn't one to fold into the everyday gate. All
-the whole site replays in roughly two and a half minutes; a cold CI run adds building the sandbox
+the whole site replays in roughly four and a half minutes; a cold CI run adds building the sandbox
 image, which the workflow does as its own step so the log says which half any slowness is in.
 
 That invocation is correct for every page. Some pages have to replay as the unprivileged

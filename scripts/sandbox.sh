@@ -17,18 +17,25 @@ NAME_PREFIX="content-sandbox-"
 # Dockerfile edit never reached an already-built image, and the symptom is misleading:
 # examples replay against a stale toolset and fail as though the page were wrong. Adding
 # `patch` to the image once surfaced days later as the diff page dropping to 16/17.
+#
+# The staleness test is a label holding the newest mtime in the build context, rather than the
+# image's own creation time. Those are not the same thing: a rebuild that hits the layer cache
+# keeps the *cached* layer's creation time, so an image compared that way stays permanently older
+# than the context that just rebuilt it, and every call rebuilds. That went unnoticed while the
+# replay started one container per run and shouted once. Starting one per page made it 56 rebuild
+# attempts and 56 lines of log, which is how it was found.
+#
+# Anything in the build context counts, not just the Dockerfile, so whatever gets added alongside
+# it later is covered without editing this.
+CONTEXT_LABEL="tips.context-mtime"
 ensure_image() {
-  local created epoch
-  if created=$(docker image inspect -f '{{.Created}}' "$IMAGE" 2>/dev/null); then
-    epoch=$(date -d "$created" +%s 2>/dev/null) || epoch=0
-    # Anything in the build context newer than the image means a rebuild, not just the
-    # Dockerfile, so whatever gets added alongside it later is covered without editing this.
-    if [[ -z "$(find "$DOCKERFILE_DIR" -type f -newermt "@$epoch" -print -quit 2>/dev/null)" ]]; then
-      return
-    fi
+  local newest stamp
+  newest=$(find "$DOCKERFILE_DIR" -type f -printf '%T@\n' 2>/dev/null | sort -rn | head -1)
+  if stamp=$(docker image inspect -f "{{index .Config.Labels \"$CONTEXT_LABEL\"}}" "$IMAGE" 2>/dev/null); then
+    [[ -n "$newest" && "$stamp" == "$newest" ]] && return
     echo "sandbox: $DOCKERFILE_DIR is newer than $IMAGE, rebuilding" >&2
   fi
-  docker build -t "$IMAGE" "$DOCKERFILE_DIR" >&2
+  docker build --label "$CONTEXT_LABEL=$newest" -t "$IMAGE" "$DOCKERFILE_DIR" >&2
 }
 
 require_sandbox_name() {
@@ -110,7 +117,12 @@ case "$cmd" in
   stop)
     name="${1:-}"
     require_sandbox_name "$name"
-    docker stop "$name" >/dev/null
+    # `-t 0` kills immediately instead of sending SIGTERM and waiting out the ten-second grace
+    # period. Nothing in here has anything to flush, and neither init reacts to SIGTERM: `sleep
+    # infinity` has no handler, and systemd wants SIGRTMIN+3 rather than SIGTERM to shut down. So
+    # the default timeout was paid in full every time, ten seconds per container, and the replay
+    # starts one per page.
+    docker stop -t 0 "$name" >/dev/null
     ;;
   list)
     docker ps --filter "name=${NAME_PREFIX}" --format '{{.Names}}\t{{.Status}}'

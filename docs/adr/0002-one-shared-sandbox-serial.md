@@ -1,6 +1,6 @@
 # ADR-0002: The replay runs serially in one shared sandbox, and the image owns the tools
 
-- **Status:** Accepted, with a deferred follow-up
+- **Status:** Superseded by [ADR-0020](0020-one-container-per-page.md)
 - **Recorded:** 2026-08-19
 - **Enforced by:** `scripts/replay-all.ts` with `scripts/lib/replayOrder.ts` and `test/replayOrder.test.ts`; each page's `scripts/fixtures/<slug>.sh`; `scripts/sandbox/Dockerfile`; the `replay` and `replay-shuffled` jobs in `.github/workflows/ci.yml`
 

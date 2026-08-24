@@ -49,10 +49,11 @@ command shown. These five records keep that claim honest.
 | # | Decision |
 | --- | --- |
 | [0001](0001-replay-every-documented-output.md) | Every documented output is replayed against a real Debian container |
-| [0002](0002-one-shared-sandbox-serial.md) | The replay runs serially in one shared sandbox, and the sandbox image owns the tools |
+| ~~[0002](0002-one-shared-sandbox-serial.md)~~ superseded by 0020 | The replay runs serially in one shared sandbox, and the sandbox image owns the tools |
 | [0003](0003-ci-topology-and-gated-deploy.md) | Replay is a separate CI job, and deploy is gated on CI passing the same commit |
 | [0004](0004-never-document-an-architecture.md) | No documented output may name a machine architecture |
 | [0005](0005-volatile-output-and-exemptions.md) | Output that cannot reproduce exactly is declared, never quietly excused |
+| [0020](0020-one-container-per-page.md) | Every page is replayed in a container of its own |
 
 ### The content model
 

@@ -2,10 +2,11 @@
 # Rebuilt on demand by scripts/sandbox.sh when missing; not part of the site build.
 FROM debian:trixie
 
-# Every tool a page needs is installed here rather than by the page itself. All the pages share
-# one sandbox, so a setup script that installed its own tool would leave it installed for
-# whatever ran next, and `--changed` replays subsets, so which pages those are varies with the
-# diff. Installing in the image makes the package set the same for every page in every ordering.
+# Every tool a page needs is installed here rather than by the page itself. Since ADR-0020 this
+# image is the *only* thing pages share, which makes it the only place a difference between two
+# pages can come from, and that is worth keeping true: a setup script installing its own tool
+# would put the page's result at the mercy of a network fetch, and would pay for it on every
+# example, since the setup script runs before each one.
 # (`jq` is not part of a base Debian install; its page says so.)
 #
 # `gnupg` and `apt-utils` are here for the same reason, though no page documents them: three

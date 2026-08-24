@@ -1,4 +1,4 @@
-// Replays every page's documented output inside one disposable sandbox.
+// Replays every page's documented output inside a disposable sandbox of its own.
 //
 //   npm run replay                 # every page
 //   npm run replay -- wget curl    # just these
@@ -10,18 +10,15 @@
 // Separate from `npm run check` because it needs Docker, and because "the generator is broken"
 // and "a page is lying" are different problems. A cold run is dominated by building the image.
 //
-//   npm run replay -- --order=reverse         # a different permutation, deterministically
-//   npm run replay -- --order=random:abc123   # and a seeded one, reproducible from the seed
+// **One container per page, torn down after it.** A page cannot see what another page installed,
+// configured, bound or left running, so what a page claims depends on the image and on its own
+// setup script and on nothing else. See ADR-0020, which supersedes the shared sandbox this ran in
+// before. The consequence worth knowing while reading a failure: a single-page run and a full run
+// put a page in the identical container, so `npm run replay -- <page>` reproduces a batch failure
+// exactly, and the order pages run in cannot change any result.
 //
-// Pages run one at a time, in one sandbox per flavour, and that is deliberate: every page
-// sharing one container is what tests CLAUDE.md's third rule, that a page's setup script
-// normalises what it needs rather than trusting what the last page left behind. See ADR-0002.
 // The two replays are imported and called rather than spawned, so a serial run at least does not
 // pay for a TypeScript startup per page.
-//
-// The order within that one sandbox is a parameter, because a fixed order tests exactly one of
-// the possible orderings, and a page that passes only because of what ran before it passes anyway.
-// The seed is always printed, so a shuffled failure names the command that reproduces it.
 //
 // Exit status: 0 when every page reproduces, 1 if any page fails, 2 if Docker is
 // unavailable or an argument names no page.
@@ -29,7 +26,6 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { ReplayError, readSetupDirectives } from "./lib/replayMetadata.js";
-import { ORDER_MODE, type ReplayOrder, describeOrder, orderPages, parseOrder } from "./lib/replayOrder.js";
 import { PROSE_CATEGORIES } from "../src/content/schema.js";
 import { CONTENT_DIR, SANDBOX_SCRIPT, commandsDir, fixtureScript, proseSlug } from "../src/paths.js";
 import { replayCommandPage } from "./replay-command-page.js";
@@ -38,25 +34,12 @@ import { SANDBOX_FLAVOUR, type SandboxFlavour } from "./lib/sandbox.js";
 
 const args = process.argv.slice(2);
 const FLAGS = ["--changed"];
-const unknownFlags = args.filter(
-  (arg) => arg.startsWith("-") && !FLAGS.includes(arg) && !arg.startsWith("--order="),
-);
+const unknownFlags = args.filter((arg) => arg.startsWith("-") && !FLAGS.includes(arg));
 if (unknownFlags.length) {
-  console.error(
-    `replay: unexpected argument ${unknownFlags[0]} (accepts ${FLAGS.join(", ")}, --order=<mode>)`,
-  );
+  console.error(`replay: unexpected argument ${unknownFlags[0]} (accepts ${FLAGS.join(", ")})`);
   process.exit(2);
 }
 const onlyChanged = args.includes("--changed");
-
-let order: ReplayOrder;
-try {
-  const flag = args.find((arg) => arg.startsWith("--order="));
-  order = parseOrder(flag ? flag.slice("--order=".length) : ORDER_MODE.alpha);
-} catch (error) {
-  console.error(`replay: ${(error as Error).message}`);
-  process.exit(2);
-}
 
 const requestedPages = args.filter((arg) => !arg.startsWith("-"));
 
@@ -129,8 +112,6 @@ function changedPages(): string[] {
   return [...touched];
 }
 
-// Not sorted here: `orderPages` sorts before it does anything else, so the order this arrives in
-// cannot reach the run.
 const selected = onlyChanged ? changedPages() : requestedPages;
 const pages = [...commandPages, ...prosePages].filter((name) =>
   selected.length || onlyChanged ? selected.includes(name) : true,
@@ -148,10 +129,9 @@ if (missing.length) {
 // comment saying so: an explicit "nothing to create here" beats an absence that reads as an
 // oversight, and it keeps this gate meaningful instead of permanently red.
 const unfixtured = pages.filter((name) => !existsSync(fixtureScript(name)));
-const runnable = orderPages(
-  pages.filter((name) => existsSync(fixtureScript(name))),
-  order,
-);
+// Sorted only so the report reads in a predictable order. Each page gets its own container, so
+// the order carries nothing else: it cannot change any page's result.
+const runnable = pages.filter((name) => existsSync(fixtureScript(name))).sort();
 
 if (runnable.length === 0) {
   console.log(onlyChanged ? "no changed page has examples to replay." : "nothing to replay.");
@@ -165,61 +145,131 @@ try {
   process.exit(2);
 }
 
-// A page declaring `# verify: --systemd` needs a sandbox booted with systemd as PID 1,
-// which costs --privileged and the host's cgroup tree. Each flavour is started only if a
-// page in this run asks for it.
+// A page declaring `# verify: --systemd` needs a sandbox booted with systemd as PID 1, which
+// costs --privileged and the host's cgroup tree, so it is asked for per page rather than given
+// to every page.
 const flavourOf = (name: string): SandboxFlavour =>
   readSetupDirectives(fixtureScript(name)).needsSystemd ? SANDBOX_FLAVOUR.systemd : SANDBOX_FLAVOUR.default;
-const flavours = new Map(runnable.map((name) => [name, flavourOf(name)]));
-const neededFlavours = [...new Set(flavours.values())].sort();
 
-// Registered before the first container starts: one left behind holds its name and its
-// ports, and the next run would inherit whatever state it was left in.
-const sandboxes = new Map<SandboxFlavour, string>();
-let stopped = false;
-const stop = (): void => {
-  if (stopped) return;
-  stopped = true;
-  for (const name of sandboxes.values()) {
+/** Names a container after the run that owns it and the page it is replaying, so `docker ps`
+ *  during a long run says what is happening, and so the sweep below can tell three things apart:
+ *  a container this run owns, one another live run owns, and one nobody owns any more.
+ *
+ *  The `content-sandbox-` stem is required by `scripts/sandbox.sh`, so a sandbox somebody started
+ *  by hand to write a page with shares it. That is why the run marker comes after the stem rather
+ *  than replacing it: a hand-started sandbox never matches, and is never swept. */
+const RUN_PREFIX = "content-sandbox-replay";
+const containerFor = (page: string): string =>
+  `${RUN_PREFIX}${process.pid}-${page.replace(/[^a-z0-9-]/gi, "-")}`;
+
+/** Removes containers left behind by a replay that is no longer running.
+ *
+ *  Tearing down after each page covers the ordinary paths, and the handlers below cover an
+ *  interrupt between pages. Neither covers an interrupt that arrives *mid-example*: the loop is
+ *  blocked inside a synchronous `docker exec`, a JavaScript signal handler cannot run until that
+ *  returns, and whatever kills the process first wins. A privileged container then outlives its
+ *  run, and the next thing to notice is usually a port still being held. Sweeping at the start
+ *  rather than trying harder at the end also covers a crash and a `kill -9`, which no handler can.
+ *
+ *  Ownership is decided by the pid in the name, so a second replay running at the same time keeps
+ *  its containers. Nothing here needs two replays to work, but silently destroying another one's
+ *  sandboxes mid-run would report as a page failing. */
+function sweepAbandoned(): void {
+  const alive = (pid: number): boolean => {
     try {
-      execFileSync(SANDBOX_SCRIPT, ["stop", name], { stdio: "ignore" });
+      process.kill(pid, 0);
+      return true;
     } catch {
-      console.error(`could not stop ${name}: remove it with: docker stop ${name}`);
+      return false;
     }
+  };
+
+  let abandoned: string[];
+  try {
+    abandoned = execFileSync(
+      "docker",
+      ["ps", "-a", "--filter", `name=^${RUN_PREFIX}`, "--format", "{{.Names}}"],
+      {
+        encoding: "utf-8",
+      },
+    )
+      .split("\n")
+      .filter((name) => {
+        const owner = new RegExp(`^${RUN_PREFIX}(\\d+)-`).exec(name);
+        return owner?.[1] !== undefined && !alive(Number(owner[1]));
+      });
+  } catch {
+    return;
+  }
+  if (!abandoned.length) return;
+  console.log(`removing ${abandoned.length} sandbox(es) left by an interrupted run`);
+  try {
+    execFileSync("docker", ["rm", "-f", ...abandoned], { stdio: "ignore" });
+  } catch {
+    console.error("could not remove them; `docker ps -a` will list what is left");
+  }
+}
+
+// Whatever is running right now, so an interrupt takes it down with it. A container left behind
+// holds its name, its ports and its privileges until someone notices.
+let live = "";
+let stopped = false;
+const stopLive = (): void => {
+  if (!live) return;
+  const name = live;
+  live = "";
+  try {
+    execFileSync(SANDBOX_SCRIPT, ["stop", name], { stdio: "ignore" });
+  } catch {
+    console.error(`could not stop ${name}: remove it with: docker rm -f ${name}`);
   }
 };
-process.on("exit", stop);
+process.on("exit", () => {
+  stopped = true;
+  stopLive();
+});
 for (const signal of ["SIGINT", "SIGTERM"]) {
   process.on(signal, () => {
-    stop();
+    stopLive();
     process.exit(130);
   });
 }
 
-for (const flavour of neededFlavours) {
-  const startArgs = flavour === SANDBOX_FLAVOUR.systemd ? ["start", "--systemd"] : ["start"];
-  sandboxes.set(flavour, execFileSync(SANDBOX_SCRIPT, startArgs, { encoding: "utf-8" }).trim());
-}
-
-const sandboxSummary = [...sandboxes].map(([flavour, name]) => `${name} (${flavour})`).join(", ");
-console.log(`replaying ${runnable.length} page(s) in ${sandboxSummary}, order: ${describeOrder(order)}\n`);
+sweepAbandoned();
+console.log(`replaying ${runnable.length} page(s), one container each\n`);
 
 const failed: string[] = [];
 const started = Date.now();
 for (const name of runnable) {
-  const sandbox = sandboxes.get(flavours.get(name) ?? SANDBOX_FLAVOUR.default) ?? "";
+  if (stopped) break;
   const setupPath = fixtureScript(name);
+  const startArgs = flavourOf(name) === SANDBOX_FLAVOUR.systemd ? ["start", "--systemd"] : ["start"];
+  startArgs.push(containerFor(name));
+  try {
+    live = execFileSync(SANDBOX_SCRIPT, startArgs, { encoding: "utf-8" }).trim();
+  } catch {
+    // Starting a container is the harness failing, not the page. Report it against the page so
+    // the run still names what went unchecked, and carry on: the next page gets its own attempt.
+    console.error(`\n${name}: could not start a sandbox`);
+    failed.push(name);
+    continue;
+  }
   try {
     const result = isProse(name)
-      ? replayProsePage({ sandbox, slug: name, setupPath })
-      : replayCommandPage({ sandbox, command: name, setupPath });
+      ? replayProsePage({ sandbox: live, slug: name, setupPath })
+      : replayCommandPage({ sandbox: live, command: name, setupPath });
     if (result.mismatches > 0) failed.push(name);
   } catch (error) {
-    if (!(error instanceof ReplayError)) throw error;
+    if (!(error instanceof ReplayError)) {
+      stopLive();
+      throw error;
+    }
     // One page's setup failing says nothing about the next page's, so the batch carries on and
     // reports it alongside the mismatches rather than taking the whole run down.
     console.error(`\n${name}: ${error.message}`);
     failed.push(name);
+  } finally {
+    stopLive();
   }
 }
 
@@ -232,14 +282,9 @@ if (failed.length) {
   console.log(`\nfailing: ${failed.join(", ")}`);
   console.log("Each mismatch above names the first line that differs. The real output is the truth:");
   console.log("re-capture with scripts/adopt-real-output.ts once you've confirmed the command is right.");
-  if (order.mode !== ORDER_MODE.alpha) {
-    // A page can fail in one ordering and pass in another, which is a defect in that page rather
-    // than in the run, so both commands are worth having: the first repeats this exact ordering,
-    // the second says whether the ordering is what did it.
-    console.log(`\nThis run was ordered ${describeOrder(order)}. To repeat it exactly:`);
-    console.log(`  npm run replay -- --order=${describeOrder(order)}`);
-    console.log("If it passes in the default order, the page depends on what ran before it:");
-    console.log("  npm run replay");
-  }
+  // Worth saying, because under the shared sandbox this was not true and the habit of doubting a
+  // single-page run outlives the arrangement that justified it.
+  console.log(`\nEach page ran in its own container, so this reproduces any of the above exactly:`);
+  console.log(`  npm run replay -- ${failed[0]}`);
 }
 process.exit(failed.length === 0 ? 0 : 1);
