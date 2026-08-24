@@ -133,7 +133,7 @@ password, and it is pure Debian: Ubuntu users never see it.
 
 ## §4. Command pages
 
-27 written. Below is the full candidate set, grouped as `COMMAND_GROUPS` in `src/config.ts`
+29 written. Below is the full candidate set, grouped as `COMMAND_GROUPS` in `src/config.ts`
 groups them, with a priority marker and the reason each earns a page. Adding a slug to
 `COMMAND_GROUPS` is part of shipping it, or it falls into "More commands".
 
