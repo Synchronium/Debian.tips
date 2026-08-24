@@ -42,7 +42,8 @@ owner, the group, the size in bytes, the modification time, and the name.
 
 Two of those mislead if taken at face value. The **size** of a directory (usually 4096) is the
 size of the directory file itself, rather than of what it contains; adding up a tree's real size
-is `du`'s job, as in [find the largest files](/recipes/find-the-largest-files/). And the **link
+is [`du`](/commands/du/)'s job, as in
+[find the largest files](/recipes/find-the-largest-files/). And the **link
 count** on a directory is the number of subdirectories it holds plus two, because every directory
 contains `.` and every child of it contains `..`.
 

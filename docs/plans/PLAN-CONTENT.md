@@ -25,13 +25,14 @@ covers it; require at least two pages that will plausibly use it; prefer nouns f
 and adjectives for audience tags. Add it in the batch that needs it, not speculatively.
 
 Current usage is lopsided and worth watching. Recounted 2026-08-24 from page frontmatter:
-`performance` still has **zero** pages, and `archives` and `disk` have one each. `cron`,
-`environment`, `search` and `ssh` have two. A tag with one page is a dead end for a reader who
-clicks it. Either the backlog below fills them or they should be retired.
+`performance` still has **zero** pages, and `archives` has one. `cron`, `disk`, `environment`,
+`search` and `ssh` have two. A tag with one page is a dead end for a reader who clicks it. Either
+the backlog below fills them or they should be retired.
 
-`du` and `df` (§4.6) would take `disk` to three on their own, which is the cheapest fix available
-and an argument for pulling them forward out of Wave 8. `performance` has no page in prospect
-anywhere in this document, so it is the one genuinely facing retirement rather than filling.
+`disk` was the worst of these until `du` was written; `df` (§4.6) takes it to three, which is the
+cheapest remaining fix and an argument for pulling that page forward out of Wave 8. `performance`
+has no page in prospect anywhere in this document, so it is the one genuinely facing retirement
+rather than filling.
 
 ### §1.2. Verification is part of the page, not polish afterwards
 
@@ -49,9 +50,9 @@ Counted 2026-08-24 by `verificationStats` in `src/content/verificationStats.ts`,
 same routine the about page renders from, so these figures are the ones the site itself publishes
 rather than a second tally that can drift from them.
 
-**54 pages. 1,111 documented outputs, of which 1,094 are re-run on every push** and 17 are
-exempted in a `.skip` file that names how each was verified instead. 1,193 examples across 27
-command pages, 94 blocks of sample data, and 37 outputs declared `volatile:` and compared by
+**56 pages. 1,218 documented outputs, of which 1,201 are re-run on every push** and 17 are
+exempted in a `.skip` file that names how each was verified instead. 1,300 examples across 29
+command pages, 98 blocks of sample data, and 53 outputs declared `volatile:` and compared by
 shape.
 
 **Every page replays.** `unreplayedCommandPages` and `unreplayedProsePages` are both zero: there
@@ -59,7 +60,7 @@ is no page left whose outputs nothing re-runs. That closes the largest item in �
 
 | Category | Pages | State |
 |---|---|---|
-| `commands` | apt, awk, chmod, cowsay, crontab, curl, cut, diff, dpkg, find, grep, head, journalctl, jq, ls, sed, sort, ssh, systemctl, tail, tar, tee, tr, uniq, wc, wget, xargs | 27 pages, all replayed. Text processing is now complete enough to stop being the priority. Debian package tooling opened with `apt` and `dpkg`. **Still no process, disk, network-diagnostic or user-management coverage.** |
+| `commands` | apt, awk, chmod, cowsay, crontab, curl, cut, diff, dpkg, du, find, grep, head, journalctl, jq, ls, ps, sed, sort, ssh, systemctl, tail, tar, tee, tr, uniq, wc, wget, xargs | 29 pages, all replayed. Text processing is now complete enough to stop being the priority. Debian package tooling opened with `apt` and `dpkg`. `ps` and `du` open the process and disk groups at one page each. **Still no network-diagnostic or user-management coverage.** |
 | `concepts` | environment-variables-and-path, exit-codes-and-error-handling, file-permissions-explained, pipes-and-redirection | 4 pages. Still the thinnest category relative to demand: §3.1 rates this layer above any command page. |
 | `scripting` | your-first-script, variables-and-quoting, conditionals-and-test, loops, script-arguments, functions | Unchanged. Lessons 1–6 of a course that should run to ~13, stopping one lesson before the highest-demand topics. |
 | `recipes` | bulk-rename-files, copy-files-between-machines, find-the-largest-files, kill-whatever-is-using-a-port, monitor-a-log-in-real-time | 5 pages, unchanged in count but **all five now replay**, which they did not on 2026-08-18. |
@@ -164,10 +165,13 @@ The §3.3 gap, and the group that has moved most since the last revision.
 
 ### §4.2. Processes, signals & job control
 
-Nothing here is written. `kill-whatever-is-using-a-port` already uses `kill` and `lsof` with no
-page to link to.
+`ps` is written; the rest is not. `kill-whatever-is-using-a-port` still uses `kill` and `lsof`
+with no page to link to.
 
-- **P1 `ps`** (standard): `aux` vs `-ef`, `-o` custom format, the BSD/UNIX syntax confusion.
+- **P1 `ps`** (standard): **written 2026-08-24.** `aux` vs `-ef`, `-o` custom format, the
+  BSD/UNIX syntax confusion, and `pgrep`/`pidof` folded in as planned. It needs the systemd
+  sandbox, and its examples have to avoid enumerating the whole process table: the harness runs
+  each one through `timeout … bash -c … | head`, all of which a whole-table listing would show.
 - **P1 `kill` / `pkill` / `killall`** (standard): signals by name and number, why `-9` is a last
   resort, "what if kill -9 doesn't work" (uninterruptible sleep) which is +656 on unix.SE.
 - **P1 `jobs` / `fg` / `bg` / `nohup` / `disown`** (standard): the +813 question is exactly this
@@ -178,7 +182,7 @@ page to link to.
   (+658) and "how long did this take" (+751).
 - **P2 `free` / `uptime` / `nice` / `renice`** (light, combined): too small alone.
 - **P3 `strace`** (standard): powerful, hard to verify deterministically (§11).
-- **P3 `pidof` / `pgrep`**: fold into the `ps` and `kill` pages.
+- **P3 `pidof` / `pgrep`**: folded into the `ps` page; the `kill` page should do the same.
 
 ### §4.3. Files & directories
 
@@ -233,14 +237,14 @@ The everyday commands, none of which have pages. Low glamour, high traffic.
 
 ### §4.6. Disk & storage
 
-- **P1 `du`** (standard): `-sh`, `--max-depth`, sorting; the link target
-  `find-the-largest-files` needs. "Tracking down where disk space has gone" is +838.
-  **Filed under Wave 8 and that filing is wrong.** §11.2's blocker is the loop device, which
-  `mount`/`fdisk`/`mkfs` need and `du` does not: it wants a directory tree with known sizes, and
-  `mk_projects` in `scripts/fixtures/_common.sh` is already one, built with pinned sizes for the
-  `find` and `ls` pages. Cheap now, and it takes the one-page `disk` tag off the §1.1 list.
+- **P1 `du`** (standard): **written 2026-08-24.** The prediction held: `mk_projects` in
+  `scripts/fixtures/_common.sh` supplied the tree, the page needed no loop device, and it was
+  pulled out of Wave 8 on that basis. Two additions beside the tree carry the material the
+  existing fixtures could not: a sparse file, for allocation against length, and a hard-linked
+  pair, for what `-l` counts twice.
 - **P1 `df`** (light): `-h`, and `-i` inode exhaustion, which is the failure nobody expects.
-  Same argument as `du`: no loop device required for the ordinary output.
+  Same argument as `du`: no loop device required for the ordinary output. `du --inodes` is
+  already on the `du` page, so this one inherits a reader who has met the idea.
 - **P2 `mount` / `umount` / `lsblk` / `blkid`** (standard, combined): reading `/etc/fstab`,
   what a bind mount is (+620).
 - **P2 `rsync`** (flagship): already referenced by `copy-files-between-machines` with no page.
@@ -830,10 +834,10 @@ searching the apt cluster finds most of it and not the rest.
 | 2. Scripting 7–14 | **untouched** | All eight lessons |
 | 3. Concepts | **1 of 3** | terminal/shell/tty, processes-and-signals |
 | 4. Perl track | **blocked** | The §10.4 `order:` change first, then 9 pages |
-| 5. Processes and everyday files | **2 of 7** | `ps`, `kill`, job control, `cp`/`mv`, `rm` |
+| 5. Processes and everyday files | **3 of 7** | `kill`, job control, `cp`/`mv`, `rm` |
 | 6. Comparisons | **4 of ~19** | Everything not listed in §10.1 as written |
 | 7. Recipes | **untouched** | All P1 recipes; the existing five were verified, not added to |
-| 8. Networking and disk | **untouched** | Harness work first, except `du`/`df`, which need none |
+| 8. Networking and disk | **1 page** | `du` is written; `df` is the other page needing no harness work. Everything else waits on a resolver fixture and a loop device |
 
 **Wave 1: the namesake gap (§4.1, §6.1, §6.2).** The §10.2 decision it was waiting on has been
 taken, the `troubleshooting` category exists, and all four P1 error pages are written, as are
@@ -869,23 +873,22 @@ existing recipes were brought up to replaying during this period, which is a dif
 
 **Wave 8: networking and disk (§4.6, §4.7).** Deliberately last, because §11.2 and §11.3 mean
 this wave starts with harness work (a local resolver fixture and a loop-device setup) before
-any page can be written honestly. **`du` and `df` are the exception and should be pulled out of
-this wave**: neither needs a loop device, both have a fixture tree already, and `du` is the link
-target `find-the-largest-files` has always wanted. See §4.6.
+any page can be written honestly. **`du` and `df` were the exception and were pulled out of this
+wave.** `du` is written; `df` is the same argument and still open. See §4.6.
 
 Running alongside: the tag-coverage problem in §1.1, now down to `performance` at zero and
-`archives`/`disk` at one, and the `0/0` reporting hole in §11.5. The five unreplayed recipes that
-used to head this list are done.
+`archives` at one, and the `0/0` reporting hole in §11.5. The five unreplayed recipes that used
+to head this list are done.
 
 ### Scale, honestly
 
 The backlog above is roughly 60 command pages, 14 concepts, 20 Debian articles, 8 more scripting
 lessons, 9 Perl pages, 20 recipes, 19 comparisons and 8–15 troubleshooting pages: **something
-like 170 pages against the 54 that exist.** At this site's verification standard that is a very
+like 170 pages against the 56 that exist.** At this site's verification standard that is a very
 large amount of sandbox work, and the plan should not pretend otherwise. The waves are ordered so
 that stopping after any one of them leaves the site coherent rather than half-built.
 
-There is now a rate to measure it against: 17 pages in the six days between 2026-08-18 and
+There is now a rate to measure it against: 19 pages in the six days between 2026-08-18 and
 2026-08-24. Sustained, that is a year of work, and it will not be sustained. The point of the
 waves is that stopping is survivable, which only holds if a wave is finished before the next one
 starts. Wave 1 is the current counter-example.
@@ -939,3 +942,12 @@ starts. Wave 1 is the current counter-example.
   `npm run voice` walked a narrower corpus. The two entry points now share one definition of
   scope, so writing outside it no longer produces a wall of findings against prose the guide was
   never written for.
+- **2026-08-24**: `ps`, opening §4.2. Its first replay found that the harness's own invocation
+  is visible to any example that lists every process, and CI then found that the devcontainer
+  boots six virtual consoles where a GitHub runner boots five, so seven examples were counting
+  `agetty`. Both classes are now avoided rather than captured. The `agetty` fix was proved by
+  stopping two gettys and replaying against the smaller count.
+- **2026-08-24**: `du`, opening §4.6, and the `find-the-largest-files` recipe moved onto
+  `mk_projects`. The recipe had been building its own `projects/` tree with different files and
+  sizes, so the site showed two trees under one name; the shared one now backs both, and the
+  recipe's ranking was recaptured against it.

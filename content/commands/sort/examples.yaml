@@ -462,7 +462,7 @@ sections:
         level: basic
       - title: "Find the largest directories, biggest first"
         code: du -sh */ | sort -rh
-        description: "`du -sh */` prints one human-readable size per top-level directory; piping through `sort -rh` orders them biggest first. See the find-the-largest-files recipe for the file-level version of this pattern."
+        description: "[`du -sh */`](/commands/du/) prints one human-readable size per top-level directory; piping through `sort -rh` orders them biggest first. See [find the largest files](/recipes/find-the-largest-files/) for the file-level version of this pattern."
         output: |
           2.0M	archive/
           504K	photos/

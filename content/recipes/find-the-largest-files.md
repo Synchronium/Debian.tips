@@ -4,8 +4,8 @@ tagline: "du, sort and head, aimed at any directory"
 description: "Locate what is eating your disk space, from a whole filesystem down to one directory."
 category: recipes
 tags: [disk, files, one-liners]
-updated: 2026-08-22
-related: [find, tar, sort, head]
+updated: 2026-08-24
+related: [du, find, tar, sort, head]
 ---
 
 **Problem:** Disk space is running low and you need to find out what's using it.
@@ -16,29 +16,30 @@ related: [find, tar, sort, head]
 du -ah projects | sort -rh | head -6
 ```
 ```
-2.6M	projects
-2.1M	projects/archive
-2.0M	projects/archive/backup.tar.gz
-568K	projects/logs
-500K	projects/logs/app.log
-64K	projects/logs/access.log
+6.1M	projects/logs
+6.1M	projects
+6.0M	projects/logs/big.log
+20K	projects/src
+20K	projects/backups
+12K	projects/logs/app.log
 ```
 
 **How it works:**
 
 - `du -ah projects` prints the disk usage of every file and directory underneath it, in
   human-readable sizes (`-h`), including individual files, not just directory totals (`-a`).
-  Point it at `/var` or `/` for the real investigation; a small tree is used here so the
-  numbers on this page are ones you can reproduce.
+  See [du](/commands/du/) for what that number measures. Point it at `/var` or `/` for the real
+  investigation; a small tree is used here so the numbers on this page are ones you can
+  reproduce.
 - `sort -rh` sorts that output by size, largest first (`-r` reverse, `-h` understands
   human-readable sizes like "1.2G"). See [sort](/commands/sort/) for more, including the
   common mistake of using `-h` without also telling it which field to sort by.
 - `head -6` keeps just the top of the ranking (see [head](/commands/head/)). Use
   `head -20` on a real filesystem, where there is far more to sift through.
 
-Note that directories and their contents both appear: `projects/archive` at 2.1M is the
-directory holding `backup.tar.gz` at 2.0M, not a second copy of it. `-a` was asked for every
-file, so the totals down the column add up to more than the disk holds.
+Note that directories and their contents both appear: `projects/logs` at 6.1M is the directory
+holding `big.log` at 6.0M, not a second copy of it. `-a` was asked for every file, so the totals
+down the column add up to more than the disk holds.
 
 **Variations:**
 

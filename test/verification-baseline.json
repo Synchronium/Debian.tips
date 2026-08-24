@@ -62,6 +62,13 @@
     "fixtures": 0,
     "unpaired": 0
   },
+  "commands/du": {
+    "checked": 54,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 3,
+    "unpaired": 0
+  },
   "commands/find": {
     "checked": 27,
     "byShape": 0,

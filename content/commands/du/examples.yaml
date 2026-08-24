@@ -1,0 +1,532 @@
+command: du
+fixtures:
+  - name: projects/
+    note: "the same sample tree the find and ls pages use: nested directories, two symlinks (one broken), a hidden directory, and files of deliberately different sizes, modes and ages"
+    from: "ls -lAR projects"
+    content: |
+      projects:
+      total 20
+      drwxr-xr-x 2 user user 4096 Jun 26 10:00 .hidden
+      drwxr-xr-x 2 user user 4096 Jun 26 10:00 backups
+      drwxr-xr-x 2 user user 4096 Jun 26 10:00 empty-dir
+      drwxr-xr-x 2 user user 4096 Jun 26 10:00 logs
+      drwxr-xr-x 3 user user 4096 Jun 26 10:00 src
+
+      projects/.hidden:
+      total 4
+      -rw-r--r-- 1 user user 13 Jun 24 10:00 .env
+
+      projects/backups:
+      total 16
+      -rw------- 1 user user 5120 May 31  2025 site-2026-01-01.tar.gz
+      -rw-r--r-- 1 user user 5120 Jun 15 15:30 site-2026-06-01.tar.gz
+
+      projects/empty-dir:
+      total 0
+
+      projects/logs:
+      total 6156
+      -rw-r--r-- 1 user user   10240 Jun 21 10:00 app.log
+      -rw-r--r-- 1 user user 6291456 Jun 20 10:00 big.log
+      lrwxrwxrwx 1 user user      14 Jun 25 10:00 main-link.js -> ../src/main.js
+      lrwxrwxrwx 1 user user      12 Jun 25 10:00 rotated-link -> app.log.1.gz
+
+      projects/src:
+      total 12
+      -rwxrwxrwx 1 user user    8 Jun 23 10:00 main.js
+      -rw-r--r-- 1 user user    8 Jun  1 09:00 util.js
+      drwxr-xr-x 2 user user 4096 Jun 26 10:00 vendor
+
+      projects/src/vendor:
+      total 4
+      -rw-r--r-- 1 user user 7 Jun 22 10:00 lib.js
+  - name: disk-image.img
+    note: "a sparse file: 100M long with nothing written into it. `ls -ls` prints the allocated size first and the length second, so the leading `0` is the whole point of it."
+    from: "ls -ls disk-image.img"
+    content: |
+      0 -rw-r--r-- 1 user user 104857600 Jun 26 10:00 disk-image.img
+  - name: snapshots/
+    note: "two names for one 2M file, made with `ln`. The `2` in the link-count column is what tells them apart from two separate files of the same size."
+    from: "ls -lA snapshots"
+    content: |
+      total 4096
+      -rw-r--r-- 2 user user 2097152 Jun 26 10:00 monday.tar
+      -rw-r--r-- 2 user user 2097152 Jun 26 10:00 tuesday.tar
+sections:
+  - title: "Totals for a directory"
+    intro: "`-s` asks for one summary line instead of a line per directory, and `-h` scales the number to a unit you can read. Together they are most of what anyone types."
+    examples:
+      - title: "Total up one directory"
+        code: du -sh projects
+        description: "The whole tree in one line. Without `-h` the number is in kibibytes, which is rarely what you wanted to know."
+        output: |2
+          6.1M	projects
+        level: basic
+        tags: [beginner, disk]
+      - title: "Total up several things at once"
+        code: du -sh projects snapshots disk-image.img
+        description: "Each argument gets its own line, in the order given. Files are allowed as well as directories."
+        output: |2
+          6.1M	projects
+          2.1M	snapshots
+          0	disk-image.img
+        level: basic
+        tags: [beginner, disk]
+      - title: "Add a grand total across the arguments"
+        code: du -csh projects snapshots
+        description: "`-c` appends a `total` line. It is the only way to get one figure covering several directories, since `du` never adds up its arguments otherwise."
+        output: |2
+          6.1M	projects
+          2.1M	snapshots
+          8.1M	total
+        level: basic
+        tags: [disk]
+      - title: "Total up the working directory"
+        code: du -sh .
+        description: "`.` covers everything below where you are, hidden entries included, which is the difference between this and a glob."
+        output: |2
+          8.1M	.
+        level: basic
+        tags: [beginner, disk]
+      - title: "Get the number without the filename"
+        code: du -sh projects | cut -f1
+        description: "`du` separates the two columns with a tab, so [`cut`](/commands/cut/) with no `-d` picks the size off cleanly. This is the form to assign to a variable."
+        output: |2
+          6.1M
+        level: intermediate
+        tags: [scripting, disk]
+      - title: "Total in kibibytes, the default unit"
+        code: du -s projects
+        description: "With no `-h` and no `-B`, the number is in units of 1024 bytes. Machine-readable and directly comparable between runs, which `-h` is not."
+        output: |2
+          6216	projects
+        level: basic
+        tags: [scripting, disk]
+      - title: "Size each entry in a directory separately"
+        code: du -sh projects/*
+        description: "The shell expands the glob and hands `du` each name, so this is one total per top-level entry rather than one for the tree."
+        output: |2
+          20K	projects/backups
+          4.0K	projects/empty-dir
+          6.1M	projects/logs
+          20K	projects/src
+        level: basic
+        tags: [disk]
+      - title: "Make the glob include hidden entries"
+        code: du -sh projects/.[!.]* projects/*
+        description: "`*` never matches a leading dot, so the previous example silently skipped `.hidden` and its 8K. The extra pattern matches names starting with a dot but excludes `.` and `..`."
+        output: |2
+          8.0K	projects/.hidden
+          20K	projects/backups
+          4.0K	projects/empty-dir
+          6.1M	projects/logs
+          20K	projects/src
+        level: intermediate
+        tags: [disk, files]
+      - title: "Size two named files"
+        code: du -sh projects/logs/big.log projects/logs/app.log
+        description: "Given files rather than directories, `du` reports each one's allocation and nothing else. `-s` changes nothing here, since a file has no tree to summarise."
+        output: |2
+          6.0M	projects/logs/big.log
+          12K	projects/logs/app.log
+        level: basic
+        tags: [disk, files]
+      - title: "See what an empty directory costs"
+        code: du -h projects/empty-dir
+        description: "A directory is itself a file holding names, so it occupies a block whether or not anything is in it. Every directory in these listings carries that 4K."
+        output: |2
+          4.0K	projects/empty-dir
+        level: intermediate
+        tags: [disk, files]
+
+  - title: "How deep to look"
+    intro: "By default `du` prints a line for every directory it walks and stays quiet about individual files. `--max-depth` trims the bottom of that, and `-a` extends it down to files."
+    examples:
+      - title: "Report every directory in the tree"
+        code: du -h projects | sort -h
+        description: "The plain form: one line per directory, at any depth. Piped through [`sort -h`](/commands/sort/) because `du` emits siblings in directory order, which is neither alphabetical nor sorted by size."
+        output: |2
+          4.0K	projects/empty-dir
+          8.0K	projects/.hidden
+          8.0K	projects/src/vendor
+          20K	projects/backups
+          20K	projects/src
+          6.1M	projects
+          6.1M	projects/logs
+        level: basic
+        tags: [disk]
+      - title: "Stop at the first level down"
+        code: du -h --max-depth=1 projects | sort -h
+        description: "`projects/src/vendor` is gone; `projects/src` still counts it. This is the usual first command to run on a full disk, because it names the subtree to look in next."
+        output: |2
+          4.0K	projects/empty-dir
+          8.0K	projects/.hidden
+          20K	projects/backups
+          20K	projects/src
+          6.1M	projects
+          6.1M	projects/logs
+        level: basic
+        tags: [disk, sysadmin]
+      - title: "Write --max-depth the short way"
+        code: du -h -d1 projects | sort -h
+        description: "`-d` is the same option. It is a GNU extension rather than POSIX, so a script that has to run on BSD or busybox should spell out `--max-depth`, or not use it."
+        output: |2
+          4.0K	projects/empty-dir
+          8.0K	projects/.hidden
+          20K	projects/backups
+          20K	projects/src
+          6.1M	projects
+          6.1M	projects/logs
+        level: intermediate
+        tags: [disk]
+      - title: "Go one level deeper"
+        code: du -h --max-depth=2 projects | sort -h
+        description: "`projects/src/vendor` reappears at depth 2. Each extra level multiplies the lines, which is why `-a` on a real filesystem is usually unreadable."
+        output: |2
+          4.0K	projects/empty-dir
+          8.0K	projects/.hidden
+          8.0K	projects/src/vendor
+          20K	projects/backups
+          20K	projects/src
+          6.1M	projects
+          6.1M	projects/logs
+        level: basic
+        tags: [disk]
+      - title: "Ask for depth zero"
+        code: du -h --max-depth=0 projects
+        description: "Identical to `du -sh`. Worth knowing when the depth is a variable in a script and 0 has to be a legal value for it."
+        output: |2
+          6.1M	projects
+        level: intermediate
+        tags: [scripting, disk]
+      - title: "Include individual files"
+        code: du -ah projects/backups | sort -h
+        description: "`-a` reports files as well as directories. Both archives are 5120 bytes long and both take 8K, because allocation happens in whole blocks."
+        output: |2
+          8.0K	projects/backups/site-2026-01-01.tar.gz
+          8.0K	projects/backups/site-2026-06-01.tar.gz
+          20K	projects/backups
+        level: basic
+        tags: [disk, files]
+      - title: "See files at every depth"
+        code: du -ah projects/src | sort -h
+        description: "With `-a` the directory lines stay, so `projects/src/vendor` appears both as a total and as the file inside it. The column does not add up to the tree, by design."
+        output: |2
+          4.0K	projects/src/main.js
+          4.0K	projects/src/util.js
+          4.0K	projects/src/vendor/lib.js
+          8.0K	projects/src/vendor
+          20K	projects/src
+        level: intermediate
+        tags: [disk, files]
+      - title: "Count a directory without its subdirectories"
+        code: du -Sh projects | sort -h
+        description: "`-S` reports what each directory holds directly, leaving subdirectory totals out. `projects` drops to 4K because everything in it is a subdirectory."
+        output: |2
+          4.0K	projects
+          4.0K	projects/empty-dir
+          8.0K	projects/.hidden
+          8.0K	projects/src/vendor
+          12K	projects/src
+          20K	projects/backups
+          6.1M	projects/logs
+        level: advanced
+        tags: [disk, sysadmin]
+      - title: "Compare -S against the default on one directory"
+        code: du -Sh projects/src && du -h projects/src
+        description: "12K against 20K, and the 8K difference is `vendor`. Use `-S` to find the directory that is itself fat rather than the one containing something fat."
+        output: |2
+          8.0K	projects/src/vendor
+          12K	projects/src
+          8.0K	projects/src/vendor
+          20K	projects/src
+        level: advanced
+        tags: [disk]
+
+  - title: "Ranking what is biggest"
+    intro: "`du` has no sorting of its own, so every hunt for space is `du` piped into [`sort`](/commands/sort/). `sort -h` reads the suffixes that `du -h` writes."
+    examples:
+      - title: "Rank everything, biggest first"
+        code: du -ah projects | sort -rh | head -5
+        description: "The standard disk-space hunt. [Finding the largest files](/recipes/find-the-largest-files/) is the same pipeline aimed at a real filesystem."
+        output: |2
+          6.1M	projects/logs
+          6.1M	projects
+          6.0M	projects/logs/big.log
+          20K	projects/src
+          20K	projects/backups
+        level: basic
+        tags: [disk, one-liners, sysadmin]
+      - title: "Rank the top-level directories only"
+        code: du -h --max-depth=1 projects | sort -rh | head -3
+        description: "Fewer lines and the same answer about where to look next. On a filesystem with a large tree this is much faster to read than the `-a` ranking."
+        output: |2
+          6.1M	projects/logs
+          6.1M	projects
+          20K	projects/src
+        level: basic
+        tags: [disk, sysadmin]
+      - title: "Show only entries above a size"
+        code: du --threshold=1M -h projects | sort -h
+        description: "`--threshold` filters inside `du`, so nothing under 1M reaches the pipe at all. Handy when the tree is big enough that the noise is the problem."
+        output: |2
+          6.1M	projects
+          6.1M	projects/logs
+        level: intermediate
+        tags: [disk]
+      - title: "Show only entries below a size"
+        code: du --threshold=-1M -h projects | sort -h
+        description: "A negative threshold inverts the test, which finds the thousands of small files that add up between them instead of the one large one."
+        output: |2
+          4.0K	projects/empty-dir
+          8.0K	projects/.hidden
+          8.0K	projects/src/vendor
+          20K	projects/backups
+          20K	projects/src
+        level: advanced
+        tags: [disk, sysadmin]
+      - title: "Total a set of files matching a pattern"
+        code: du -ch projects/logs/*.log
+        description: "The glob picks the files and `-c` answers how much they come to together. This is the question behind most \"can I delete the logs?\" investigations."
+        output: |2
+          12K	projects/logs/app.log
+          6.0M	projects/logs/big.log
+          6.1M	total
+        level: basic
+        tags: [disk, one-liners]
+
+  - title: "Blocks, bytes and apparent size"
+    intro: "`du` counts the blocks a file occupies. `--apparent-size` counts the bytes it contains. The two differ in both directions, and which one you want depends on the question."
+    examples:
+      - title: "See a file's allocated size"
+        code: du -h projects/logs/app.log
+        description: "`app.log` is 10240 bytes long. Three 4K blocks are needed to hold it, so `du` says 12K."
+        output: |2
+          12K	projects/logs/app.log
+        level: basic
+        tags: [disk, files]
+      - title: "See a file's length instead"
+        code: du -h --apparent-size projects/logs/app.log
+        description: "The same file measured the way [`ls -l`](/commands/ls/) measures it. Use this when comparing against a byte count from somewhere else, such as a `Content-Length`."
+        output: |2
+          10K	projects/logs/app.log
+        level: intermediate
+        tags: [disk, files]
+      - title: "Get an exact byte count"
+        code: du -b projects/logs/app.log
+        description: "`-b` is `--apparent-size --block-size=1`, so the figure is bytes with no rounding anywhere. The one form of `du` output safe to do arithmetic on."
+        output: |2
+          10240	projects/logs/app.log
+        level: intermediate
+        tags: [scripting, disk]
+      - title: "Measure a sparse file"
+        code: du -h disk-image.img
+        description: "`disk-image.img` was made with `truncate -s 100M` and never written to, so the filesystem has allocated it nothing at all."
+        output: |2
+          0	disk-image.img
+        level: intermediate
+        tags: [disk, files]
+      - title: "Measure the same sparse file by length"
+        code: du -h --apparent-size disk-image.img
+        description: "100M of addressable file with no blocks behind it. Copying it with `cp` rather than `cp --sparse=always` is how a 0-byte file becomes a 100M one."
+        output: |2
+          100M	disk-image.img
+        level: intermediate
+        tags: [disk, files]
+      - title: "Watch the gap run the other way"
+        code: du -sh snapshots && du -sh --apparent-size snapshots
+        description: "Here the allocation is *larger* than the contents: 2.1M against 2.0M, because the directory itself takes a block that its files' lengths do not include."
+        output: |2
+          2.1M	snapshots
+          2.0M	snapshots
+        level: advanced
+        tags: [disk]
+      - title: "Report in kibibytes"
+        code: du -sk projects
+        description: "`-k` is the default on Debian, so this is explicit rather than different. Worth typing in a script, because `POSIXLY_CORRECT` and some other systems default to 512-byte blocks."
+        output: |2
+          6216	projects
+        level: intermediate
+        tags: [scripting, disk]
+      - title: "Report in mebibytes"
+        code: du -sm projects
+        description: "6216K is a little over six mebibytes, and `-m` reports 7: the unit is truncated to whole numbers, and `du` rounds up rather than down."
+        output: |2
+          7	projects
+        level: intermediate
+        tags: [disk]
+      - title: "Choose the unit explicitly"
+        code: du -s --block-size=1M projects
+        description: "`--block-size` takes a number or a suffix and covers anything `-k` and `-m` do not. `1M` here is identical to `-m`."
+        output: |2
+          7	projects
+        level: intermediate
+        tags: [scripting, disk]
+      - title: "Keep the unit in the output"
+        code: du -s --block-size=K projects
+        description: "A suffix with no number prints the unit alongside the figure. Useful in a report that a person reads, awkward in one a script parses."
+        output: |2
+          6216K	projects
+        level: advanced
+        tags: [disk]
+      - title: "Use powers of 1000 rather than 1024"
+        code: du --si -s projects
+        description: "`--si` divides by 1000, so the same tree that `-h` calls 6.1M becomes 6.4M. Disk manufacturers quote capacity this way, which accounts for the missing space in a new drive."
+        output: |2
+          6.4M	projects
+        level: intermediate
+        tags: [disk]
+      - title: "Total a tree in exact bytes"
+        code: du -sb projects
+        description: "The sum of every file's length, ignoring block allocation entirely. It will not match `du -s` on any tree containing more than a handful of files."
+        output: |2
+          6311998	projects
+        level: advanced
+        tags: [scripting, disk]
+
+  - title: "Symlinks and hard links"
+    intro: "A symlink and a hard link both make one file reachable by two names, and `du` treats them completely differently. An estimate built on the wrong one of those comes out double."
+    examples:
+      - title: "Measure a symlink"
+        code: du -h projects/logs/main-link.js
+        description: "`main-link.js` points at `../src/main.js`. `du` reports the link itself, whose target path is short enough to live inside the inode, so it costs nothing."
+        output: |2
+          0	projects/logs/main-link.js
+        level: intermediate
+        tags: [disk, files]
+      - title: "Follow the symlink instead"
+        code: du -Lh projects/logs/main-link.js
+        description: "`-L` measures what the link points at. A tree of symlinks into somewhere else looks empty without it and full with it, and both answers are useful."
+        output: |2
+          4.0K	projects/logs/main-link.js
+        level: intermediate
+        tags: [disk, files]
+      - title: "Hit a broken symlink with -L"
+        code: du -Lsh projects/logs
+        description: "`rotated-link` points at a file that no longer exists, so following it fails. `du` reports the error, keeps going, and exits non-zero, which will fail a script running under `set -e`."
+        output: |2
+          du: cannot access 'projects/logs/rotated-link'
+          6.1M	projects/logs
+        level: advanced
+        tags: [disk, scripting]
+      - title: "Total a directory of hard links"
+        code: du -sh snapshots
+        description: "`monday.tar` and `tuesday.tar` are two names for one 2M file. `du` counts its blocks once and reports 2.1M rather than 4.1M."
+        output: |2
+          2.1M	snapshots
+        level: intermediate
+        tags: [disk, files]
+      - title: "Count every name separately"
+        code: du -slh snapshots
+        description: "`-l` counts a file once per link, which doubles the total here. This is the right answer when estimating an extraction that will not preserve the links."
+        output: |2
+          4.1M	snapshots
+        level: advanced
+        tags: [disk, sysadmin]
+      - title: "Spell -l out in full"
+        code: du -sh --count-links snapshots
+        description: "The long name for `-l`, and a much clearer thing to find in a script six months later."
+        output: |2
+          4.1M	snapshots
+        level: advanced
+        tags: [scripting, disk]
+      - title: "List the linked files individually"
+        code: du -alh snapshots | sort -rh
+        description: "With `-a` alone, only the first name `du` reaches is listed and the second is skipped silently. `-l` makes both appear, at the cost of a total that overstates the disk."
+        output: |2
+          4.1M	snapshots
+          2.0M	snapshots/tuesday.tar
+          2.0M	snapshots/monday.tar
+        level: advanced
+        tags: [disk, files]
+
+  - title: "Filtering, counting and scripting"
+    intro: "The rest of `du` is about narrowing what it walks and making its output safe to hand to something else."
+    examples:
+      - title: "Skip files matching a pattern"
+        code: du -sh --exclude=*.log projects/logs
+        description: "The pattern is matched against the base name, not the path. Both logs are dropped and 6.1M becomes the 4K of the directory itself."
+        output: |2
+          4.0K	projects/logs
+        level: intermediate
+        tags: [disk, files]
+      - title: "Exclude by extension"
+        code: du -h --exclude=*.gz projects/backups
+        description: "Quote the pattern (`--exclude='*.gz'`) if the shell might expand it against the working directory first. Here it cannot, since nothing beside the tree ends in `.gz`."
+        output: |2
+          4.0K	projects/backups
+        level: intermediate
+        tags: [disk]
+      - title: "Exclude a whole subdirectory"
+        code: du --exclude=vendor -h projects/src
+        description: "A directory name excludes the directory and everything under it, which is how `node_modules` or `.git` gets left out of an estimate."
+        output: |2
+          12K	projects/src
+        level: intermediate
+        tags: [disk, sysadmin]
+      - title: "Count inodes instead of blocks"
+        code: du --inodes -s projects
+        description: "17 files and directories. A filesystem can run out of inodes while gigabytes of space remain, and this is the tool that finds where they went."
+        output: |2
+          17	projects
+        level: advanced
+        tags: [disk, sysadmin]
+      - title: "Find which subtree holds the most files"
+        code: du --inodes -h --max-depth=1 projects | sort -h
+        description: "The same shape as the size version, counting entries. `-h` still applies, so a directory with 12000 files reports `12K`."
+        output: |2
+          1	projects/empty-dir
+          2	projects/.hidden
+          3	projects/backups
+          5	projects/logs
+          5	projects/src
+          17	projects
+        level: advanced
+        tags: [disk, sysadmin]
+      - title: "Show when a directory last changed"
+        code: du --time -h projects/backups
+        description: "`--time` inserts the newest mtime found anywhere in the tree as a middle column. It answers whether a large directory is still in use before you delete it."
+        output: |2
+          20K	2026-06-26 10:00	projects/backups
+        level: advanced
+        tags: [disk, sysadmin]
+      - title: "Choose the time format"
+        code: du --time --time-style=+%Y-%m-%d -h projects/backups
+        description: "`--time-style` takes a `date`-style format string after a `+`, along with the names `full-iso`, `long-iso` and `iso`."
+        output: |2
+          20K	2026-06-26	projects/backups
+        level: advanced
+        tags: [disk]
+      - title: "Stay on one filesystem"
+        code: du -x -sh projects
+        description: "`-x` refuses to descend into anything mounted elsewhere. Running `du -sh /` without it walks `/proc`, network shares and every attached disk."
+        output: |2
+          6.1M	projects
+        level: advanced
+        tags: [disk, sysadmin]
+      - title: "Produce output safe for any filename"
+        code: du -0 -s projects/* | xargs -0 -n1 echo
+        description: "`-0` ends each line with a NUL instead of a newline, so a filename containing a newline cannot split a record. [`xargs -0`](/commands/xargs/) is what reads it back."
+        output: |2
+          20	projects/backups
+          4	projects/empty-dir
+          6160	projects/logs
+          20	projects/src
+        level: advanced
+        tags: [scripting, disk]
+      - title: "Read the list of paths from stdin"
+        code: printf '%s\0' projects snapshots | du --files0-from=- -sch
+        description: "The other half of the NUL convention, and the way to hand `du` a list from [`find -print0`](/commands/find/) without an argument-length limit."
+        output: |2
+          6.1M	projects
+          2.1M	snapshots
+          8.1M	total
+        level: advanced
+        tags: [scripting, disk]
+      - title: "Ask for something that is not there"
+        code: du -sh projects/nope
+        description: "`du` prints the reason on stderr and exits 1. A missing path among several does not stop the others being reported, so check the exit status rather than the output."
+        output: |2
+          du: cannot access 'projects/nope': No such file or directory
+        level: intermediate
+        tags: [disk, scripting]
