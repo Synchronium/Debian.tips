@@ -19,11 +19,6 @@
 
 export DEBIAN_FRONTEND=noninteractive
 
-# Other pages' setups also configure apt and `npm run replay` runs them all in one sandbox, so
-# a source or a pin left behind by an earlier page changes what this one sees.
-find /etc/apt/sources.list.d -name '*.sources' ! -name 'debian.sources' -delete 2>/dev/null
-rm -f /etc/apt/preferences.d/*
-
 # See scripts/fixtures/apt.sh: apt prints "WARNING: apt does not have a stable CLI interface"
 # whenever stdout is not a terminal, which in this harness is always, and a reader running these
 # examples at a prompt never sees it. /compare/apt-vs-apt-get/ is where that warning is
@@ -32,7 +27,7 @@ cat > /etc/apt/apt.conf.d/99-replay-no-script-warning <<'EOF'
 APT::Cmd::Disable-Script-Warning "1";
 EOF
 
-# Package lists are rebuilt only when the previous page left different sources configured.
+# Fetched once per container rather than once per example; see apt.sh.
 STATE=/var/lib/apt/.fixture-page
 if [ "$(cat $STATE 2>/dev/null)" != "remove-vs-purge-vs-autoremove" ]; then
   apt-get update >/dev/null 2>&1
@@ -52,9 +47,9 @@ if ! dpkg -l cowsay-off 2>/dev/null | grep -q '^ii'; then
   apt-get install -y cowsay-off >/dev/null 2>&1
 fi
 
-# Both marks are reset rather than assumed. The apt page's setup marks cowsay manual and the
-# page's own last block marks it manual too, so without this the auto-mark blocks would report
-# the opposite of what they document depending on what ran before them.
+# Both marks are reset rather than assumed, because the page's own last block runs
+# `apt-mark manual cowsay`. Without this, every auto-mark block above it reports the opposite of
+# what it documents from the second restore onwards.
 apt-mark auto cowsay >/dev/null 2>&1
 apt-mark manual cowsay-off >/dev/null 2>&1
 
@@ -65,14 +60,6 @@ apt-mark manual cowsay-off >/dev/null 2>&1
 # one package the page is actually about.
 apt-mark manual perl libtext-charwidth-perl >/dev/null 2>&1
 
-# A hold suppresses what autoremove says it would do, and the apt page's setup leaves one on
-# ca-certificates.
-apt-mark unhold cowsay cowsay-off ca-certificates >/dev/null 2>&1
-
-# nano must be the *only* package left in the `rc` state, because one block sweeps the whole
-# database for them and would otherwise report whatever the previous page left behind. The apt
-# page's setup puts bash-completion there deliberately, and in a full `npm run replay` that is
-# still true by the time this page runs. Its own setup puts it back when it needs it.
-if dpkg -l bash-completion 2>/dev/null | grep -q '^rc'; then
-  apt-get purge -y bash-completion >/dev/null 2>&1
-fi
+# One block sweeps the whole database for `rc` packages and documents a single row, so nano above
+# has to be the only one. Nothing else here or on the page puts a package into that state, and
+# the image ships none, so the row is the one this script creates.

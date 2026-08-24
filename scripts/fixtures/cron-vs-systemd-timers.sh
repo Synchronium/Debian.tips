@@ -17,8 +17,9 @@
 # Note the file it writes is under /tmp rather than the working directory: the harness wipes
 # the workdir between examples, and this has to survive being set up once.
 
-# A settled starting point: an earlier page in the batch may have left a crontab behind, and
-# `crontab -l` is the first thing this page prints.
+# A settled starting point: `crontab -l` is the first thing this page prints, and the blocks
+# below it edit the crontab, so the one written here has to replace whatever they left rather
+# than be appended to it.
 crontab -r 2>/dev/null
 
 crontab - <<'CRON'

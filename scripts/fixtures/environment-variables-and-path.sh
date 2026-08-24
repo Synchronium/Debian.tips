@@ -8,7 +8,7 @@
 # each example, and that directory sits *inside* $HOME, so anything an example writes to ~ is
 # left standing. Several examples here create ~/bin, and Debian's ~/.profile adds ~/bin to PATH
 # whenever it exists, so without this line the login-shell example prints a different PATH
-# depending on which examples ran before it, and every later page inherits the directory.
+# depending on which examples ran before it.
 rm -rf "$HOME/bin"
 #
 # PATH is different for root and for an unprivileged user, and the page shows both a user's PATH

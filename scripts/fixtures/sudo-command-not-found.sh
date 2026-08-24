@@ -5,10 +5,11 @@
 # Debian's installer leaves you with when you set a root password during installation. Every
 # diagnostic and fix on the page is then run against a real account in that state.
 #
-# The literal "sudo: command not found" is the one thing not reproduced here. Removing sudo
-# would break every other page in the batch, since `npm run replay` shares one sandbox and the
-# apt page's examples all begin with `sudo`, so the page quotes that message as the error the
-# reader arrived with and verifies the diagnosis and the fix instead.
+# The literal "sudo: command not found" is the one thing not reproduced here: the page quotes it
+# as the error the reader arrived with and verifies the diagnosis and the fix instead. That was
+# forced while every page shared a container, because removing sudo broke every page whose
+# examples begin with it. A container per page removes the obstacle, so reproducing the error for
+# real is now available to whoever next works on this page.
 
 export DEBIAN_FRONTEND=noninteractive
 

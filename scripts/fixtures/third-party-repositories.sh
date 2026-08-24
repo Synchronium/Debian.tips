@@ -19,9 +19,9 @@ umask 0022
 REPO=/srv/repo
 KEY_EMAIL=packages@example.com
 
-# Other prose pages' setups also configure apt, and `npm run replay` runs every page in one
-# sandbox, so a source left behind by an earlier page changes what this one sees. Each page
-# normalises the sources and preferences directories to exactly what it needs.
+# This page's own blocks add a repository and pin it, and the restore between blocks only empties
+# the working directory. So both directories are swept back to what the image ships before the
+# ones this page wants are written below, or a block sees what the block before it added.
 find /etc/apt/sources.list.d -name '*.sources' ! -name 'debian.sources' -delete 2>/dev/null
 rm -f /etc/apt/preferences.d/*
 
@@ -62,11 +62,11 @@ if [ ! -f "$REPO/dists/stable/InRelease" ]; then
   gpg --batch --quiet --passphrase "" --pinentry-mode loopback \
     --quick-generate-key "Example Vendor <$KEY_EMAIL>" default default never
   gpg --armor --export "$KEY_EMAIL" > "$REPO/vendor-key.asc"
-  # --local-user, not the keyring default: `npm run replay` runs every page in one sandbox,
-  # and any other page that generates a signing key would otherwise become the default and
-  # sign this repository with the wrong one. apt then reports the repository as unsigned,
-  # naming a key id that appears nowhere. Exactly that happened when packages-kept-back
-  # started building a repository of its own.
+  # --local-user, not the keyring default: naming the key means this signs with the key it just
+  # generated whatever else the keyring holds. Relying on the default was a real defect, found
+  # when a second page started building a repository of its own, and its symptom is worth
+  # knowing because it points nowhere near the cause: apt reports the repository as unsigned and
+  # names a key id that appears nowhere on the system.
   gpg --batch --yes --local-user "$KEY_EMAIL" --clearsign -o "$REPO/dists/stable/InRelease" "$REPO/dists/stable/Release"
 fi
 
@@ -74,11 +74,10 @@ fi
 # actually type. 127.0.0.1 for the same reason the curl and wget pages use it: what
 # `localhost` resolves to is a property of the reader's machine.
 #
-# Port 8081, not 8080. The curl, wget, awk, sed, grep and diff pages start
-# scripts/fixtures/http-mock.py on 8080 and nothing stops it afterwards, so in a full
-# `npm run replay` (one sandbox, every page in turn) 8080 is already taken by the time this
-# page runs. Alone it passed; in the batch the bind failed silently and apt found no
-# repository. Hence the hard failure below rather than another silent one.
+# Port 8081, not 8080, which scripts/fixtures/http-mock.py uses. Only this page's own listener
+# can reach this port now, but the check below stays a hard failure: a bind that fails silently
+# leaves apt finding no repository, which reads as a page that has drifted rather than as a
+# fixture that never came up.
 if ! curl -sf http://127.0.0.1:8081/dists/stable/InRelease >/dev/null 2>&1; then
   ( python3 -m http.server 8081 --directory "$REPO" --bind 127.0.0.1 >/dev/null 2>&1 & )
   for _ in $(seq 1 50); do
@@ -112,8 +111,8 @@ rm -f /etc/apt/preferences.d/example-vendor
 # Snapshot comments are an artifact of the container image, not something a reader has.
 sed -i '/^# http:\/\/snapshot\.debian\.org/d' /etc/apt/sources.list.d/debian.sources
 
-# Rebuilt when the previous page left different sources configured, which is once per page
-# rather than once per documented output.
+# Fetched once per container rather than once per documented output: this script runs before
+# every one of them, and each fetch is seconds of network.
 STATE=/var/lib/apt/.fixture-page
 if [ "$(cat $STATE 2>/dev/null)" != "third-party-repositories" ]; then
   apt-get update >/dev/null 2>&1
