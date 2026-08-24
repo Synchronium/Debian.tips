@@ -12,38 +12,31 @@ sections:
     intro: "`aux` is BSD syntax and `-ef` is UNIX syntax. Both select every process; they differ in which columns they print. PIDs and times below are from one run and will differ on your machine."
     examples:
       - title: "List every process, BSD style"
-        code: ps aux | head -5
+        code: ps aux | head -4
         description: "The listing people reach for most. `a` drops the same-user restriction, `u` asks for the user-oriented columns, and `x` includes processes with no controlling terminal, which is most daemons."
-        volatile: "the PIDs, the start times and the CPU and memory figures are specific to your machine"
+        volatile: "the PIDs, start times and CPU and memory figures are specific to your machine, as is which process follows `cron`"
         compare: shape
         output: |2
           USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
-          root           1  0.0  0.3  23028 12996 ?        Ss   10:13   0:00 /lib/systemd/systemd
-          root          35  0.0  0.3  34788 12256 ?        Ss   10:13   0:00 /usr/lib/systemd/systemd-journald
-          root          93  0.0  0.0   4400  2464 ?        Ss   10:13   0:00 /usr/sbin/cron -f
-          root          99  0.0  0.0   4728  2156 tty1     Ss+  10:13   0:00 /sbin/agetty -o -- \u --noreset --noclear - linux
+          root           1 21.1  0.3  23028 12988 ?        Ss   11:43   0:00 /lib/systemd/systemd
+          root          35 18.5  0.3  34788 12200 ?        Ss   11:43   0:00 /usr/lib/systemd/systemd-journald
+          root          87  0.0  0.0   4400  2484 ?        Ss   11:44   0:00 /usr/sbin/cron -f
         level: basic
       - title: "List every process, UNIX style"
-        code: ps -ef | head -5
+        code: ps -ef | head -4
         description: "The same set of processes with a different column choice. `-e` selects everything and `-f` asks for the full-format listing, whose distinguishing column is `PPID`, the parent process id."
-        volatile: "the PIDs and start times are specific to your machine"
+        volatile: "the PIDs and start times come from one run, and your machine will list different processes after `cron`"
         compare: shape
         output: |2
           UID          PID    PPID  C STIME TTY          TIME CMD
-          root           1       0  0 10:13 ?        00:00:00 /lib/systemd/systemd
-          root          35       1  0 10:13 ?        00:00:00 /usr/lib/systemd/systemd-journald
-          root          93       1  0 10:13 ?        00:00:00 /usr/sbin/cron -f
-          root          99       1  0 10:13 tty1     00:00:00 /sbin/agetty -o -- \u --noreset --noclear - linux
+          root           1       0 20 11:43 ?        00:00:00 /lib/systemd/systemd
+          root          35       1 18 11:43 ?        00:00:00 /usr/lib/systemd/systemd-journald
+          root          87       1  0 11:44 ?        00:00:00 /usr/sbin/cron -f
         level: basic
       - title: "List everything the init system started"
-        code: ps --ppid 1 -o comm= | sort
-        description: "`--ppid 1` selects the children of PID 1, which is close to a list of the machine's daemons. `-o comm=` prints the name alone and the `=` suppresses the header, so the result needs no further tidying."
+        code: ps --ppid 1 -o comm= | sort -u
+        description: "`--ppid 1` selects the children of PID 1, which is close to a list of the machine's daemons. `sort -u` collapses the duplicates, which is worth doing here because there is one `agetty` per virtual console and the number of consoles varies between machines."
         output: |
-          agetty
-          agetty
-          agetty
-          agetty
-          agetty
           agetty
           cron
           sshd
@@ -77,22 +70,11 @@ sections:
         output: |
           cron
         level: basic
-      - title: "List the virtual consoles waiting for a login"
-        code: ps -o tty=,comm= -C agetty | sort
-        description: "One `agetty` per virtual console, each holding a `tty` open for someone to log in on. `sort` is here because process order follows PID rather than terminal number."
-        output: |
-          tty1     agetty
-          tty2     agetty
-          tty3     agetty
-          tty4     agetty
-          tty5     agetty
-          tty6     agetty
-        level: basic
       - title: "Count the processes belonging to one command"
-        code: ps -o comm= -C agetty | wc -l
+        code: ps -o comm= -C tips-backup | wc -l
         description: "Piping a headerless listing into [`wc -l`](/commands/wc/) is the general way to count matches. `pgrep -c` does the same job in one command."
         output: |
-          6
+          2
         level: basic
 
   - title: "Columns and fields"
@@ -233,19 +215,12 @@ sections:
         output: |
           3
         level: intermediate
-      - title: "Show which terminals processes are attached to"
-        code: ps -e -o tty= | sort | uniq -c
-        description: "`?` means no controlling terminal, which is what every daemon looks like. The counts here are one virtual console each plus everything running without a terminal."
-        volatile: "the count of processes with no terminal depends on your machine"
-        compare: shape
-        output: |2
-               11 ?
-                1 tty1
-                1 tty2
-                1 tty3
-                1 tty4
-                1 tty5
-                1 tty6
+      - title: "Check whether a process has a controlling terminal"
+        code: ps -o tty=,comm= -C tips-backup,tips-supervisor | sort -u
+        description: "`?` in the `TTY` column means no controlling terminal. Every daemon shows `?`, while anything started at a prompt shows the terminal it was started from."
+        output: |
+          ?        tips-backup
+          ?        tips-supervisor
         level: intermediate
 
   - title: "Sorting"
@@ -272,24 +247,23 @@ sections:
           sshd             0.1
         level: basic
       - title: "Find the longest-running processes"
-        code: ps -eo comm,etime --sort=-etime --no-headers | head -4
+        code: ps -eo comm,etime --sort=-etime --no-headers | head -3
         description: "Sorting by elapsed time picks out whatever started earliest, which on a healthy machine is the boot sequence and on an unhealthy one is often the thing that has hung."
         volatile: "the elapsed times depend on how long your machine has been up"
         compare: shape
         output: |2
-          systemd               25:30
-          systemd-journal       25:29
-          cron                  25:29
-          agetty                25:29
+          systemd               00:01
+          systemd-journal       00:01
+          cron                  00:00
         level: intermediate
       - title: "Find which command has the most processes"
-        code: ps -eo comm= --sort=comm | uniq -c | sort -rn | head -2
+        code: ps -u user -o comm= --sort=comm | uniq -c | sort -rn
         description: "Sorting by name first is what makes [`uniq -c`](/commands/uniq/) able to count, since it only collapses adjacent lines. The second `sort` puts the largest count first."
         volatile: "the commands and counts depend on what your machine is running"
         compare: shape
         output: |2
-                6 agetty
                 2 tips-backup
+                1 tips-supervisor
         level: intermediate
       - title: "Group processes by state"
         code: ps -e -o stat=,comm= --sort=stat | head -4
@@ -302,15 +276,15 @@ sections:
           Ss   systemd-journal
           Ss   cron
         level: advanced
-      - title: "List the distinct daemons, in name order"
-        code: ps --ppid 1 -o comm= --sort=comm | uniq
-        description: "`--sort` orders the listing itself, so [`uniq`](/commands/uniq/) collapses the six `agetty` entries without a separate sort step."
+      - title: "List the daemons in reverse name order"
+        code: ps --ppid 1 -o comm= --sort=-comm | uniq
+        description: "A leading `-` reverses the sort, on a name as much as on a number. `--sort` orders the listing itself, so [`uniq`](/commands/uniq/) collapses the repeats without a separate sort step."
         output: |
-          agetty
-          cron
-          sshd
-          systemd-journal
           tips-supervisor
+          systemd-journal
+          sshd
+          cron
+          agetty
         level: intermediate
       - title: "Order threads by count"
         code: ps -e -o comm=,nlwp= --sort=-nlwp | head -3

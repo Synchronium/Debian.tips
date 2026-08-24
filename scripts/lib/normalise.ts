@@ -139,7 +139,7 @@ export function normalise(text: string): string {
  *                                         needs, so the count of them is itself volatile
  *    weekday    Mon, Tue                  clock-derived, and not digits
  *    month      Jan, Feb                  the same
- *    identifier 59fc699d36de4013          an invocation or container id
+ *    identifier 59fc699d36de4013          an invocation or container id: hex, and never all digits
  *    digits     87, 4699                  a pid, a limit, a count
  *    padding    two spaces vs five        a column shifts when its number changes width
  *
@@ -155,7 +155,11 @@ export function shapeOf(text: string): string {
       .replace(/Q( Q)+/g, "Q")
       .replace(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/g, "D")
       .replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/g, "M")
-      .replace(/\b[0-9a-f]{8,}\b/gi, "x")
+      // An identifier is hex, so it must contain a hex letter. Matching bare length instead makes
+      // a number's *width* decide how it is compared: `lsof`'s DEVICE column is a socket inode,
+      // seven digits on a freshly booted machine and eight once it has been up a while, and one
+      // would compare as a number while the other compared as an identifier.
+      .replace(/\b(?=[0-9a-f]{8,}\b)[0-9a-f]*[a-f][0-9a-f]*\b/gi, "x")
       .replace(/\d+/g, "0")
       .replace(/[ \t]+/g, " ")
   );

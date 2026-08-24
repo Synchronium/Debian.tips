@@ -208,6 +208,19 @@ describe("shapeOf", () => {
     expect(shapeOf(failed)).not.toBe(shapeOf(status("87", "10:24:34", "288K")));
   });
 
+  /* A number stays a number however wide it gets. `lsof`'s DEVICE column is a socket inode, and
+   * it crosses from seven digits to eight as a machine stays up, so comparing the width rather
+   * than the kind made a page pass or fail on how much had run before it. */
+  it("compares a decimal the same way at any width", () => {
+    expect(shapeOf("1792818")).toBe(shapeOf("10225366"));
+    expect(shapeOf("10225366")).toBe("0");
+  });
+
+  it("still masks a hex identifier", () => {
+    expect(shapeOf("59fc699d36de4013")).toBe("x");
+    expect(shapeOf("59fc699d36de4013")).toBe(shapeOf("ffffffffffffffff"));
+  });
+
   it("holds a quantity and its unit together, so 261ms and 2min agree", () => {
     expect(shapeOf("     Active: active (running) since Mon 2026-08-17 11:01:48 UTC; 261ms ago")).toBe(
       shapeOf("     Active: active (running) since Tue 2026-09-01 04:12:07 UTC; 2min ago"),
