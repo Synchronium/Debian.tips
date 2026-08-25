@@ -39,7 +39,9 @@ sections:
         level: basic
       - title: "Check the installed ssh version"
         code: ssh -V
-        description: "Prints the OpenSSH and OpenSSL versions in use, useful when a flag doesn't behave as documented and you suspect an older build."
+        description: "Prints the OpenSSH and OpenSSL versions in use, useful when a flag doesn't behave as documented and you suspect an older build. Note that both are printed on standard error, so `ssh -V | grep OpenSSL` finds nothing and `ssh -V 2>&1 | grep OpenSSL` works."
+        volatile: "the two version numbers and the OpenSSL release date are whatever your Debian ships"
+        compare: shape
         output: |2
           OpenSSH_10.0p2 Debian-7+deb13u4, OpenSSL 3.5.6 7 Apr 2026
         level: basic
