@@ -142,11 +142,11 @@ Read the list before agreeing to it. If something on it should stay, say so:
 ```bash
 sudo apt remove -y cowsay-off > /dev/null
 sudo apt-mark manual cowsay
-apt autoremove --dry-run | grep "Removing:"
+apt autoremove --dry-run | grep -A1 REMOVING || echo "nothing to remove"
 ```
 ```
 cowsay set to manually installed.
-  Upgrading: 0, Installing: 0, Removing: 0, Not Upgrading: 0
+nothing to remove
 ```
 
 `apt-mark manual` is not a hold and does not pin a version. It records that you want this
