@@ -3,6 +3,7 @@
 //   npm run replay                 # every page
 //   npm run replay -- wget curl    # just these
 //   npm run replay -- --changed    # only the pages a diff touches (what CI runs on a PR)
+//   npm run replay -- --shard=2/4  # one part of whichever of those two a run selected
 //
 // The check `npm run check` can't make: that gate validates shape (schema, links, types)
 // and would pass a page claiming output no command ever produced.
@@ -73,6 +74,15 @@ if (recordTimings && (shard.total > 1 || onlyChanged || args.some((a) => !a.star
 }
 
 const requestedPages = args.filter((arg) => !arg.startsWith("-"));
+
+// Naming pages and then sharding them replays whichever of them the split happened to put in this
+// shard, and none at all in the other shards, each exiting 0. `--changed` is the combination that
+// is meant: it selects a set, and CI shards that set across its runners.
+if (shard.total > 1 && requestedPages.length) {
+  console.error("replay: --shard splits a whole run, so it cannot be combined with named pages.");
+  console.error(`  Drop --shard to replay ${requestedPages.join(", ")} directly.`);
+  process.exit(2);
+}
 
 // Prose pages state their claims as Markdown fences rather than YAML, so the two kinds run
 // through different replays.
@@ -324,18 +334,36 @@ for (const name of runnable) {
 }
 
 const seconds = Math.round((Date.now() - started) / 1000);
-console.log(`\n${runnable.length - failed.length}/${runnable.length} pages replay exactly (${seconds}s)`);
+const inShard = shard.total > 1 ? ` in shard ${shard.index}/${shard.total}` : "";
+console.log(
+  `\n${runnable.length - failed.length}/${runnable.length} pages replay exactly${inShard} (${seconds}s)`,
+);
+// A page with no setup script belongs to no shard, so this list is every such page in the whole
+// selection rather than this shard's share of them. Two counts a line apart that cover different
+// populations read as one, so the sharded run says which is which.
 if (unfixtured.length) {
-  console.log(`not replayed, no scripts/fixtures/<slug>.sh: ${unfixtured.join(", ")}`);
+  const scope = shard.total > 1 ? " by any shard" : "";
+  console.log(`not replayed${scope}, no scripts/fixtures/<slug>.sh: ${unfixtured.join(", ")}`);
 }
 
 if (recordTimings) {
-  // Sorted by name rather than by duration, so the diff between two recordings reads as "what
-  // changed" rather than as a reordering.
-  const sorted = Object.fromEntries([...elapsed].sort(([a], [b]) => a.localeCompare(b)));
-  writeFileSync(REPLAY_TIMINGS_FILE, `${JSON.stringify(sorted, null, 2)}\n`);
-  console.log(`Recorded ${elapsed.size} page times in ${relative(ROOT, REPLAY_TIMINGS_FILE)}`);
-  console.log("These only balance --shard. A stale figure costs wall clock, never coverage.");
+  // A page whose sandbox never started has no time to record, and writing the file without it
+  // drops that page to the default of a couple of seconds. The heavy pages are exactly the ones
+  // worth balancing, so losing one costs the next run roughly that page's whole duration on
+  // whichever shard it lands in. Refusing to write leaves the previous figures in place, which
+  // are merely stale rather than wrong.
+  const unrecorded = runnable.filter((name) => !elapsed.has(name));
+  if (unrecorded.length) {
+    console.error(`\nNot recording timings: no time for ${unrecorded.join(", ")}.`);
+    console.error(`  ${relative(ROOT, REPLAY_TIMINGS_FILE)} is unchanged. Re-run once the run is clean.`);
+  } else {
+    // Sorted by name rather than by duration, so the diff between two recordings reads as "what
+    // changed" rather than as a reordering.
+    const sorted = Object.fromEntries([...elapsed].sort(([a], [b]) => a.localeCompare(b)));
+    writeFileSync(REPLAY_TIMINGS_FILE, `${JSON.stringify(sorted, null, 2)}\n`);
+    console.log(`Recorded ${elapsed.size} page times in ${relative(ROOT, REPLAY_TIMINGS_FILE)}`);
+    console.log("These only balance --shard. A stale figure costs wall clock, never coverage.");
+  }
 }
 if (failed.length) {
   console.log(`\nfailing: ${failed.join(", ")}`);

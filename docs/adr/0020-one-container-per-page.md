@@ -54,8 +54,9 @@ Two things follow, and both are removals rather than additions:
   interactions. With a container per page the order cannot reach any result, so a shuffled run is
   a gate that can never fail, which is worse than no gate: it reads as coverage.
 - **The `replay-shuffled` CI job is gone.** Same reason. ADR-0003 is edited rather than
-  superseded: its decision was that replay is a separate job and that deploy is gated on the
-  whole workflow, and both still hold with one replay job instead of two.
+  superseded: its decision was that replay is separate from `check` and that deploy is gated on
+  the whole workflow, and both hold whatever the replay is made of, which is why sharding it into
+  four later did not disturb them either.
 
 The corollary ADR-0002 recorded still holds and matters more now: **tools the site documents are
 installed in the sandbox image, not by the page that documents them.** The image is the only
@@ -150,12 +151,12 @@ wait for: pages are independent, so distributing them changes only speed. `npm r
 `--shard=<i>/<n>`, and CI runs four shards on four runners, 254 seconds serial against 64 for the
 slowest shard.
 
-The prediction that the ceiling is one page held exactly. `apt` alone is 58 seconds, so four
-shards land on that floor and six measured the same number while spending two more runners. What
-this record got wrong is the shape of the risk: it framed parallelising as a change to *what is
-tested*, which was true of the shared sandbox and is not true now. The risk that replaced it is a
-page belonging to no shard, which is a partition problem rather than a contamination one, and
-`test/replayShard.test.ts` holds it.
+The prediction that the ceiling is one page held exactly. `apt` alone is 58 seconds, and five
+shards reach that floor while every count above five stays on it; four comes within 6 seconds of
+it for one runner fewer. What this record got wrong is the shape of the risk: it framed
+parallelising as a change to *what is tested*, which was true of the shared sandbox and is not
+true now. The risk that replaced it is a page belonging to no shard, which is a partition problem
+rather than a contamination one, and `test/replayShard.test.ts` holds it.
 
 Revisit again when the slowest single page dominates the shard budget rather than merely setting
 it. At that point the lever is that page's setup script, not more runners.

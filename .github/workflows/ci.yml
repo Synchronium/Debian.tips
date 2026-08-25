@@ -41,10 +41,11 @@ jobs:
   replay:
     runs-on: ubuntu-latest
     # Four shards, each on its own runner, replaying a quarter of the site. Serial it is 254
-    # seconds; split four ways the slowest shard is 64 (measured 2026-08-24). Four rather than
-    # more because the floor is one page: `apt` alone is 58 seconds, so no split beats it, and
-    # the four-way split lands on that floor almost exactly. Six shards measured the same 58 as
-    # four and spent two more runners doing it.
+    # seconds; split four ways the slowest shard is 64 (measured 2026-08-24). The floor is one
+    # page, because a page is never split: `apt` alone is 58 seconds, so no number of shards
+    # beats that. Five shards reach it exactly and every count above five stays there, so the
+    # whole question is whether the last 6 seconds are worth a fifth runner and the image build
+    # that comes with it. They are not, which is what picks four.
     #
     # Each shard is its own runner, so this is not the CPU contention that has produced false
     # failures here before (.claude/skills/ship/SKILL.md): that is about two heavy jobs sharing
@@ -52,11 +53,21 @@ jobs:
     #
     # Which pages a shard takes is decided by scripts/lib/replayShard.ts, balanced from recorded
     # timings. Deploy keys off the whole workflow's conclusion, so every shard has to pass.
+    #
+    # The shard list below is the only place this workflow writes the count; the expressions read
+    # it back as `strategy.job-total`, so changing the split is editing one line here. The prose
+    # above and in docs/adr/0003 still names the number, because it is reasoning about the choice
+    # rather than repeating a constant, and a different number wants different reasoning.
+    #
+    # That one-line property holds only while `shard` is the sole matrix dimension and nothing is
+    # added by `include`. `job-total` counts jobs rather than shard values, so a second dimension
+    # would push it past the last shard, and the run would replay a fraction of the pages while
+    # reporting success.
     strategy:
       fail-fast: false
       matrix:
         shard: [1, 2, 3, 4]
-    name: replay (${{ matrix.shard }}/4)
+    name: replay (${{ matrix.shard }}/${{ strategy.job-total }})
     # The budget is for building the sandbox image on a cold runner, plus room for a hung example
     # that somehow escapes the per-example timeout.
     timeout-minutes: 15
@@ -83,7 +94,7 @@ jobs:
       # whole site, so nothing is deployed on the strength of a partial run.
       #
       # The pull-request run is sharded too. Most diffs give it fewer pages than there are
-      # shards, so most of these four report an empty shard and exit 0, which costs a runner
+      # shards, so most of these jobs report an empty shard and exit 0, which costs a runner
       # doing nothing and keeps one code path rather than two.
       #
       # There is no second, differently-ordered job beside these any more. Under ADR-0020 every
@@ -91,9 +102,9 @@ jobs:
       # job that varied it would be a gate that can never fail.
       - name: Replay the changed pages
         if: github.event_name == 'pull_request'
-        run: npm run replay -- --changed --shard=${{ matrix.shard }}/4
+        run: npm run replay -- --changed --shard=${{ matrix.shard }}/${{ strategy.job-total }}
         env:
           REPLAY_DIFF_BASE: origin/${{ github.base_ref }}
       - name: Replay every page
         if: github.event_name != 'pull_request'
-        run: npm run replay -- --shard=${{ matrix.shard }}/4
+        run: npm run replay -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}

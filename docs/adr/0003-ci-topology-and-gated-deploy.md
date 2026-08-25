@@ -19,14 +19,17 @@ reproduced, and the badge and the site disagreed.
 
 ## Decision
 
-CI runs two jobs in parallel:
+CI runs two kinds of job in parallel:
 
 - **`check`**: format, typecheck (both configs), tests, build, pagefind, linkcheck, link audit,
   then `pa11y-ci` against the built site. Needs nothing but Node. This is exactly what
   `npm run check` runs locally, and it sets `NODE_ENV=production` itself so drafts are excluded in
   both places.
 - **`replay`**: builds the sandbox image, then replays pages, each in a container of its own. A
-  pull request replays only what its diff touched; a push to `main` replays everything.
+  pull request replays only what its diff touched; a push to `main` replays everything. It is a
+  matrix of four shards on four runners, each taking a share of the pages balanced by recorded
+  timings; `scripts/lib/replayShard.ts` decides which pages, and `test/replayShard.test.ts` holds
+  the property that every page lands in exactly one shard.
 
 There was a third job, `replay-shuffled`, which replayed the whole site again in a seeded random
 order. [ADR-0020](0020-one-container-per-page.md) removed it: pages no longer share a container,
@@ -51,11 +54,20 @@ Pinning to `head_sha` closes a real hole: a `workflow_run` job otherwise checks 
 default branch, so a quick second push would be deployed under the previous run's approval, having
 been verified by nothing. `workflow_dispatch` stays available for a manual re-deploy.
 
+The gate survives the replay being a matrix because it keys off the workflow's conclusion rather
+than naming jobs: a workflow whose shards do not all succeed does not conclude successfully, so
+adding or removing a shard cannot quietly widen what gets deployed. A gate that listed job names
+would have to be edited every time the shard count moved, and would deploy on a stale list if
+nobody remembered.
+
 ## Revisit when
 
-Image build time comes to dominate a replay job. It is around 22 seconds against roughly 290 for a
-full replay, and the workflow builds the image as its own step precisely so the log says which half
-any slowness is in. Caching the image is the next lever and is not worth its failure modes yet.
+Image build time comes to dominate a replay job. Sharding cut the replay half of that job to
+around 64 seconds against an image build of roughly 22, so the build is now about a quarter of a
+shard rather than a fourteenth of a single serial job, and it is the half that does not shrink
+when a shard is added. The workflow builds the image as its own step precisely so the log says
+which half any slowness is in. Caching the image is the next lever, and it is closer to worth its
+failure modes than it was.
 
 ADR-0020's "Revisit when" covers the other half, which is what to do about the replay's total run
-time now that there is one replay job rather than two.
+time, and records why four shards rather than more.
