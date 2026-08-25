@@ -19,7 +19,13 @@
 /** The tokens a mask can introduce. The replay rejects a page containing one: they belong to a
  *  comparison, and on a page they would read as literal placeholders and match any future
  *  output for ever. */
-export const MASK_TOKENS: readonly string[] = ["<TIMESTAMP>", "<RATE>", "<VOLATILE>", "<ELAPSED>"];
+export const MASK_TOKENS: readonly string[] = [
+  "<TIMESTAMP>",
+  "<RATE>",
+  "<VOLATILE>",
+  "<ELAPSED>",
+  "<VERSION>",
+];
 
 /** Timestamps, each anchored to the column of the command that emits it.
  *
@@ -65,6 +71,31 @@ const rates = (s: string): string =>
  * scripts/fixtures/http-mock.py, which pins its own Date and Last-Modified so those lines
  * can be published and checked like any other. `<VOLATILE>` has no producer for that
  * reason, and stays in MASK_TOKENS so the guard still recognises it on an older page. */
+
+/** The version of a tool the sandbox image installed, which moves with a Debian point release
+ *  and with nothing a page controls. OpenSSL going 3.5.6 to 3.5.7 in the image failed the ssh
+ *  page on a line whose every character was a version number.
+ *
+ *  Anchored to the exact text that prints each one, which is what keeps the mask honest. The
+ *  tool's *name* is part of every anchor and is never masked, so a curl that stopped identifying
+ *  itself as curl, or an OpenSSH linked against something other than OpenSSL, still fails: the
+ *  line no longer matches, so it is not masked, and an unmasked line cannot equal a masked one.
+ *
+ *  `ssh -V`            ->  OpenSSH_10.0p2 Debian-7+deb13u4, OpenSSL 3.5.6 7 Apr 2026
+ *  the curl page       ->  "User-Agent": "curl/8.14.1"
+ *  the wget page       ->  "User-Agent": "Wget/1.25.0"
+ *
+ *  Not masked: the `-A` and `--user-agent` examples on those pages, whose value the page chooses
+ *  and must therefore keep checking. Those print a lowercase `"user-agent"` from a different
+ *  endpoint, and name neither tool, so neither anchor reaches them.
+ *
+ *  Package versions in `apt` and `dpkg` output are the same kind of value and are deliberately
+ *  not here: anchoring them means matching apt's listing formats rather than one literal string,
+ *  and `apt-cache` is about to be written. */
+const versions = (s: string): string =>
+  s
+    .replace(/^OpenSSH_[^,\n]*, OpenSSL \S+ \d{1,2} [A-Z][a-z]{2} \d{4}$/gm, "<VERSION>")
+    .replace(/("User-Agent": "(?:curl|Wget)\/)[^"\n]+/g, "$1<VERSION>");
 
 /** wget redraws its progress bar with carriage returns and sizes it to the terminal, so no
  *  single frame is worth publishing. Matched one line at a time, never across lines.
@@ -121,9 +152,10 @@ export function stripArtifacts(text: string): string {
  *  any future output for ever.
  *
  *  Order matters: `rates` matches wget's summary line only after `timestamps` has replaced the
- *  stamp that opens it. */
+ *  stamp that opens it. `versions` is independent of both, and anchored tightly enough that it
+ *  would be whatever it ran on. */
 export function normalise(text: string): string {
-  return rates(timestamps(stripArtifacts(text)));
+  return versions(rates(timestamps(stripArtifacts(text))));
 }
 
 /** Reduces output to its structure, for an example declared `volatile:`, one whose output

@@ -104,6 +104,45 @@ describe("normalise: what gets compared", () => {
     expect(normalise(before)).not.toBe(normalise(after));
   };
 
+  /* Tool versions move with a Debian point release and with nothing a page controls: OpenSSL
+   * going 3.5.6 to 3.5.7 in the sandbox image failed the ssh page. What the mask must not do is
+   * stop checking the tool's identity, or reach a version a page chose for itself. */
+  it("masks the versions ssh -V prints", () => {
+    changes(
+      "OpenSSH_10.0p2 Debian-7+deb13u4, OpenSSL 3.5.6 7 Apr 2026",
+      "OpenSSH_10.0p2 Debian-7+deb13u4, OpenSSL 3.5.7 9 Jun 2026",
+    );
+  });
+
+  it("still fails when ssh -V stops naming OpenSSL", () => {
+    // The anchor is the check: a line that no longer matches is not masked, and an unmasked
+    // line cannot equal a masked one. Without this the mask would accept any rewrite of the line.
+    differs(
+      "OpenSSH_10.0p2 Debian-7+deb13u4, OpenSSL 3.5.6 7 Apr 2026",
+      "OpenSSH_10.0p2 Debian-7+deb13u4, LibreSSL 3.5.6 7 Apr 2026",
+    );
+  });
+
+  it("masks the version curl and wget report in their own User-Agent", () => {
+    changes('    "User-Agent": "curl/8.14.1"', '    "User-Agent": "curl/8.15.0"');
+    changes('    "User-Agent": "Wget/1.25.0",', '    "User-Agent": "Wget/1.26.1",');
+    // The tool's name is outside the mask, so one tool cannot pass as another.
+    differs('    "User-Agent": "curl/8.14.1"', '    "User-Agent": "Wget/8.14.1"');
+  });
+
+  it("leaves a User-Agent the page chose alone", () => {
+    // The -A and --user-agent examples document a value the page picked, so it stays checked.
+    differs('    "user-agent": "MyScript/1.0"', '    "user-agent": "MyScript/2.0"');
+    differs('    "User-Agent": "MyScript/1.0"', '    "User-Agent": "MyScript/2.0"');
+  });
+
+  it("leaves a version in a file the page is showing alone", () => {
+    // The reason every mask here is anchored: an unanchored version rule would also rewrite
+    // fixture contents, and a page could then show a file that had drifted and still pass.
+    differs("requires curl/8.14.1 or newer", "requires curl/8.15.0 or newer");
+    differs("OpenSSH_10.0p2 was released in April", "OpenSSH_10.1p1 was released in April");
+  });
+
   it("masks the mtime in a diff header but not the diff body", () => {
     changes(
       "--- nginx-old.conf\t2026-08-14 09:15:00.000000000 +0000",

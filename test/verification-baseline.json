@@ -134,7 +134,7 @@
   },
   "commands/ssh": {
     "checked": 11,
-    "byShape": 1,
+    "byShape": 0,
     "exempt": 8,
     "fixtures": 2,
     "unpaired": 0

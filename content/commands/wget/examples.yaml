@@ -250,7 +250,7 @@ sections:
         level: intermediate
       - title: "Set the User-Agent"
         code: wget -q -O - --user-agent="MyScript/1.0" http://127.0.0.1:8080/user-agent
-        description: "`--user-agent` replaces the default `Wget/1.25.0` string, which some servers refuse outright."
+        description: "`--user-agent` replaces the default, which names wget and the version installed, and which some servers refuse outright."
         output: |2
           {
             "user-agent": "MyScript/1.0"
