@@ -35,6 +35,8 @@ the sandbox and diffs the real result against what the page claims:
 
 ```sh
 npm run replay              # every page, each in a sandbox of its own (ADR-0020)
+npm run replay -- --shard=2/4        # a quarter of them; CI runs four shards on four runners
+npm run replay -- --record-timings   # full run, and rewrite what balances those shards
 npm run replay -- wget curl # just these
 
 # or drive one page directly, which is what the above does per page:
@@ -42,12 +44,21 @@ name=$(scripts/sandbox.sh start)
 npx tsx scripts/replay-command-page.ts "$name" wc scripts/fixtures/wc.sh   # -> "wc (as root): 25/25 ..."
 ```
 
-`npm run replay` runs in CI as its own job (`.github/workflows/ci.yml`), in parallel with the
-`check` job, because "the generator is broken" and "a page is lying" want different people looking
-at them. It stays out of `npm run check` so that command needs nothing but Node: the replay needs
-Docker, and a check you can't run without a daemon isn't one to fold into the everyday gate. All
-the whole site replays in roughly four and a half minutes; a cold CI run adds building the sandbox
-image, which the workflow does as its own step so the log says which half any slowness is in.
+`npm run replay` runs in CI separately from the `check` job (`.github/workflows/ci.yml`), as four
+sharded jobs in parallel with it, because "the generator is broken" and "a page is lying" want
+different people looking at them. It stays out of `npm run check` so that command needs nothing but
+Node: the replay needs Docker, and a check you can't run without a daemon isn't one to fold into
+the everyday gate. Serially the whole site replays in roughly four and a half minutes, and the
+slowest CI shard in about a minute; a cold run adds building the sandbox image, which the workflow
+does as its own step so the log says which half any slowness is in.
+
+`--shard` takes a whole run and hands one part of it back, balanced from the timings in
+`scripts/lib/replayShard.ts`'s recorded file, so it composes with `--changed` but not with named
+pages, which it refuses rather than replaying some arbitrary subset of them. A single shard is
+worth running by hand to reproduce what a red CI shard ran. Starting several at once on one
+machine is not: that is the contention `.claude/skills/ship/SKILL.md` §1 records, where
+`packages-kept-back` and `release-channels` report as lying because their local apt repository
+times out under load. CI does not hit it because each shard has a runner to itself.
 
 That invocation is correct for every page. Some pages have to replay as the unprivileged
 `user`, meaning anything printing file ownership (`tar -tvf`, `ls -l`) or documenting a permission

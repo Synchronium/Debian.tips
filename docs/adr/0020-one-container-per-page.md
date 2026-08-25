@@ -3,7 +3,7 @@
 - **Status:** Accepted, with a deferred follow-up
 - **Recorded:** 2026-08-24
 - **Supersedes:** [ADR-0002](0002-one-shared-sandbox-serial.md)
-- **Enforced by:** `scripts/replay-all.ts`, which starts and stops a sandbox around each page; `scripts/sandbox.sh`; the single `replay` job in `.github/workflows/ci.yml`
+- **Enforced by:** `scripts/replay-all.ts`, which starts and stops a sandbox around each page; `scripts/sandbox.sh`; the sharded `replay` job in `.github/workflows/ci.yml`; `test/replayShard.test.ts`, which holds the partition the sharding depends on
 
 ## Context
 
@@ -54,8 +54,9 @@ Two things follow, and both are removals rather than additions:
   interactions. With a container per page the order cannot reach any result, so a shuffled run is
   a gate that can never fail, which is worse than no gate: it reads as coverage.
 - **The `replay-shuffled` CI job is gone.** Same reason. ADR-0003 is edited rather than
-  superseded: its decision was that replay is a separate job and that deploy is gated on the
-  whole workflow, and both still hold with one replay job instead of two.
+  superseded: its decision was that replay is separate from `check` and that deploy is gated on
+  the whole workflow, and both hold whatever the replay is made of, which is why sharding it into
+  four later did not disturb them either.
 
 The corollary ADR-0002 recorded still holds and matters more now: **tools the site documents are
 installed in the sandbox image, not by the page that documents them.** The image is the only
@@ -95,6 +96,12 @@ free rather than that it pays for itself.
 
 Deleting the `replay-shuffled` job returns a whole runner, so total CI machine time for replay
 work falls even though the one remaining job is slower.
+
+**Independent pages are shardable pages**, which is the second consequence and is why the
+"Revisit when" below was acted on the same day. `--shard=<i>/<n>` splits the run across runners,
+and it is sound only because of this record: a shard is a subset, and under the shared sandbox a
+subset was a different experiment from the whole, since the pages missing from it were also the
+pages that had been contaminating it.
 
 **A container can outlive an interrupted run, so the run sweeps before it starts.** Tearing down
 after each page covers the ordinary paths and a handler covers an interrupt between pages, but
@@ -138,11 +145,21 @@ being true.
 
 ## Revisit when
 
-A full replay exceeds roughly ten minutes of CI wall clock. The lever is parallelising across
-several containers at once, which is now a much smaller change than ADR-0002 could contemplate:
-pages are already independent, so distributing them changes only speed, and none of the three
-prerequisites that record listed still applies. The ceiling is set by one page (`apt`), so expect
-roughly 3.5x rather than the worker count.
+**Taken already, 2026-08-24, ahead of the ten-minute trigger this record originally set.** The
+lever named here was parallelising across containers, and it turned out to be cheap enough not to
+wait for: pages are independent, so distributing them changes only speed. `npm run replay` grew
+`--shard=<i>/<n>`, and CI runs four shards on four runners, 254 seconds serial against 64 for the
+slowest shard.
+
+The prediction that the ceiling is one page held exactly. `apt` alone is 58 seconds, and five
+shards reach that floor while every count above five stays on it; four comes within 6 seconds of
+it for one runner fewer. What this record got wrong is the shape of the risk: it framed
+parallelising as a change to *what is tested*, which was true of the shared sandbox and is not
+true now. The risk that replaced it is a page belonging to no shard, which is a partition problem
+rather than a contamination one, and `test/replayShard.test.ts` holds it.
+
+Revisit again when the slowest single page dominates the shard budget rather than merely setting
+it. At that point the lever is that page's setup script, not more runners.
 
 Also revisit if the per-page `apt-get update` grows beyond a few seconds. Baking the package lists
 into the image was considered and rejected: the lists would be as old as the last image build,

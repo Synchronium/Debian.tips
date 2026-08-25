@@ -103,9 +103,10 @@ than being quietly dropped.
 `.github/workflows/ci.yml` runs on every pull request and push to `main`, as parallel jobs:
 
 - **check**: typecheck, tests, build, linkcheck, then `pa11y-ci` against the built site.
-- **replay**: every documented `output:` block re-run for real inside a disposable Debian
-  container and diffed against the page, a container per page. Separate because it needs Docker,
-  and because "the generator is broken" and "a page is lying" are different problems.
+- **replay**, four of them: every documented `output:` block re-run for real inside a disposable
+  Debian container and diffed against the page, a container per page, split across four runners.
+  Separate from `check` because it needs Docker, and because "the generator is broken" and "a
+  page is lying" are different problems.
 
 `.github/workflows/deploy.yml` then publishes to GitHub Pages, but only for a commit CI passed:
 it triggers on CI completing successfully and checks out that exact commit, so a red build

@@ -90,13 +90,15 @@ Report what you ran locally and what it said, and move on. If the user later rep
 failure, §5 is how to look into it.
 
 There is nothing worth caching to make waiting cheaper; this was checked on run 32179804758.
-`check` finishes in 48s, and in the `replay` job the sandbox image build is 22s against 4m26s
-for the replay itself, so image caching would take under 10% off the slower job. npm is already
-cached by `setup-node`. If `replay` ever does get slow, the log separates image-build time from
-replay time on purpose, so it will say which half to fix.
+`check` finishes in 48s. The `replay` shards are about 64s of replay each against a 22s image
+build, so image caching is now worth a larger share of that job than it was, and is the next
+lever if it matters. npm is already cached by `setup-node`. The log separates image-build time
+from replay time on purpose, so it will say which half to fix.
 
-CI runs two jobs in parallel (`check` and `replay`) split so a failure says which kind it is:
-"the generator is broken" and "a page is lying" want different people looking at them.
+CI runs `check` and four `replay` shards in parallel, split so a failure says which kind it is:
+"the generator is broken" and "a page is lying" want different people looking at them. A red
+shard names the pages it ran, and `npm run replay -- <page>` reproduces any of them exactly:
+which shard a page landed in never changes its result, only when it ran.
 
 ## 4. Deploy is gated on CI
 

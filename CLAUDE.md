@@ -25,9 +25,15 @@ npm run check    # format, tsc --noEmit, vitest, build, pagefind, linkcheck, lin
 npm run replay   # replay every page's examples, one container each (needs Docker, ~4.5 min warm)
 npm run replay -- --changed        # only the pages your diff touches, which is what CI runs on a PR
 npm run replay -- ls du            # named pages; identical to how the full run replays them
+npm run replay -- --shard=2/4      # one quarter of the pages; CI gives each of the four a runner
 npm run audit:links -- --verbose   # the link graph on its own, advisory findings included
 npm run voice    # prose against .claude/reference/voice.md; a hook runs it per file as you write
 ```
+
+`--shard` exists for CI, which gives each shard a machine of its own. One shard at a time is a
+fine way to reproduce what a red shard ran, but starting the four here at once is the contention
+that makes true pages report as lying (`.claude/skills/ship/SKILL.md` §1): locally, the plain
+`npm run replay` is both faster and honest.
 
 Run `npm run check` before treating any change as done. It's also what CI runs
 (`.github/workflows/ci.yml`), followed by `pa11y-ci` as a separate accessibility gate whose URL
