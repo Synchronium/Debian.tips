@@ -35,9 +35,8 @@ sections:
         level: basic
       - title: "List everything the init system started"
         code: ps --ppid 1 -o comm= | sort -u
-        description: "`--ppid 1` selects the children of PID 1, which is close to a list of the machine's daemons. `sort -u` collapses the duplicates, which is worth doing here because there is one `agetty` per virtual console and the number of consoles varies between machines."
-        output: |
-          agetty
+        description: "`--ppid 1` selects the children of PID 1, which is close to a list of the machine's daemons. `sort -u` does more on a machine with virtual consoles than it does here: each console runs its own `agetty`, so the raw listing repeats that one name five or six times before anything else appears."
+        output: |2
           cron
           sshd
           systemd-journal
@@ -278,13 +277,12 @@ sections:
         level: advanced
       - title: "List the daemons in reverse name order"
         code: ps --ppid 1 -o comm= --sort=-comm | uniq
-        description: "A leading `-` reverses the sort, on a name as much as on a number. `--sort` orders the listing itself, so [`uniq`](/commands/uniq/) collapses the repeats without a separate sort step."
-        output: |
+        description: "A leading `-` reverses the sort, on a name as much as on a number. `--sort` orders the listing itself, so [`uniq`](/commands/uniq/) collapses the repeats without a separate sort step. On a machine with virtual consoles the repeats are the `agetty` processes, one per console."
+        output: |2
           tips-supervisor
           systemd-journal
           sshd
           cron
-          agetty
         level: intermediate
       - title: "Order threads by count"
         code: ps -e -o comm=,nlwp= --sort=-nlwp | head -3

@@ -138,6 +138,13 @@ repo has had was environmental, and the same five causes keep coming back:
   `sort`.
 - **races**: `systemctl start` returns before a `Type=simple` service is ready; journald writes
   asynchronously. A page that passes locally three times can still be racing.
+- **units the page did not start**: anything listing the whole process table inherits the
+  container's boot. The virtual consoles are the repeat offender and have broken the `ps` page
+  twice: how many `agetty` processes there are is a property of the machine (six in the
+  devcontainer, five on a runner), and systemd names a child it has forked `(agetty)` for the
+  window between fork and exec, so a getty restarting mid-listing yields a command name that is
+  not a command name and `sort -u` counts it as a second daemon. The fix is for the page's setup
+  script to mask what it does not want rather than for each example to dodge it.
 - **the page's own earlier examples**: an example installs a package or writes to `/etc`, and a
   later one on the same page reports it. The restore between examples empties the working
   directory and re-runs the setup script; it undoes nothing either of them did elsewhere. The fix

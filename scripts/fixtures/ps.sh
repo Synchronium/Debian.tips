@@ -15,6 +15,23 @@
 # script's `comm` is its own basename while its `args` is the interpreter plus the path, which
 # is the difference the `comm` and `args` examples turn on.
 
+# The virtual consoles are stopped and masked, because they are the part of this container that
+# nothing here controls and every whole-table example would otherwise be built on top of them.
+# They have broken this page twice, in two different ways:
+#
+#   - How many there are is a property of the machine. Six in the devcontainer, five on a GitHub
+#     runner, so seven examples that were counting them passed locally and failed in CI.
+#   - systemd renames a child it has forked to `(agetty)` for the window between fork and exec,
+#     so a getty restarting while `ps` reads the table yields a command name that is not a
+#     command name. `sort -u` then sees `agetty` and `(agetty)` as two daemons. Reproduced here
+#     by restarting a getty in a loop and sampling: state `Rs`, comm `(agetty)`, parent PID 1.
+#
+# Masking the template covers every instance and stops systemd respawning one mid-example, which
+# stopping alone does not. The page says in prose that a machine with consoles shows one `agetty`
+# per console, so the lesson survives without the output depending on it.
+systemctl mask getty@.service console-getty.service serial-getty@.service >/dev/null 2>&1
+systemctl stop 'getty@*.service' console-getty.service 'serial-getty@*.service' >/dev/null 2>&1
+
 # Kill by exact process name, never `pkill -f tips-`. `-f` matches the whole command line, so
 # it matches the shell running this script and kills the setup along with the strays.
 for name in tips-supervisor tips-backup; do
