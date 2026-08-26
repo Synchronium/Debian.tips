@@ -1,7 +1,7 @@
 // Writes the URL list pa11y-ci checks, from the sitemap the build just produced.
 //
-//   npx tsx scripts/pa11y-urls.ts [origin]        # default http://localhost:4321
-//   npx pa11y-ci -c .pa11yci.generated.json       # what then reads it
+//   npm run a11y                                  # generate the list, then check it
+//   npx tsx scripts/pa11y-urls.ts [origin]        # just this step; default http://localhost:4321
 //
 // Generated rather than hand-written: a typed list silently stops covering the site as
 // categories are added, and the symptom is a gate that passes because it is checking less.
@@ -15,47 +15,99 @@
 // while the URLs are output, and output committed beside its own generator goes stale in the
 // repository and dirties the working tree of anyone who runs the gate. It had already drifted by
 // one page when this was split.
+//
+// The list-building is exported as a function and the file handling is confined to `main`, the
+// arrangement `replay-command-page.ts` uses, so `test/pa11yUrls.test.ts` can put a sitemap in and
+// read a list out without a build, a subprocess or a temporary directory.
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
-import { NOT_FOUND_PATH, TAGS_PATH } from "../src/config.js";
+import { CATEGORY_META, NAV_ORDER, NOT_FOUND_PATH, TAGS_PATH } from "../src/config.js";
 import { DIST_DIR, PA11Y_CONFIG, PA11Y_GENERATED_CONFIG, ROOT, SITEMAP_FILE } from "../src/paths.js";
 
-const origin = process.argv[2] ?? "http://localhost:4321";
+const DEFAULT_ORIGIN = "http://localhost:4321";
 
-const sitemap = readFileSync(join(DIST_DIR, SITEMAP_FILE), "utf-8");
-// Parsed as a URL rather than pattern-matched: the sitemap holds absolute locations, and taking
-// the path with a regex quietly produced `//debian.tips/commands/`, which is a path, resolves
-// against the origin, and 404s.
-const paths = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => new URL(match[1] ?? "").pathname);
+/** The URL list came out short, so nothing is written. Its own class because the caller has to
+ *  tell it from a missing sitemap or an unreadable settings file, which are different repairs. */
+export class Pa11yUrlsError extends Error {}
 
-/** A content page's path is `/category/slug/`; a listing's is `/category/`. */
-const isContentPage = (path: string): boolean =>
-  /^\/[^/]+\/[^/]+\/$/.test(path) && !path.startsWith(TAGS_PATH);
-const categoryOf = (path: string): string => path.split("/")[1] ?? "";
+/** The pages to check, from the XML of a built sitemap.
+ *
+ *  Throws rather than returning a short list, and that is the whole reason this check exists here:
+ *  **pa11y-ci cannot fail on a list that is too short.** Given no URLs at all it prints "Running
+ *  Pa11y on 0 URLs / 0/0 URLs passed" and exits 0, with or without a config file. So every way the
+ *  list can come out short ends in a green tick over nothing, and nothing downstream will say so.
+ *
+ *  Completeness is asserted against the categories rather than a count, so the check describes
+ *  what the list is for: one page per template, and a category listing is a template. A number
+ *  here would need updating whenever a category was added, which is exactly when it would be
+ *  wrong. */
+export function pa11yUrls(sitemapXml: string, origin: string = DEFAULT_ORIGIN): string[] {
+  // Parsed as a URL rather than pattern-matched: the sitemap holds absolute locations, and taking
+  // the path with a regex quietly produced `//debian.tips/commands/`, which is a path, resolves
+  // against the origin, and 404s.
+  const paths = [...sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(
+    (match) => new URL(match[1] ?? "").pathname,
+  );
 
-const listings = paths.filter((path) => !isContentPage(path));
-// One content page per category, chosen as the first in sitemap order so the list is stable
-// between runs rather than depending on what happens to have been edited.
-const samples = new Map<string, string>();
-for (const path of paths.filter(isContentPage)) {
-  const category = categoryOf(path);
-  if (!samples.has(category)) samples.set(category, path);
+  /** A content page's path is `/category/slug/`; a listing's is `/category/`. */
+  const isContentPage = (path: string): boolean =>
+    /^\/[^/]+\/[^/]+\/$/.test(path) && !path.startsWith(TAGS_PATH);
+  const categoryOf = (path: string): string => path.split("/")[1] ?? "";
+
+  const listings = paths.filter((path) => !isContentPage(path));
+  // One content page per category, chosen as the first in sitemap order so the list is stable
+  // between runs rather than depending on what happens to have been edited.
+  const samples = new Map<string, string>();
+  for (const path of paths.filter(isContentPage)) {
+    const category = categoryOf(path);
+    if (!samples.has(category)) samples.set(category, path);
+  }
+
+  // Tag pages are listings and there are dozens of them; they are all the same template, so one
+  // is enough. The tags index itself is a different template and stays.
+  const tagPages = listings.filter((path) => path.startsWith(TAGS_PATH) && path !== TAGS_PATH);
+  const otherListings = listings.filter((path) => !path.startsWith(TAGS_PATH) || path === TAGS_PATH);
+
+  const urls = [...otherListings, ...(tagPages[0] ? [tagPages[0]] : []), ...samples.values()]
+    .map((path) => `${origin}${path}`)
+    // The 404 page is deliberately not in the sitemap, since nothing should crawl to it, but it is
+    // a template with its own markup, and one nobody looks at until it is already being seen.
+    .concat(`${origin}${NOT_FOUND_PATH}`);
+
+  const missing = NAV_ORDER.map((category) => CATEGORY_META[category].path).filter(
+    (path) => !urls.includes(`${origin}${path}`),
+  );
+  if (missing.length) {
+    throw new Pa11yUrlsError(
+      `${missing.length} category listing(s) missing from the URL list:\n` +
+        missing.map((path) => `  ${path}`).join("\n") +
+        `\n\nRead ${paths.length} location(s) from the sitemap. Either the build did not emit them ` +
+        `or the parse is broken.\nNot writing a config: pa11y-ci passes an empty list, so a short ` +
+        `one is worse than no run at all.`,
+    );
+  }
+  return urls;
 }
 
-// Tag pages are listings and there are dozens of them; they are all the same template, so one
-// is enough. The tags index itself is a different template and stays.
-const tagPages = listings.filter((path) => path.startsWith(TAGS_PATH) && path !== TAGS_PATH);
-const otherListings = listings.filter((path) => !path.startsWith(TAGS_PATH) || path === TAGS_PATH);
+function main(): void {
+  const origin = process.argv[2] ?? DEFAULT_ORIGIN;
+  const sitemap = join(DIST_DIR, SITEMAP_FILE);
 
-const urls = [...otherListings, ...(tagPages[0] ? [tagPages[0]] : []), ...samples.values()]
-  .map((path) => `${origin}${path}`)
-  // The 404 page is deliberately not in the sitemap, since nothing should crawl to it, but it is
-  // a template with its own markup, and one nobody looks at until it is already being seen.
-  .concat(`${origin}${NOT_FOUND_PATH}`);
+  let urls: string[];
+  try {
+    urls = pa11yUrls(readFileSync(sitemap, "utf-8"), origin);
+  } catch (error) {
+    if (!(error instanceof Pa11yUrlsError)) throw error;
+    console.error(`pa11y-urls: ${error.message}`);
+    process.exit(1);
+  }
 
-// The hand-maintained settings (the WCAG standard, the timeout, Chrome's flags) are read from the
-// tracked file and passed through, so there is one place to change them and this only ever adds
-// the part it computes.
-const settings = JSON.parse(readFileSync(PA11Y_CONFIG, "utf-8")) as Record<string, unknown>;
-writeFileSync(PA11Y_GENERATED_CONFIG, `${JSON.stringify({ ...settings, urls }, null, 2)}\n`, "utf-8");
-console.log(`${relative(ROOT, PA11Y_GENERATED_CONFIG)}: ${urls.length} URL(s) to check`);
+  // The hand-maintained settings (the WCAG standard, the timeout, Chrome's flags) are read from
+  // the tracked file and passed through, so there is one place to change them and this only ever
+  // adds the part it computes.
+  const settings = JSON.parse(readFileSync(PA11Y_CONFIG, "utf-8")) as Record<string, unknown>;
+  writeFileSync(PA11Y_GENERATED_CONFIG, `${JSON.stringify({ ...settings, urls }, null, 2)}\n`, "utf-8");
+  console.log(`${relative(ROOT, PA11Y_GENERATED_CONFIG)}: ${urls.length} URL(s) to check`);
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) main();

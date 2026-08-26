@@ -68,8 +68,12 @@ export const FEED_FILE = "feed.xml";
  *
  *  Two files because they are two kinds of thing. The settings belong in git; the URL list is
  *  output, and output committed next to its own generator goes stale in the repository and dirties
- *  the working tree of anyone who runs the gate. The generated one is gitignored, and is what both
- *  CI and the local recipe in CLAUDE.md point `pa11y-ci` at. */
+ *  the working tree of anyone who runs the gate. The generated one is gitignored, and is what
+ *  `npm run a11y` points `pa11y-ci` at, in CI and locally alike.
+ *
+ *  Splitting them made a bare `npx pa11y-ci` worse than useless: it reads the settings file, finds
+ *  no `urls`, and reports a pass having checked nothing. `pa11y-urls.ts` refuses to write a list
+ *  that is missing a category listing, since pa11y-ci itself will never object to a short one. */
 export const PA11Y_CONFIG = join(ROOT, ".pa11yci.json");
 export const PA11Y_GENERATED_CONFIG = join(ROOT, ".pa11yci.generated.json");
 
