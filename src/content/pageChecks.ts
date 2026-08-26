@@ -55,7 +55,12 @@ export interface PageChecks {
    *  `volatile` here would overstate how loosely the page is checked. */
   byShape: number;
   /** Documented outputs a batch run cannot reproduce. A command page names each in its `.skip`
-   *  file; a prose page carries the reason inline, above the block. */
+   *  file; a prose page carries the reason inline, above the block.
+   *
+   *  On a prose page this covers both ways a block can go unreproduced: a pair marked
+   *  `verify: skip`, and an output fence with no command above it at all. They are the same claim
+   *  to a reader, who sees an output block either way, so they are counted as one figure and
+   *  described by one sentence. See ADR-0021. */
   exempt: number;
   /** Sample-file blocks re-read from the sandbox and diffed. Command pages only. */
   fixtures: number;
@@ -72,12 +77,12 @@ export function commandChecks(doc: ExamplesFile, slug: string, fixtureDir?: stri
 }
 
 export function proseChecks(source: string): PageChecks {
-  const { pairs } = parseProsePage(source);
+  const { pairs, unpaired } = parseProsePage(source);
   const checked = pairs.filter((pair) => pair.comparison !== COMPARISON.skip);
   return {
     checked: checked.length,
     byShape: checked.filter((pair) => pair.comparison === COMPARISON.shape).length,
-    exempt: pairs.filter((pair) => pair.comparison === COMPARISON.skip).length,
+    exempt: pairs.filter((pair) => pair.comparison === COMPARISON.skip).length + unpaired.length,
     fixtures: 0,
   };
 }

@@ -10,12 +10,14 @@ related: [file-permissions-explained, apt, apt-essentials, could-not-get-lock-dp
 
 On a fresh Debian install, `sudo` is frequently not there at all:
 
+<!-- verify: skip quoted here to open the page; reproduced for real further down -->
 ```
 -bash: sudo: command not found
 ```
 
 Or `sudo` exists, but refuses you:
 
+<!-- verify: skip the real message names your own account; reproduced for real further down -->
 ```
 newbie is not in the sudoers file.
 ```

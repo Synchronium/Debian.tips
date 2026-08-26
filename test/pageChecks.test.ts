@@ -1,10 +1,11 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { loadContent } from "../src/content/loader.js";
+import { renderMarkdown } from "../src/content/markdown.js";
 import { verificationStats } from "../src/content/verificationStats.js";
 import { isCommandPage } from "../src/content/loader.js";
 import { PROSE_CATEGORIES } from "../src/content/schema.js";
-import { CONTENT_DIR, FIXTURE_DIR, fixtureScript } from "../src/paths.js";
+import { CONTENT_DIR, FIXTURE_DIR, fixtureScript, proseSource } from "../src/paths.js";
 
 /* Each page now states what `npm run replay -- <slug>` will check on it, and /about/ states the
  * totals. They are the same numbers seen from two distances, so the only interesting failure is
@@ -24,12 +25,20 @@ const sum = (pages: typeof model.pages, pick: (page: (typeof model.pages)[number
   pages.reduce((total, page) => total + pick(page), 0);
 
 describe("per-page figures and the site totals", () => {
-  it("agree on how many command-page outputs are replayed", () => {
-    expect(sum(commands, (page) => page.checks.checked)).toBe(stats.outputs - stats.exemptions);
+  it("agree on how many outputs are replayed", () => {
+    expect(sum(commands, (page) => page.checks.checked) + sum(prose, (page) => page.checks.checked)).toBe(
+      stats.replayed,
+    );
   });
 
   it("agree on how many are exempt", () => {
-    expect(sum(commands, (page) => page.checks.exempt)).toBe(stats.exemptions);
+    // Both kinds, since ADR-0021: a prose page's exemptions are blocks a reader is shown and the
+    // site does not re-run, exactly like a command page's, and the sentence at the foot of each
+    // page counts them the same way. A total that left the prose ones out would be smaller than
+    // the sum of the footers it is meant to be the sum of.
+    expect(sum(commands, (page) => page.checks.exempt) + sum(prose, (page) => page.checks.exempt)).toBe(
+      stats.exemptions,
+    );
   });
 
   it("agree on the fixture blocks", () => {
@@ -75,6 +84,27 @@ describe("the shapes a page's figures can take", () => {
       expect(page.checks.checked).toBeGreaterThanOrEqual(0);
       expect(page.checks.exempt).toBeGreaterThanOrEqual(0);
     }
+  });
+});
+
+describe("every block a reader is shown as output", () => {
+  it("is counted by the page that shows it", async () => {
+    // The property ADR-0021 is about, asserted against the rendered markup rather than against
+    // the parser, which would only restate its own arithmetic. A block reaches the reader inside
+    // a `<pre aria-label="output">`, and the sentence at the foot of the page accounts for
+    // exactly `checked + exempt` of them. An output fence that belongs to neither is the gap
+    // this closes: it used to be reported as a count nobody published and required to explain
+    // nothing.
+    const undercounted: string[] = [];
+    for (const page of prose) {
+      const { html } = await renderMarkdown(readFileSync(proseSource(page.category, page.slug), "utf-8"));
+      const shown = [...html.matchAll(/<pre aria-label="output"/g)].length;
+      const counted = page.checks.checked + page.checks.exempt;
+      if (shown !== counted) {
+        undercounted.push(`${page.category}/${page.slug}: shows ${shown}, counts ${counted}`);
+      }
+    }
+    expect(undercounted).toEqual([]);
   });
 });
 

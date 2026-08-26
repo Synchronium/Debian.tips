@@ -29,8 +29,10 @@ export interface VerificationStats {
   volatile: number;
   /** Sample-file blocks, themselves re-read from the sandbox and diffed. */
   fixtures: number;
-  /** Examples exempted from the batch in scripts/fixtures/<command>.skip, each with a
-   *  comment there saying how it was verified instead. */
+  /** Documented outputs a batch run cannot reproduce, each with a written reason beside it: a
+   *  command page names them in `scripts/fixtures/<command>.skip`, a prose page in a
+   *  `verify: skip` comment above the block. Both are summed, because both are a block a reader
+   *  sees and the site does not re-run, and every page's own footer counts them the same way. */
   exemptions: number;
   /** Prose pages (concepts, lessons, recipes, Debian articles) whose documented output is
    *  replayed too. Counted separately because a prose page opts in by having a setup script,
@@ -55,9 +57,10 @@ function countProse(
   pages: Page[],
   contentDir: string,
   fixtureDir: string,
-): { prosePages: number; proseOutputs: number; unreplayedProsePages: number } {
+): { prosePages: number; proseOutputs: number; proseExemptions: number; unreplayedProsePages: number } {
   let prosePages = 0;
   let proseOutputs = 0;
+  let proseExemptions = 0;
   let unreplayedProsePages = 0;
   for (const page of pages) {
     if (!(PROSE_CATEGORIES as readonly string[]).includes(page.category)) continue;
@@ -72,12 +75,17 @@ function countProse(
     // `page.checks` is this same count, taken from the loader. Recomputed from the file here
     // because the synthetic tree in `test/fixtures/` is counted without going through a build;
     // a test asserts the two agree on the real tree.
-    const { checked } = proseChecks(readFileSync(source, "utf-8"));
+    const { checked, exempt } = proseChecks(readFileSync(source, "utf-8"));
+    // Counted before the `checked === 0` test below, because a page every one of whose blocks is
+    // exempt still documents those blocks, and `exemptions` is the figure that says how many of
+    // those exist site-wide. Leaving them out would make the total smaller than the sum of the
+    // per-page footers, which is the disagreement `pageChecks.ts` exists to prevent.
+    proseExemptions += exempt;
     if (checked === 0) continue;
     prosePages++;
     proseOutputs += checked;
   }
-  return { prosePages, proseOutputs, unreplayedProsePages };
+  return { prosePages, proseOutputs, proseExemptions, unreplayedProsePages };
 }
 
 export function verificationStats(
@@ -114,17 +122,25 @@ export function verificationStats(
     exemptions += checks.exempt;
   }
 
-  const { prosePages, proseOutputs, unreplayedProsePages } = countProse(pages, contentDir, fixtureDir);
+  const { prosePages, proseOutputs, proseExemptions, unreplayedProsePages } = countProse(
+    pages,
+    contentDir,
+    fixtureDir,
+  );
   return {
     pages: pages.length,
     commandPages: commandPages.length,
     unreplayedCommandPages: allCommandPages.length - commandPages.length,
     examples,
     outputs,
+    // The local `exemptions` here, not the wider figure returned below: `outputs` counts command
+    // pages only, so only command-page exemptions come off it, and `proseOutputs` is already the
+    // count of prose blocks that are checked rather than exempt. Adding the prose exemptions to
+    // this subtraction would remove them twice.
     replayed: outputs - exemptions + proseOutputs,
     volatile,
     fixtures,
-    exemptions,
+    exemptions: exemptions + proseExemptions,
     prosePages,
     proseOutputs,
     unreplayedProsePages,

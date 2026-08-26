@@ -97,6 +97,17 @@ function textContent(node: any): string {
   return node.children.map(textContent).join("");
 }
 
+/** What a fenced block is, announced to a screen reader that cannot see the styling.
+ *
+ *  Three kinds, because two were not enough. A bare fence is output, which is why
+ *  `src/content/proseBlocks.ts` pairs one to the command above it; a `bash` fence is a command.
+ *  Anything else is a file in that format, and calling a `.sources` stanza a command told a
+ *  reader to run it. */
+function blockLabel(lang: BundledLanguage | "plaintext"): string {
+  if (lang === "plaintext") return "output";
+  return lang === "bash" ? "command" : `${lang} file`;
+}
+
 /** Highlights fenced code blocks at the mdast stage, replacing them with a
  * trusted raw HTML node carrying Shiki's dual-theme output. */
 function remarkShiki() {
@@ -108,12 +119,8 @@ function remarkShiki() {
     });
     for (const node of codeNodes) {
       const lang = resolveLang(node.lang);
-      const isOutput = lang === "plaintext";
       const rendered = finishShiki(highlighter.codeToHtml(node.value, { lang, themes: THEMES }));
-      const withA11y = rendered.replace(
-        /^<pre /,
-        `<pre aria-label="${isOutput ? "output" : "command"}" `,
-      );
+      const withA11y = rendered.replace(/^<pre /, `<pre aria-label="${blockLabel(lang)}" `);
       node.type = "html";
       node.value = withA11y;
       delete node.lang;

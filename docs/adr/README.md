@@ -54,6 +54,7 @@ command shown. These records keep that claim honest.
 | [0004](0004-never-document-an-architecture.md) | No documented output may name a machine architecture |
 | [0005](0005-volatile-output-and-exemptions.md) | Output that cannot reproduce exactly is declared, never quietly excused |
 | [0020](0020-one-container-per-page.md) | Every page is replayed in a container of its own |
+| [0021](0021-every-output-block-is-accounted-for.md) | Every block shown as output is either checked or explained |
 
 ### The content model
 

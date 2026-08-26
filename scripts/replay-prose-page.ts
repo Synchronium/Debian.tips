@@ -71,18 +71,33 @@ export function replayProsePage(options: ProseReplayOptions): ReplayResult {
   const skipped = pairs.filter((pair) => pair.comparison === COMPARISON.skip);
 
   // A mask token in a documented output would match any real output for ever, because the
-  // masks are idempotent. Same rule the command pages are held to.
-  for (const pair of pairs) {
-    const token = MASK_TOKENS.find((mask) => pair.output.includes(mask));
+  // masks are idempotent. Same rule the command pages are held to. Unpaired blocks are held to it
+  // as well: nothing compares them, so a mask there cannot weaken a comparison, but it would
+  // render to the reader as a literal `<TIMESTAMP>` in something presented as real output.
+  for (const block of [...pairs, ...unpaired]) {
+    const token = MASK_TOKENS.find((mask) => block.output.includes(mask));
     if (token) {
       throw new ReplayError(
-        `${pagePath}:${pair.line} documents the mask token ${token}, which would match anything.`,
+        `${pagePath}:${block.line} documents the mask token ${token}, which would match anything.`,
       );
     }
   }
-  const unexplained = skipped.find((pair) => !pair.note);
-  if (unexplained) {
-    throw new ReplayError(`${pagePath}:${unexplained.line} is skipped with no reason given.`);
+  // Both ways of leaving an output block unreproduced have to say why, and for the same reason:
+  // the page's footer tells a reader how many blocks are exempt and points them at the page
+  // source for the reasons, so a block with no reason there makes the footer promise something
+  // that is not written down. An unpaired fence used to be the way round this, being reported as
+  // a count and required to explain nothing. See ADR-0021.
+  const unexplained = [
+    ...skipped.filter((pair) => !pair.note).map((pair) => pair.line),
+    ...unpaired.filter((block) => !block.note).map((block) => block.line),
+  ].sort((a, b) => a - b);
+  if (unexplained.length) {
+    throw new ReplayError(
+      `${pagePath}: ${unexplained.length} output block(s) are not reproduced and give no reason:\n` +
+        unexplained.map((line) => `  ${pagePath}:${line}`).join("\n") +
+        `\nPut "<!-- verify: skip <why> -->" on the line above each, which is what the page's own ` +
+        `"N are exempt" sentence sends a reader to look for.`,
+    );
   }
 
   const sandbox = openSandbox({
@@ -123,11 +138,11 @@ export function replayProsePage(options: ProseReplayOptions): ReplayResult {
       total: runnable.length,
       shapeMatches,
       notes: [
+        // Kept apart in the tool's own output, though the page states them as one figure. They
+        // are the same claim to a reader and different work to an author: a skipped pair has a
+        // command that could in principle be run, and an unpaired block has none.
         skipped.length ? `, ${skipped.length} skipped` : "",
-        // Unpaired blocks are claims nothing checked. Reported rather than failed: a config
-        // stanza is legitimately not command output, and the count is what tells an author
-        // which is which.
-        unpaired.length ? `, ${unpaired.length} block(s) not checkable` : "",
+        unpaired.length ? `, ${unpaired.length} unpaired` : "",
       ],
     }),
   );

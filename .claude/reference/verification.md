@@ -176,9 +176,12 @@ Where an arch-dependent package is genuinely the right example, narrow the outpu
 be documented at all, since its output carries download sizes, speeds, the architecture, and dpkg's
 carriage-return progress lines.
 
-Bare fences that pair with nothing (a `.sources` stanza, a config snippet) are counted and
-reported as "not checkable" rather than failed. The count is what tells an author which of their
-blocks is a claim nobody checks.
+Bare fences that pair with nothing are output blocks nothing reproduces, and since ADR-0021 each
+has to say why with a `verify: skip` note, exactly as a skipped pair does. They count as exempt and
+the page states them at its foot, so the reader is told a block exists rather than left to compare
+the page's figure against what is in front of them. A config snippet is a different thing and takes
+a language tag instead: it was never an output claim, and routing it through the exemption
+mechanism would have the page reporting one.
 
 The first page through this, `apt-essentials`, had **four broken output blocks out of four**: two
 silently abridged (`dpkg -l` prints a five-line header; one fence ran three commands and showed

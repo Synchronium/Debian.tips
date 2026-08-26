@@ -208,8 +208,15 @@ same standard as an `output:` block:
 - Output that legitimately moves (a package version, a count of pending upgrades) gets
   `<!-- verify: shape why it moves -->` on the line above the command fence. Output that cannot
   be replayed at all gets `<!-- verify: skip the reason -->`, and the reason is required.
-- A bare fence that is a config snippet rather than command output pairs with nothing and is
-  reported as "not checkable". That is correct; just make sure it really is not output.
+- **A bare fence with no command above it needs `<!-- verify: skip the reason -->` too**
+  (ADR-0021). The error message a troubleshooting page opens on is the usual case: it is the one
+  the reader already saw, and not one this machine can be made to print. It counts as exempt, and
+  the page's footer tells the reader how many there are and sends them to the page source for the
+  reasons, so a block with no reason makes that sentence promise something nobody wrote.
+- **A config snippet is not output, so do not fence it bare.** A `.sources` stanza or an
+  `/etc` file the reader is told to write takes a language tag (` ```ini `), which is what stops
+  it being read as an output claim, keeps it out of the exempt count, and stops a screen reader
+  announcing it as a command to run.
 
 Then `npm run replay -- <slug>` and aim for N/N, exactly as for a command page.
 

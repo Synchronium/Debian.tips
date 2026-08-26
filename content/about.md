@@ -58,8 +58,11 @@ page that has a script but whose blocks are all exempt is not counted at all.
 Where an example needs something a container cannot provide, the page says so rather than
 inventing output. The {{exemptions}} exempt examples are ones a batch run cannot supply: a
 `tail -f` needing a second process writing to the file, an `ssh` example whose output would
-require committing a private key, a request whose answer is your own public IP address. Each
-is listed by name in the repository with a note on how it was checked by hand instead.
+require committing a private key, a request whose answer is your own public IP address. The
+error message a troubleshooting page opens on is usually one of these too, since it is the one
+you already saw and not one this machine can be made to print. Each is listed by name in the
+repository with a note on how it was checked by hand instead, and every page counts them in the
+figure at its own foot, so no page can show you a block the total does not know about.
 
 ## Output that cannot be identical
 

@@ -10,6 +10,7 @@ related: [apt, apt-vs-apt-get, apt-essentials, release-channels]
 
 `apt-get upgrade` can finish successfully and still leave a package on its old version:
 
+<!-- verify: skip an extract of a full upgrade transcript, whose other lines depend on the machine -->
 ```
 The following packages have been kept back:
   tips-demo

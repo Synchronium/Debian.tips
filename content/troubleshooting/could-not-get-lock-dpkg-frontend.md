@@ -10,6 +10,7 @@ related: [apt-essentials, apt-vs-apt-get, release-channels]
 
 apt refuses to start while another process is changing packages, and says so:
 
+<!-- verify: skip the pid and the holding process are whatever was running on your machine -->
 ```
 E: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 2412 (unattended-upgr)
 E: Unable to acquire the dpkg frontend lock (/var/lib/dpkg/lock-frontend), is another process using it?

@@ -58,7 +58,7 @@ at the newest point release without doing anything.
 
 A source can name either the codename or the role, and the two behave differently:
 
-```
+```ini
 Suites: trixie      # this specific release, forever
 Suites: stable      # whatever is stable at the time, changing under you
 ```
@@ -109,7 +109,7 @@ after a fix exists. Stable gets it directly.
 Adding backports does not change any version you already have. Debian assigns the suite a
 priority of 100, below the default 500, so packages there are visible but never chosen:
 
-```
+```ini
 Types: deb
 URIs: http://deb.debian.org/debian
 Suites: trixie-backports
