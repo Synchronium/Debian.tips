@@ -6,7 +6,7 @@ category: commands
 tier: flagship
 tags: [apt, debian, sysadmin]
 updated: 2026-08-18
-related: [apt, apt-cache, apt-vs-apt-get, apt-essentials, could-not-get-lock-dpkg-frontend]
+related: [apt, apt-cache, list-installed-packages, apt-vs-apt-get, apt-essentials]
 ---
 
 `dpkg` is the program that installs Debian packages. It unpacks a `.deb`, runs its
@@ -30,6 +30,7 @@ Given that, most installing is better done through apt. What `dpkg` is for:
 - **Asking what is installed**, and in what state. `dpkg -l`, `dpkg -s` and `dpkg -L` answer
   from the local database with no network involved at all, which also makes them the tools that
   still work on a machine whose networking or apt configuration is broken.
+  [Listing what is installed](/debian/list-installed-packages/) is the tour of that question.
 - **Finding which package owns a file.** `dpkg -S /path` is the fastest way to identify an
   unfamiliar file on a system.
 - **Inspecting a `.deb` before installing it.** `dpkg -I` and `dpkg -c` read a package file

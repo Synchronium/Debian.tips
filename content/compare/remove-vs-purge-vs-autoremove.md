@@ -72,7 +72,8 @@ rc  nano
 
 Run that on a machine a few years old and it usually prints more than you expect. Each line is a
 package whose binaries are gone and whose settings are not, sitting there costing nothing but
-disk and a little confusion. [`dpkg -l`](/commands/dpkg/) shows the same `rc` in its first
+disk and a little confusion. It is also why a count of installed packages depends on which
+command you ask, which [Listing what is installed](/debian/list-installed-packages/) goes into. [`dpkg -l`](/commands/dpkg/) shows the same `rc` in its first
 column, the form you will see quoted most often.
 
 You do not have to reinstall anything to finish the job. `purge` works directly on a package

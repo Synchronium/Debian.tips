@@ -81,6 +81,8 @@ apt list --upgradable            # list packages with a newer version available
 `apt list --installed` on a real system prints thousands of lines, so it is nearly always worth
 narrowing with [`grep`](/commands/grep/). `apt list --installed | grep -i python` answers "is
 this here, and which version" faster than `apt show` and a guess at the package name.
+[Listing what is installed](/debian/list-installed-packages/) covers the commands that survive a
+pipe, and how to tell what you asked for from what came along with it.
 
 Beyond `apt` itself, `dpkg` answers questions about packages already on your system without
 touching the network at all:

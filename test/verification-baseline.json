@@ -272,6 +272,13 @@
     "fixtures": 0,
     "unpaired": 0
   },
+  "debian/list-installed-packages": {
+    "checked": 12,
+    "byShape": 6,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
   "debian/release-channels": {
     "checked": 4,
     "byShape": 2,
