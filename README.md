@@ -27,7 +27,7 @@ Requires Node 24+ (what CI runs, and what the devcontainer provides).
 
 ```sh
 npm install
-npm run dev      # dev server at http://localhost:4321, rebuilds on file change
+npm run dev      # dev server at http://localhost:4321, full rebuild on any file change
 npm run build    # one-off production build to dist/
 npm run check    # format, typecheck, tests, build, linkcheck, link audit: the full gate
 ```
@@ -79,8 +79,8 @@ page is replayed against freshly-restored fixtures and diffed against the output
 and the sample-file blocks are re-read from the sandbox and diffed as well.
 
 ```sh
-npm run replay              # every page, in one throwaway container
-npm run replay -- wget curl # just these
+npm run replay              # every page, each in a throwaway container of its own
+npm run replay -- wget curl # just these, in the same containers the full run gives them
 
 # the same thing one page at a time, if you want to keep the sandbox around
 name=$(scripts/sandbox.sh start)
@@ -88,8 +88,8 @@ npx tsx scripts/replay-command-page.ts "$name" wc scripts/fixtures/wc.sh   # pri
 scripts/sandbox.sh stop "$name"
 ```
 
-Every page with a setup script replays at 100%. The counts (how many outputs are re-run, across
-how many pages, and how many are exempt) are on [the about page](https://debian.tips/about/),
+The counts (how many outputs are re-run, across how many pages, and how many are exempt, and how
+many pages have no setup script yet) are on [the about page](https://debian.tips/about/),
 counted from the content at build time rather than typed here, where they went stale within a
 week the first time. Pages whose output depends on who ran the command (file ownership, a `~`
 path, a permission denial) say so with a `# verify: --user` line in their setup script, which
@@ -107,6 +107,12 @@ than being quietly dropped.
   Debian container and diffed against the page, a container per page, one shard per runner.
   Separate from `check` because it needs Docker, and because "the generator is broken" and "a
   page is lying" are different problems.
+
+`.github/workflows/drift.yml` replays the whole site once a week on a schedule. Nothing here can
+go stale on its own except the one thing that matters most, which is Debian's archive: the sandbox
+image builds from a moving tag, so a security update to a package a page documents is enough to
+make a true page false. A push to `main` already replays everything, so this only earns its runner
+during quiet weeks, which are the weeks nobody would notice.
 
 `.github/workflows/deploy.yml` then publishes to GitHub Pages, but only for a commit CI passed:
 it triggers on CI completing successfully and checks out that exact commit, so a red build
