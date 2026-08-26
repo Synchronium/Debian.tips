@@ -89,9 +89,12 @@ const rates = (s: string): string =>
  *  and must therefore keep checking. Those print a lowercase `"user-agent"` from a different
  *  endpoint, and name neither tool, so neither anchor reaches them.
  *
- *  Package versions in `apt` and `dpkg` output are the same kind of value and are deliberately
- *  not here: anchoring them means matching apt's listing formats rather than one literal string,
- *  and `apt-cache` is about to be written. */
+ *  Package versions in `apt`, `apt-cache` and `dpkg` output are the same kind of value and are
+ *  deliberately not here, and it is not for want of an anchor: `apt-cache policy` prints
+ *  `Installed:` and `Candidate:` in a shape as fixed as anything above. Masking them would erase
+ *  the comparison those examples exist to make, which is that the two fields agree, or that they
+ *  differ. Both readings pass once the versions are gone. A page that prints a package version
+ *  compares it exactly and names a package the archive has left alone. */
 const versions = (s: string): string =>
   s
     .replace(/^OpenSSH_[^,\n]*, OpenSSL \S+ \d{1,2} [A-Z][a-z]{2} \d{4}$/gm, "<VERSION>")

@@ -149,9 +149,11 @@ The §3.3 gap, and the group that has moved most since the last revision.
 - **SHIPPED 2026-08-18 `dpkg`** (flagship): the "dpkg is the layer below apt" framing,
   `--configure -a` after a broken install. Note §11.1: no `dpkg -l` table, because of the
   architecture column.
-- **P1 `apt-cache`** (standard): `policy`, `show`, `depends`/`rdepends`, `search`. `policy` is
-  the diagnostic for half of §3.3. **The largest remaining hole in this group**, and the reason
-  Wave 1 is not finished.
+- **SHIPPED 2026-08-26 `apt-cache`** (standard): `policy`, `show`, `depends`/`rdepends`,
+  `search`, `pkgnames`, `stats`. Its fixture stands up a second repository at `file:/srv/vendor`
+  declaring `Architectures=all`, which is what lets a version table be published at all: the
+  index a version was read from is named `all` rather than the machine's architecture. §11.1 is
+  narrower than it was as a result.
 - **P1 `apt-file`** (light): which package provides a file you don't have yet (the `dpkg -S`
   counterpart for uninstalled packages). +819 votes says this is a page.
 - **P2 `update-alternatives`** (standard): default editor, `python`, `java`; the mechanism
@@ -766,9 +768,14 @@ between releases, so the version question grows with exactly the work the waves 
 `arm64` on the devcontainer, `amd64` on the CI runner, no emulation available locally: any block
 printing an architecture fails in exactly one of the two places. This rules out `dpkg -l` output
 (the `Architecture` column), `uname -m`, `lscpu`, `dpkg --print-architecture`, `file` on a
-binary, and `apt-cache policy` without a filter. Affected: §6.2's "listing what is installed"
-page, and any `dpkg`/`apt` page that shows a package table. Workaround, already used by the apt
-article: `dpkg -s`, and `apt-cache policy <pkg> | head -3`.
+binary, and `apt-cache policy` against a Debian index. Affected: §6.2's "listing what is
+installed" page, and any `dpkg`/`apt` page that shows a package table. Workaround, already used
+by the apt article: `dpkg -s`, and `apt-cache policy <pkg> | head -3`.
+
+A version table can be published after all, which the apt-cache page found. A fixture repository
+built with `apt-ftparchive -o APT::FTPArchive::Release::Architectures=all` is read from an index
+whose name is `all`, so the source line `apt-cache policy` prints for it is the same on either
+machine. Only the entries coming from Debian's own indexes have to be filtered out.
 
 ### §11.2. No hardware, and no real network peers
 
@@ -825,12 +832,12 @@ picked page by page across four waves at once, which is why no wave is finished 
 sequencing below needs reading as a set of open fronts rather than a queue. That is not a
 complaint about the choices: `ls` and `xargs` were both worth writing when they were written.
 But the effect is that **Wave 1 sits at roughly three-quarters done and has been left there**.
-The remaining quarter is `apt-cache`, `apt-file` and three articles, without which a reader
+The remaining quarter is `apt-file` and three articles, without which a reader
 searching the apt cluster finds most of it and not the rest.
 
 | Wave | Status | What remains |
 |---|---|---|
-| 1. Namesake gap | **~75%** | `apt-cache`, `apt-file`, and three §6.2 articles (list installed, install a `.deb`, which package provides a file) |
+| 1. Namesake gap | **~80%** | `apt-file`, and three §6.2 articles (list installed, install a `.deb`, which package provides a file) |
 | 2. Scripting 7–14 | **untouched** | All eight lessons |
 | 3. Concepts | **1 of 3** | terminal/shell/tty, processes-and-signals |
 | 4. Perl track | **blocked** | The §10.4 `order:` change first, then 9 pages |

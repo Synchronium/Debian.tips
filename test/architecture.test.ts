@@ -65,7 +65,9 @@ describe("documented output", () => {
    *
    * There is always a fix: choose an `Architecture: all` package, or filter the field out of
    * the command's output. Both keep the example and remove the claim that cannot be true
-   * everywhere. */
+   * everywhere. A third works where the output names an index rather than a package, as
+   * `apt-cache policy` does: a fixture repository declaring `Architectures=all` is read from an
+   * index whose name is `all`, so the line reads the same on either machine. */
   it("is never exempted from checking because of the architecture", () => {
     const reasons: { where: string; reason: string }[] = [];
 
