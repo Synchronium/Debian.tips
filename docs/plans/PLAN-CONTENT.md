@@ -372,9 +372,10 @@ working: both were "X vs Y" in shape, so they took the comparison template. The 
 remain are genuine articles, and they are what is left of Wave 1.
 
 - **SHIPPED 2026-08-18 as `compare/apt-vs-apt-get`**: which layer does what. +281, +1218, +860.
-- **P1 Listing what is installed, and when it arrived**: `dpkg -l`, `apt list --installed`,
-  `/var/log/apt/history.log`, `zgrep` through rotated logs. +2749 and +143. Note the architecture
-  constraint in §11.1: `dpkg -l` output cannot be printed here.
+- **SHIPPED 2026-08-26 as `debian/list-installed-packages`**: +2749 and +143. Leads on
+  `dpkg-query -W -f`, since §11.1 turned out to block `dpkg -l` and `apt list --installed`
+  unfiltered and nothing else; `apt-mark showmanual` for what was asked for; `/var/log/dpkg.log`
+  and `/var/lib/dpkg/info/*.list` mtimes for when, with `zgrep` over rotated apt history.
 - **P1 Installing a `.deb` by hand, safely**: `apt install ./file.deb` rather than `dpkg -i`,
   and why the dependency story differs. +1581 and +1218.
 - **P1 Finding which package provides a file**: `dpkg -S` for installed, `apt-file` for not.
@@ -766,16 +767,38 @@ between releases, so the version question grows with exactly the work the waves 
 ### §11.1. Architecture may never appear in output
 
 `arm64` on the devcontainer, `amd64` on the CI runner, no emulation available locally: any block
-printing an architecture fails in exactly one of the two places. This rules out `dpkg -l` output
-(the `Architecture` column), `uname -m`, `lscpu`, `dpkg --print-architecture`, `file` on a
-binary, and `apt-cache policy` against a Debian index. Affected: §6.2's "listing what is
-installed" page, and any `dpkg`/`apt` page that shows a package table. Workaround, already used
-by the apt article: `dpkg -s`, and `apt-cache policy <pkg> | head -3`.
+printing an architecture fails in exactly one of the two places. ADR-0004 is the decision and
+`test/architecture.test.ts` enforces it. What follows is the practical map, worked out while
+writing the `apt-cache` and `list-installed-packages` pages, because an earlier revision of this
+section said "no package tables" and that turned out to be both too broad and too narrow.
 
-A version table can be published after all, which the apt-cache page found. A fixture repository
-built with `apt-ftparchive -o APT::FTPArchive::Release::Architectures=all` is read from an index
-whose name is `all`, so the source line `apt-cache policy` prints for it is the same on either
-machine. Only the entries coming from Debian's own indexes have to be filtered out.
+**Genuinely impossible**, because the architecture *is* the output: `uname -m`, `arch`,
+`dpkg --print-architecture`, `lscpu`, and `file` on a compiled binary. Filtering cannot help, and
+masking the value would leave the example checking nothing.
+
+**Safe, and the answer most of the time:**
+
+| Command | Why it holds everywhere |
+| --- | --- |
+| `dpkg-query -W -f='${Package}'` | the bare name, never qualified |
+| `apt-mark showmanual` and `showauto` | never qualified |
+| `/var/log/dpkg.log` | dpkg records the *package's* architecture, so an `Architecture: all` package reads `:all` on both machines |
+| `dpkg -s`, `dpkg -l`, `apt show`, `apt list --installed` narrowed to an `all` package | the `Architecture` field really is `all` |
+| `apt-cache policy` against a fixture repository declaring `Architectures=all` | its index is named `all`, so the source line is identical on both machines |
+
+**Blocked, with the trap in each:**
+
+| Command | What goes wrong |
+| --- | --- |
+| `dpkg-query -W -f='${binary:Package}'` | appends `:amd64` to every multi-arch package, roughly half a normal install, and leaves the rest bare |
+| `dpkg --get-selections` | the same qualifier on the same packages, which rules out the usual "copy my package list" recipe |
+| `/var/log/apt/history.log` `Install:`, `Remove:`, `Upgrade:` and `Purge:` lines | apt records the *host* architecture on every package, `Architecture: all` ones included, so a package that is not arch-specific at all still reads `bash-completion:arm64`. The `Start-Date:`, `Commandline:`, `Requested-By:` and `End-Date:` lines are safe |
+| `apt-cache policy` version table against Debian's own indexes | Debian publishes an index per architecture, so the source line names one |
+| `dpkg -l` and `apt list --installed` unfiltered | whichever arch-dependent packages the listing reaches |
+
+The two logs differ in a way that is easy to get backwards. dpkg records the package's own
+architecture, so an `Architecture: all` package is publishable from `dpkg.log`; apt records the
+host's, so nothing in an `Install:` line ever is.
 
 ### §11.2. No hardware, and no real network peers
 
@@ -832,12 +855,12 @@ picked page by page across four waves at once, which is why no wave is finished 
 sequencing below needs reading as a set of open fronts rather than a queue. That is not a
 complaint about the choices: `ls` and `xargs` were both worth writing when they were written.
 But the effect is that **Wave 1 sits at roughly three-quarters done and has been left there**.
-The remaining quarter is `apt-file` and three articles, without which a reader
+The remaining quarter is `apt-file` and two articles, without which a reader
 searching the apt cluster finds most of it and not the rest.
 
 | Wave | Status | What remains |
 |---|---|---|
-| 1. Namesake gap | **~80%** | `apt-file`, and three §6.2 articles (list installed, install a `.deb`, which package provides a file) |
+| 1. Namesake gap | **~85%** | `apt-file`, and two §6.2 articles (install a `.deb`, which package provides a file) |
 | 2. Scripting 7–14 | **untouched** | All eight lessons |
 | 3. Concepts | **1 of 3** | terminal/shell/tty, processes-and-signals |
 | 4. Perl track | **blocked** | The §10.4 `order:` change first, then 9 pages |
