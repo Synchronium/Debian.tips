@@ -179,10 +179,17 @@ with no page to link to.
   BSD/UNIX syntax confusion, and `pgrep`/`pidof` folded in as planned. It needs the systemd
   sandbox, and its examples have to avoid enumerating the whole process table: the harness runs
   each one through `timeout … bash -c … | head`, all of which a whole-table listing would show.
-- **P1 `kill` / `pkill` / `killall`** (standard): signals by name and number, why `-9` is a last
-  resort, "what if kill -9 doesn't work" (uninterruptible sleep) which is +656 on unix.SE.
-- **P1 `jobs` / `fg` / `bg` / `nohup` / `disown`** (standard): the +813 question is exactly this
-  page. Ctrl-Z, `&`, and what survives logout.
+- **P1 `kill` / `pkill` / `killall`** (standard): selecting the target, which is where these three
+  differ and the only reason there are three of them. `pkill -f` against a full command line,
+  `killall` matching an exact name, sending a signal to a process group with a negative PID, and
+  `kill -0` as an existence test. Signal semantics belong to the §5 concept page: this page names
+  the flags and links for the why. +656 ("what if kill -9 doesn't work") is answered on the
+  concept page, since the answer is uninterruptible sleep rather than a command.
+- **P1 `jobs` / `fg` / `bg` / `nohup` / `disown`** (standard): the commands, on top of the
+  mechanism the concept page establishes. The `jobs` table and `%1` job specs, Ctrl-Z into `fg`
+  and `bg`, `disown` against `disown -h`, where `nohup.out` goes, `kill %1`, and the point at
+  which the honest answer is `tmux` or `systemd-run --user` instead. Reads +813 as "what do I
+  type"; see §5 for why that question splits three ways.
 - **P2 `top`** (standard): reading load average, sort keys, renice in place; `htop` in a callout.
 - **P2 `lsof`** (standard): open files, `-i` for sockets, deleted-but-held files eating a disk.
 - **P2 `timeout` / `time` / `watch` / `sleep`** (light, combined): "run this every N seconds"
@@ -316,8 +323,40 @@ Verification, rather than the writing, is the constraint here. See §11.3.
   `PATH` whenever that directory exists and the setup script has to remove it.
 - **P1 Terminal, shell, tty, console and session**: the +1638 question. Pulls in Ctrl-C vs
   Ctrl-Z vs Ctrl-D, why Ctrl-S freezes your terminal (+974), and what `$TERM` is for.
-- **P1 Processes, signals and job control**: PIDs, parent/child, orphans and zombies, the signal
-  table, what `&` actually does. Supports §4.2 and answers +813.
+- **P1 Processes, signals and job control**: PIDs, parent/child, orphans reparenting to PID 1,
+  zombies, the signal table, catchable against uncatchable, the 128+N exit convention, and why
+  `-9` destroys rather than stops. Then the half that ties it together: **a signal is delivered
+  to a process group**, which is what makes Ctrl-C stop a whole pipeline, what the controlling
+  terminal sends on hangup, and why `&` alone does not survive a logout.
+
+  **Scope, decided 2026-08-26 before writing.** Four planned pages were pointing at one cluster,
+  and three of them claimed the same +813 outright. The boundary is the reader's question rather
+  than the topic:
+
+  | Question | Page |
+  | --- | --- |
+  | What is actually happening? | this page |
+  | What do I type? | §4.2 `jobs`/`fg`/`bg`/`nohup`/`disown`, and §4.2 `kill`/`pkill`/`killall` |
+  | How do I keep this running after logout? | §9 recipe, +1044 |
+
+  This page therefore takes the SIGHUP story, because the answer to +813 is a fact about signals
+  rather than about commands: `nohup` makes the process ignore the signal, `disown` makes the
+  shell not send it, and `setsid` takes the process out of the session so it never arrives. A
+  command page cannot own that without teaching process groups first, and a concept page that
+  skips it explains SIGHUP without saying what sends it. +656 lands here too, for the same
+  reason: the answer to "kill -9 did nothing" is uninterruptible sleep, which is a process state.
+
+  The cost is length, at the top of the 800–2000 band. It holds together because it is one idea
+  rather than two subjects: a signal goes to a group, in a session, attached to a terminal.
+
+  **Verified 2026-08-26, before writing, in a `--systemd` sandbox.** Deterministic and free of
+  PIDs, which is the trap on this subject: exit status 143 and 130 from `kill -TERM $$` and
+  `kill -INT $$`; a script trapping TERM, surviving it, and dying to KILL; `T` then `S` across
+  STOP and CONT; an orphan reading `PPID 1`; and a zombie that stays `Z` through `kill -KILL`
+  and disappears the moment its parent exits. Two things cannot be shown and will be prose: the
+  `D` state needs real blocking I/O, and Ctrl-C and Ctrl-Z as keystrokes need a tty the harness
+  does not have, so the page sends `INT` and `TSTP` with `kill` and says the terminal driver is
+  what turns the keypress into the signal.
 - **P2 Regular expressions: BRE vs ERE vs PCRE**: unifies the regex flags scattered across
   `grep`, `sed` and `awk`. The `regex` tag exists with no page owning it.
 - **P2 The filesystem hierarchy**: `/etc`, `/var`, `/usr`, `/opt`, `/usr/local`, `/srv`,
@@ -538,7 +577,9 @@ for the "how do I do X" half of §3, and each one is cheap. Ordered by demand.
 - **P1 Find and replace across many files**: `grep -rl` + `sed -i`, with `find -print0`,
   a dry run first, and a backup. +956 / +982 / +588.
 - **P1 Keep a program running after you log out**: `nohup`, `setsid`, `tmux`, and
-  `systemd-run --user`, with an honest recommendation. +1044.
+  `systemd-run --user`, with an honest recommendation. +1044. Third of the three pages the §5
+  scope note divides: this one is the task, so it states the recommendation first and sends the
+  reader to the concept page for why the alternatives differ rather than explaining SIGHUP again.
 - **P1 Exclude "permission denied" noise from `find`**: `2>/dev/null` and why that is the wrong
   answer, `-readable`, running as the right user. +749, and a nice pipes/exit-codes callback.
 - **P2 Save everything a terminal session prints**: `tee`, `script`, and the difference. +1448.
@@ -899,10 +940,11 @@ halfway" problem. On the evidence in §3.1 this outranks everything except finis
 it has been passed over for a week in favour of command pages, which §3.1 explicitly rates lower.
 
 **Wave 3: the environment and terminal concepts (§5).** The `PATH`/startup-files page shipped
-2026-08-23. The terminal/shell/tty page and processes-and-signals remain. Worth noting that
-processes-and-signals is the natural companion to `ps` and `kill` in Wave 5: writing those
-command pages first repeats the situation `kill-whatever-is-using-a-port` was in, referencing
-commands and concepts with nothing to link to.
+2026-08-23. The terminal/shell/tty page and processes-and-signals remain, and
+processes-and-signals is next: §5 records the scope decision it was waiting on, and writing it
+unblocks three Wave 5 pages rather than one. Taking those command pages first would repeat the
+situation `kill-whatever-is-using-a-port` was in, referencing commands and concepts with nothing
+to link to, and would additionally leave each of them re-explaining signals in its own words.
 
 **Wave 4: the Perl track (§8).** Still blocked on the §10.4 `order:` generalisation, which
 has not been made. Everything else about the wave stands.
