@@ -28,6 +28,7 @@ npm run replay -- ls du            # named pages; identical to how the full run 
 npm run replay -- --shard=2/7      # one seventh of the pages; CI gives each of the seven a runner
 npm run audit:links -- --verbose   # the link graph on its own, advisory findings included
 npm run voice    # prose against .claude/reference/voice.md; a hook runs it per file as you write
+npm run browser  # search and narrow-screen layout, in a real browser against a served build
 ```
 
 `--shard` exists for CI, which gives each shard a machine of its own. One shard at a time is a
@@ -44,18 +45,27 @@ excluded from both.
 Single test file: `npx vitest run test/schema.test.ts`
 Single test by name: `npx vitest run -t "accepts a valid command page"`
 
-Accessibility check locally, against a served build:
+The two gates that need a running site, against a served build:
 
 ```sh
 npm run build && npx serve -l 4321 dist &
 npx wait-on http://localhost:4321
-npm run a11y
+npm run a11y      # pa11y-ci over one page per template, WCAG2AA
+npm run browser   # search really returns results; no page scrolls sideways at 320px
 ```
 
-`npm run a11y` is the same command CI runs. **Never `npx pa11y-ci` on its own**: the URL list is
-generated from the built sitemap into `.pa11yci.generated.json`, so bare `pa11y-ci` reads
-`.pa11yci.json`, finds no `urls`, checks nothing and exits 0. `npm run a11y` generates the list
-first and refuses to write one that is missing a category listing.
+Both are the same commands CI runs, as two steps against one served build.
+
+`npm run browser` covers what a build cannot establish about itself. Search runs entirely in the
+browser against Pagefind's WASM bundle, so nothing in `npm run check` loads it and a broken search
+still builds, still passes every test and still deploys; and a stylesheet change can make a page
+scroll sideways without changing a byte of markup. Both are asserted as properties, because
+ADR-0022 rules out snapshots and pixel baselines and says why.
+
+**Never `npx pa11y-ci` on its own**: the URL list is generated from the built sitemap into
+`.pa11yci.generated.json`, so bare `pa11y-ci` reads `.pa11yci.json`, finds no `urls`, checks
+nothing and exits 0. `npm run a11y` generates the list first and refuses to write one that is
+missing a category listing.
 
 Static checks are `npm run format:check` (Prettier) and `tsc --noEmit`, both part of
 `npm run check`. TypeScript runs strict plus `noUncheckedIndexedAccess`,
@@ -76,8 +86,15 @@ inside it, which changed every emitted page the first time this was set up.
 
 `tsc` covers `src/`, `test/` and `scripts/` together: the replay harness is TypeScript too, run
 through `tsx`, and it imports the content types from `src/content/schema.ts` rather than keeping
-its own idea of what an `examples.yaml` contains. `src/client/` is checked separately by
-`tsconfig.client.json`, which is the only config with DOM globals; see ADR-0013.
+its own idea of what an `examples.yaml` contains.
+
+Two files are checked by a config of their own instead, and both are about keeping DOM globals out
+of Node code, where `document` is always a mistake (ADR-0013). `src/client/` is browser code and
+gets `tsconfig.client.json`. `scripts/browser-check.ts` is Node code that *contains* browser code,
+since the callbacks it hands to `page.evaluate()` run inside the page, and gets
+`tsconfig.browser-check.json`. **Do not widen `lib` in `tsconfig.json` to satisfy either.** That
+makes `document` typecheck across the whole build and harness, and the failure it lets through is
+one that only appears at runtime. All three configs run in `npm run check`.
 
 ## The one thing that makes this site different
 

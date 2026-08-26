@@ -25,7 +25,8 @@
     "noEmit": true
   },
   "exclude": [
-    "src/client/**"
+    "src/client/**",
+    "scripts/browser-check.ts"
   ],
   "include": [
     "src/**/*.ts",

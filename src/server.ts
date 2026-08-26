@@ -5,10 +5,12 @@ import { execFileSync, spawnSync } from "node:child_process";
 import chokidar from "chokidar";
 import { build } from "./build.js";
 import { DIST_DIR as DIST, NOT_FOUND_FILE, OUTPUT_INDEX, ROOT } from "./paths.js";
-/** 4321 is what the README, `.pa11yci.json` and the CI accessibility job all expect. `PORT` is
- *  there for the case that decided it: something else already holding the port, where a dev
- *  server that refuses to start is less useful than one on a different number. */
-const PORT = Number(process.env["PORT"] ?? 4321);
+import { LOCAL_PORT } from "./config.js";
+/** `LOCAL_PORT` is what the README and the CI browser gates expect, and it is defined in
+ *  `src/config.ts` because they resolve URLs against it too. `PORT` is there for the case that
+ *  decided it: something else already holding the port, where a dev server that refuses to start
+ *  is less useful than one on a different number. */
+const PORT = Number(process.env["PORT"] ?? LOCAL_PORT);
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",

@@ -1,7 +1,7 @@
 // Writes the URL list pa11y-ci checks, from the sitemap the build just produced.
 //
 //   npm run a11y                                  # generate the list, then check it
-//   npx tsx scripts/pa11y-urls.ts [origin]        # just this step; default http://localhost:4321
+//   npx tsx scripts/pa11y-urls.ts [origin]        # just this step; default is LOCAL_ORIGIN
 //
 // Generated rather than hand-written: a typed list silently stops covering the site as
 // categories are added, and the symptom is a gate that passes because it is checking less.
@@ -21,10 +21,8 @@
 // read a list out without a build, a subprocess or a temporary directory.
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
-import { CATEGORY_META, NAV_ORDER, NOT_FOUND_PATH, TAGS_PATH } from "../src/config.js";
+import { CATEGORY_META, LOCAL_ORIGIN, NAV_ORDER, NOT_FOUND_PATH, TAGS_PATH } from "../src/config.js";
 import { DIST_DIR, PA11Y_CONFIG, PA11Y_GENERATED_CONFIG, ROOT, SITEMAP_FILE } from "../src/paths.js";
-
-const DEFAULT_ORIGIN = "http://localhost:4321";
 
 /** The URL list came out short, so nothing is written. Its own class because the caller has to
  *  tell it from a missing sitemap or an unreadable settings file, which are different repairs. */
@@ -41,7 +39,7 @@ export class Pa11yUrlsError extends Error {}
  *  what the list is for: one page per template, and a category listing is a template. A number
  *  here would need updating whenever a category was added, which is exactly when it would be
  *  wrong. */
-export function pa11yUrls(sitemapXml: string, origin: string = DEFAULT_ORIGIN): string[] {
+export function pa11yUrls(sitemapXml: string, origin: string = LOCAL_ORIGIN): string[] {
   // Parsed as a URL rather than pattern-matched: the sitemap holds absolute locations, and taking
   // the path with a regex quietly produced `//debian.tips/commands/`, which is a path, resolves
   // against the origin, and 404s.
@@ -90,7 +88,7 @@ export function pa11yUrls(sitemapXml: string, origin: string = DEFAULT_ORIGIN): 
 }
 
 function main(): void {
-  const origin = process.argv[2] ?? DEFAULT_ORIGIN;
+  const origin = process.argv[2] ?? LOCAL_ORIGIN;
   const sitemap = join(DIST_DIR, SITEMAP_FILE);
 
   let urls: string[];

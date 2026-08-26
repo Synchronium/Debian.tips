@@ -29,6 +29,13 @@ export const FEED_PATH = `/${FEED_FILE}`;
 export const NOT_FOUND_PATH = `/${NOT_FOUND_FILE}`;
 export const tagPath = (tag: string): string => `${TAGS_PATH}${tag}/`;
 
+/** Where a built site is served for the gates that need a running one: the dev server listens
+ *  here, the README says to open it, and CI serves `dist/` on it before the accessibility and
+ *  browser checks. Both of those resolve a path against this, so the number lives here rather
+ *  than in each of them; the workflow still spells it, since a shell command cannot import it. */
+export const LOCAL_PORT = 4321;
+export const LOCAL_ORIGIN = `http://localhost:${LOCAL_PORT}`;
+
 /** Editorial order for the homepage, the footer and the sitemap. Deliberately *not* derived
  *  from `CATEGORIES`: validation order and reading order are different questions, and this list
  *  is free to lead with whatever the site most wants read first. */

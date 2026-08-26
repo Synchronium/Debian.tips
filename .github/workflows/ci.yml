@@ -28,6 +28,13 @@ jobs:
       # so a run that skipped the generate step would report a pass having checked nothing.
       - name: Accessibility
         run: npm run a11y
+      # The two things a build cannot establish about itself: that search works, which runs
+      # entirely in the browser against Pagefind's WASM and so is loaded by nothing in `check`,
+      # and that no page scrolls sideways at 320px. Both assert properties rather than compare
+      # against stored output, which is ADR-0022. Same served build as the step above; its own
+      # step so a failure says which of the two gates found something.
+      - name: Browser checks
+        run: npm run browser
 
   # Runs every documented `output:` block on every command page for real, inside a
   # disposable Debian container, and diffs the result against what the page claims. The
