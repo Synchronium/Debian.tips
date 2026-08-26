@@ -41,9 +41,15 @@ function documentedOutputs(): { where: string; output: string }[] {
     for (const filename of readdirSync(dir)) {
       const slug = proseSlug(filename);
       if (slug === null) continue;
-      const { pairs } = parseProsePage(readFileSync(proseSource(category, slug), "utf-8"));
+      const { pairs, unpaired } = parseProsePage(readFileSync(proseSource(category, slug), "utf-8"));
       for (const pair of pairs)
         found.push({ where: `${category}/${slug}:${pair.line}`, output: pair.output });
+      // Unpaired blocks too. Nothing replays these, which is exactly why they need this: a real
+      // output that drifts is caught by the replay, and one nothing reproduces can only be caught
+      // by reading it. Both render to the reader inside a `<pre aria-label="output">`, so an
+      // architecture in either is the same defect.
+      for (const block of unpaired)
+        found.push({ where: `${category}/${slug}:${block.line}`, output: block.output });
     }
   }
 

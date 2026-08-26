@@ -127,7 +127,7 @@ export function replayProsePage(options: ProseReplayOptions): ReplayResult {
         // Unpaired blocks are claims nothing checked. Reported rather than failed: a config
         // stanza is legitimately not command output, and the count is what tells an author
         // which is which.
-        unpaired ? `, ${unpaired} block(s) not checkable` : "",
+        unpaired.length ? `, ${unpaired.length} block(s) not checkable` : "",
       ],
     }),
   );

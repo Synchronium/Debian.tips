@@ -32,21 +32,21 @@ describe("parseProsePage", () => {
     ].join("\n");
     const { pairs, unpaired } = parseProsePage(source);
     expect(pairs).toHaveLength(0);
-    expect(unpaired).toBe(1);
+    expect(unpaired).toHaveLength(1);
   });
 
   it("leaves a bash fence with no output alone", () => {
     // Most commands on a prose page make no claim about what they print.
     const { pairs, unpaired } = parseProsePage(`${fence("bash", "sudo apt update")}\n\nSome prose.`);
     expect(pairs).toHaveLength(0);
-    expect(unpaired).toBe(0);
+    expect(unpaired).toHaveLength(0);
   });
 
   it("counts a config block as unpaired rather than as output", () => {
     // A .sources stanza is not something a command printed.
     const { pairs, unpaired } = parseProsePage(`Put this in the file:\n\n${fence("", "Types: deb")}`);
     expect(pairs).toHaveLength(0);
-    expect(unpaired).toBe(1);
+    expect(unpaired).toHaveLength(1);
   });
 
   it("reads a shape directive and its note", () => {
@@ -91,7 +91,7 @@ describe("parseProsePage", () => {
     ].join("\n");
     const { pairs, unpaired } = parseProsePage(source);
     expect(pairs.map((p) => p.command)).toEqual(["one", "two"]);
-    expect(unpaired).toBe(0);
+    expect(unpaired).toHaveLength(0);
   });
 });
 
@@ -102,7 +102,7 @@ describe("fence info strings", () => {
     // rendered, the replay reported "1 block not checkable", and nothing failed, so verification
     // lost silently, which is the one thing this harness exists to prevent.
     const page = parseProsePage('```bash title="one"\necho hi\n```\n```\nhi\n```\n');
-    expect(page.unpaired).toBe(0);
+    expect(page.unpaired).toHaveLength(0);
     expect(page.pairs).toHaveLength(1);
     expect(page.pairs[0]).toMatchObject({ command: "echo hi", output: "hi" });
   });
