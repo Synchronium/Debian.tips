@@ -1,4 +1,5 @@
 {
+  "//": "Settings only. The URL list is generated from the built sitemap into .pa11yci.generated.json, so `npx pa11y-ci` reading THIS file finds no urls, checks nothing, and exits 0. Run `npm run a11y`, which generates the list and then checks it.",
   "defaults": {
     "standard": "WCAG2AA",
     "timeout": 30000,
