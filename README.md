@@ -112,7 +112,8 @@ than being quietly dropped.
 go stale on its own except the one thing that matters most, which is Debian's archive: the sandbox
 image builds from a moving tag, so a security update to a package a page documents is enough to
 make a true page false. A push to `main` already replays everything, so this only earns its runner
-during quiet weeks, which are the weeks nobody would notice.
+during quiet weeks, which are the weeks nobody would notice. A failure opens an issue rather than
+resting in the Actions tab, for the same reason.
 
 `.github/workflows/deploy.yml` then publishes to GitHub Pages, but only for a commit CI passed:
 it triggers on CI completing successfully and checks out that exact commit, so a red build
