@@ -1,5 +1,6 @@
 import { FEED_PATH, SITE, STANDALONE_PAGES } from "./config.js";
 import type { Page } from "./content/loader.js";
+import { isoDay } from "./templates/pageMeta.js";
 
 const XML_ESC: Record<string, string> = {
   "&": "&amp;",
@@ -10,10 +11,6 @@ const XML_ESC: Record<string, string> = {
 };
 function escapeXml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => XML_ESC[c]!);
-}
-
-function isoDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
 }
 
 /** Newest `updated` among the given pages, or undefined for an empty set. */
@@ -48,7 +45,7 @@ export function sitemapXml(pages: Page[], listings: Listing[]): string {
   const xml = entries
     .map(({ path, lastmod }) => {
       const loc = `<loc>${escapeXml(`${SITE.url}${path}`)}</loc>`;
-      return `<url>${loc}${lastmod ? `<lastmod>${isoDate(lastmod)}</lastmod>` : ""}</url>`;
+      return `<url>${loc}${lastmod ? `<lastmod>${isoDay(lastmod)}</lastmod>` : ""}</url>`;
     })
     .join("");
 
