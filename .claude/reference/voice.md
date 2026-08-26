@@ -207,6 +207,13 @@ counts the phrases that are fine a few times and wrong as a habit, against a bud
 whole-corpus pass can judge. A `PostToolUse` hook runs it on each file as it is written, so a
 banned construction comes back in the same turn it was typed.
 
+**Over the whole of what this document claims**, which means `content/`, `docs/`, `.claude/`,
+`README.md`, `CLAUDE.md`, and the comments in `src/`, `scripts/` and `test/`. In a source file it
+reads whole-line comments and nothing else: a banned phrase inside a string literal or a regular
+expression is data, and `scripts/voice-check.ts` quotes every phrase it bans. `test/fixtures/` is
+exempt, because those bytes are what the build tests compare against and a fixture is a stand-in
+rather than prose.
+
 **A green run says nothing about §4.** The tells that are shapes rather than spellings, a closer,
 a manufactured misconception, a section that comments on itself, are invisible to it, and the one
 rule that was tried both ways proves the boundary: `, and` joining a consequence matched 185 lines

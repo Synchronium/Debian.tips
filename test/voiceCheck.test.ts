@@ -80,6 +80,28 @@ describe("voice-check scoping", () => {
     expect(lines.map((l) => l.text.trim())).toEqual(["level: basic"]);
   });
 
+  it("reads a source file's comments and never its code", () => {
+    // The rules quote the phrases they ban, so a checker that read code would fail on its own
+    // rule table. A banned phrase inside a string literal or a regular expression is data.
+    const source = [
+      "// A load-bearing comment, which is a finding.",
+      "/* A block comment,",
+      "   still inside the block, load-bearing again. */",
+      'const banned = "load-bearing";',
+      "const pattern = /load-bearing/g;",
+      "# a shell comment, load-bearing",
+    ].join("\n");
+    const lines = proseLines("src/thing.ts", source).map((entry) => entry.line);
+    expect(lines).toEqual([1, 2, 3, 6]);
+  });
+
+  it("exempts the synthetic content tree the build tests assert against", () => {
+    // A fixture is a stand-in, not prose. Holding one to the guide invites improving a sentence
+    // that a build test compares character for character.
+    const findings = checkFile(join(ROOT, "test/fixtures/content/about.md"));
+    expect(findings).toEqual([]);
+  });
+
   it("rates the banned constructions as failures", () => {
     const findings = checkFile(write("page.md", "The real question is whether this fails.\n"));
 
@@ -104,9 +126,19 @@ describe("voice-check scope", () => {
   // guide does not claim answers false, which is what a session's own scratch notes rely on.
   it("leaves untracked notes and non-prose alone", () => {
     expect(inScope(join(ROOT, "scratch/notes/draft.md"))).toBe(false);
-    expect(inScope(join(ROOT, "scripts/voice-check.ts"))).toBe(false);
     expect(inScope(join(ROOT, "content/commands/ls/notes.txt"))).toBe(false);
+    expect(inScope(join(ROOT, "styles/site.css"))).toBe(false);
     expect(inScope("/etc/passwd.md")).toBe(false);
+  });
+
+  it("covers the code, for its comments", () => {
+    // voice.md's opening claims code comments, because ADR-0017 puts every one of them a click
+    // away from a page it helped produce. The checker read only content/ and the documentation
+    // until this, so the guide's "the corpus sits at zero" was true of half of what it claimed.
+    expect(inScope(join(ROOT, "src/templates/layout.ts"))).toBe(true);
+    expect(inScope(join(ROOT, "scripts/voice-check.ts"))).toBe(true);
+    expect(inScope(join(ROOT, "scripts/fixtures/ls.sh"))).toBe(true);
+    expect(inScope(join(ROOT, "test/build.test.ts"))).toBe(true);
   });
 
   it("resolves a relative path before deciding", () => {

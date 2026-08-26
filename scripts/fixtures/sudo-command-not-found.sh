@@ -31,7 +31,7 @@ gpasswd -d newbie sudo >/dev/null 2>&1 || true
 
 # The sandbox image grants the `user` account passwordless sudo through /etc/sudoers.d/user.
 # That is why the page uses `newbie` rather than `user`: `user` cannot demonstrate this error
-# at all, and reaching for it would have produced a page that quietly proved nothing.
+# at all, and using it would have produced a page that quietly proved nothing.
 
 # sudo back, because one example purges it and the restore between examples only empties the
 # working directory. Without this, every example after that one runs on a machine that has no

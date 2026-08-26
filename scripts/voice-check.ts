@@ -17,7 +17,7 @@
 // which is the status Claude Code feeds back to whoever wrote the line rather than to the human
 // watching the session.
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { isAbsolute, join, relative, resolve } from "node:path";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { CONTENT_DIR, EXAMPLES_FILE, ROOT } from "../src/paths.js";
 
 export const SEVERITY = {
@@ -115,11 +115,44 @@ const RULES: readonly Rule[] = [
  *  checking it would report the rules as violations of themselves. */
 const EXEMPT = new Set([".claude/reference/voice.md"]);
 
+/** The synthetic content tree the build tests run over, which publishes nothing.
+ *
+ *  Exempt because its bytes are what the tests assert against. A fixture is a stand-in, not
+ *  prose, and holding one to the guide invites someone to improve a sentence that a build test
+ *  compares character for character. The rest of `test/` is checked: those comments explain what
+ *  a test is defending and are read like any other. */
+const EXEMPT_DIRS: readonly string[] = [join(ROOT, "test", "fixtures")];
+
 interface Finding {
   readonly file: string;
   readonly line: number;
   readonly rule: Rule;
   readonly text: string;
+}
+
+/** Comment lines in a TypeScript or shell source file, with the code between them dropped.
+ *
+ *  voice.md applies to code comments, which ADR-0017 puts one click away from every page they
+ *  helped produce. It does not apply to code: a string literal, an identifier or a regular
+ *  expression is not a sentence, and `voice-check.ts` itself quotes every phrase it bans, so
+ *  offering the code to the rules would have the checker fail on its own rule table.
+ *
+ *  Only whole-line comments. A trailing `// like this` sits on a line whose code half would come
+ *  with it, and the cases worth catching are the block comments above a declaration, which is
+ *  where this repository does its explaining. */
+function commentLines(source: string): { line: number; text: string }[] {
+  const out: { line: number; text: string }[] = [];
+  let inBlock = false;
+  source.split("\n").forEach((text, index) => {
+    const trimmed = text.trimStart();
+    const isLineComment = trimmed.startsWith("//") || trimmed.startsWith("#");
+    if (inBlock || isLineComment || trimmed.startsWith("/*")) {
+      out.push({ line: index + 1, text });
+    }
+    if (trimmed.startsWith("/*") && !trimmed.includes("*/")) inBlock = true;
+    if (inBlock && trimmed.includes("*/")) inBlock = false;
+  });
+  return out;
 }
 
 /** Prose lines only, with captured text removed.
@@ -133,17 +166,22 @@ export function proseLines(path: string, source: string): { line: number; text: 
   let inFence = false;
   let blockIndent: number | null = null;
 
-  source.split("\n").forEach((text, index) => {
-    const line = index + 1;
+  if (isCode(path)) return commentLines(source);
 
-    if (!isExamples) {
+  if (!isExamples) {
+    source.split("\n").forEach((text, index) => {
+      const line = index + 1;
       if (/^\s*```/.test(text)) {
         inFence = !inFence;
         return;
       }
       if (!inFence) out.push({ line, text });
-      return;
-    }
+    });
+    return out;
+  }
+
+  source.split("\n").forEach((text, index) => {
+    const line = index + 1;
 
     // Inside a block scalar, every line more indented than the key that opened it is content.
     if (blockIndent !== null) {
@@ -166,6 +204,7 @@ export function proseLines(path: string, source: string): { line: number; text: 
 export function checkFile(absolute: string): Finding[] {
   const file = relative(ROOT, absolute);
   if (EXEMPT.has(file)) return [];
+  if (EXEMPT_DIRS.some((dir) => resolve(absolute).startsWith(dir + sep))) return [];
   const findings: Finding[] = [];
   for (const { line, text } of proseLines(file, readFileSync(absolute, "utf-8"))) {
     for (const rule of RULES) {
@@ -192,10 +231,27 @@ function walk(dir: string, keep: (path: string) => boolean): string[] {
  *  which is any file in the repository, and prose the guide was never written for is out of scope
  *  rather than failing. Without the test, editing a personal note produces a wall of findings
  *  against sentences nobody agreed to hold to this. */
-const VOICE_DIRS: readonly string[] = [CONTENT_DIR, join(ROOT, "docs"), join(ROOT, ".claude")];
+const VOICE_DIRS: readonly string[] = [
+  CONTENT_DIR,
+  join(ROOT, "docs"),
+  join(ROOT, ".claude"),
+  // The code, for its comments. voice.md's opening says it applies to "every sentence this
+  // repository publishes", and names code comments explicitly, because ADR-0017 puts every one of
+  // them one click away from a page they helped produce. Leaving these out meant the guide's claim
+  // that the corpus sits at zero was true only of the half the checker happened to walk, and it
+  // was not true of the other half.
+  join(ROOT, "src"),
+  join(ROOT, "scripts"),
+  join(ROOT, "test"),
+];
 const VOICE_FILES: readonly string[] = [join(ROOT, "README.md"), join(ROOT, "CLAUDE.md")];
 
-const isProse = (path: string): boolean => path.endsWith(".md") || path.endsWith(EXAMPLES_FILE);
+/** Source files, checked for their comments and not for their code. */
+const CODE_EXTENSIONS = [".ts", ".sh"];
+const isCode = (path: string): boolean => CODE_EXTENSIONS.some((ext) => path.endsWith(ext));
+
+const isProse = (path: string): boolean =>
+  path.endsWith(".md") || path.endsWith(EXAMPLES_FILE) || isCode(path);
 
 export function inScope(path: string): boolean {
   const absolute = resolve(path);
