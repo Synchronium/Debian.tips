@@ -89,6 +89,7 @@ command shown. These records keep that claim honest.
 | [0015](0015-link-integrity-is-two-gates.md) | Link integrity is two separate checks, not one |
 | [0016](0016-accessibility-is-a-gate.md) | Accessibility is a build gate, and its URL list is generated |
 | [0017](0017-every-page-links-to-its-own-sources.md) | Every page links to the files that produced it |
+| [0022](0022-no-snapshot-tests-and-no-pixel-baselines.md) | No snapshot tests and no pixel baselines; the gates assert named properties |
 
 ## Adding one
 

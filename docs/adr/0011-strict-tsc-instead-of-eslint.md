@@ -22,9 +22,11 @@ settings the codebase passes:
 `strict`, plus `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`,
 `noUnusedLocals`, `noUnusedParameters`, `noImplicitReturns` and `noFallthroughCasesInSwitch`.
 
-Two configs, because client code and build code need different lib sets: `tsconfig.json` excludes
-`src/client/**`, and `tsconfig.client.json` covers it with DOM types (ADR-0013). Both run in the
-gate.
+Three configs, because build code and browser code need different lib sets: `tsconfig.json` has no
+DOM lib and excludes the two things that need one, `tsconfig.client.json` covers `src/client/**`
+(ADR-0013), and `tsconfig.browser-check.json` covers `scripts/browser-check.ts`, which is Node code
+whose `page.evaluate()` callbacks run in a page (ADR-0022). All three run in the gate. Widening the
+root `lib` instead would collapse them into one and let `document` typecheck everywhere.
 
 ## Consequences
 

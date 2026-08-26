@@ -35,6 +35,11 @@ DOM types live in a separate `tsconfig.client.json`. The root config excludes `s
 deliberately: sharing one config would let `document` typecheck inside the build and the harness,
 where referring to it is always a mistake.
 
+That exclusion is the rule rather than the special case, and `scripts/browser-check.ts` is the
+second file to need it (ADR-0022): it is Node code holding browser code, since the callbacks it
+passes to `page.evaluate()` run inside a page. It gets `tsconfig.browser-check.json` for the same
+reason, rather than the root `lib` being widened to reach it.
+
 ## Consequences
 
 The source can be readable, checked and formatted, while what ships is small.
