@@ -3,7 +3,7 @@
 //   npm run replay                 # every page
 //   npm run replay -- wget curl    # just these
 //   npm run replay -- --changed    # only the pages a diff touches (what CI runs on a PR)
-//   npm run replay -- --shard=2/5  # one part of whichever of those two a run selected
+//   npm run replay -- --shard=2/7  # one part of whichever of those two a run selected
 //
 // The check `npm run check` can't make: that gate validates shape (schema, links, types)
 // and would pass a page claiming output no command ever produced.

@@ -35,7 +35,7 @@ the sandbox and diffs the real result against what the page claims:
 
 ```sh
 npm run replay              # every page, each in a sandbox of its own (ADR-0020)
-npm run replay -- --shard=2/5        # a fifth of them; CI runs five shards on five runners
+npm run replay -- --shard=2/7        # a seventh of them; CI runs seven shards on seven runners
 npm run replay -- --record-timings   # full run, and rewrite what balances those shards
 npm run replay -- wget curl # just these
 

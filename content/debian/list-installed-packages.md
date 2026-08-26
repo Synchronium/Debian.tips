@@ -49,7 +49,7 @@ base-passwd 3.6.7
 **Use `${Package}` rather than `${binary:Package}`.** The second appends an architecture
 qualifier to any package that could be installed for more than one architecture at a time, so
 roughly half your list comes back as `libc6:amd64` while the rest stays bare. That is correct
-behaviour bit it's hardly ever what you want in a script.
+behaviour but it's hardly ever what you want in a script.
 
 ## dpkg-query lists more than is installed
 

@@ -27,7 +27,7 @@ CI runs two kinds of job in parallel:
   both places.
 - **`replay`**: builds the sandbox image, then replays pages, each in a container of its own. A
   pull request replays only what its diff touched; a push to `main` replays everything. It is a
-  matrix of five shards on five runners, each taking a share of the pages balanced by recorded
+  matrix of seven shards on seven runners, each taking a share of the pages balanced by recorded
   timings; `scripts/lib/replayShard.ts` decides which pages, and `test/replayShard.test.ts` holds
   the property that every page lands in exactly one shard.
 
@@ -76,4 +76,4 @@ which half any slowness is in. Caching the image is the next lever, and it is cl
 failure modes than it was.
 
 ADR-0020's "Revisit when" covers the other half, which is what to do about the replay's total run
-time, and records why five shards rather than more.
+time, and records how the shard count has moved with it.

@@ -75,7 +75,7 @@ sections:
             Candidate: 3.03+dfsg2-8
       - title: Find which installed package owns a file
         code: dpkg -S /usr/bin/apt-get
-        description: A [`dpkg`](/debian/apt-essentials/) query rather than an apt one, because it works from the list of files each installed package shipped. For a file you don't have yet, `apt-file search` is the equivalent.
+        description: A [`dpkg`](/debian/apt-essentials/) query rather than an apt one, because it works from the list of files each installed package shipped. For a file you don't have yet, [`apt-file search`](/commands/apt-file/) is the equivalent.
         level: intermediate
         output: |2
           apt: /usr/bin/apt-get

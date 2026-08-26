@@ -66,7 +66,7 @@ sections:
           /usr/share/cowsay
       - title: Find which package owns a file
         code: dpkg -S /usr/games/cowsay
-        description: The reverse lookup, and the fastest way to identify an unfamiliar file. It only knows about installed packages - for a file you don't have yet, `apt-file search` is the equivalent.
+        description: The reverse lookup, and the fastest way to identify an unfamiliar file. It only knows about installed packages - for a file you don't have yet, [`apt-file search`](/commands/apt-file/) is the equivalent.
         level: basic
         output: |2
           cowsay: /usr/games/cowsay

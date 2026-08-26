@@ -48,6 +48,6 @@ remind you.
 
 [`dpkg -S`](/commands/dpkg/) names the package a file on disk came from, out of what dpkg
 recorded when it unpacked it. That only reaches packages you have installed. For a file you do
-not have yet, `apt-file search` answers the same question, and the command is not installed by
-default. Installing the `apt-file` package also adds the archive's Contents index to what
-`apt update` fetches, so the sequence is install, update, then search.
+not have yet, [`apt-file search`](/commands/apt-file/) answers the same question, and the command
+is not installed by default. Installing the `apt-file` package also adds the archive's Contents
+index to what `apt update` fetches, so the sequence is install, update, then search.

@@ -1,0 +1,226 @@
+command: apt-file
+fixtures:
+  - name: wanted.txt
+    note: "the batch of paths the `-f` examples look up, one per line: a command, a development header and a game, none of them installed here"
+    content: |
+      /usr/bin/nslookup
+      /usr/include/zlib.h
+      /usr/games/cowsay
+sections:
+  - title: "Find the package that ships a file"
+    intro: "`apt-file` reads Debian's index of which package contains which path, so it can answer for a package nobody has installed. [`dpkg -S`](/commands/dpkg/) works from the file lists on the disk, and is limited to what those cover."
+    examples:
+      - title: "Find the package for a command you do not have"
+        code: apt-file search bin/ifconfig
+        description: "The pattern does not have to be a whole path, which saves you from having to remember where Debian puts things. `ifconfig` moved to `/usr/sbin` in the `/usr` merge, and a fragment like `bin/ifconfig` finds it either side of that."
+        level: basic
+        output: |
+          net-tools: /usr/sbin/ifconfig
+      - title: "Confirm dpkg cannot answer for a package you have not installed"
+        code: dpkg -S /usr/sbin/ifconfig
+        description: "`dpkg -S` searches the file lists dpkg wrote when it unpacked each package. `net-tools` is not installed here, so there is no list to find the path in, and the message says so rather than saying no package ships it."
+        level: basic
+        output: |
+          dpkg-query: no path found matching pattern /usr/sbin/ifconfig
+      - title: "Search for an exact path"
+        code: apt-file search /usr/games/cowsay
+        description: "A leading `/` makes the pattern an absolute path. Use it when you know exactly where the file belongs."
+        level: basic
+        output: |
+          cowsay: /usr/games/cowsay
+      - title: "Print only the package name"
+        code: apt-file search -l bin/nslookup
+        description: "`-l` (`--package-only`) drops the paths and de-duplicates, which is the form to use when the answer is going into `apt install`."
+        level: basic
+        output: |
+          bind9-dnsutils
+      - title: "Find the package for a missing header file"
+        code: apt-file search /usr/include/zlib.h
+        description: "The reason a build fails with `fatal error: zlib.h: No such file or directory` is almost always a missing `-dev` package, and this is how to find out which one."
+        level: basic
+        output: |
+          zlib1g-dev: /usr/include/zlib.h
+      - title: "Find the package that ships a systemd unit"
+        code: apt-file search lib/systemd/system/cron.service
+        description: "Unit files are packaged like any other file, so a unit named in a guide you are following can be traced back to the package that would install it. See [systemd services](/debian/systemd-services/)."
+        level: basic
+        output: |
+          cron: /usr/lib/systemd/system/cron.service
+      - title: "See what happens when nothing matches"
+        code: apt-file search /usr/bin/definitely-not-a-real-file
+        description: "No output, and an exit status of 1. A script can test for that rather than parsing the empty result."
+        level: intermediate
+      - title: "Search for a file you do have"
+        code: apt-file search /usr/bin/apt-file
+        description: "`apt-file` never looks at your disk. It searches the archive index either way, so it will also name the package behind a file you already have."
+        level: intermediate
+        output: |
+          apt-file: /usr/bin/apt-file
+      - title: "Ask dpkg instead when the package is installed"
+        code: dpkg -S /usr/bin/ls
+        description: "Instant, and it needs no index: dpkg already has the file list. `apt-file` is for the case where this comes back empty."
+        level: intermediate
+        output: |
+          coreutils: /usr/bin/ls
+
+  - title: "Control what the pattern matches"
+    intro: "A pattern with no wildcards in it is matched as a **substring** of the whole path, which finds more than people expect."
+    examples:
+      - title: "See why a plain pattern matches too much"
+        code: apt-file search /usr/bin/dig
+        description: "Eight paths across seven packages, because `/usr/bin/dig` is a substring of `/usr/bin/digikam` and of six others. The command you wanted is the first line."
+        level: basic
+        output: |
+          bind9-dnsutils: /usr/bin/dig
+          digikam: /usr/bin/digikam
+          digikam: /usr/bin/digitaglinktree
+          digitemp: /usr/bin/digitemp_DS9097
+          digitemp: /usr/bin/digitemp_DS9097U
+          digup: /usr/bin/digup
+          golang-golang-x-tools: /usr/bin/digraph
+          texlive-extra-utils: /usr/bin/digestif
+      - title: "Anchor a search to the end of the path"
+        code: apt-file search -x 'bin/dig$'
+        description: "`-x` (`--regexp`) treats the pattern as a regular expression, so `$` pins it to the end of the path and the seven near-misses disappear. Leave the `/usr` off while you are at it. The index stores paths without their leading slash, so a pattern carrying one has to be compiled into an alternation of both forms and matched twice, which doubles the time the search takes."
+        level: intermediate
+        output: |
+          bind9-dnsutils: /usr/bin/dig
+      - title: "Search for several commands at once"
+        code: apt-file search -x 'bin/(ifconfig|route)$'
+        description: "One pass over the index rather than two, and a pass reads tens of megabytes."
+        level: intermediate
+        output: |
+          net-tools: /usr/sbin/ifconfig
+          net-tools: /usr/sbin/route
+      - title: "Match a group of files with a regular expression"
+        code: apt-file search -x 'share/cowsay/cows/[bc].*\.cow$'
+        description: "Quote the pattern. `$`, `*` and `[` are all meaningful to the shell, and an unquoted pattern is expanded against your working directory before `apt-file` ever sees it."
+        level: intermediate
+        output: |
+          cowsay: /usr/share/cowsay/cows/bud-frogs.cow
+          cowsay: /usr/share/cowsay/cows/bunny.cow
+          cowsay: /usr/share/cowsay/cows/calvin.cow
+          cowsay: /usr/share/cowsay/cows/cheese.cow
+          cowsay: /usr/share/cowsay/cows/cock.cow
+          cowsay: /usr/share/cowsay/cows/cower.cow
+          cowsay-off: /usr/share/cowsay/cows/beavis.zen.cow
+          cowsay-off: /usr/share/cowsay/cows/bong.cow
+      - title: "Ignore case when you are unsure of the spelling"
+        code: apt-file search -i games/COWSAY
+        description: "`-i` (`--ignore-case`) matters most with fonts, icons and documentation, where capitalisation in the filename is not something anyone remembers."
+        level: intermediate
+        output: |
+          cowsay: /usr/games/cowsay
+      - title: "Find every translation of a manual page"
+        code: apt-file search --substring-match man8/ifconfig
+        description: "`--substring-match` forces the substring behaviour even for a pattern containing wildcards, so nothing in it is treated as a glob or a regular expression."
+        level: advanced
+        output: |
+          manpages-es: /usr/share/man/es/man8/ifconfig.8.gz
+          manpages-ja: /usr/share/man/ja/man8/ifconfig.8.gz
+          manpages-pl: /usr/share/man/pl/man8/ifconfig.8.gz
+          manpages-ro: /usr/share/man/ro/man8/ifconfig.8.gz
+          manpages-tr: /usr/share/man/tr/man8/ifconfig.8.gz
+          manpages-zh: /usr/share/man/zh_CN/man8/ifconfig.8.gz
+          manpages-zh: /usr/share/man/zh_TW/man8/ifconfig.8.gz
+          net-tools: /usr/share/man/de/man8/ifconfig.8.gz
+          net-tools: /usr/share/man/fr/man8/ifconfig.8.gz
+          net-tools: /usr/share/man/man8/ifconfig.8.gz
+          net-tools: /usr/share/man/pt_BR/man8/ifconfig.8.gz
+      - title: "Look up a list of paths in one go"
+        code: apt-file search -F -f wanted.txt
+        description: "`-f` (`--from-file`) reads one pattern per line, and one pass over the index answers all of them. Pair it with `-F` (`--fixed-string`) when the lines are complete paths: without it each line is compiled into the same regular expression, which takes twice as long as the search itself."
+        level: advanced
+        output: |
+          bind9-dnsutils: /usr/bin/nslookup
+          cowsay: /usr/games/cowsay
+          zlib1g-dev: /usr/include/zlib.h
+      - title: "Turn a list of paths into a list of packages to install"
+        code: apt-file search -l -F -f wanted.txt
+        description: "The output is ready to hand to `apt install`. Read it before you do, since a path can be shipped by more than one package."
+        level: advanced
+        output: |
+          bind9-dnsutils
+          cowsay
+          zlib1g-dev
+      - title: "Restrict a search to one suite"
+        code: apt-file search --filter-suites trixie bin/nslookup
+        description: "With [backports or another release enabled](/debian/release-channels/), one path can be answered by several suites. `--filter-suites` keeps the answer to the one you are actually installing from."
+        level: advanced
+        output: |
+          bind9-dnsutils: /usr/bin/nslookup
+
+  - title: "List what a package contains"
+    intro: "The same index read the other way round: `apt-file list` is [`dpkg -L`](/commands/dpkg/) for a package you have not installed yet. `show` is a second name for the same action, as `find` is for `search`."
+    examples:
+      - title: "List the files a package would install"
+        code: apt-file list cowsay | head -5
+        description: "`cowsay` is not installed here. The listing comes from the archive index, so nothing is downloaded and nothing is unpacked."
+        level: basic
+        output: |
+          cowsay: /usr/games/cowsay
+          cowsay: /usr/games/cowthink
+          cowsay: /usr/share/cowsay/cows/apt.cow
+          cowsay: /usr/share/cowsay/cows/bud-frogs.cow
+          cowsay: /usr/share/cowsay/cows/bunny.cow
+      - title: "Count what a package would install"
+        code: apt-file list cowsay | wc -l
+        description: "Worth a look before installing something that sounds small."
+        level: basic
+        output: |
+          57
+      - title: "Find the manual pages a package would give you"
+        code: apt-file list cowsay | grep man
+        description: "The listing is plain text, so [`grep`](/commands/grep/) narrows it. Note that `snowman.cow` matches too, which is the usual reason to anchor the pattern."
+        level: intermediate
+        output: |
+          cowsay: /usr/share/cowsay/cows/snowman.cow
+          cowsay: /usr/share/man/man6/cowsay.6.gz
+          cowsay: /usr/share/man/man6/cowthink.6.gz
+      - title: "See what happens with a package that does not exist"
+        code: apt-file list definitely-not-a-real-package
+        description: "Nothing, and exit status 1. `list` matches the package name as a substring, so a typo that is a prefix of a real package will quietly list that one instead."
+        level: intermediate
+      - title: "Check whether a downloaded .deb collides with anything"
+        code: apt-file search -l -D cowsay_*.deb
+        description: "`-D` (`--from-deb`) takes the file list out of a `.deb` that `apt-get download cowsay` left in the working directory, and searches the archive for every path in it. Only the package itself comes back, so no other package would have its files overwritten. Drop the `-l` to see which paths collided."
+        level: advanced
+        output: |
+          cowsay
+
+  - title: "Where the index comes from"
+    intro: "`apt-file` searches a file called `Contents`, which apt downloads only because installing `apt-file` asked it to."
+    examples:
+      - title: "See what installing apt-file changed"
+        code: dpkg -L apt-file | grep apt.conf
+        description: "That one fragment adds the `Contents` indices to `Acquire::IndexTargets`. From then on, an ordinary `apt update` fetches them along with the package lists."
+        level: basic
+        output: |
+          /etc/apt/apt.conf.d
+          /etc/apt/apt.conf.d/50apt-file.conf
+      - title: "Check the index is present before searching"
+        code: apt-file list-indices
+        description: "`Ok` against `deb` means there is something to search. `Empty (code: 3)` means the file was never downloaded, and every search will report `The cache is empty` until it is."
+        level: basic
+        output: |
+          +-----------------+-----------------------------+-----------------+
+          | Index Name (-I) | DefaultEnabled (Apt config) | Index Status    |
+          +-----------------+-----------------------------+-----------------+
+          | deb             | <unset>                     | Ok              |
+          | udeb            | false                       | Empty (code: 4) |
+          | dsc             | false                       | Empty (code: 4) |
+          +-----------------+-----------------------------+-----------------+
+      - title: "Download the index"
+        code: apt-file update 2>&1 | tail -1
+        description: "Since apt-file 3.0 this runs `apt-get update` for you, restricted to the `Contents` indices, and the lines it prints before this one are the same `Get:` and `Hit:` lines that command gives. Running plain `apt update` keeps the index current too, so on a machine you update anyway this is only needed once."
+        level: intermediate
+        output: |
+          Reading package lists...
+      - title: "Read the package description before installing what you found"
+        code: apt-cache show net-tools | grep -E '^(Package|Section|Homepage)'
+        description: "A path can be shipped by a package you have never heard of. [`apt-cache show`](/commands/apt-cache/) is the cheap look before `apt install`."
+        level: intermediate
+        output: |
+          Package: net-tools
+          Homepage: http://sourceforge.net/projects/net-tools/
+          Section: net

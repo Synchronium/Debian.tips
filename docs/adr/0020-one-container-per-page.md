@@ -155,14 +155,19 @@ of the risk: it framed parallelising as a change to *what is tested*, which was 
 sandbox and is not true now. The risk that replaced it is a page belonging to no shard, which is a
 partition problem rather than a contamination one, and `test/replayShard.test.ts` holds it.
 
-The count moved from four to five on 2026-08-26, when the site had grown to 333 seconds serial
-and four shards were coming out at 84 against a floor of 62. Five reaches 67, which is the last
-count the total work justifies rather than the floor; the reasoning lives beside the matrix in
-`.github/workflows/ci.yml`, where changing it is one line.
+The count moved from four to five and then to seven, both on 2026-08-26, and the second move
+corrected a mistake in the first. Five was chosen on the argument that nothing waits on the replay
+job, so a runner buying seconds was not worth spending. That is wrong: ADR-0003 gates deploy on
+this workflow's conclusion, which makes the slowest shard part of the time between a push and the
+site being live. With that understood, the count should sit wherever the curve stops moving. It
+stops at seven: 427 seconds serial comes out at 86 across five, 71 across six and 63 across seven,
+where it meets the floor and stays. The figures live beside the matrix in
+`.github/workflows/ci.yml`, where changing the count is one line, and they are there to be
+re-measured rather than trusted.
 
-Revisit again when the slowest single page dominates the shard budget rather than merely setting
-it, which five shards are close to already. At that point the lever is that page's setup script,
-not more runners.
+Revisit when the slowest single page dominates the shard budget rather than merely setting it,
+which seven shards now do exactly: the slowest shard **is** the `apt` page. From here more runners
+buy nothing at all, and the only lever left is that page's setup script.
 
 Also revisit if the per-page `apt-get update` grows beyond a few seconds. Baking the package lists
 into the image was considered and rejected: the lists would be as old as the last image build,

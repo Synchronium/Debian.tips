@@ -174,7 +174,7 @@ sections:
     examples:
       - title: "Skip the header row of a CSV"
         code: tail -n +2 users.csv
-        description: "From line 2 to the end, so the column names are dropped and every record is kept. The idiom to reach for before piping a CSV into anything that would choke on its header."
+        description: "From line 2 to the end, so the column names are dropped and every record is kept. The idiom to use before piping a CSV into anything that would choke on its header."
         output: |2
           Alice,34,Engineering
           Bob,29,Sales

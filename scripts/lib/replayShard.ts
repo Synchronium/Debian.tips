@@ -7,13 +7,13 @@
 // tolerate. `test/replayShard.test.ts` asserts the partition over many page counts and shard
 // counts rather than trusting the arithmetic here to be obviously right.
 //
-// **The split is balanced, because one page decides the answer.** Replay time is concentrated:
-// measured 2026-08-26, the `apt` page alone is a fifth of a 333-second run and the median page
-// is 1.2 seconds. So the wall clock of a sharded run is the slowest shard, the slowest shard can
-// never be quicker than the slowest page, and the only thing worth optimising is keeping the
-// handful of heavy pages apart. Splitting the sorted list round-robin instead does that by
-// accident: it put `apt` and `remove-vs-purge-vs-autoremove` in one shard at five shards and gave
-// a slower run than four did.
+// **The split is balanced, because a handful of pages decide the answer.** Replay time is
+// concentrated: measured 2026-08-26, the four heaviest pages are half of a 427-second run and the
+// median page is 1.4 seconds. So the wall clock of a sharded run is the slowest shard, the
+// slowest shard can never be quicker than the slowest page, and the only thing worth optimising
+// is keeping those few pages apart. Splitting the sorted list round-robin instead does that only
+// by accident, and on the same timings it came out 47% slower across seven shards. The gap widens
+// as shards are added, because there are fewer pages left to absorb a badly placed heavy one.
 import { readFileSync } from "node:fs";
 import { REPLAY_TIMINGS_FILE } from "../../src/paths.js";
 
@@ -77,8 +77,8 @@ const UNTIMED_SECONDS = 10;
  *
  *  Greedy longest-processing-time. It is not optimal in general and does not need to be: the
  *  bound that matters is the slowest single page, and putting the heavy pages first is what
- *  reaches it. Measured 2026-08-26 over the real timings, five shards came out at 66.8 seconds
- *  against a 66.6-second ideal.
+ *  reaches it. Measured 2026-08-26 over the real timings, seven shards came out at 62.8 seconds,
+ *  which is the `apt` page's own time: the split has reached the floor and no packing beats it.
  *
  *  Deterministic for a given page set: pages are ordered by time and then by name, and ties
  *  between equally-loaded shards go to the lowest index. Two runs of the same commit therefore

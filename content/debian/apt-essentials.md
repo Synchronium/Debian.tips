@@ -102,7 +102,9 @@ curl: /usr/bin/curl
 ```
 
 Use it when you find an unfamiliar file or command on a system and want to know what installed
-it, without a search engine.
+it, without a search engine. When the file is not there yet, which is the case behind most
+`command not found` messages, the question needs
+[a different tool](/debian/which-package-provides-a-file/).
 
 ## Previewing a change before it happens
 

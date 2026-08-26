@@ -13,6 +13,13 @@
     "fixtures": 2,
     "unpaired": 0
   },
+  "commands/apt-file": {
+    "checked": 25,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 1,
+    "unpaired": 0
+  },
   "commands/awk": {
     "checked": 79,
     "byShape": 0,
@@ -297,6 +304,13 @@
     "checked": 4,
     "byShape": 1,
     "exempt": 2,
+    "fixtures": 0,
+    "unpaired": 0
+  },
+  "debian/which-package-provides-a-file": {
+    "checked": 12,
+    "byShape": 1,
+    "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
   },

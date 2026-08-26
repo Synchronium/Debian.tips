@@ -103,8 +103,8 @@ than being quietly dropped.
 `.github/workflows/ci.yml` runs on every pull request and push to `main`, as parallel jobs:
 
 - **check**: typecheck, tests, build, linkcheck, then `pa11y-ci` against the built site.
-- **replay**, four of them: every documented `output:` block re-run for real inside a disposable
-  Debian container and diffed against the page, a container per page, split across five runners.
+- **replay**, seven of them: every documented `output:` block re-run for real inside a disposable
+  Debian container and diffed against the page, a container per page, one shard per runner.
   Separate from `check` because it needs Docker, and because "the generator is broken" and "a
   page is lying" are different problems.
 

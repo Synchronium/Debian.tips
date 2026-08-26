@@ -154,8 +154,13 @@ The §3.3 gap, and the group that has moved most since the last revision.
   declaring `Architectures=all`, which is what lets a version table be published at all: the
   index a version was read from is named `all` rather than the machine's architecture. §11.1 is
   narrower than it was as a result.
-- **P1 `apt-file`** (light): which package provides a file you don't have yet (the `dpkg -S`
-  counterpart for uninstalled packages). +819 votes says this is a page.
+- **SHIPPED 2026-08-26 `apt-file`** (light): the `dpkg -S` counterpart for packages you have not
+  installed. Its examples are searches of Debian's real `Contents` index, which is what makes it
+  the second-slowest page on the site: a search reads tens of megabytes, so several examples sat
+  within a second of the harness's five-second cap until they were rewritten. Two rules came out
+  of measuring them, and both are on the page because a reader hits them too: a pattern beginning
+  with `/` is matched twice, once against each form the index could hold, and `-f` without `-F`
+  compiles every line into one regular expression and costs more than the search.
 - **P2 `update-alternatives`** (standard): default editor, `python`, `java`; the mechanism
   behind "how do I change the default X" questions.
 - **P2 `dpkg-reconfigure`** (light): locales, timezone, keyboard. Debian-specific and nowhere
@@ -378,8 +383,11 @@ remain are genuine articles, and they are what is left of Wave 1.
   and `/var/lib/dpkg/info/*.list` mtimes for when, with `zgrep` over rotated apt history.
 - **P1 Installing a `.deb` by hand, safely**: `apt install ./file.deb` rather than `dpkg -i`,
   and why the dependency story differs. +1581 and +1218.
-- **P1 Finding which package provides a file**: `dpkg -S` for installed, `apt-file` for not.
-  +819. Pairs with the `apt-file` command page in §4.1; write them together.
+- **SHIPPED 2026-08-26 as `debian/which-package-provides-a-file`**: +819, written alongside the
+  `apt-file` page in §4.1 as planned. Its third section is the part no answer to this question
+  usually has: the files that belong to no package, where both commands fail and
+  `update-alternatives --query` is the answer. Closes with `command-not-found`, which does the
+  lookup from the shell prompt and needs a database of its own built first.
 - **SHIPPED 2026-08-20 as `compare/remove-vs-purge-vs-autoremove`**: config files left behind,
   and the `deb-systemd-helper` state that survives a remove. +781.
 - **P2 Holding a package back, and pinning**: `apt-mark hold`, `/etc/apt/preferences.d`,
@@ -861,12 +869,12 @@ picked page by page across four waves at once, which is why no wave is finished 
 sequencing below needs reading as a set of open fronts rather than a queue. That is not a
 complaint about the choices: `ls` and `xargs` were both worth writing when they were written.
 But the effect is that **Wave 1 sits at roughly three-quarters done and has been left there**.
-The remaining quarter is `apt-file` and two articles, without which a reader
-searching the apt cluster finds most of it and not the rest.
+What is left of it is one article, without which a reader searching the apt cluster finds most of
+it and not the rest.
 
 | Wave | Status | What remains |
 |---|---|---|
-| 1. Namesake gap | **~85%** | `apt-file`, and two §6.2 articles (install a `.deb`, which package provides a file) |
+| 1. Namesake gap | **~95%** | One §6.2 article: installing a `.deb` by hand |
 | 2. Scripting 7–14 | **untouched** | All eight lessons |
 | 3. Concepts | **1 of 3** | terminal/shell/tty, processes-and-signals |
 | 4. Perl track | **blocked** | The §10.4 `order:` change first, then 9 pages |

@@ -40,15 +40,19 @@ jobs:
   # people looking at them.
   replay:
     runs-on: ubuntu-latest
-    # Five shards, each on its own runner. Serial the site is 333 seconds; split five ways the
-    # slowest shard is 67 (measured 2026-08-26). The floor is one page, because a page is never
-    # split: `apt` alone is 62 seconds, so no number of shards beats that.
+    # Seven shards, each on its own runner. Serial the site is 427 seconds; split seven ways the
+    # slowest shard is 63 (measured 2026-08-26). The floor is one page, because a page is never
+    # split: `apt` alone is 63 seconds, so no number of shards beats that.
     #
-    # Five is the last count justified by the total work rather than by that floor. Four comes out
-    # at 84 seconds, well above it, so a fifth runner buys 17. Six reaches 62 and every count
-    # above six stays there, so the sixth buys 4 more, which is not worth a runner and an image
-    # build. When five stops being above the floor, the lever is the `apt` page's setup script
-    # rather than a seventh runner; ADR-0020's "Revisit when" holds that.
+    # Seven is where the curve stops moving. Five comes out at 86 and six at 71, so the sixth and
+    # seventh runners buy 15 and 8 seconds; the eighth buys nothing at all, and every count above
+    # it stays on the floor. Buying those seconds is worth a runner because **deploy waits on
+    # this**: `deploy.yml` triggers on this workflow's conclusion, so the slowest shard is time
+    # between a push and the site being live, not just a number in a log.
+    #
+    # Re-measure before changing it, because the whole curve moves as pages are added. Once the
+    # count is on the floor, more runners do nothing and the lever is the `apt` page's setup
+    # script instead. ADR-0020's "Revisit when" holds that.
     #
     # Each shard is its own runner, so this is not the CPU contention that has produced false
     # failures here before (.claude/skills/ship/SKILL.md): that is about two heavy jobs sharing
@@ -69,7 +73,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5]
+        shard: [1, 2, 3, 4, 5, 6, 7]
     name: replay (${{ matrix.shard }}/${{ strategy.job-total }})
     # The budget is for building the sandbox image on a cold runner, plus room for a hung example
     # that somehow escapes the per-example timeout.

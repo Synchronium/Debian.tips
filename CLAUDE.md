@@ -22,16 +22,16 @@ npm run dev      # dev server at http://localhost:4321, full rebuild on any file
 npm run build    # one-off production build to dist/
 npm test         # vitest run (unit + fixture-based build tests)
 npm run check    # format, tsc --noEmit, vitest, build, pagefind, linkcheck, link-audit: the full gate
-npm run replay   # replay every page's examples, one container each (needs Docker, ~4.5 min warm)
+npm run replay   # replay every page's examples, one container each (needs Docker, ~7 min warm)
 npm run replay -- --changed        # only the pages your diff touches, which is what CI runs on a PR
 npm run replay -- ls du            # named pages; identical to how the full run replays them
-npm run replay -- --shard=2/5      # one fifth of the pages; CI gives each of the five a runner
+npm run replay -- --shard=2/7      # one seventh of the pages; CI gives each of the seven a runner
 npm run audit:links -- --verbose   # the link graph on its own, advisory findings included
 npm run voice    # prose against .claude/reference/voice.md; a hook runs it per file as you write
 ```
 
 `--shard` exists for CI, which gives each shard a machine of its own. One shard at a time is a
-fine way to reproduce what a red shard ran, but starting the four here at once is the contention
+fine way to reproduce what a red shard ran, but starting several here at once is the contention
 that makes true pages report as lying (`.claude/skills/ship/SKILL.md` §1): locally, the plain
 `npm run replay` is both faster and honest.
 

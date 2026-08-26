@@ -131,7 +131,7 @@ than another `related:` entry.
 
 - `check`: format, typecheck (both configs), tests, build, pagefind, linkcheck, link audit, then
   `pa11y-ci` against the built site. Exactly what `npm run check` runs locally.
-- `replay`, as five sharded jobs on five runners: the examples, for real, each page in a Docker
+- `replay`, as seven sharded jobs on seven runners: the examples, for real, each page in a Docker
   sandbox of its own. A PR replays what its diff touched; a push to `main` replays everything.
   Which shard takes which page is `scripts/lib/replayShard.ts`, balanced from recorded timings
   and held to covering every page by `test/replayShard.test.ts`.
