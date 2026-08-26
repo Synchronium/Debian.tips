@@ -24,7 +24,7 @@
 // Exit status: 0 when every page reproduces, 1 if any page fails, 2 if Docker is
 // unavailable or an argument names no page.
 import { execFileSync } from "node:child_process";
-import { existsSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { relative } from "node:path";
 import { ReplayError, readSetupDirectives } from "./lib/replayMetadata.js";
 import { REPLAY_TIMINGS_FILE, ROOT, SANDBOX_SCRIPT, fixtureScript } from "../src/paths.js";
@@ -32,7 +32,11 @@ import { replayCommandPage } from "./replay-command-page.js";
 import { replayProsePage } from "./replay-prose-page.js";
 import { SANDBOX_FLAVOUR, type SandboxFlavour } from "./lib/sandbox.js";
 import { type Shard, ShardError, parseShard, readTimings, shardPages } from "./lib/replayShard.js";
-import { commandPages as listCommandPages, prosePages as listProsePages } from "./lib/replayPages.js";
+import {
+  commandPages as listCommandPages,
+  hasSetupScript,
+  prosePages as listProsePages,
+} from "./lib/replayPages.js";
 
 const args = process.argv.slice(2);
 const FLAGS = ["--changed", "--record-timings"];
@@ -155,8 +159,8 @@ if (missing.length) {
 // about how much is checked. A page needing no sample files still gets one, holding only a
 // comment saying so: an explicit "nothing to create here" beats an absence that reads as an
 // oversight, and it keeps this gate meaningful instead of permanently red.
-const unfixtured = pages.filter((name) => !existsSync(fixtureScript(name)));
-const replayable = pages.filter((name) => existsSync(fixtureScript(name)));
+const unfixtured = pages.filter((name) => !hasSetupScript(name));
+const replayable = pages.filter(hasSetupScript);
 // Sorted only so the report reads in a predictable order. Each page gets its own container, so
 // the order carries nothing else: it cannot change any page's result.
 const runnable = shardPages(replayable, shard, readTimings()).sort();
