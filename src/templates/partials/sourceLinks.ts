@@ -83,7 +83,7 @@ Checks ${checks.checked} ${checks.checked === 1 ? "output" : "outputs"}${raw(spl
  *  command that does not do what the surrounding text claims is worse than saying so. */
 export function sourceLinks(slug: string, sources: PageSources, checks: PageChecks): string {
   const items = sources.files.map((file) =>
-    raw(html`<li><a href="${blobUrl(file.path)}"><code>${file.path}</code></a> — ${file.label}</li>`),
+    raw(html`<li><a href="${blobUrl(file.path)}"><code>${file.path}</code></a> - ${file.label}</li>`),
   );
 
   const replayCommand = `npm run replay -- ${slug}`;

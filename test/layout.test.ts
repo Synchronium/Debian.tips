@@ -113,6 +113,14 @@ describe("layout", () => {
     expect(render()).toContain('<main id="main">');
   });
 
+  it("uses a hyphen, not an em dash, in the title it assembles", () => {
+    // voice.md bans the em dash and `npm run voice` cannot see this one: it reads whole-line
+    // comments in a source file, and a separator in a template lives in a string literal. The
+    // title is on every page on the site, so this is the assertion that stands in for the rule.
+    expect(render({ title: "grep" })).toContain("<title>grep - debian.tips</title>");
+    expect(render()).not.toContain("\u2014");
+  });
+
   it("escapes a `<` in structured data so it cannot end the script element", () => {
     const html = render({ jsonLd: { headline: "</script><img>" } });
     expect(html).not.toContain("</script><img>");

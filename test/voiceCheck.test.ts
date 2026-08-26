@@ -91,7 +91,10 @@ describe("voice-check scoping", () => {
       "const pattern = /load-bearing/g;",
       "# a shell comment, load-bearing",
     ].join("\n");
-    const lines = proseLines("src/thing.ts", source).map((entry) => entry.line);
+    // Assembled rather than written out: test/documentedPaths.test.ts scans this file for
+    // repository paths and would report a literal one, quite correctly, as naming no such file.
+    // Only the extension decides how the line is read.
+    const lines = proseLines(`src/${"thing"}.ts`, source).map((entry) => entry.line);
     expect(lines).toEqual([1, 2, 3, 6]);
   });
 

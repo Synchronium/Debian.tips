@@ -204,7 +204,7 @@ function safeJsonLd(data: Record<string, unknown>): string {
 
 export function layout(opts: LayoutOptions): string {
   const canonical = `${SITE.url}${opts.path}`;
-  const pageTitle = opts.path === "/" ? `${SITE.title} — ${SITE.tagline}` : `${opts.title} — ${SITE.title}`;
+  const pageTitle = opts.path === "/" ? `${SITE.title} - ${SITE.tagline}` : `${opts.title} - ${SITE.title}`;
   const websiteJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
