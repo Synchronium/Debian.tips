@@ -279,6 +279,13 @@
     "fixtures": 0,
     "unpaired": 0
   },
+  "debian/install-a-deb-file": {
+    "checked": 11,
+    "byShape": 4,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
   "debian/list-installed-packages": {
     "checked": 12,
     "byShape": 5,

@@ -236,8 +236,8 @@ zgrep '^Commandline:' /var/log/apt/history.log.*.gz
 ```
 
 That is the fastest way to answer "when did this machine get nginx, and who decided that". Note
-that it only covers apt: a package installed with `dpkg -i` never touches this file, though it
-still appears in `/var/log/dpkg.log`.
+that it only covers apt: a package [installed by hand](/debian/install-a-deb-file/) with
+`dpkg -i` never touches this file, though it still appears in `/var/log/dpkg.log`.
 
 ## Copying the list to another machine
 

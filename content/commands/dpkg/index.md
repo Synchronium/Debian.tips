@@ -73,6 +73,8 @@ The `./` is what makes apt treat it as a file rather than a package name. apt un
 dpkg exactly as `dpkg -i` would, but resolves and downloads the dependencies first, so the
 install either completes or does not start. Use `dpkg -i` when apt is not available or not
 working, which happens, and is the reason to know the command exists.
+[Installing a .deb by hand](/debian/install-a-deb-file/) walks the whole sequence, including
+what the broken state looks like and how to read the package before you run either command.
 
 ## `dpkg -l` is for reading, not parsing
 

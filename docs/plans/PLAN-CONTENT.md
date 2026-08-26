@@ -381,8 +381,13 @@ remain are genuine articles, and they are what is left of Wave 1.
   `dpkg-query -W -f`, since §11.1 turned out to block `dpkg -l` and `apt list --installed`
   unfiltered and nothing else; `apt-mark showmanual` for what was asked for; `/var/log/dpkg.log`
   and `/var/lib/dpkg/info/*.list` mtimes for when, with `zgrep` over rotated apt history.
-- **P1 Installing a `.deb` by hand, safely**: `apt install ./file.deb` rather than `dpkg -i`,
-  and why the dependency story differs. +1581 and +1218.
+- **SHIPPED 2026-08-26 as `debian/install-a-deb-file`**: +1581 and +1218. Built around a
+  fixture package rather than a real download, because the two commands only diverge when a
+  dependency is missing, and nothing in the archive can be relied on to be absent. That package
+  also carries a `postinst` that prints `id -un`, so the section about maintainer scripts running
+  as root is demonstrated by the install rather than asserted. The §11.1 size trap never arose:
+  every version and listing on the page is an `Architecture: all` package, and the download-size
+  summary is filtered out of what the examples show.
 - **SHIPPED 2026-08-26 as `debian/which-package-provides-a-file`**: +819, written alongside the
   `apt-file` page in §4.1 as planned. Its third section is the part no answer to this question
   usually has: the files that belong to no package, where both commands fail and
@@ -868,13 +873,12 @@ is demand-first with verification cost as the tiebreak.
 picked page by page across four waves at once, which is why no wave is finished and why the
 sequencing below needs reading as a set of open fronts rather than a queue. That is not a
 complaint about the choices: `ls` and `xargs` were both worth writing when they were written.
-But the effect is that **Wave 1 sits at roughly three-quarters done and has been left there**.
-What is left of it is one article, without which a reader searching the apt cluster finds most of
-it and not the rest.
+That was written while Wave 1 sat at three-quarters done. **Wave 1 finished on 2026-08-26**,
+with `apt-file` and both remaining §6.2 articles.
 
 | Wave | Status | What remains |
 |---|---|---|
-| 1. Namesake gap | **~95%** | One §6.2 article: installing a `.deb` by hand |
+| 1. Namesake gap | **done** | Nothing. `apt-file` and both §6.2 articles shipped 2026-08-26 |
 | 2. Scripting 7–14 | **untouched** | All eight lessons |
 | 3. Concepts | **1 of 3** | terminal/shell/tty, processes-and-signals |
 | 4. Perl track | **blocked** | The §10.4 `order:` change first, then 9 pages |

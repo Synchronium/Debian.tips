@@ -194,7 +194,7 @@ sections:
         level: intermediate
       - title: Install a .deb file you already have
         code: sudo apt install ./cowsay_3.03+dfsg2-8_all.deb
-        description: Prefer this over `dpkg -i`, because apt resolves the file's dependencies from the repositories. The `./` matters - without it, apt looks for a package with that name instead.
+        description: Prefer this over `dpkg -i`, because apt resolves the file's dependencies from the repositories. The `./` matters - without it, apt looks for a package with that name instead. [Installing a .deb by hand](/debian/install-a-deb-file/) has the failure mode and the way out of it.
         level: intermediate
 
   - title: Removing packages
