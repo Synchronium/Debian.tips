@@ -14,6 +14,24 @@ function exemptionsAreIn(sources: PageSources): string {
   return sources.hasSkipFile ? "the skip file above" : "the page source above";
 }
 
+/** How long this page took on the last recorded full replay, rounded to something a reader can
+ *  act on.
+ *
+ *  Read from `scripts/replay-timings.json` rather than written here, because the repository knows
+ *  the answer and the pages differ by a factor of forty: the median is under two seconds and `apt`
+ *  is a minute. "About a minute" was on every one of them.
+ *
+ *  Says nothing at all when there is no recorded time, which is a page added since the last
+ *  recording. An estimate is worth having and worth omitting; it is never worth guessing, on the
+ *  one page whose subject is not claiming things it has not checked. The figure excludes building
+ *  the sandbox image, which a first run pays once and no per-page number can describe. */
+function howLong(seconds: number | undefined): string {
+  if (seconds === undefined) return "";
+  if (seconds < 10) return " and takes a few seconds";
+  if (seconds < 90) return ` and takes about ${Math.round(seconds / 10) * 10} seconds`;
+  return ` and takes a few minutes`;
+}
+
 /** What the replay command will actually check here, as a sentence.
  *
  *  Every clause is conditional, so the common page (everything compared exactly, nothing
@@ -84,7 +102,7 @@ ${
   sources.replayable
     ? raw(html`<p>
 Clone the repository and re-run every example on this page in a throwaway container. It needs
-Docker and takes about a minute:
+Docker${raw(howLong(sources.replaySeconds))}:
 </p>
 <div class="source-replay">
 <pre><code>${replayCommand}</code></pre>

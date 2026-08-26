@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadContent } from "../src/content/loader.js";
 import { pageSources } from "../src/content/sourcePaths.js";
+import { readTimings } from "../src/content/replayTimings.js";
 import { sourceLinks } from "../src/templates/partials/sourceLinks.js";
 import { SITE, blobUrl } from "../src/config.js";
 import { CONTENT_DIR, FIXTURE_DIR, ROOT } from "../src/paths.js";
@@ -50,6 +51,18 @@ describe("the source files each page links to", () => {
     const wrong = model.pages.filter(
       (page) => page.sources.hasSkipFile !== existsSync(join(FIXTURE_DIR, `${page.slug}.skip`)),
     );
+    expect(wrong.map((page) => page.url)).toEqual([]);
+  });
+
+  it("offers a replay time only for a page that has a recorded one", () => {
+    // The estimate a reader is shown before running the command. Advisory, like the file it comes
+    // from: a page added since the last recording says nothing rather than guessing, which on the
+    // page whose subject is not claiming unchecked things is the only acceptable default.
+    const timings = readTimings();
+    const wrong = model.pages.filter((page) => {
+      const expected = page.sources.replayable ? timings[page.slug] : undefined;
+      return page.sources.replaySeconds !== expected;
+    });
     expect(wrong.map((page) => page.url)).toEqual([]);
   });
 
