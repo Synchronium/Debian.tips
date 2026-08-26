@@ -3,7 +3,7 @@ name: Drift
 # stale without anyone touching it.
 #
 # Nothing here can drift on its own except the one thing that matters most: Debian's archive.
-# `scripts/sandbox.Dockerfile` builds from a moving tag, so a rebuild picks up whatever the
+# `scripts/sandbox/Dockerfile` builds from a moving tag, so a rebuild picks up whatever the
 # archive holds that day, and a security update to a package a page documents is enough to make a
 # true page false. That has happened: OpenSSL 3.5.6 to 3.5.7 failed the ssh page, and an
 # autoremove counter moved because the archive had drifted past the pinned image.
