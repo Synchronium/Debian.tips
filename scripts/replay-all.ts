@@ -3,7 +3,7 @@
 //   npm run replay                 # every page
 //   npm run replay -- wget curl    # just these
 //   npm run replay -- --changed    # only the pages a diff touches (what CI runs on a PR)
-//   npm run replay -- --shard=2/4  # one part of whichever of those two a run selected
+//   npm run replay -- --shard=2/5  # one part of whichever of those two a run selected
 //
 // The check `npm run check` can't make: that gate validates shape (schema, links, types)
 // and would pass a page claiming output no command ever produced.
@@ -24,23 +24,15 @@
 // Exit status: 0 when every page reproduces, 1 if any page fails, 2 if Docker is
 // unavailable or an argument names no page.
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, writeFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { existsSync, writeFileSync } from "node:fs";
+import { relative } from "node:path";
 import { ReplayError, readSetupDirectives } from "./lib/replayMetadata.js";
-import { PROSE_CATEGORIES } from "../src/content/schema.js";
-import {
-  CONTENT_DIR,
-  REPLAY_TIMINGS_FILE,
-  ROOT,
-  SANDBOX_SCRIPT,
-  commandsDir,
-  fixtureScript,
-  proseSlug,
-} from "../src/paths.js";
+import { REPLAY_TIMINGS_FILE, ROOT, SANDBOX_SCRIPT, fixtureScript } from "../src/paths.js";
 import { replayCommandPage } from "./replay-command-page.js";
 import { replayProsePage } from "./replay-prose-page.js";
 import { SANDBOX_FLAVOUR, type SandboxFlavour } from "./lib/sandbox.js";
 import { type Shard, ShardError, parseShard, readTimings, shardPages } from "./lib/replayShard.js";
+import { commandPages as listCommandPages, prosePages as listProsePages } from "./lib/replayPages.js";
 
 const args = process.argv.slice(2);
 const FLAGS = ["--changed", "--record-timings"];
@@ -85,16 +77,10 @@ if (shard.total > 1 && requestedPages.length) {
 }
 
 // Prose pages state their claims as Markdown fences rather than YAML, so the two kinds run
-// through different replays.
-const commandPages = readdirSync(commandsDir(), { withFileTypes: true })
-  .filter((entry) => entry.isDirectory())
-  .map((entry) => entry.name);
-
-const prosePages = PROSE_CATEGORIES.flatMap((category) =>
-  existsSync(join(CONTENT_DIR, category))
-    ? readdirSync(join(CONTENT_DIR, category)).flatMap((file) => proseSlug(file) ?? [])
-    : [],
-);
+// through different replays. Both lists come from scripts/lib/replayPages.ts, which is also what
+// the timings check reads, so neither can start describing a different site from the other.
+const commandPages = listCommandPages();
+const prosePages = listProsePages();
 
 const isProse = (name: string): boolean => prosePages.includes(name);
 
