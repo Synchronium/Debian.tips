@@ -1,5 +1,8 @@
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { layout } from "../src/templates/layout.js";
+import { layout, resetClientScripts } from "../src/templates/layout.js";
+import { CLIENT_DIR } from "../src/paths.js";
 import { raw } from "../src/html.js";
 
 /* The layout is on every page, so anything wrong here is wrong everywhere at once, and two of
@@ -53,6 +56,25 @@ describe("layout", () => {
       .filter((script) => script.startsWith("(()=>"));
     expect(scripts).toHaveLength(2);
     for (const script of scripts) expect(script).toContain('"data-theme"');
+  });
+
+  it("re-reads a client script after the cache is reset", () => {
+    // The dev server builds many times in one process, and routes an edit under src/client/ to a
+    // rebuild rather than a restart. Without the reset the rebuild emits the previous
+    // compilation: it succeeds, reports its milliseconds, and changes nothing on the page, which
+    // is a much worse way to find out than an error.
+    const before = render();
+    const file = join(CLIENT_DIR, "interaction.ts");
+    const original = readFileSync(file, "utf-8");
+    try {
+      writeFileSync(file, `${original}\nconsole.log("cache-probe");\n`, "utf-8");
+      expect(render()).toBe(before);
+      resetClientScripts();
+      expect(render()).toContain("cache-probe");
+    } finally {
+      writeFileSync(file, original, "utf-8");
+      resetClientScripts();
+    }
   });
 
   it("keeps analytics out of a development build", () => {

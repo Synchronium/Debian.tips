@@ -64,6 +64,18 @@ const CLIENT_SHARED = "shared.ts";
  *  `</script` check runs on the *output*: minification can move a string, and a page that stops
  *  parsing halfway is a bad way to find that out. */
 const scriptCache = new Map<string, string>();
+
+/** Empties the compiled-script cache, so the next build reads `src/client/` from disk again.
+ *
+ *  Per *build*, not per process. The dev server builds many times in one process and routes an
+ *  edit under `src/client/` to a rebuild rather than a restart, so a cache that outlived the
+ *  build made those edits invisible: the rebuild succeeded, reported its milliseconds, and
+ *  emitted the previous compilation. `resetShikiStyles` exists for the same reason and is called
+ *  from the same place. */
+export function resetClientScripts(): void {
+  scriptCache.clear();
+}
+
 function clientScript(filename: string): string {
   const cached = scriptCache.get(filename);
   if (cached !== undefined) return cached;

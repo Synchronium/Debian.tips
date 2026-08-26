@@ -24,6 +24,7 @@ import { homePage } from "./templates/home.js";
 import { listingPage } from "./templates/listing.js";
 import { PAGE_SIZE, paginate } from "./templates/partials/pager.js";
 import { notFoundPage } from "./templates/notFound.js";
+import { resetClientScripts } from "./templates/layout.js";
 import { standalonePage } from "./templates/standalone.js";
 import { tagPage, tagsIndexPage } from "./templates/tags.js";
 
@@ -70,9 +71,12 @@ export async function build(
 
   copyPublic(distDir);
 
-  // A long-lived process (the dev server) builds many times; the registry of highlighting
-  // classes is per-build, so a colour no content uses any more does not linger in the stylesheet.
+  // A long-lived process (the dev server) builds many times, and two caches are per-build rather
+  // than per-process for it: the registry of highlighting classes, so a colour no content uses any
+  // more does not linger in the stylesheet, and the compiled client scripts, so an edit under
+  // `src/client/` reaches the next rebuild.
   resetShikiStyles();
+  resetClientScripts();
   const cssHref = CSS_HREF_TOKEN;
 
   const { pages, tags } = await loadContent(contentDir, fixtureDir);
