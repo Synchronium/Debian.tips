@@ -1,0 +1,48 @@
+name: Drift
+# Replays every page once a week against a freshly built sandbox image, to catch the site going
+# stale without anyone touching it.
+#
+# Nothing here can drift on its own except the one thing that matters most: Debian's archive.
+# `scripts/sandbox.Dockerfile` builds from a moving tag, so a rebuild picks up whatever the
+# archive holds that day, and a security update to a package a page documents is enough to make a
+# true page false. That has happened: OpenSSL 3.5.6 to 3.5.7 failed the ssh page, and an
+# autoremove counter moved because the archive had drifted past the pinned image.
+#
+# A push to `main` already replays everything, so this only earns its runner during quiet weeks,
+# which are exactly the weeks nobody would notice.
+#
+# **Deliberately not a job in ci.yml.** Deploy triggers on `workflow_run` of the CI workflow, so a
+# scheduled CI conclusion would publish the site on a timer, from whatever commit happened to be
+# at the head of main. A separate workflow cannot reach that trigger. Moving this into ci.yml to
+# save a file would reintroduce it silently.
+on:
+  schedule:
+    # Thursday, away from the top of the hour and from the day Dependabot opens its PRs, so a
+    # failure here arrives on its own rather than in a pile.
+    - cron: "17 4 * * 4"
+  workflow_dispatch: {}
+
+# Reads and reports. It records no timings and opens no pull request: the timings file is
+# measured locally on purpose, because a runner and the devcontainer are different architectures
+# and alternating between them would rewrite the whole file each time for no gain.
+permissions: { contents: read }
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    # Serial on one runner rather than sharded across five. Nothing is waiting on this, and one
+    # runner for six minutes is fewer runner-minutes than five runners for ninety seconds each
+    # once the image build is counted on every one of them.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Its own step, so the log says whether a slow run was the image or the replay.
+      - name: Build the sandbox image
+        run: scripts/sandbox.sh build
+      - name: Replay every page
+        run: npm run replay

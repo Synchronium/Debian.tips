@@ -35,6 +35,12 @@ There was a third job, `replay-shuffled`, which replayed the whole site again in
 order. [ADR-0020](0020-one-container-per-page.md) removed it: pages no longer share a container,
 so the order they run in cannot reach any result and a job that varied it could never fail.
 
+A third workflow, `drift.yml`, replays the whole site once a week on a schedule. It is a monitor
+rather than a gate: it blocks nothing and nothing waits for it, and it exists because the one
+input to this repository that moves without a commit is Debian's archive. It is a separate
+workflow rather than a scheduled job inside CI because Deploy triggers on `workflow_run` of CI,
+so a scheduled CI conclusion would publish the site on a timer.
+
 Deploy triggers on `workflow_run` of CI, runs only when `conclusion == 'success'`, and checks out
 `github.event.workflow_run.head_sha` rather than the tip of the branch.
 

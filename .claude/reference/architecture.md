@@ -136,6 +136,11 @@ than another `related:` entry.
   Which shard takes which page is `scripts/lib/replayShard.ts`, balanced from recorded timings
   and held to covering every page by `test/replayShard.test.ts`.
 
+`.github/workflows/drift.yml` replays the whole site weekly on a schedule, serially on one
+runner. It gates nothing; it is there because Debian's archive moves without a commit, and a push
+to `main` is the only other thing that would notice. Kept out of `ci.yml` on purpose: Deploy keys
+off a CI conclusion, so a scheduled one would publish the site on a timer.
+
 `.github/workflows/deploy.yml` builds and publishes `dist/` to GitHub Pages on `workflow_run` of
 CI, gated on the whole workflow succeeding and pinned to the same commit. All of it runs on
 GitHub-hosted runners, independent of this repo's devcontainer. ADR-0003 is the topology and why;
