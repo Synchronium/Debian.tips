@@ -219,3 +219,39 @@ framework's own headers, so `Date` and `Server` are both pinned, which is what l
 `curl -i` response verbatim instead of masking half of it. Conditional requests compare the date
 they were given rather than assuming it, so `-N`/`-z` can demonstrate both branches, and a range
 past the end of a file gets a 416 rather than the whole file over again.
+
+## Why a page passes here and fails in CI
+
+Every CI-only failure this repository has had was environmental rather than a real difference in
+what a command does. The same causes keep coming back, so identify the symptom before touching the
+page.
+
+**Architecture.** `arm64` here, `amd64` on a runner, and no emulation locally, so a block naming
+one fails in exactly one of the two places. This has its own rule above and its own test.
+
+**umask.** A `docker exec` inherits the *host's* umask, which is 0000 in this devcontainer and 0022
+on a runner, so permission columns differ. The replay pins 0022; a bare `scripts/sandbox.sh exec`
+does not, which is why a hand-run reproduction can disagree with the harness.
+
+**IPv6.** A runner often has it switched off, so anything bound to `::1` fails outright. Pages name
+`127.0.0.1` for this reason, as above.
+
+**Directory order.** `find`, `grep -r` and shell globs follow readdir order, which is a property of
+the filesystem rather than of the command. Anything listing more than one path needs an explicit
+`sort`.
+
+**Races.** `systemctl start` returns before a `Type=simple` service is ready, and journald writes
+asynchronously. A page that passes locally three times running can still be racing; the tell is a
+failure that names a missing line rather than a different one.
+
+**Units the page did not start.** Anything listing the whole process table inherits the container's
+boot rather than only what the example did. The virtual consoles are the repeat offender: how many
+`agetty` processes exist is a property of the machine, and systemd names a child it has forked
+`(agetty)` for the window between fork and exec, so a getty restarting mid-listing yields a command
+name that is not a command name. The fix belongs in the page's setup script, which should mask what
+it does not want, rather than in each example dodging it.
+
+**The page's own earlier examples.** An example installs a package or writes to `/etc`, and a later
+one on the same page reports it. The restore between examples empties the working directory and
+re-runs the setup script; it undoes neither of those. The fix belongs in that setup script, which
+should assert the state its output depends on, including the *absence* of something.
