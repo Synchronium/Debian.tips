@@ -9,15 +9,12 @@
 # after. That is safe here because a page gets a container to itself (ADR-0020), and it is the
 # reason for the reinstall guard at the foot of this script.
 
+. /tmp/fixtures-common.sh
+
 export DEBIAN_FRONTEND=noninteractive
 
-# Package lists, needed only so the reinstall below can find sudo. Fetched once per container
-# rather than once per example: this script runs before every documented output.
-STATE=/var/lib/apt/.fixture-page
-if [ "$(cat $STATE 2>/dev/null)" != "sudo-command-not-found" ]; then
-  apt-get update >/dev/null 2>&1
-  echo sudo-command-not-found > $STATE
-fi
+# Needed only so the reinstall below can find sudo.
+apt_update_once
 
 if ! id newbie >/dev/null 2>&1; then
   useradd -m -s /bin/bash newbie

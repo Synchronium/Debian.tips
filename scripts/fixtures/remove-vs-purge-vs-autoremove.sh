@@ -17,6 +17,8 @@
 # `Remv cowsay [3.03+dfsg2-8]` both drift with a point release, so every block here narrows to
 # lines that name packages and not versions.
 
+. /tmp/fixtures-common.sh
+
 export DEBIAN_FRONTEND=noninteractive
 
 # See scripts/fixtures/apt.sh: apt prints "WARNING: apt does not have a stable CLI interface"
@@ -27,12 +29,7 @@ cat > /etc/apt/apt.conf.d/99-replay-no-script-warning <<'EOF'
 APT::Cmd::Disable-Script-Warning "1";
 EOF
 
-# Fetched once per container rather than once per example; see apt.sh.
-STATE=/var/lib/apt/.fixture-page
-if [ "$(cat $STATE 2>/dev/null)" != "remove-vs-purge-vs-autoremove" ]; then
-  apt-get update >/dev/null 2>&1
-  echo remove-vs-purge-vs-autoremove > $STATE
-fi
+apt_update_once
 
 # nano in the `rc` state: binaries gone, /etc/nanorc still there. It is the file the whole
 # remove-versus-purge distinction rests on, and the page shows it disappearing.

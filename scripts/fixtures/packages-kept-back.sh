@@ -15,6 +15,8 @@
 # Every step is guarded: this runs again before each documented output, and building packages
 # and generating a signing key each time would dominate the run.
 
+. /tmp/fixtures-common.sh
+
 export DEBIAN_FRONTEND=noninteractive
 umask 0022
 
@@ -108,7 +110,7 @@ sed -i '/^# http:\/\/snapshot\.debian\.org/d' /etc/apt/sources.list.d/debian.sou
 # creates the pending upgrade, so a stale list is the difference between the error and no
 # error at all.
 apt-get update >/dev/null 2>&1
-echo packages-kept-back > /var/lib/apt/.fixture-page
+: > "$APT_UPDATED_MARKER"
 
 # tips-demo pinned at 1.0-1, so the upgrade to 2.0-1 is always pending. Asserted rather than
 # assumed: the pending upgrade is the whole subject of the page, and a tips-demo already at

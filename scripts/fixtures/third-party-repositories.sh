@@ -13,6 +13,8 @@
 # present, and pinned. This leaves the sandbox in the "present, unpinned" state, which is the
 # one the page's warning is about; the others are marked `verify: skip` on the page.
 
+. /tmp/fixtures-common.sh
+
 export DEBIAN_FRONTEND=noninteractive
 umask 0022
 
@@ -111,10 +113,4 @@ rm -f /etc/apt/preferences.d/example-vendor
 # Snapshot comments are an artifact of the container image, not something a reader has.
 sed -i '/^# http:\/\/snapshot\.debian\.org/d' /etc/apt/sources.list.d/debian.sources
 
-# Fetched once per container rather than once per documented output: this script runs before
-# every one of them, and each fetch is seconds of network.
-STATE=/var/lib/apt/.fixture-page
-if [ "$(cat $STATE 2>/dev/null)" != "third-party-repositories" ]; then
-  apt-get update >/dev/null 2>&1
-  echo third-party-repositories > $STATE
-fi
+apt_update_once

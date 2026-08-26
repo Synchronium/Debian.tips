@@ -9,6 +9,28 @@
 # it by absolute path:
 #
 #     . /tmp/fixtures-common.sh
+# Fetches the package lists once per container.
+#
+# A setup script runs again before every documented output on its page, and `apt-get update` is
+# seconds of network each time, so a page with twenty examples would spend a minute of its run
+# re-fetching an index that has not changed. The marker file is what makes the second call onwards
+# a no-op.
+#
+# It is a plain existence test rather than a comparison against the page's name. Under ADR-0020
+# each page gets a container of its own, so the marker can only ever have been written by this
+# page: a name to compare against was a defence the shared sandbox needed, and comparing one now
+# reads as though two pages could still meet.
+#
+# Under /var/lib/apt because that is what the marker is about, and because it is a directory the
+# per-example restore does not touch: the restore empties the page's working directory, so a
+# marker kept there would be deleted before every example and fetch every time.
+APT_UPDATED_MARKER=/var/lib/apt/.fixture-apt-updated
+apt_update_once() {
+  [ -e "$APT_UPDATED_MARKER" ] && return 0
+  apt-get update >/dev/null 2>&1
+  : > "$APT_UPDATED_MARKER"
+}
+
 mk_projects() { (
 # A directory tree, shared by every page that documents one. Built in a subshell so the
 # `cd` below cannot leak into the caller.

@@ -7,14 +7,12 @@
 # Every step is guarded. This script runs again before each documented output, and a 50 MB
 # index fetch and a database rebuild on each would dominate the run.
 
+. /tmp/fixtures-common.sh
+
 export DEBIAN_FRONTEND=noninteractive
 umask 0022
 
-STATE=/var/lib/apt/.fixture-page
-if [ "$(cat $STATE 2>/dev/null)" != "which-package-provides-a-file" ]; then
-  apt-get update >/dev/null 2>&1
-  echo which-package-provides-a-file > $STATE
-fi
+apt_update_once
 
 # apt-file, and the Contents index it searches. Installing the package is what adds those
 # indices to what `apt update` fetches, so the order matters: an update before the install

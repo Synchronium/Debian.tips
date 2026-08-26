@@ -8,15 +8,11 @@
 # Every step is guarded. This script runs again before each documented output, and an
 # unguarded apt-get install would spend a few seconds per block re-doing settled work.
 
+. /tmp/fixtures-common.sh
+
 export DEBIAN_FRONTEND=noninteractive
 
-# Package lists are fetched once per container rather than once per documented output, which is
-# what this marker is for: the script runs before every one of them.
-STATE=/var/lib/apt/.fixture-page
-if [ "$(cat $STATE 2>/dev/null)" != "apt-essentials" ]; then
-  apt-get update >/dev/null 2>&1
-  echo apt-essentials > $STATE
-fi
+apt_update_once
 
 # nano in the `rc` state: binaries gone, configuration still on disk. Installing then
 # removing (not purging) is the only way to reach it.

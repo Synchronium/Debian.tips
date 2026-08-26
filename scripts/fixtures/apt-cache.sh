@@ -8,6 +8,8 @@
 # Every step is guarded. This script runs again before each documented output, and building a
 # package and re-indexing a repository on each would dominate the run.
 
+. /tmp/fixtures-common.sh
+
 export DEBIAN_FRONTEND=noninteractive
 umask 0022
 
@@ -70,13 +72,7 @@ chmod 644 /etc/apt/sources.list.d/vendor.sources
 # `apt-cache policy` with no package named prints the sources it read.
 sed -i '/^# http:\/\/snapshot\.debian\.org/d' /etc/apt/sources.list.d/debian.sources
 
-# Fetched once per container rather than once per documented output: this script runs before
-# every one of them, and each fetch is seconds of network.
-STATE=/var/lib/apt/.fixture-page
-if [ "$(cat $STATE 2>/dev/null)" != "apt-cache" ]; then
-  apt-get update >/dev/null 2>&1
-  echo apt-cache > $STATE
-fi
+apt_update_once
 
 # cowsay installed and cowsay-off absent: the pair the policy, depends and rdepends examples
 # read. Both are Architecture: all and neither has moved in the archive for years, which is
