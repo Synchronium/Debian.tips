@@ -56,7 +56,7 @@ npm run replay          # everything: a rendering change is not page-local
 Run pa11y locally when rendering is involved:
 
 ```sh
-npm run build && npx serve -l 4321 dist & npx wait-on http://localhost:4321 && npx pa11y-ci
+npm run build && npx serve -l 4321 dist & npx wait-on http://localhost:4321 && npm run a11y
 ```
 
 ## The two ecosystems you cannot fully test

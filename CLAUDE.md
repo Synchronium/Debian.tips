@@ -44,17 +44,18 @@ excluded from both.
 Single test file: `npx vitest run test/schema.test.ts`
 Single test by name: `npx vitest run -t "accepts a valid command page"`
 
-Accessibility check locally. The URL list is generated from the built sitemap, so the middle step
-is not optional: without it `pa11y-ci` has no `urls` to read and checks nothing.
+Accessibility check locally, against a served build:
 
 ```sh
 npm run build && npx serve -l 4321 dist &
 npx wait-on http://localhost:4321
-npx tsx scripts/pa11y-urls.ts && npx pa11y-ci -c .pa11yci.generated.json
+npm run a11y
 ```
 
-Same three steps CI runs, in the same order. `.pa11yci.json` holds the settings and is hand-edited;
-`.pa11yci.generated.json` is those settings plus the URLs, and is gitignored.
+`npm run a11y` is the same command CI runs. **Never `npx pa11y-ci` on its own**: the URL list is
+generated from the built sitemap into `.pa11yci.generated.json`, so bare `pa11y-ci` reads
+`.pa11yci.json`, finds no `urls`, checks nothing and exits 0. `npm run a11y` generates the list
+first and refuses to write one that is missing a category listing.
 
 Static checks are `npm run format:check` (Prettier) and `tsc --noEmit`, both part of
 `npm run check`. TypeScript runs strict plus `noUncheckedIndexedAccess`,
