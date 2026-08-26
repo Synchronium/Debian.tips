@@ -147,7 +147,8 @@ curl:
   Candidate: 8.14.1-2+deb13u4
 ```
 
-`apt-cache policy` shows the installed version alongside the candidate version `apt` would
+[`apt-cache policy`](/commands/apt-cache/) shows the installed version alongside the candidate
+version `apt` would
 install or upgrade to. Without the `head -3` it goes on to list every version available and the
 repository each comes from, which is the fastest way to answer "why isn't this upgrading" or
 "which repo is this version actually coming from" without digging through

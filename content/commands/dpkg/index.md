@@ -6,7 +6,7 @@ category: commands
 tier: flagship
 tags: [apt, debian, sysadmin]
 updated: 2026-08-18
-related: [apt, apt-vs-apt-get, apt-essentials, could-not-get-lock-dpkg-frontend]
+related: [apt, apt-cache, apt-vs-apt-get, apt-essentials, could-not-get-lock-dpkg-frontend]
 ---
 
 `dpkg` is the program that installs Debian packages. It unpacks a `.deb`, runs its

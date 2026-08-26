@@ -28,7 +28,7 @@ it would have needed more than an upgrade.
 
 ## Check whether a missing dependency explains it
 
-Two commands. First, whether an upgrade is really available:
+Two [`apt-cache`](/commands/apt-cache/) commands. First, whether an upgrade is really available:
 
 ```bash
 apt-cache policy tips-demo | head -3

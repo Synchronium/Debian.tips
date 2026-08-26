@@ -6,7 +6,7 @@ category: commands
 tier: flagship
 tags: [apt, debian, sysadmin, beginner]
 updated: 2026-08-18
-related: [apt-vs-apt-get, apt-essentials, third-party-repositories, could-not-get-lock-dpkg-frontend]
+related: [apt-cache, apt-vs-apt-get, apt-essentials, third-party-repositories, could-not-get-lock-dpkg-frontend]
 ---
 
 `apt` is the command you will type more than any other on a Debian system. It resolves
@@ -15,7 +15,7 @@ and hands them to `dpkg` to unpack and configure, then keeps the whole set consi
 things change underneath it.
 
 The naming is genuinely confusing, so it is worth being precise. `apt` is one of several front
-ends to the same library: `apt-get` and `apt-cache` are
+ends to the same library: `apt-get` and [`apt-cache`](/commands/apt-cache/) are
 the older, script-stable pair, and `apt` gathers the most-used parts of both behind one name
 with nicer defaults. They are shipped by the same package and share a dependency resolver, so
 they never disagree about what should be installed.

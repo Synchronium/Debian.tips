@@ -6,6 +6,13 @@
     "fixtures": 0,
     "unpaired": 0
   },
+  "commands/apt-cache": {
+    "checked": 51,
+    "byShape": 5,
+    "exempt": 0,
+    "fixtures": 2,
+    "unpaired": 0
+  },
   "commands/awk": {
     "checked": 79,
     "byShape": 0,

@@ -1,0 +1,507 @@
+command: apt-cache
+
+fixtures:
+  - name: /etc/apt/sources.list.d/vendor.sources
+    note: "the sandbox has a second repository configured alongside Debian's, which is what the version tables below are reading. It carries two packages: `hello-tips`, which Debian does not have at all, and a `bash-completion` at version `1:99.0-1`, higher than the one Debian ships. `Trusted: yes` is there because this one is unsigned and local; a repository reached over the network wants `Signed-By` instead, which [third-party repositories](/debian/third-party-repositories/) covers."
+    content: |
+      Types: deb
+      URIs: file:/srv/vendor
+      Suites: stable
+      Components: main
+      Trusted: yes
+  - name: "which of the page's packages are installed"
+    from: "dpkg-query -W -f='${db:Status-Abbrev} ${binary:Package} ${Version}\\n' cowsay bash-completion"
+    content: |
+      ii  bash-completion 1:2.16.0-7
+      ii  cowsay 3.03+dfsg2-8
+
+sections:
+  - title: "Which version would I get"
+    intro: >-
+      `apt-cache policy` is the command to reach for whenever a package is not the version you
+      expected. `Installed` is what is on the machine now and `Candidate` is what `apt install`
+      would fetch, and the two lines together answer most of the question on their own.
+    examples:
+      - title: "Check what is installed and what apt would install"
+        code: apt-cache policy cowsay | head -3
+        description: "The two lines agreeing means the machine already has the version apt would choose, so there is nothing to upgrade. No root and no network: this reads the cache `apt update` last filled."
+        level: basic
+        output: |2
+          cowsay:
+            Installed: 3.03+dfsg2-8
+            Candidate: 3.03+dfsg2-8
+      - title: "See which version you would get before installing"
+        code: apt-cache policy cowsay-off | head -3
+        description: "`(none)` in the `Installed` line means the package is not on the machine. The `Candidate` line is what would arrive if you ran `apt install cowsay-off`, which is worth knowing before you agree to it."
+        level: basic
+        output: |2
+          cowsay-off:
+            Installed: (none)
+            Candidate: 3.03+dfsg2-8
+      - title: "Find out whether an upgrade is waiting"
+        code: apt-cache policy bash-completion | head -3
+        description: The two lines disagreeing means an upgrade is available and not yet applied. Here the candidate comes from a repository other than Debian's, which the version table below these lines spells out.
+        level: basic
+        output: |2
+          bash-completion:
+            Installed: 1:2.16.0-7
+            Candidate: 1:99.0-1
+      - title: "Read the whole version table"
+        code: apt-cache policy hello-tips
+        description: Under the first two lines, one entry per version apt can see. Each is followed by its priority, which is what decides the winner, and the indented line beneath names the repository the version came from.
+        level: basic
+        output: |2
+          hello-tips:
+            Installed: (none)
+            Candidate: 1.0-1
+            Version table:
+               1.0-1 500
+                  500 file:/srv/vendor stable/main all Packages
+      - title: "Find out which repository a version is coming from"
+        code: apt-cache policy bash-completion | head -6
+        description: The diagnostic to run when a package sits at a version you did not expect. A second repository is offering a higher version than Debian at the same priority, so it wins, and Debian's own entry follows below the six lines shown. See [third-party repositories](/debian/third-party-repositories/) for how to stop that happening.
+        level: intermediate
+        output: |2
+          bash-completion:
+            Installed: 1:2.16.0-7
+            Candidate: 1:99.0-1
+            Version table:
+               1:99.0-1 500
+                  500 file:/srv/vendor stable/main all Packages
+      - title: "Recognise a package with no installation candidate"
+        code: apt-cache policy default-mta
+        description: A `Candidate` of `(none)` and an empty version table means apt knows the name but has no version to offer. Here it is a virtual package, a name real packages claim rather than one of their own. The same output appears when a package has been dropped from the archive.
+        level: intermediate
+        output: |2
+          default-mta:
+            Installed: (none)
+            Candidate: (none)
+            Version table:
+      - title: "Ask about several packages at once"
+        code: "apt-cache policy cowsay cowsay-off | grep -E '^[a-z]|: '"
+        description: Every name you pass gets its own stanza. Dropping the version tables with `grep` fits a whole set of packages into a few lines.
+        level: intermediate
+        output: |2
+          cowsay:
+            Installed: 3.03+dfsg2-8
+            Candidate: 3.03+dfsg2-8
+          cowsay-off:
+            Installed: (none)
+            Candidate: 3.03+dfsg2-8
+      - title: "Notice that an unknown package name says nothing"
+        code: apt-cache policy nosuchpackage; echo "exit $?"
+        description: No output and a success exit status, which is the trap on this command. A typo in a package name looks exactly like a package apt has nothing to say about, so never take a silent `policy` as confirmation the name was right.
+        level: intermediate
+        output: |2
+          exit 0
+      - title: "Pull the candidate version into a variable"
+        code: V=$(apt-cache policy cowsay-off | awk '/Candidate:/ {print $2}'); echo "would install $V"
+        description: The field-per-line format is stable enough to parse, which is what `apt-cache` is for in a script where `apt` would print a warning. See [Variables and quoting](/scripting/variables-and-quoting/).
+        level: advanced
+        output: |2
+          would install 3.03+dfsg2-8
+      - title: "Report whether a package is up to date"
+        code: "apt-cache policy bash-completion | awk '/Installed:/{i=$2} /Candidate:/{c=$2} END{ if (i==c) print \"up to date\"; else print \"upgrade available: \" i \" -> \" c }'"
+        description: Comparing the two fields as strings, rather than trying to work out which version is newer. apt has already decided that; the candidate is by definition what it would install.
+        level: advanced
+        output: |2
+          upgrade available: 1:2.16.0-7 -> 1:99.0-1
+      - title: "List the repositories apt is reading from"
+        code: apt-cache policy | head -5
+        description: With no package named, `policy` prints the sources themselves and the priority each carries. `/var/lib/dpkg/status` at 100 is what is already installed, which is why an installed version is never silently replaced by an equal-priority one.
+        level: advanced
+        output: |2
+          Package files:
+           100 /var/lib/dpkg/status
+               release a=now
+           500 file:/srv/vendor stable/main all Packages
+               release o=ExampleVendor,a=stable,n=stable,c=main,b=all
+      - title: "Show where a version lives and where it came from"
+        code: apt-cache madison hello-tips
+        description: "`madison` is the version table in one line per version, named after the Debian archive tool whose output it imitates. Handy when you want the answer on a single line rather than in a stanza."
+        level: advanced
+        output: |2
+          hello-tips |      1.0-1 | file:/srv/vendor stable/main all Packages
+      - title: "Report the candidate version for a list of packages"
+        code: for pkg in cowsay cowsay-off hello-tips; do printf '%s %s\n' "$pkg" "$(apt-cache policy "$pkg" | awk '/Candidate:/{print $2}')"; done
+        description: "`policy` takes several names at once, but a loop keeps each answer on its own line and lets you format it. See [Loops](/scripting/loops/)."
+        level: advanced
+        output: |2
+          cowsay 3.03+dfsg2-8
+          cowsay-off 3.03+dfsg2-8
+          hello-tips 1.0-1
+
+  - title: "Reading a package's record"
+    intro: >-
+      `apt-cache show` prints the stanza the repository publishes about a package, which is the
+      same information [`dpkg -s`](/commands/dpkg/) gives for an installed one. The difference is
+      that this works for packages you have never installed.
+    examples:
+      - title: "Read a package's description and metadata"
+        code: apt-cache show cowsay | head -8
+        description: Everything the archive says about the package, one field per line. `apt show` prints the same record with the layout rearranged for reading.
+        level: basic
+        output: |2
+          Package: cowsay
+          Version: 3.03+dfsg2-8
+          Installed-Size: 92
+          Maintainer: James McDonald <james@jamesmcdonald.com>
+          Architecture: all
+          Depends: libtext-charwidth-perl, perl:any
+          Suggests: filters, cowsay-off
+          Description: configurable talking cow
+      - title: "Pick out just the fields you care about"
+        code: apt-cache show cowsay | grep -E '^(Version|Installed-Size|Depends)'
+        description: "`Installed-Size` is in kilobytes and is the archive's estimate of what the package will occupy once unpacked, which is not the size of the download."
+        level: basic
+        output: |2
+          Version: 3.03+dfsg2-8
+          Installed-Size: 92
+          Depends: libtext-charwidth-perl, perl:any
+      - title: "See a dependency's version constraints"
+        code: apt-cache show cowsay-off | grep -E '^(Depends|Breaks|Replaces)'
+        description: The version ranges that `apt-cache depends` leaves out. `Breaks` and `Replaces` naming the same package as `Depends` is how a split package tells apt that older copies must go.
+        level: intermediate
+        output: |2
+          Replaces: cowsay (<< 3.03+dfsg2-3)
+          Depends: cowsay (>= 3.03+dfsg2-3)
+          Breaks: cowsay (<< 3.03+dfsg2-3)
+      - title: "Find the file apt would download"
+        code: apt-cache show cowsay | grep -E '^(Filename|Size|SHA256)'
+        description: The path within the repository, the size of the `.deb` in bytes, and the checksum apt verifies after fetching it. `Filename` is relative to the repository's URI.
+        level: intermediate
+        output: |2
+          Filename: pool/main/c/cowsay/cowsay_3.03+dfsg2-8_all.deb
+          Size: 21372
+          SHA256: 5b16f90ff97871aa0f442087abc1878940d00e310f74190ba854a097545204bf
+      - title: "Ask about one specific version"
+        code: apt-cache show cowsay=3.03+dfsg2-8 | head -3
+        description: The `name=version` form works anywhere apt takes a package name, including `apt install`. Without it you get the candidate, which may not be the version you are asking about.
+        level: intermediate
+        output: |2
+          Package: cowsay
+          Version: 3.03+dfsg2-8
+          Installed-Size: 92
+      - title: "Notice that show prints every version it knows"
+        code: apt-cache show bash-completion | grep '^Version:'
+        description: One stanza per version, not one per package, so piping `apt-cache show` into `grep` can return more lines than you expected on a machine with several repositories configured.
+        level: intermediate
+        output: |2
+          Version: 1:99.0-1
+          Version: 1:2.16.0-7
+      - title: "Read the raw record apt keeps"
+        code: apt-cache showpkg hello-tips
+        description: "The internal view: which index files list the package, what it depends on, and what depends on it. Denser than `show` and rarely what you want, but it is the only place that names the index file a version was read from."
+        level: advanced
+        output: |2
+          Package: hello-tips
+          Versions:
+          1.0-1 (/var/lib/apt/lists/_srv_vendor_dists_stable_main_binary-all_Packages.lz4)
+           Description Language:
+                           File: /var/lib/apt/lists/_srv_vendor_dists_stable_main_binary-all_Packages.lz4
+                            MD5:
+
+
+          Reverse Depends:
+          Dependencies:
+          1.0-1 -
+          Provides:
+          1.0-1 -
+          Reverse Provides:
+      - title: "Test whether apt knows a package name at all"
+        code: apt-cache show nosuchpackage; echo "exit $?"
+        description: Unlike `policy`, `show` treats an unknown name as an error and says so. That makes it the one to use when a script needs to tell a typo from a package it has nothing to say about.
+        level: intermediate
+        output: |2
+          E: No packages found
+          exit 100
+      - title: "Check a name from a script"
+        code: apt-cache show cowsay >/dev/null 2>&1 && echo known || echo unknown
+        description: Exit status rather than parsed output, so a change to the record's fields cannot break it. See [Exit codes and error handling](/concepts/exit-codes-and-error-handling/).
+        level: advanced
+        output: |2
+          known
+      - title: "Watch a virtual package print nothing"
+        code: apt-cache show default-mta; echo "exit $?"
+        description: A virtual package has no record of its own, so `show` prints nothing and still succeeds. `apt-cache showpkg` lists the real packages providing the name, under `Reverse Provides`.
+        level: advanced
+        output: |2
+          exit 0
+      - title: "Read about a package the machine has never had"
+        code: dpkg -s cowsay-off 2>&1 | head -1; apt-cache show cowsay-off | head -1
+        description: dpkg answers from what is installed and apt-cache answers from the archive, so the package dpkg has never heard of is one apt-cache can describe in full.
+        level: intermediate
+        output: |2
+          dpkg-query: package 'cowsay-off' is not installed and no information is available
+          Package: cowsay-off
+      - title: "Understand why showsrc has nothing to say"
+        code: apt-cache showsrc cowsay 2>&1 | head -1
+        description: "`showsrc` reads source package records, which come from `deb-src` lines that a default Debian install does not have. Add one to `/etc/apt/sources.list.d/debian.sources` and run `apt update` before expecting an answer."
+        level: advanced
+        output: |2
+          E: You must put some 'deb-src' URIs in your sources.list
+
+  - title: "Finding a package by name or description"
+    intro: >-
+      `apt-cache search` takes a regular expression and matches it against both package names and
+      their descriptions, which is why a short search term returns so much. Everything here reads
+      the cache, so a package added to the archive since your last `apt update` will not appear.
+    examples:
+      - title: "Search for a package"
+        code: apt-cache search cowsay
+        description: Name on the left, short description on the right. The pattern matched all three of these in the name, but it would have matched a package whose description mentioned cowsay too.
+        level: basic
+        output: |2
+          cowsay - configurable talking cow
+          cowsay-off - configurable talking cow (offensive cows)
+          xcowsay - Graphical configurable talking cow
+      - title: "Search names only, ignoring descriptions"
+        code: apt-cache search --names-only '^cow' | sort
+        description: "`--names-only` (short form `-n`) is the first thing to reach for when a search returns pages of results. Results come back in cache order rather than alphabetically, so pipe through [`sort`](/commands/sort/) if the order matters."
+        level: basic
+        output: |2
+          cowbuilder - pbuilder running on cowdancer
+          cowdancer - Copy-on-write directory tree utility
+          cowpatty - Brute-force WPA dictionary attack
+          cowsay - configurable talking cow
+          cowsay-off - configurable talking cow (offensive cows)
+      - title: "Narrow a search with several terms"
+        code: apt-cache search talking cow
+        description: Two patterns means both must match, in any order and anywhere in the record. Adding a term is usually faster than writing a cleverer regex.
+        level: basic
+        output: |2
+          cowsay - configurable talking cow
+          cowsay-off - configurable talking cow (offensive cows)
+          xcowsay - Graphical configurable talking cow
+      - title: "Match a package name exactly"
+        code: apt-cache search --names-only '^cowsay$'
+        description: The pattern is a regular expression, so `^` and `$` anchor it to the whole name. Without the anchors this would also match `cowsay-off` and `xcowsay`.
+        level: intermediate
+        output: |2
+          cowsay - configurable talking cow
+      - title: "Read the full record for each result"
+        code: apt-cache search --full cowsay-off | head -6
+        description: "`--full` swaps the one-line summary for the same record `apt-cache show` prints. Useful for searching and inspecting in one pass, and long enough that it usually wants a pipe."
+        level: intermediate
+        output: |2
+          Package: cowsay-off
+          Source: cowsay
+          Version: 3.03+dfsg2-8
+          Installed-Size: 23
+          Maintainer: James McDonald <james@jamesmcdonald.com>
+          Architecture: all
+      - title: "List package names without descriptions"
+        code: apt-cache pkgnames cowsay
+        description: "`pkgnames` takes a prefix rather than a regular expression, and matches only the start of the name. Debian's shell completion for package names is built on it."
+        level: intermediate
+        output: |2
+          cowsay
+          cowsay-off
+      - title: "List every package with a given prefix"
+        code: apt-cache pkgnames cowsay-
+        description: A trailing hyphen is a quick way to see what a source package split itself into, once you know the naming pattern a project uses.
+        level: intermediate
+        output: |2
+          cowsay-off
+      - title: "Check a package name exists before using it"
+        code: apt-cache pkgnames cowsay | grep -qx cowsay && echo available || echo "no such package"
+        description: "`grep -qx` insists on a whole-line match, so a prefix that also matches longer names cannot pass. Faster than `apt-cache show` for the same question, because `pkgnames` never reads the records."
+        level: advanced
+        output: |2
+          available
+      - title: "Count what a search would return"
+        code: apt-cache search --names-only cow | wc -l
+        description: Worth doing before piping a broad search anywhere. The count comes from your machine's cache, so it depends on which repositories are configured.
+        volatile: "the count depends on which repositories your machine has configured and when it last updated"
+        compare: shape
+        level: intermediate
+        output: |2
+          22
+      - title: "Count every package name apt knows"
+        code: apt-cache pkgnames | wc -l
+        description: The size of the archive as your machine sees it. Adding a repository, or enabling `contrib` and `non-free`, moves this number.
+        volatile: "the count moves with the archive and with which components are enabled"
+        compare: shape
+        level: advanced
+        output: |2
+          68194
+
+  - title: "Following dependencies"
+    intro: >-
+      `depends` reads forwards, from a package to what it needs; `rdepends` reads backwards, from
+      a package to what needs it. Both answer from the archive, so neither is limited to what is
+      installed unless you ask for that.
+    examples:
+      - title: "See what a package depends on"
+        code: apt-cache depends cowsay
+        description: One line per relationship, with the kind named on the left. `Suggests` and `Recommends` appear here alongside `Depends`, so this is a longer list than what installing the package would actually pull in.
+        level: basic
+        output: |2
+          cowsay
+            Depends: libtext-charwidth-perl
+            Depends: <perl:any>
+              perl
+            Suggests: filters
+            Suggests: cowsay-off
+      - title: "Show only the dependencies that are required"
+        code: apt-cache depends -i cowsay
+        description: "`-i` (`--important`) drops everything that is not a hard requirement, which cuts a long dependency list down to the part that decides whether the package can be installed at all."
+        level: basic
+        output: |2
+          cowsay
+            Depends: libtext-charwidth-perl
+            Depends: <perl:any>
+              perl
+      - title: "Read a virtual dependency"
+        code: apt-cache depends default-mta
+        description: Angle brackets mean a virtual package, a name real packages provide rather than one of their own. Asking about one directly gives the name straight back; where a real package depends on a virtual one, `depends` indents the providers beneath it, as the `<perl:any>` line above does with `perl`.
+        level: intermediate
+        output: |2
+          <default-mta>
+      - title: "Limit the answer to packages you have"
+        code: apt-cache depends --installed cowsay
+        description: The same query filtered to packages present on the machine, which is a quick way to see what a dependency chain has already brought in.
+        level: intermediate
+        output: |2
+          cowsay
+            Depends: libtext-charwidth-perl
+      - title: "Notice that depends hides version constraints"
+        code: apt-cache depends cowsay-off
+        description: "`Depends: cowsay` here, where the record says `cowsay (>= 3.03+dfsg2-3)`. `apt-cache show` keeps the ranges, and you need them to work out why apt is refusing to install a particular version."
+        level: intermediate
+        output: |2
+          cowsay-off
+            Depends: cowsay
+            Breaks: cowsay
+            Replaces: cowsay
+      - title: "Follow a dependency chain all the way down"
+        code: apt-cache depends --recurse -i cowsay | head -12
+        description: "`--recurse` repeats the query on everything it finds. Without `-i` it follows `Suggests` and `Recommends` too, which on a normal package reaches a large part of the archive."
+        level: advanced
+        output: |2
+          cowsay
+            Depends: libtext-charwidth-perl
+            Depends: <perl:any>
+              perl
+          libtext-charwidth-perl
+            Depends: libc6
+            Depends: perl-base
+            Depends: <perlapi-5.40.0>
+              perl-base
+          perl
+            Depends: perl-base
+            Depends: perl-modules-5.40
+      - title: "List every package a dependency chain reaches"
+        code: apt-cache depends --recurse -i cowsay | grep '^[a-z]' | sort
+        description: Package names are unindented in this output and relationships are indented, so `grep '^[a-z]'` reduces the chain to the set of packages it touches. This is the whole transitive closure, including what is already installed.
+        level: advanced
+        output: |2
+          cowsay
+          gcc-14-base
+          libbz2-1.0
+          libc6
+          libcrypt1
+          libdb5.3t64
+          libgcc-s1
+          libgdbm-compat4t64
+          libgdbm6t64
+          libperl5.40
+          libtext-charwidth-perl
+          perl
+          perl-base
+          perl-modules-5.40
+          zlib1g
+      - title: "See how much bigger a recursion gets without -i"
+        code: 'echo "important: $(apt-cache depends --recurse -i cowsay | grep -c ''^[a-z]'')"; echo "everything: $(apt-cache depends --recurse cowsay | grep -c ''^[a-z]'')"'
+        description: Following `Suggests` and `Recommends` as well turns a chain of a dozen packages into a large fraction of the archive, because those relationships have no reason to converge. Always pass `-i` unless you specifically want the wider answer.
+        volatile: "both counts depend on which repositories your machine has configured, and the second is a large fraction of the archive"
+        compare: shape
+        level: advanced
+        output: |2
+          important: 15
+          everything: 16690
+      - title: "Spell out the relationships to follow"
+        code: apt-cache depends --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances cowsay
+        description: What `-i` is shorthand for. The long form is worth knowing because each flag can be used on its own, so you can drop `Suggests` while keeping `Recommends`.
+        level: advanced
+        output: |2
+          cowsay
+            Depends: libtext-charwidth-perl
+            Depends: <perl:any>
+              perl
+      - title: "Find out what depends on a package"
+        code: apt-cache rdepends cowsay
+        description: "What would be affected if this package went away. Packages appear once per relationship rather than once each, which is why `cowsay-off` is listed three times: it declares `Depends`, `Breaks` and `Replaces` on cowsay."
+        level: basic
+        output: |2
+          cowsay
+          Reverse Depends:
+            cowsay-off
+            presentty
+            junior-games-text
+            games-toys
+            cowsay-off
+            cowsay-off
+            ansible
+            ansible-core
+      - title: "Get a reverse dependency list without duplicates"
+        code: apt-cache rdepends cowsay | tail -n +3 | sort -u
+        description: "`tail -n +3` drops the two header lines and [`sort -u`](/commands/sort/) collapses the repeats, leaving one line per package. Worth doing before counting anything."
+        level: intermediate
+        output: |2
+            ansible
+            ansible-core
+            cowsay-off
+            games-toys
+            junior-games-text
+            presentty
+      - title: "Show only packages that truly require it"
+        code: apt-cache rdepends -i cowsay
+        description: The same filter as on `depends`, and it changes the answer considerably. Most of the list above is `Suggests` and `Recommends`, so only these two would actually break.
+        level: intermediate
+        output: |2
+          cowsay
+          Reverse Depends:
+            cowsay-off
+            presentty
+      - title: "Check whether anything installed needs a package"
+        code: apt-cache rdepends --installed cowsay
+        description: An empty list under the header means nothing on this machine depends on the package, so removing it will not take anything else with it. Compare with `apt remove --dry-run`, which answers the same question from the other direction.
+        level: advanced
+        output: |2
+          cowsay
+          Reverse Depends:
+
+  - title: "The cache itself"
+    intro: >-
+      The cache is a binary index built from the files `apt update` downloads into
+      `/var/lib/apt/lists/`. These commands describe it rather than any package in it, and the
+      numbers they print will differ on every machine.
+    examples:
+      - title: "See how big the package cache is"
+        code: apt-cache stats | head -3
+        description: "`Total package names` counts every name apt has seen, real and virtual. It is far larger than the number of installable packages, which the next lines break down."
+        volatile: "every figure here depends on which repositories your machine has configured and when it last updated"
+        compare: shape
+        level: basic
+        output: |2
+          Total package names: 159757 (5112 k)
+          Total package structures: 143561 (6317 k)
+            Normal packages: 67868
+      - title: "Tell real packages from virtual ones"
+        code: apt-cache stats | grep -E 'Normal|virtual'
+        description: "`Normal` are packages you can install. The other three count virtual names: `Pure` where no real package carries the name at all, as with `default-mta`, `Single` where exactly one package provides it, and `Mixed` where a real package of that name exists as well."
+        volatile: "the counts depend on which repositories your machine has configured"
+        compare: shape
+        level: intermediate
+        output: |2
+            Normal packages: 67868
+            Pure virtual packages: 1097
+            Single virtual packages: 64623
+            Mixed virtual packages: 327
+      - title: "Rebuild the cache from the downloaded lists"
+        code: apt-cache gencaches
+        description: Re-reads `/var/lib/apt/lists/` and rewrites the binary index without fetching anything. The repair for a cache that has been corrupted, and the one apt-cache command that writes to disk.
+        level: advanced
+        output: |2
+          Reading package lists...

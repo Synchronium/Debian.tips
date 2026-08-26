@@ -163,7 +163,8 @@ EOF
 sudo apt update
 ```
 
-`o=` matches the `Origin:` field the repository declares, which `apt-cache policy` will show you.
+`o=` matches the `Origin:` field the repository declares, which
+[`apt-cache policy`](/commands/apt-cache/) will show you.
 A priority below zero means "never install this", so the first stanza closes the door and the
 second opens it for one package. Afterwards, the `curl` from earlier is Debian's again:
 
