@@ -38,10 +38,10 @@ npm run check    # format, typecheck, tests, build, linkcheck, link audit: the f
 content/            Markdown + YAML content, one directory per category (see src/content/schema.ts)
 src/                Generator: content pipeline, templates, dev server, build/linkcheck scripts
 src/templates/      Page templates and shared partials
-src/client/         Client JavaScript inlined into every page (theme, copy buttons, search key)
+src/client/         Client TypeScript: inlined into every page, except the fetched search dialog
 scripts/            Sandbox, example replay (npm run replay), and content-fixture setup scripts
 styles/site.css     Full design system (single stylesheet, hashed on build)
-public/             Static assets copied as-is into dist/ (favicon, robots.txt, CNAME, search.js)
+public/             Static assets copied as-is into dist/ (favicon, robots.txt, CNAME)
 test/               Vitest unit + build-pipeline tests, with fixture content
 ```
 

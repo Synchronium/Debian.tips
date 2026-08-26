@@ -2,9 +2,9 @@
 // page by src/templates/layout.ts. It is small, and a request per page for this much would cost
 // more than it saves.
 //
-// The search dialog's own wiring (and Pagefind itself) live in /assets/search.js, fetched via
-// dynamic import() only when the dialog is first opened, so Pagefind's JS/WASM bundle never loads
-// for visitors who don't search.
+// The search dialog's own wiring (and Pagefind itself) live in src/client/search.ts, compiled to
+// /assets/search.js and fetched via dynamic import() only when the dialog is first opened, so
+// Pagefind's JS/WASM bundle never loads for visitors who don't search.
 //
 // Anything this file and theme-init.ts both need is declared in src/client/shared.ts, which is
 // prepended to both. Anything the *templates* decide reaches this file as a data- attribute

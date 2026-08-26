@@ -27,7 +27,7 @@ looks at the rendered page (ADR-0001). The corruption would ship silently, past 
 
 ## Decision
 
-Minify `styles/site.css` and the static scripts under `public/assets/`, each with a source map
+Minify `styles/site.css` and the client scripts under `src/client/`, each with a source map
 written beside it. Do not minify HTML.
 
 Source maps are separate files, so they cost a visitor nothing: a browser fetches one only when

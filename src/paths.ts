@@ -18,9 +18,13 @@ export const DIST_DIR = join(ROOT, "dist");
 export const PUBLIC_DIR = join(ROOT, "public");
 export const STYLES_DIR = join(ROOT, "styles");
 
-/** Client-side JavaScript that the layout inlines into every page, rather than serving as a
- *  file: it has to run before first paint. Under `src/` because it is a build input; anything
- *  the browser fetches for itself lives in `public/assets/` instead. */
+/** The site's client-side TypeScript, compiled by esbuild at build time (ADR-0013).
+ *
+ *  Most of it is inlined into every page by `src/templates/layout.ts`, because it has to run
+ *  before first paint. `search.ts` is the exception and is compiled to a file instead, since it
+ *  pulls in Pagefind and should not load for a visitor who never searches; `src/assets.ts` writes
+ *  it out. Both are build inputs, which is why they are here rather than under `public/`, where
+ *  a file is copied to `dist/` unread and unchecked. */
 export const CLIENT_DIR = join(ROOT, "src", "client");
 
 /** Setup scripts, `.skip` lists and the Python helpers a page's examples need. */

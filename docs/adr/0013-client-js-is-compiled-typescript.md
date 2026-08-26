@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Recorded:** 2026-08-19
-- **Enforced by:** `tsconfig.client.json` in `npm run check`, `clientScript()` in `src/templates/layout.ts`, `test/layout.test.ts`
+- **Enforced by:** `tsconfig.client.json` in `npm run check`, `clientScript()` in `src/templates/layout.ts`, `FETCHED_CLIENT_SCRIPTS` in `src/assets.ts`, `test/layout.test.ts`, `test/assets.test.ts`
 
 ## Context
 
@@ -20,8 +20,16 @@ esbuild at build time, then inlined into every page.
 
 It is inlined rather than fetched because it runs before and during first paint: the theme script
 must run before the page renders or the page renders in the wrong theme first, and a request per
-page for this much would cost more than it saves. `search.js` is the exception and is fetched, since
-it is only needed once someone searches.
+page for this much would cost more than it saves. `search.ts` is the exception and is compiled to a
+file, `dist/assets/search.js`, since it is only needed once someone searches and it pulls in
+Pagefind's JS and WASM bundle behind it.
+
+The exception is about *how it is delivered* and nothing else. It lived under `public/` for a while,
+which made it an exception to the whole record instead: `public/` is copied to `dist/` unread, so
+that one file was outside `tsconfig.client.json`, outside Prettier's globs and outside
+`test/documentedPaths.test.ts`, and had drifted to prove it. It sits under `src/client/` with the
+rest, and `src/assets.ts` writes it out as a module rather than an IIFE, because the dynamic
+`import()` in `interaction.ts` needs something to import.
 
 DOM types live in a separate `tsconfig.client.json`. The root config excludes `src/client/**`
 deliberately: sharing one config would let `document` typecheck inside the build and the harness,
@@ -42,7 +50,9 @@ change them:
   page that stops parsing halfway is a bad way to find that out.
 
 The compiled result is cached per build, since the layout runs for every page and neither file
-changes between them.
+changes between them. Per build and not per process: the dev server builds many times in one and
+routes an edit under `src/client/` to a rebuild rather than a restart, so a cache that outlived the
+build would make those edits invisible.
 
 ## Revisit when
 

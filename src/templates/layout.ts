@@ -177,7 +177,7 @@ ${STANDALONE_PAGES.map((s) => raw(html`<li><a href="${s.path}">${s.navLabel}</a>
 
 /** Static markup only: no results are pre-rendered, so this ships fine to every
  * page without needing Pagefind at build time. All behaviour is wired by
- * assets/search.js on first open.
+ * src/client/search.ts, served as /assets/search.js, on first open.
  *
  * The result list itself is not a live region: replacing its contents on every keystroke made a
  * screen reader announce every result again, mid-typing. The status line beside it says how many
