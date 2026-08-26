@@ -52,9 +52,28 @@ cloud image built from one will often not have it.
 ```bash
 dpkg -s sudo >/dev/null 2>&1 && echo "sudo is installed" || echo "sudo is not installed"
 ```
+```
+sudo is installed
+```
 
-If it is not installed, that is your answer. If it is, the problem is that your account is not
-permitted to use it. Ask which groups you are in:
+On a machine that has no `sudo`, running it gives the first error from the top of this page.
+Taking it off a machine to show that needs an override, because sudo's own pre-removal script
+refuses: removing it is how people lock themselves out.
+
+```bash
+SUDO_FORCE_REMOVE=yes apt-get purge -y sudo > /dev/null 2>&1
+su - newbie -c 'sudo apt update' 2>&1 | tail -1
+```
+```
+-bash: sudo: command not found
+```
+
+Notice who is speaking. `-bash:` means the shell looked for `sudo` on your `PATH`, found nothing,
+and gave up before any sudo ran. The other error on this page comes from sudo itself, which
+means sudo is installed and has read its configuration and decided about you. One is a missing
+package and the other is a missing group, and the prefix tells you which you have.
+
+If sudo is installed, ask which groups you are in:
 
 ```bash
 id -nG newbie

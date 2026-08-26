@@ -399,7 +399,7 @@
     "unpaired": 3
   },
   "troubleshooting/sudo-command-not-found": {
-    "checked": 6,
+    "checked": 8,
     "byShape": 0,
     "exempt": 0,
     "fixtures": 0,

@@ -81,6 +81,21 @@ describe("stripArtifacts: what gets written onto a page", () => {
     );
   });
 
+  it("keeps the leading dash a login shell prints", () => {
+    // `su -` runs a login shell, whose $0 is `-bash`. That dash is in every copy of
+    // "-bash: sudo: command not found" anyone has ever pasted into a search box, so the line
+    // number goes and the shell's own name stays.
+    expect(stripArtifacts("-bash: line 1: sudo: command not found")).toBe("-bash: sudo: command not found");
+  });
+
+  it("does not rewrite one shell's name into another's", () => {
+    // The name is carried through rather than normalised, so a page claiming a login shell
+    // cannot be satisfied by output from a non-login one.
+    expect(stripArtifacts("bash: line 1: sudo: command not found")).not.toBe(
+      stripArtifacts("-bash: line 1: sudo: command not found"),
+    );
+  });
+
   it("never introduces a mask token", () => {
     // Masks belong to comparison only. This is the invariant that keeps <TIMESTAMP> and
     // <VOLATILE> off the published pages, where they read as broken placeholders.

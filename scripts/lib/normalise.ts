@@ -124,10 +124,15 @@ const curlMeter = (s: string): string =>
     .replace(/^[^\n]*--:--:--[^\n]*$\n?/gm, "");
 
 /** `bash -c` numbers its diagnostics; an interactive shell does not. ssh warns about the
- *  missing terminal for the same reason. */
+ *  missing terminal for the same reason.
+ *
+ *  The shell's own name is kept rather than normalised, because it is the part a reader
+ *  recognises and the part that says which shell they are in: `su -` runs a login shell, which
+ *  prints `-bash`, and that leading dash is in every copy of this error anyone has pasted into a
+ *  search box. Only the line number goes. */
 const shellNoise = (s: string): string =>
   s
-    .replace(/^bash: line \d+: /gm, "bash: ")
+    .replace(/^(-?bash): line \d+: /gm, "$1: ")
     .replace(/^Pseudo-terminal will not be allocated because stdin is not a terminal\.\n/gm, "");
 
 /** Removes only the artifacts of running under the harness, leaving every real value

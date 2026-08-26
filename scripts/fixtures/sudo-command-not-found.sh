@@ -5,13 +5,19 @@
 # Debian's installer leaves you with when you set a root password during installation. Every
 # diagnostic and fix on the page is then run against a real account in that state.
 #
-# The literal "sudo: command not found" is the one thing not reproduced here: the page quotes it
-# as the error the reader arrived with and verifies the diagnosis and the fix instead. That was
-# forced while every page shared a container, because removing sudo broke every page whose
-# examples begin with it. A container per page removes the obstacle, so reproducing the error for
-# real is now available to whoever next works on this page.
+# One example removes sudo outright, which is the only way to produce the error the page is named
+# after. That is safe here because a page gets a container to itself (ADR-0020), and it is the
+# reason for the reinstall guard at the foot of this script.
 
 export DEBIAN_FRONTEND=noninteractive
+
+# Package lists, needed only so the reinstall below can find sudo. Fetched once per container
+# rather than once per example: this script runs before every documented output.
+STATE=/var/lib/apt/.fixture-page
+if [ "$(cat $STATE 2>/dev/null)" != "sudo-command-not-found" ]; then
+  apt-get update >/dev/null 2>&1
+  echo sudo-command-not-found > $STATE
+fi
 
 if ! id newbie >/dev/null 2>&1; then
   useradd -m -s /bin/bash newbie
@@ -29,3 +35,10 @@ gpasswd -d newbie sudo >/dev/null 2>&1 || true
 # The sandbox image grants the `user` account passwordless sudo through /etc/sudoers.d/user.
 # That is why the page uses `newbie` rather than `user`: `user` cannot demonstrate this error
 # at all, and reaching for it would have produced a page that quietly proved nothing.
+
+# sudo back, because one example purges it and the restore between examples only empties the
+# working directory. Without this, every example after that one runs on a machine that has no
+# sudo to be refused by, and the page's diagnosis and fix sections stop meaning anything.
+if ! dpkg -s sudo >/dev/null 2>&1; then
+  apt-get install -y sudo >/dev/null 2>&1
+fi
