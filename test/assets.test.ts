@@ -77,10 +77,23 @@ describe("the byte budget", () => {
   });
 });
 
-describe("public assets", () => {
-  it("minifies the scripts and leaves everything else alone", () => {
+describe("the fetched client script", () => {
+  it("is minified with a source map beside it", () => {
     expect(asset("search.js")).toMatch(/\/\/# sourceMappingURL=search\.js\.map/);
     expect(readdirSync(join(dist, "assets"))).toContain("search.js.map");
+  });
+
+  it("keeps its export, so the dynamic import has something to import", () => {
+    // The one difference from the inlined scripts, which are wrapped in an IIFE precisely so that
+    // nothing they declare escapes. `src/client/interaction.ts` reaches this through
+    // `import("/assets/search.js")`, and a build that emitted an IIFE would leave the search
+    // trigger throwing on click, in a browser, with every gate green.
+    expect(asset("search.js")).toMatch(/export\s*\{[^}]*\bopenSearch\b/);
+  });
+});
+
+describe("public assets", () => {
+  it("copies what is not a build input, and leaves it alone", () => {
     // Not a script, and not something to rewrite: it is the domain the site is served from.
     expect(readFileSync(join(dist, "CNAME"), "utf-8")).toContain("debian.tips");
   });

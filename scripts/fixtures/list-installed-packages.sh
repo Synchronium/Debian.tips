@@ -5,6 +5,8 @@
 # known package into both: installed recently enough to be the newest thing on the machine, and
 # named in the rotated history the page searches.
 
+. /tmp/fixtures-common.sh
+
 export DEBIAN_FRONTEND=noninteractive
 umask 0022
 
@@ -15,11 +17,7 @@ cat > /etc/apt/apt.conf.d/99-replay-no-script-warning <<'EOF'
 APT::Cmd::Disable-Script-Warning "1";
 EOF
 
-STATE=/var/lib/apt/.fixture-page
-if [ "$(cat $STATE 2>/dev/null)" != "list-installed-packages" ]; then
-  apt-get update >/dev/null 2>&1
-  echo list-installed-packages > $STATE
-fi
+apt_update_once
 
 # cowsay-off installed after everything the image installed, so it is the newest row in the logs
 # and the answer to "what did I add most recently". Architecture: all, which is what keeps the

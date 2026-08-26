@@ -61,7 +61,7 @@ ${raw(paginationNav(slice))}
   return layout({
     // A page-2 title that reads the same as page 1 is a duplicate as far as a search engine is
     // concerned, and unhelpful in a tab strip either way.
-    title: slice.number === 1 ? meta.label : `${meta.label} — page ${slice.number}`,
+    title: slice.number === 1 ? meta.label : `${meta.label} - page ${slice.number}`,
     description: meta.description,
     path: slice.path,
     activeCategory: category,

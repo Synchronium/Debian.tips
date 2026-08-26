@@ -64,6 +64,18 @@ const CLIENT_SHARED = "shared.ts";
  *  `</script` check runs on the *output*: minification can move a string, and a page that stops
  *  parsing halfway is a bad way to find that out. */
 const scriptCache = new Map<string, string>();
+
+/** Empties the compiled-script cache, so the next build reads `src/client/` from disk again.
+ *
+ *  Per *build*, not per process. The dev server builds many times in one process and routes an
+ *  edit under `src/client/` to a rebuild rather than a restart, so a cache that outlived the
+ *  build made those edits invisible: the rebuild succeeded, reported its milliseconds, and
+ *  emitted the previous compilation. `resetShikiStyles` exists for the same reason and is called
+ *  from the same place. */
+export function resetClientScripts(): void {
+  scriptCache.clear();
+}
+
 function clientScript(filename: string): string {
   const cached = scriptCache.get(filename);
   if (cached !== undefined) return cached;
@@ -165,7 +177,7 @@ ${STANDALONE_PAGES.map((s) => raw(html`<li><a href="${s.path}">${s.navLabel}</a>
 
 /** Static markup only: no results are pre-rendered, so this ships fine to every
  * page without needing Pagefind at build time. All behaviour is wired by
- * assets/search.js on first open.
+ * src/client/search.ts, served as /assets/search.js, on first open.
  *
  * The result list itself is not a live region: replacing its contents on every keystroke made a
  * screen reader announce every result again, mid-typing. The status line beside it says how many
@@ -192,7 +204,7 @@ function safeJsonLd(data: Record<string, unknown>): string {
 
 export function layout(opts: LayoutOptions): string {
   const canonical = `${SITE.url}${opts.path}`;
-  const pageTitle = opts.path === "/" ? `${SITE.title} — ${SITE.tagline}` : `${opts.title} — ${SITE.title}`;
+  const pageTitle = opts.path === "/" ? `${SITE.title} - ${SITE.tagline}` : `${opts.title} - ${SITE.title}`;
   const websiteJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",

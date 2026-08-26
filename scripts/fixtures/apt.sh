@@ -5,6 +5,8 @@
 # states the examples document. Every step is guarded: this runs again before each documented
 # output, and an unguarded apt-get install would spend seconds per block re-doing settled work.
 
+. /tmp/fixtures-common.sh
+
 export DEBIAN_FRONTEND=noninteractive
 
 # `apt` prints "WARNING: apt does not have a stable CLI interface" whenever stdout is not a
@@ -19,13 +21,7 @@ cat > /etc/apt/apt.conf.d/99-replay-no-script-warning <<'EOF'
 APT::Cmd::Disable-Script-Warning "1";
 EOF
 
-# Package lists are fetched once per container rather than once per example. This script runs
-# before every documented output, and `apt-get update` is three seconds of network each time.
-STATE=/var/lib/apt/.fixture-page
-if [ "$(cat $STATE 2>/dev/null)" != "apt" ]; then
-  apt-get update >/dev/null 2>&1
-  echo apt > $STATE
-fi
+apt_update_once
 
 # Examples that show a package's identity use Architecture: all packages throughout: cowsay,
 # bash-completion, ca-certificates, tzdata. An arch-dependent package prints "arm64" here and

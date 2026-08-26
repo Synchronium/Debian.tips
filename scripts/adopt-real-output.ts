@@ -4,8 +4,8 @@
 //   npx tsx scripts/adopt-real-output.ts [--user] <sandbox> <command> <setup.sh> --all
 //
 // This changes what a page claims, so it only touches examples named on the command line,
-// or every example under `--all`. Reach for it when a page's output was written from
-// memory or abridged, and the real output is the truth.
+// or every example under `--all`. Use it when a page's output was written from memory or
+// abridged, and the real output is the truth.
 //
 // What it writes is `stripArtifacts` output, never `normalise` output: the masks exist to
 // compare two runs, and a page carrying one would read as a literal `<TIMESTAMP>` to a

@@ -298,7 +298,7 @@
     "byShape": 2,
     "exempt": 0,
     "fixtures": 0,
-    "unpaired": 2
+    "unpaired": 0
   },
   "debian/systemd-services": {
     "checked": 5,
@@ -401,28 +401,28 @@
   "troubleshooting/could-not-get-lock-dpkg-frontend": {
     "checked": 2,
     "byShape": 1,
-    "exempt": 0,
+    "exempt": 1,
     "fixtures": 0,
     "unpaired": 1
   },
   "troubleshooting/packages-kept-back": {
     "checked": 5,
     "byShape": 0,
-    "exempt": 0,
+    "exempt": 1,
     "fixtures": 0,
     "unpaired": 1
   },
   "troubleshooting/repository-is-not-signed": {
     "checked": 4,
     "byShape": 2,
-    "exempt": 0,
+    "exempt": 3,
     "fixtures": 0,
     "unpaired": 3
   },
   "troubleshooting/sudo-command-not-found": {
     "checked": 8,
     "byShape": 0,
-    "exempt": 0,
+    "exempt": 2,
     "fixtures": 0,
     "unpaired": 2
   }

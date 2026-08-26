@@ -18,9 +18,13 @@ export const DIST_DIR = join(ROOT, "dist");
 export const PUBLIC_DIR = join(ROOT, "public");
 export const STYLES_DIR = join(ROOT, "styles");
 
-/** Client-side JavaScript that the layout inlines into every page, rather than serving as a
- *  file: it has to run before first paint. Under `src/` because it is a build input; anything
- *  the browser fetches for itself lives in `public/assets/` instead. */
+/** The site's client-side TypeScript, compiled by esbuild at build time (ADR-0013).
+ *
+ *  Most of it is inlined into every page by `src/templates/layout.ts`, because it has to run
+ *  before first paint. `search.ts` is the exception and is compiled to a file instead, since it
+ *  pulls in Pagefind and should not load for a visitor who never searches; `src/assets.ts` writes
+ *  it out. Both are build inputs, which is why they are here rather than under `public/`, where
+ *  a file is copied to `dist/` unread and unchecked. */
 export const CLIENT_DIR = join(ROOT, "src", "client");
 
 /** Setup scripts, `.skip` lists and the Python helpers a page's examples need. */
@@ -58,6 +62,16 @@ export const OUTPUT_INDEX = "index.html";
 export const NOT_FOUND_FILE = "404.html";
 export const SITEMAP_FILE = "sitemap.xml";
 export const FEED_FILE = "feed.xml";
+
+/** The accessibility gate's settings, hand-maintained, and the file `scripts/pa11y-urls.ts`
+ *  writes beside it holding those settings plus the URL list it computes from the built sitemap.
+ *
+ *  Two files because they are two kinds of thing. The settings belong in git; the URL list is
+ *  output, and output committed next to its own generator goes stale in the repository and dirties
+ *  the working tree of anyone who runs the gate. The generated one is gitignored, and is what both
+ *  CI and the local recipe in CLAUDE.md point `pa11y-ci` at. */
+export const PA11Y_CONFIG = join(ROOT, ".pa11yci.json");
+export const PA11Y_GENERATED_CONFIG = join(ROOT, ".pa11yci.generated.json");
 
 /** Starts and stops a disposable container. Absolute, so a tool that runs it does not depend
  *  on having been started from the repository root. */

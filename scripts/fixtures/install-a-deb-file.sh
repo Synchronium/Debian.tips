@@ -5,14 +5,12 @@
 # a package apt has never heard of, with a dependency the machine does not satisfy and a
 # maintainer script that says who ran it.
 
+. /tmp/fixtures-common.sh
+
 export DEBIAN_FRONTEND=noninteractive
 umask 0022
 
-STATE=/var/lib/apt/.fixture-page
-if [ "$(cat $STATE 2>/dev/null)" != "install-a-deb-file" ]; then
-  apt-get update >/dev/null 2>&1
-  echo install-a-deb-file > $STATE
-fi
+apt_update_once
 
 ROOT=/build/hello-tips
 rm -rf "$ROOT"

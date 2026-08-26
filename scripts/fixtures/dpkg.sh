@@ -5,6 +5,8 @@
 # package before installing it. Every step is guarded: this runs again before each documented
 # output, and re-downloading a package each time would dominate the run.
 
+. /tmp/fixtures-common.sh
+
 export DEBIAN_FRONTEND=noninteractive
 umask 0022
 
@@ -14,12 +16,7 @@ cat > /etc/apt/apt.conf.d/99-replay-no-script-warning <<'EOF'
 APT::Cmd::Disable-Script-Warning "1";
 EOF
 
-# Fetched once per container rather than once per example; see apt.sh.
-STATE=/var/lib/apt/.fixture-page
-if [ "$(cat $STATE 2>/dev/null)" != "dpkg" ]; then
-  apt-get update >/dev/null 2>&1
-  echo dpkg > $STATE
-fi
+apt_update_once
 
 # Architecture: all throughout. `dpkg -l`, `dpkg -s` and `dpkg -I` all print an Architecture
 # field, so an arch-dependent package would make this page pass on arm64 and fail on amd64,

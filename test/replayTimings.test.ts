@@ -1,7 +1,7 @@
 import { relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import { readTimings } from "../scripts/lib/replayShard.js";
-import { replayablePages } from "../scripts/lib/replayPages.js";
+import { allPages, hasSetupScript } from "../scripts/lib/replayPages.js";
 import { REPLAY_TIMINGS_FILE, ROOT } from "../src/paths.js";
 
 /* `scripts/replay-timings.json` is what balances the CI shards, and it is the one file here that
@@ -15,7 +15,13 @@ import { REPLAY_TIMINGS_FILE, ROOT } from "../src/paths.js";
  *
  * So the file is allowed to drift by a few pages and no further. A budget rather than an exact
  * match, because requiring one would mean a full replay before any new page could ship, and the
- * fallback in `replayShard.ts` already absorbs a page or two. */
+ * fallback in `replayShard.ts` already absorbs a page or two.
+ *
+ * Counted over the pages that *opt into* the replay, never over every page. A page with no setup
+ * script is never put in a container and so never has a time to record, and counting it here made
+ * the budget exhaustible by pages that could not be recorded: four such pages and this fails
+ * permanently, printing a command that cannot clear it. `/about/` publishes the count of pages in
+ * exactly that state, so it is a state the site plans for rather than a hypothetical. */
 
 const BUDGET = 3;
 const RECORD_COMMAND = "npm run replay -- --record-timings";
@@ -23,7 +29,8 @@ const RECORD_COMMAND = "npm run replay -- --record-timings";
 describe("the recorded replay timings", () => {
   it("still describe the site, give or take a few pages", () => {
     const timings = readTimings();
-    const untimed = replayablePages()
+    const untimed = allPages()
+      .filter(hasSetupScript)
       .filter((page) => timings[page] === undefined)
       .sort();
 
@@ -39,6 +46,15 @@ describe("the recorded replay timings", () => {
         "It refuses anything less than the whole site, so run it when the replay is green.",
       ].join("\n"),
     ).toEqual([]);
+  });
+
+  it("records nothing for a page the replay never runs", () => {
+    // The other direction of the same rule. A recorded time for a page with no setup script would
+    // mean either that the file was hand-edited or that the run put an opted-out page in a
+    // container, and both are worth hearing about.
+    const timings = readTimings();
+    const optedOut = Object.keys(timings).filter((page) => !hasSetupScript(page));
+    expect(optedOut).toEqual([]);
   });
 
   it("is read from a file that exists and parses", () => {

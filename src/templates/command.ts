@@ -133,7 +133,7 @@ ${raw(toc([...page.toc, ...sectionTocEntries]))}
 </article>`;
 
   return layout({
-    title: `${page.title} — ${countLabel} practical examples`,
+    title: `${page.title} - ${countLabel} practical examples`,
     description: page.description,
     path: page.url,
     activeCategory: page.category,

@@ -18,7 +18,7 @@ export function tagsIndexPage(tags: TagInfo[], pages: Page[], cssHref: string): 
 <ul class="tag-index">
 ${tags.map((t) =>
   raw(
-    html`<li><a href="${tagPath(t.name)}">${t.name}</a> <span class="tag-count">(${countByTag.get(t.name) ?? 0})</span> — ${t.description}</li>`,
+    html`<li><a href="${tagPath(t.name)}">${t.name}</a> <span class="tag-count">(${countByTag.get(t.name) ?? 0})</span> - ${t.description}</li>`,
   ),
 )}
 </ul>`;
@@ -43,7 +43,7 @@ ${raw(rowList(slice.items, "h2"))}
 ${raw(paginationNav(slice))}`;
 
   return layout({
-    title: slice.number === 1 ? tag.name : `${tag.name} — page ${slice.number}`,
+    title: slice.number === 1 ? tag.name : `${tag.name} - page ${slice.number}`,
     description: `Everything tagged "${tag.name}" on debian.tips.`,
     path: slice.path,
     bodyHtml: raw(body),

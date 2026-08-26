@@ -3,7 +3,7 @@ name: Drift
 # stale without anyone touching it.
 #
 # Nothing here can drift on its own except the one thing that matters most: Debian's archive.
-# `scripts/sandbox.Dockerfile` builds from a moving tag, so a rebuild picks up whatever the
+# `scripts/sandbox/Dockerfile` builds from a moving tag, so a rebuild picks up whatever the
 # archive holds that day, and a security update to a package a page documents is enough to make a
 # true page false. That has happened: OpenSSL 3.5.6 to 3.5.7 failed the ssh page, and an
 # autoremove counter moved because the archive had drifted past the pinned image.
@@ -22,10 +22,15 @@ on:
     - cron: "17 4 * * 4"
   workflow_dispatch: {}
 
-# Reads and reports. It records no timings and opens no pull request: the timings file is
-# measured locally on purpose, because a runner and the devcontainer are different architectures
-# and alternating between them would rewrite the whole file each time for no gain.
-permissions: { contents: read }
+# Reads, and opens an issue when it finds something. It records no timings and opens no pull
+# request: the timings file is measured locally on purpose, because a runner and the devcontainer
+# are different architectures and alternating between them would rewrite the whole file each time
+# for no gain.
+#
+# `issues: write` is for that one step. A scheduled run that fails only emails whoever last touched
+# this file, which is the weakest possible signal for the one job whose entire purpose is to notice
+# during weeks when nobody is looking.
+permissions: { contents: read, issues: write }
 
 jobs:
   replay:
@@ -45,4 +50,41 @@ jobs:
       - name: Build the sandbox image
         run: scripts/sandbox.sh build
       - name: Replay every page
+        id: replay
         run: npm run replay
+
+      # The point of the whole workflow. A red scheduled run is a page that has silently stopped
+      # being true, and it needs a destination: an issue is visible next time anyone opens the
+      # repository, where a failed run buried in the Actions tab is not.
+      #
+      # One issue, reopened rather than duplicated, so eight quiet weeks of drift are one thread
+      # rather than eight. Keyed on the title, since a workflow cannot remember what it opened last
+      # time.
+      - name: Open or update the drift issue
+        if: failure() && steps.replay.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Replay drift: a page no longer reproduces"
+          body="The weekly replay failed. Something a page documents has changed underneath it,
+          most likely a package update in the Debian archive, since nothing in this repository
+          moved.
+
+          Run: $RUN_URL
+
+          The log names the first line that differs on each failing page. To reproduce one:
+
+              npm run replay -- <page>
+
+          Each page replays in a container of its own, so that is the same state CI gave it."
+          existing=$(gh issue list --state all --search "$title in:title" --json number,state \
+            --jq '.[0] | select(.) | "\(.number) \(.state)"')
+          if [ -z "$existing" ]; then
+            gh issue create --title "$title" --body "$body"
+          else
+            number=${existing% *}
+            state=${existing#* }
+            [ "$state" = "CLOSED" ] && gh issue reopen "$number"
+            gh issue comment "$number" --body "$body"
+          fi

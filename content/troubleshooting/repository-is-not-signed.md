@@ -10,6 +10,7 @@ related: [third-party-repositories, apt, apt-essentials, release-channels]
 
 apt refuses to use a repository whose signature it cannot check:
 
+<!-- verify: skip names an example repository that does not exist; reproduced below against a real one -->
 ```
 E: The repository 'http://packages.example.com stable InRelease' is not signed.
 N: Updating from such a repository can't be done securely, and is therefore disabled by default.
@@ -17,10 +18,12 @@ N: Updating from such a repository can't be done securely, and is therefore disa
 
 Above it, depending on your Debian version, one of these:
 
+<!-- verify: skip the Debian 12 spelling, which a trixie container cannot print -->
 ```
 W: GPG error: ... The following signatures couldn't be verified because the public key is
    not available: NO_PUBKEY 8D799EB8C4C09ACA
 ```
+<!-- verify: skip elided with ... to show the two spellings side by side -->
 ```
 W: OpenPGP signature verification failed: ... Sub-process /usr/bin/sqv returned an error
    code (1), error message is: Missing key 8D799EB8..., which is needed to verify signature.

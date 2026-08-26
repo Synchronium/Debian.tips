@@ -1,5 +1,8 @@
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { layout } from "../src/templates/layout.js";
+import { layout, resetClientScripts } from "../src/templates/layout.js";
+import { CLIENT_DIR } from "../src/paths.js";
 import { raw } from "../src/html.js";
 
 /* The layout is on every page, so anything wrong here is wrong everywhere at once, and two of
@@ -55,6 +58,25 @@ describe("layout", () => {
     for (const script of scripts) expect(script).toContain('"data-theme"');
   });
 
+  it("re-reads a client script after the cache is reset", () => {
+    // The dev server builds many times in one process, and routes an edit under src/client/ to a
+    // rebuild rather than a restart. Without the reset the rebuild emits the previous
+    // compilation: it succeeds, reports its milliseconds, and changes nothing on the page, which
+    // is a much worse way to find out than an error.
+    const before = render();
+    const file = join(CLIENT_DIR, "interaction.ts");
+    const original = readFileSync(file, "utf-8");
+    try {
+      writeFileSync(file, `${original}\nconsole.log("cache-probe");\n`, "utf-8");
+      expect(render()).toBe(before);
+      resetClientScripts();
+      expect(render()).toContain("cache-probe");
+    } finally {
+      writeFileSync(file, original, "utf-8");
+      resetClientScripts();
+    }
+  });
+
   it("keeps analytics out of a development build", () => {
     withNodeEnv(undefined, () => {
       expect(render()).not.toContain("googletagmanager");
@@ -89,6 +111,14 @@ describe("layout", () => {
     // so a listing page carrying it by accident would put listings into the results.
     expect(render({ indexable: true })).toContain('<main id="main" data-pagefind-body>');
     expect(render()).toContain('<main id="main">');
+  });
+
+  it("uses a hyphen, not an em dash, in the title it assembles", () => {
+    // voice.md bans the em dash and `npm run voice` cannot see this one: it reads whole-line
+    // comments in a source file, and a separator in a template lives in a string literal. The
+    // title is on every page on the site, so this is the assertion that stands in for the rule.
+    expect(render({ title: "grep" })).toContain("<title>grep - debian.tips</title>");
+    expect(render()).not.toContain("\u2014");
   });
 
   it("escapes a `<` in structured data so it cannot end the script element", () => {

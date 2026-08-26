@@ -1,5 +1,8 @@
 node_modules/
 dist/
+
+# Written by scripts/pa11y-urls.ts from the built sitemap; .pa11yci.json holds the settings.
+.pa11yci.generated.json
 *.log
 .DS_Store
 

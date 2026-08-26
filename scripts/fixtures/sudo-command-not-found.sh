@@ -9,15 +9,12 @@
 # after. That is safe here because a page gets a container to itself (ADR-0020), and it is the
 # reason for the reinstall guard at the foot of this script.
 
+. /tmp/fixtures-common.sh
+
 export DEBIAN_FRONTEND=noninteractive
 
-# Package lists, needed only so the reinstall below can find sudo. Fetched once per container
-# rather than once per example: this script runs before every documented output.
-STATE=/var/lib/apt/.fixture-page
-if [ "$(cat $STATE 2>/dev/null)" != "sudo-command-not-found" ]; then
-  apt-get update >/dev/null 2>&1
-  echo sudo-command-not-found > $STATE
-fi
+# Needed only so the reinstall below can find sudo.
+apt_update_once
 
 if ! id newbie >/dev/null 2>&1; then
   useradd -m -s /bin/bash newbie
@@ -34,7 +31,7 @@ gpasswd -d newbie sudo >/dev/null 2>&1 || true
 
 # The sandbox image grants the `user` account passwordless sudo through /etc/sudoers.d/user.
 # That is why the page uses `newbie` rather than `user`: `user` cannot demonstrate this error
-# at all, and reaching for it would have produced a page that quietly proved nothing.
+# at all, and using it would have produced a page that quietly proved nothing.
 
 # sudo back, because one example purges it and the restore between examples only empties the
 # working directory. Without this, every example after that one runs on a machine that has no

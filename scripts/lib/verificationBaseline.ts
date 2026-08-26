@@ -35,7 +35,7 @@ export type VerificationBaseline = Record<string, PageVerification>;
 function unpairedBlocks(page: Page, contentDir: string): number {
   if (!(PROSE_CATEGORIES as readonly string[]).includes(page.category)) return 0;
   const source = readFileSync(proseSource(page.category, page.slug, contentDir), "utf-8");
-  return parseProsePage(source).unpaired;
+  return parseProsePage(source).unpaired.length;
 }
 
 export async function verificationBaseline(

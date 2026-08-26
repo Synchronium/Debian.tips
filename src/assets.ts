@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { transformSync } from "esbuild";
-import { FONT_FILE, FONT_SOURCE, PUBLIC_DIR, STYLES_DIR } from "./paths.js";
+import { CLIENT_DIR, FONT_FILE, FONT_SOURCE, PUBLIC_DIR, STYLES_DIR } from "./paths.js";
 
 /** Minified with a source map alongside, for both the stylesheet and the static scripts.
  *
@@ -24,14 +24,29 @@ const SOURCE_MAP_COMMENT = {
   css: (mapFile: string) => `/*# sourceMappingURL=${mapFile} */`,
   js: (mapFile: string) => `//# sourceMappingURL=${mapFile}`,
 } as const;
-type AssetLoader = keyof typeof SOURCE_MAP_COMMENT;
+type AssetKind = keyof typeof SOURCE_MAP_COMMENT;
 
-function minify(source: string, filename: string, loader: AssetLoader): { code: string; map: string } {
+/** esbuild's loader, which is what the source is written in, and is no longer the same question
+ *  as which comment syntax the served file takes: the search dialog is TypeScript compiled to a
+ *  `.js`. */
+const LOADER = { css: "css", ts: "ts" } as const;
+type SourceLoader = (typeof LOADER)[keyof typeof LOADER];
+
+function minify(
+  source: string,
+  filename: string,
+  loader: SourceLoader,
+  format?: "esm",
+): { code: string; map: string } {
   const result = transformSync(source, {
     loader,
     minify: true,
     sourcefile: filename,
     sourcemap: true,
+    // es2020 for the same reason src/templates/layout.ts pins it: everything this site is read in
+    // has had optional chaining and nullish coalescing for years, and `esnext` would pass through
+    // syntax newer than that.
+    ...(format ? { format, target: "es2020" as const } : {}),
   });
   return { code: result.code, map: result.map };
 }
@@ -46,27 +61,41 @@ function writeMinified(
   dir: string,
   filename: string,
   built: { code: string; map: string },
-  loader: AssetLoader,
+  kind: AssetKind,
 ): string {
   const { code, map } = built;
   const body = code.replace(/\/\/# sourceMappingURL=.*$/m, "").trimEnd();
-  const withMapUrl = `${body}\n${SOURCE_MAP_COMMENT[loader](`${filename}.map`)}\n`;
+  const withMapUrl = `${body}\n${SOURCE_MAP_COMMENT[kind](`${filename}.map`)}\n`;
   writeFileSync(join(dir, filename), withMapUrl, "utf-8");
   writeFileSync(join(dir, `${filename}.map`), map, "utf-8");
   return withMapUrl;
 }
 
+/** Client scripts that ship as files rather than being inlined into every page.
+ *
+ *  Only the search dialog, and ADR-0013 has why: it pulls in Pagefind's JS and WASM bundle, so a
+ *  visitor who never searches should never load it. Everything else under `src/client/` is
+ *  inlined by `src/templates/layout.ts` instead.
+ *
+ *  The value is the name it is served under, which `src/client/interaction.ts` imports by path.
+ *  Not content-hashed, unlike the stylesheet, because that import names the URL and nothing
+ *  rewrites it. */
+const FETCHED_CLIENT_SCRIPTS = { "search.ts": "search.js" } as const;
+
 export function copyPublic(distDir: string): void {
   cpSync(PUBLIC_DIR, distDir, { recursive: true });
 
-  // public/ is copied verbatim first, then its scripts are replaced with minified builds.
-  // Copying and then overwriting, rather than filtering the copy, keeps every other static
-  // file (CNAME, the favicon, .nojekyll) on the one path that has always handled them.
+  // public/ is copied verbatim, then the compiled client scripts are written alongside. Copying
+  // first, rather than filtering the copy, keeps every static file (CNAME, the favicon,
+  // .nojekyll) on the one path that has always handled them.
   const assetsDir = join(distDir, "assets");
   mkdirSync(assetsDir, { recursive: true });
-  for (const script of ["search.js"]) {
-    const source = readFileSync(join(PUBLIC_DIR, "assets", script), "utf-8");
-    writeMinified(assetsDir, script, minify(source, script, "js"), "js");
+  for (const [source, served] of Object.entries(FETCHED_CLIENT_SCRIPTS)) {
+    // `format: "esm"` because interaction.ts reaches this through a dynamic `import()`, so the
+    // `export` has to survive. That is the difference from the inlined scripts, which are wrapped
+    // in an IIFE precisely so that nothing they declare escapes.
+    const code = readFileSync(join(CLIENT_DIR, source), "utf-8");
+    writeMinified(assetsDir, served, minify(code, source, LOADER.ts, "esm"), "js");
   }
 
   // From node_modules rather than public/, so the font is a versioned dependency instead of a
@@ -99,7 +128,7 @@ export function writeHashedCss(distDir: string, extraCss = ""): string {
 
   // Named `site.css` in the map rather than the hashed output name, so devtools labels the
   // original something that means "the source" and not "the minified file".
-  const built = minify(source, "site.css", "css");
+  const built = minify(source, "site.css", LOADER.css);
   const hash = createHash("sha256").update(built.code).digest("hex").slice(0, 8);
   const filename = `site.${hash}.css`;
   const assetsDir = join(distDir, "assets");

@@ -23,6 +23,7 @@ import {
   proseSource,
   skipFile,
 } from "../paths.js";
+import { replayTimings } from "./replayTimings.js";
 import type { Category } from "./schema.js";
 
 /** One file, with what it is for. The label is what a reader sees beside the link: a bare list
@@ -43,6 +44,14 @@ export interface PageSources {
    *  strips before a reader ever sees it. The two need different wording, and this is what
    *  `src/templates/partials/sourceLinks.ts` picks between them on. */
   hasSkipFile: boolean;
+  /** Seconds this page took on the last recorded full replay, or undefined if it has no recorded
+   *  time. Shown to a reader about to run the command, who otherwise cannot tell a page that
+   *  takes a second from one that takes a minute.
+   *
+   *  Advisory here as everywhere else (see `REPLAY_TIMINGS_FILE`): a missing or stale figure
+   *  costs the reader an inaccurate estimate and nothing else, so a page with no time simply
+   *  does not offer one rather than guessing. */
+  replaySeconds?: number | undefined;
 }
 
 /** Repository-root-relative, forward slashes on every platform. */
@@ -79,5 +88,11 @@ export function pageSources(
     files.push({ path: repoPath(skips), label: "examples the batch cannot run, and how each was checked instead" });
   }
 
-  return { files, replayable, hasSkipFile };
+  const recorded = replayTimings()[slug];
+  return {
+    files,
+    replayable,
+    hasSkipFile,
+    ...(replayable && recorded !== undefined ? { replaySeconds: recorded } : {}),
+  };
 }

@@ -9,6 +9,8 @@
 # installed as its Signed-By keyring. Signing with a real key and verifying against a real but
 # different key is the only way to get apt's genuine message rather than an approximation.
 
+. /tmp/fixtures-common.sh
+
 export DEBIAN_FRONTEND=noninteractive
 umask 0022
 
@@ -107,4 +109,4 @@ rm -rf /var/lib/apt/lists/127.0.0.1:8083* 2>/dev/null
 
 # No `apt-get update` here: running it is what the page's first example does, and its failure
 # is the output being documented.
-echo repository-is-not-signed > /var/lib/apt/.fixture-page
+: > "$APT_UPDATED_MARKER"

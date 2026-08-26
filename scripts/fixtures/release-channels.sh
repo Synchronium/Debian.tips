@@ -5,6 +5,8 @@
 # configuration itself: backports added, and the stock file put back to what a real Debian
 # install has.
 
+. /tmp/fixtures-common.sh
+
 export DEBIAN_FRONTEND=noninteractive
 
 # This page's own blocks add sources and pins, and the restore between blocks only empties the
@@ -29,10 +31,5 @@ Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp
 EOF
 chmod 644 /etc/apt/sources.list.d/backports.sources
 
-# Guarded: this runs again before every documented output, and re-fetching the backports
-# index each time would dominate the run.
-STATE=/var/lib/apt/.fixture-page
-if [ "$(cat $STATE 2>/dev/null)" != "release-channels" ]; then
-  apt-get update >/dev/null 2>&1
-  echo release-channels > $STATE
-fi
+# The backports index is the expensive part of this one.
+apt_update_once

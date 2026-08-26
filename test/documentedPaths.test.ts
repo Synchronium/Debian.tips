@@ -16,12 +16,13 @@ import { ROOT } from "../src/paths.js";
  *  Plain `js` is deliberately *not* here: TypeScript's NodeNext imports spell every neighbour
  *  `./thing.js`, and matching those finds a relative specifier rather than a repository path. */
 const REFERENCE =
-  /(?:\.claude|scripts|src|test|content|styles|public)\/[A-Za-z0-9._/-]+\.(?:ts|mjs|sh|md|py|yaml|yml|css|json)/g;
+  /(?:\.claude|\.github|scripts|src|test|content|styles|public)\/[A-Za-z0-9._/-]+\.(?:ts|mjs|sh|md|py|yaml|yml|css|json|Dockerfile)/g;
 
 /** Extensions worth scanning: the tools themselves, the setup scripts that carry a lot of
- *  hard-won commentary, and the documentation, whose whole job since CLAUDE.md was split into
- *  `.claude/reference/` is to point at other files. */
-const SCANNED = [".ts", ".sh", ".md"];
+ *  hard-won commentary, the documentation, whose whole job since CLAUDE.md was split into
+ *  `.claude/reference/` is to point at other files, and the workflows, which reason at length
+ *  about why they are shaped the way they are and name the files that shape them. */
+const SCANNED = [".ts", ".sh", ".md", ".yml"];
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(join(ROOT, dir), { withFileTypes: true }).flatMap((entry) =>
@@ -61,6 +62,7 @@ describe("repository paths named in the tools", () => {
       ...sourceFiles("scripts"),
       ...sourceFiles("test"),
       ...sourceFiles(".claude"),
+      ...sourceFiles(".github"),
       ...sourceFiles("docs"),
       "CLAUDE.md",
       "README.md",

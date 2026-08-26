@@ -36,11 +36,26 @@ export interface ProsePair {
   note: string;
 }
 
+/** An output fence with no command fence immediately above it: a claim about what something
+ *  prints that no command on the page produces. */
+export interface UnpairedBlock {
+  /** What the page claims is printed. */
+  output: string;
+  /** 1-based line of the opening fence. */
+  line: number;
+  /** Text after the `skip` keyword on the directive above it: why nothing reproduces this. */
+  note: string;
+}
+
 export interface ProsePage {
   pairs: ProsePair[];
-  /** Bare output fences with no command fence immediately above them. Each is a claim
-   *  about what something prints that nothing can check, so the count is reported. */
-  unpaired: number;
+  /** Bare output fences with no command fence immediately above them.
+   *
+   *  Returned as blocks rather than as a count, because two things need to read what is inside
+   *  them: the architecture test, which must scan every published output for a machine name
+   *  wherever it appears, and the exemption check, which requires each to say why nothing
+   *  reproduces it. A count told neither of them anything. */
+  unpaired: UnpairedBlock[];
 }
 
 interface Fence {
@@ -102,14 +117,17 @@ export function parseProsePage(source: string): ProsePage {
   const pairs: ProsePair[] = [];
   const pairedOutputs = new Set<number>();
 
+  /** The `verify:` directive on the line above a fence, if there is one. */
+  const directiveAbove = (fence: Fence): RegExpExecArray | null =>
+    DIRECTIVE.exec(lines[fence.start - 2] ?? "");
+
   for (const [index, fence] of found.entries()) {
     if (fence.lang !== "bash") continue;
     const next = found[index + 1];
     if (!next || next.lang !== "" || next.start !== fence.end + 1) continue;
 
     pairedOutputs.add(next.start);
-    const above = lines[fence.start - 2] ?? "";
-    const directive = DIRECTIVE.exec(above);
+    const directive = directiveAbove(fence);
     pairs.push({
       command: fence.body,
       output: next.body,
@@ -119,7 +137,20 @@ export function parseProsePage(source: string): ProsePage {
     });
   }
 
-  const unpaired = found.filter((fence) => fence.lang === "" && !pairedOutputs.has(fence.start)).length;
+  const unpaired = found
+    .filter((fence) => fence.lang === "" && !pairedOutputs.has(fence.start))
+    .map((fence) => {
+      // Read with the same directive parser a pair uses, so `skip` means one thing on this page
+      // whichever kind of block carries it. Only the note is kept: an unpaired block is never run,
+      // so there is no comparison to relax, and `shape` above one would be an instruction to
+      // nothing.
+      const directive = directiveAbove(fence);
+      return {
+        output: fence.body,
+        line: fence.start,
+        note: directive?.[1] === COMPARISON.skip ? (directive[2] ?? "") : "",
+      };
+    });
   return { pairs, unpaired };
 }
 

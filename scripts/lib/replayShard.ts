@@ -14,8 +14,12 @@
 // is keeping those few pages apart. Splitting the sorted list round-robin instead does that only
 // by accident, and on the same timings it came out 47% slower across seven shards. The gap widens
 // as shards are added, because there are fewer pages left to absorb a badly placed heavy one.
-import { readFileSync } from "node:fs";
-import { REPLAY_TIMINGS_FILE } from "../../src/paths.js";
+import { readTimings } from "../../src/content/replayTimings.js";
+
+// Re-exported so the replay and its tests keep asking this module for everything about sharding,
+// while the file itself has one reader. The build needs the same figures, to tell a reader how
+// long re-running a page takes, and `src/` cannot import from `scripts/`.
+export { readTimings };
 
 /** What a shard argument parses to. `index` is 1-based, matching how `--shard=2/4` reads and how
  *  a CI matrix numbers its jobs. */
@@ -40,24 +44,6 @@ export function parseShard(value: string): Shard {
     throw new ShardError(`--shard=${value} is out of range: index must be between 1 and ${total}`);
   }
   return { index, total };
-}
-
-/** Seconds per page from the last recorded full run, keyed by page name.
- *
- *  Absent or unreadable is not an error: the file is an optimisation, and a run that cannot read
- *  it still replays every page, just in a worse-balanced order. Never let it become load-bearing. */
-export function readTimings(file: string = REPLAY_TIMINGS_FILE): Record<string, number> {
-  try {
-    const parsed: unknown = JSON.parse(readFileSync(file, "utf-8"));
-    if (typeof parsed !== "object" || parsed === null) return {};
-    return Object.fromEntries(
-      Object.entries(parsed as Record<string, unknown>).filter(
-        (entry): entry is [string, number] => typeof entry[1] === "number" && entry[1] >= 0,
-      ),
-    );
-  } catch {
-    return {};
-  }
 }
 
 /** What a page with no recorded time is assumed to cost, in seconds.
