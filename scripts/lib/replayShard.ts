@@ -8,8 +8,8 @@
 // counts rather than trusting the arithmetic here to be obviously right.
 //
 // **The split is balanced, because one page decides the answer.** Replay time is concentrated:
-// measured 2026-08-24, the `apt` page alone is a quarter of a 262-second run and the median page
-// is 1.09 seconds. So the wall clock of a sharded run is the slowest shard, the slowest shard can
+// measured 2026-08-26, the `apt` page alone is a fifth of a 333-second run and the median page
+// is 1.2 seconds. So the wall clock of a sharded run is the slowest shard, the slowest shard can
 // never be quicker than the slowest page, and the only thing worth optimising is keeping the
 // handful of heavy pages apart. Splitting the sorted list round-robin instead does that by
 // accident: it put `apt` and `remove-vs-purge-vs-autoremove` in one shard at five shards and gave
@@ -62,17 +62,23 @@ export function readTimings(file: string = REPLAY_TIMINGS_FILE): Record<string, 
 
 /** What a page with no recorded time is assumed to cost, in seconds.
  *
- *  Above the median rather than at it, so a page nobody has timed yet is spread out rather than
- *  piled onto one shard. A new page is also the one most likely to be slow, since it is the one
- *  being worked on. */
-const UNTIMED_SECONDS = 2;
+ *  Several times the median, because an untimed page is a recently added one and those have run
+ *  well above the median rather than at it. Charging one the median instead puts it last in the
+ *  longest-first ordering, where a page that turns out to be heavy lands on a shard already full.
+ *
+ *  Not higher than this, though the temptation is there. Simulated against the recorded corpus,
+ *  raising it further only helps while the guess about new pages holds, and costs more than it
+ *  saves when it does not: over-charging an unknown displaces genuinely heavy pages in the
+ *  ordering, and most pages on this site are quick. `test/replayTimings.test.ts` is the real
+ *  answer to a stale file, and this constant only limits the damage in the meantime. */
+const UNTIMED_SECONDS = 10;
 
 /** Assigns pages to shards longest-first, each to whichever shard is lightest so far.
  *
  *  Greedy longest-processing-time. It is not optimal in general and does not need to be: the
  *  bound that matters is the slowest single page, and putting the heavy pages first is what
- *  reaches it. Measured 2026-08-24 over the real timings, four shards came out at 66 seconds
- *  against a 64.8-second floor.
+ *  reaches it. Measured 2026-08-26 over the real timings, five shards came out at 66.8 seconds
+ *  against a 66.6-second ideal.
  *
  *  Deterministic for a given page set: pages are ordered by time and then by name, and ties
  *  between equally-loaded shards go to the lowest index. Two runs of the same commit therefore

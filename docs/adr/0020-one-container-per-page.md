@@ -148,18 +148,21 @@ being true.
 **Taken already, 2026-08-24, ahead of the ten-minute trigger this record originally set.** The
 lever named here was parallelising across containers, and it turned out to be cheap enough not to
 wait for: pages are independent, so distributing them changes only speed. `npm run replay` grew
-`--shard=<i>/<n>`, and CI runs four shards on four runners, 254 seconds serial against 64 for the
-slowest shard.
+`--shard=<i>/<n>`, and CI shards it across runners.
 
-The prediction that the ceiling is one page held exactly. `apt` alone is 58 seconds, and five
-shards reach that floor while every count above five stays on it; four comes within 6 seconds of
-it for one runner fewer. What this record got wrong is the shape of the risk: it framed
-parallelising as a change to *what is tested*, which was true of the shared sandbox and is not
-true now. The risk that replaced it is a page belonging to no shard, which is a partition problem
-rather than a contamination one, and `test/replayShard.test.ts` holds it.
+The prediction that the ceiling is one page held exactly. What this record got wrong is the shape
+of the risk: it framed parallelising as a change to *what is tested*, which was true of the shared
+sandbox and is not true now. The risk that replaced it is a page belonging to no shard, which is a
+partition problem rather than a contamination one, and `test/replayShard.test.ts` holds it.
+
+The count moved from four to five on 2026-08-26, when the site had grown to 333 seconds serial
+and four shards were coming out at 84 against a floor of 62. Five reaches 67, which is the last
+count the total work justifies rather than the floor; the reasoning lives beside the matrix in
+`.github/workflows/ci.yml`, where changing it is one line.
 
 Revisit again when the slowest single page dominates the shard budget rather than merely setting
-it. At that point the lever is that page's setup script, not more runners.
+it, which five shards are close to already. At that point the lever is that page's setup script,
+not more runners.
 
 Also revisit if the per-page `apt-get update` grows beyond a few seconds. Baking the package lists
 into the image was considered and rejected: the lists would be as old as the last image build,

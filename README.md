@@ -104,7 +104,7 @@ than being quietly dropped.
 
 - **check**: typecheck, tests, build, linkcheck, then `pa11y-ci` against the built site.
 - **replay**, four of them: every documented `output:` block re-run for real inside a disposable
-  Debian container and diffed against the page, a container per page, split across four runners.
+  Debian container and diffed against the page, a container per page, split across five runners.
   Separate from `check` because it needs Docker, and because "the generator is broken" and "a
   page is lying" are different problems.
 

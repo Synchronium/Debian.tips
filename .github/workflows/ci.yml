@@ -40,12 +40,15 @@ jobs:
   # people looking at them.
   replay:
     runs-on: ubuntu-latest
-    # Four shards, each on its own runner, replaying a quarter of the site. Serial it is 254
-    # seconds; split four ways the slowest shard is 64 (measured 2026-08-24). The floor is one
-    # page, because a page is never split: `apt` alone is 58 seconds, so no number of shards
-    # beats that. Five shards reach it exactly and every count above five stays there, so the
-    # whole question is whether the last 6 seconds are worth a fifth runner and the image build
-    # that comes with it. They are not, which is what picks four.
+    # Five shards, each on its own runner. Serial the site is 333 seconds; split five ways the
+    # slowest shard is 67 (measured 2026-08-26). The floor is one page, because a page is never
+    # split: `apt` alone is 62 seconds, so no number of shards beats that.
+    #
+    # Five is the last count justified by the total work rather than by that floor. Four comes out
+    # at 84 seconds, well above it, so a fifth runner buys 17. Six reaches 62 and every count
+    # above six stays there, so the sixth buys 4 more, which is not worth a runner and an image
+    # build. When five stops being above the floor, the lever is the `apt` page's setup script
+    # rather than a seventh runner; ADR-0020's "Revisit when" holds that.
     #
     # Each shard is its own runner, so this is not the CPU contention that has produced false
     # failures here before (.claude/skills/ship/SKILL.md): that is about two heavy jobs sharing
@@ -66,7 +69,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5]
     name: replay (${{ matrix.shard }}/${{ strategy.job-total }})
     # The budget is for building the sandbox image on a cold runner, plus room for a hung example
     # that somehow escapes the per-example timeout.
