@@ -152,17 +152,23 @@ worth investigating rather than ignoring.
 `${Installed-Size}` is in kilobytes and comes from the package's own record, so this needs no
 disk access at all:
 
-<!-- verify: shape the sizes and the packages depend on what the machine has installed -->
 ```bash
-dpkg-query -W -f='${Installed-Size}\t${Package}\n' | sort -rn | head -5
+dpkg-query -W -f='${Installed-Size}\t${Package}\n' cowsay perl-modules-5.40
 ```
 ```
-30982	libperl5.40
-23769	libc6
-21046	coreutils
+92	cowsay
 19988	perl-modules-5.40
-13327	systemd
 ```
+
+Sort the whole list to find the packages worth deleting:
+
+```sh
+dpkg-query -W -f='${Installed-Size}\t${Package}\n' | sort -rn | head -20
+```
+
+Expect the top of that list to be compiled libraries, and expect it to differ between machines
+of different architectures even where the package set is identical, because the same source
+builds to different sizes.
 
 This is the archive's estimate of unpacked size rather than a measurement, so it will not match
 [`du`](/commands/du/) on the files. It is the right tool for "what is big", and the wrong one for

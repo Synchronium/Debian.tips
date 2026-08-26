@@ -274,7 +274,7 @@
   },
   "debian/list-installed-packages": {
     "checked": 12,
-    "byShape": 6,
+    "byShape": 5,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0

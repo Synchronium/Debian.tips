@@ -800,6 +800,12 @@ The two logs differ in a way that is easy to get backwards. dpkg records the pac
 architecture, so an `Architecture: all` package is publishable from `dpkg.log`; apt records the
 host's, so nothing in an `Install:` line ever is.
 
+**One trap is not a string at all.** `${Installed-Size}` names no architecture and still differs
+between them, because the same source builds to different sizes, so a listing ordered by size
+returns a different few packages on each machine. `test/architecture.test.ts` scans documented
+output for architecture *names* and cannot see this class. Only the replay can, and only by
+running on both.
+
 ### §11.2. No hardware, and no real network peers
 
 The sandbox has no physical disks, NICs, PCI devices or sensors. `lsblk`, `lspci`, `lsusb`,
