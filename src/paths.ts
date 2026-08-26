@@ -63,6 +63,16 @@ export const NOT_FOUND_FILE = "404.html";
 export const SITEMAP_FILE = "sitemap.xml";
 export const FEED_FILE = "feed.xml";
 
+/** The accessibility gate's settings, hand-maintained, and the file `scripts/pa11y-urls.ts`
+ *  writes beside it holding those settings plus the URL list it computes from the built sitemap.
+ *
+ *  Two files because they are two kinds of thing. The settings belong in git; the URL list is
+ *  output, and output committed next to its own generator goes stale in the repository and dirties
+ *  the working tree of anyone who runs the gate. The generated one is gitignored, and is what both
+ *  CI and the local recipe in CLAUDE.md point `pa11y-ci` at. */
+export const PA11Y_CONFIG = join(ROOT, ".pa11yci.json");
+export const PA11Y_GENERATED_CONFIG = join(ROOT, ".pa11yci.generated.json");
+
 /** Starts and stops a disposable container. Absolute, so a tool that runs it does not depend
  *  on having been started from the repository root. */
 export const SANDBOX_SCRIPT = join(ROOT, "scripts", "sandbox.sh");

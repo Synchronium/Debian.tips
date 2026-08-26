@@ -1,8 +1,8 @@
 # How the verification harness works
 
-*Decisions* about verification (why the replay exists at all, why it runs serially, what may
-and may not be exempted) are recorded in `docs/adr/`. This document is the mechanism; that one is
-the reasoning.
+*Decisions* about verification (why the replay exists at all, why each page gets a container of
+its own, what may and may not be exempted) are recorded in `docs/adr/`. This document is the
+mechanism; that one is the reasoning.
 
 Reference, not a checklist. Read this when changing anything under `scripts/`, when a replay
 fails for a reason the message doesn't explain, or when a page needs a kind of verification

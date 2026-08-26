@@ -25,9 +25,11 @@ jobs:
         run: npx wait-on http://localhost:4321
       # The URL list is generated from the sitemap the build just wrote, so a new category or
       # page shape is covered the day it exists rather than when someone remembers to add it.
+      # It lands in .pa11yci.generated.json, which is gitignored: .pa11yci.json holds the settings
+      # and is not rewritten, so this step cannot drift from what a contributor has committed.
       - name: Choose the pages to check
         run: npx tsx scripts/pa11y-urls.ts
-      - run: npx pa11y-ci
+      - run: npx pa11y-ci -c .pa11yci.generated.json
 
   # Runs every documented `output:` block on every command page for real, inside a
   # disposable Debian container, and diffs the result against what the page claims. The

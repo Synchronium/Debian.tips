@@ -7,26 +7,5 @@
         "--no-sandbox"
       ]
     }
-  },
-  "urls": [
-    "http://localhost:4321/",
-    "http://localhost:4321/commands/",
-    "http://localhost:4321/concepts/",
-    "http://localhost:4321/scripting/",
-    "http://localhost:4321/recipes/",
-    "http://localhost:4321/troubleshooting/",
-    "http://localhost:4321/compare/",
-    "http://localhost:4321/debian/",
-    "http://localhost:4321/tags/",
-    "http://localhost:4321/about/",
-    "http://localhost:4321/tags/text-processing/",
-    "http://localhost:4321/commands/apt/",
-    "http://localhost:4321/concepts/exit-codes-and-error-handling/",
-    "http://localhost:4321/scripting/your-first-script/",
-    "http://localhost:4321/recipes/bulk-rename-files/",
-    "http://localhost:4321/troubleshooting/could-not-get-lock-dpkg-frontend/",
-    "http://localhost:4321/compare/apt-vs-apt-get/",
-    "http://localhost:4321/debian/apt-essentials/",
-    "http://localhost:4321/404.html"
-  ]
+  }
 }
