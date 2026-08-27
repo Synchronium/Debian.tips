@@ -9,7 +9,7 @@ A plan starts as a personal note, outside this repository, and is promoted here 
 worth other people reading. Promotion is deliberate rather than automatic, because a note nobody
 else reads can stay rough and a file in `docs/` cannot.
 
-Promoting one costs a pass over its prose against `.claude/reference/voice.md`: everything under
+Promoting one requires a pass over its prose against `.claude/reference/voice.md`: everything under
 `docs/` is published prose, and the voice checker walks this directory. Both plans promoted on
 2026-08-24 needed that pass; between them they carried 231 em dashes.
 
