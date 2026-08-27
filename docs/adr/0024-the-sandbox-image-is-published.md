@@ -3,9 +3,10 @@
 - **Status:** Accepted
 - **Recorded:** 2026-08-27
 - **Enforced by:** `scripts/sandbox.sh`, which hashes the build context, checks that hash against
-  a pulled image's label as well as its tag, and builds when either is missing or disagrees;
-  `.github/workflows/publish-sandbox.yml`, which publishes with the tag and label the script
-  expects
+  a pulled image's label as well as its tag, checks that the image's architecture is one this
+  daemon can run, and builds when any of those is missing or disagrees;
+  `.github/workflows/publish-sandbox.yml`, which publishes both architectures with the tag and
+  label the script expects, asking the script for both rather than spelling them out again
 
 ## Context
 
@@ -33,8 +34,8 @@ else, and on CI it had always meant a rebuild, unnoticed because CI built uncond
 **The image is published to a public registry, tagged with a hash of its build context, and
 consumers pull it when they can and build when they cannot.**
 
-- `sandbox.sh` hashes the build context: file contents and paths relative to the context
-  directory, sorted. The same commit gives the same hash on any machine.
+- `sandbox.sh` hashes the build context: the contents, paths and modes of every file in it,
+  sorted under a fixed collation. The same commit gives the same hash on any machine.
 - `.github/workflows/publish-sandbox.yml` builds and pushes
   `ghcr.io/synchronium/debian-tips-sandbox:<hash>` when anything under `scripts/sandbox/` changes.
   It gates nothing and runs beside CI, so no push ever waits on a registry.
@@ -42,6 +43,10 @@ consumers pull it when they can and build when they cannot.**
 - A pulled image is accepted only when its **label** matches too, not just its tag. A tag is a
   name somebody chose and can be moved or mistyped; the label is what the build recorded about the
   context it came from.
+- Both architectures are published, and a pulled image is accepted only when its own is one this
+  daemon runs. CI is amd64 and the devcontainer is arm64, and an image for the wrong one is worse
+  than none: it pulls with a warning rather than an error, so it passes every other check here and
+  fails at the first container.
 - The package is public, so no login is needed to pull it. A fresh devcontainer skips the build as
   well as a CI runner.
 
@@ -68,9 +73,10 @@ wrong rather than the registry.
 **`touch scripts/sandbox/Dockerfile` no longer costs a rebuild**, which the mtime label made
 certain. A real edit still does.
 
-**The first publish needs a hand.** A package is created private, and the token a workflow holds
-cannot change that, so the visibility step reports rather than fails and somebody sets it public
-once. Until then every consumer falls back to building, which is the old behaviour.
+**The first publish needs a hand.** A package is created private and no API can change that, so
+the workflow tries an unauthenticated fetch of what it just pushed and warns when that fails,
+leaving somebody to set the package public once. Until then every consumer falls back to building,
+which is the old behaviour.
 
 ## Revisit when
 
