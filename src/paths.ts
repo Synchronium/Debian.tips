@@ -86,11 +86,19 @@ export const SANDBOX_SCRIPT = join(ROOT, "scripts", "sandbox.sh");
 export const VERIFICATION_BASELINE_FILE = join(ROOT, "test", "verification-baseline.json");
 
 /** Seconds each page took on the last recorded full replay, used to balance `--shard`. Written by
- *  `npm run replay -- --record-timings`, read by `scripts/lib/replayShard.ts`.
+ *  CI after a green run of the whole site, and by `npm run replay -- --record-timings` by hand,
+ *  read by `scripts/lib/replayShard.ts`. Keyed `category/slug`, as the verification baseline is.
  *
  *  Advisory throughout: out of date, it balances worse; missing, every page still runs. Nothing
  *  reads it to decide *whether* a page is replayed. */
 export const REPLAY_TIMINGS_FILE = join(ROOT, "scripts", "replay-timings.json");
+
+/** The CI workflow, which is also where the number of replay shards is declared.
+ *
+ *  Read by `test/replayShard.test.ts`, which checks that count against the recorded timings. That
+ *  test is the reason the workflow can state the number without also stating the measurements
+ *  that justify it, which is what used to go stale beside it. */
+export const CI_WORKFLOW_FILE = join(ROOT, ".github", "workflows", "ci.yml");
 
 /** A page's setup script: creates its sample files, and is what opts it into the replay.
  *

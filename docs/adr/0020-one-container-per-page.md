@@ -159,14 +159,18 @@ The count moved from four to five and then to seven, both on 2026-08-26, and the
 corrected a mistake in the first. Five was chosen on the argument that nothing waits on the replay
 job, so a runner buying seconds was not worth spending. That is wrong: ADR-0003 gates deploy on
 this workflow's conclusion, which makes the slowest shard part of the time between a push and the
-site being live. With that understood, the count should sit wherever the curve stops moving, which
-on the day was seven. The measurements are not repeated here: they live beside the matrix in
-`.github/workflows/ci.yml`, where changing the count is one line, and a copy of them in this
-record would be the one that nobody re-measures.
+site being live. With that understood, the count should sit wherever the curve stops moving.
+
+Where that is, is not written down anywhere any more. It was in a comment beside the matrix, and
+[ADR-0023](0023-ci-records-the-replay-timings.md) moved it into `scripts/lib/replayShard.ts`, which
+computes the curve from the recorded timings. `npm run shards` prints it and says which count it
+justifies. So the workflow states a count and no measurements, this record states the argument and
+no measurements, and the number is computed rather than remembered. Changing it is still one line
+in `.github/workflows/ci.yml`, and the report says which line and what to.
 
 Revisit when the slowest single page dominates the shard budget rather than merely setting it,
-which seven shards already do: the slowest shard is within seconds of the `apt` page on its own.
-From here more runners buy almost nothing, and the lever is that page's setup script.
+which the current count already does: the slowest shard is within seconds of the `apt` page on its
+own. From here more runners buy almost nothing, and the lever is that page's setup script.
 
 Also revisit if the per-page `apt-get update` grows beyond a few seconds. Baking the package lists
 into the image was considered and rejected: the lists would be as old as the last image build,

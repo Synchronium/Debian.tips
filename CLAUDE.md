@@ -25,7 +25,7 @@ npm run check    # format, tsc --noEmit, vitest, build, pagefind, linkcheck, lin
 npm run replay   # replay every page's examples, one container each (needs Docker, ~7 min warm)
 npm run replay -- --changed        # only the pages your diff touches, which is what CI runs on a PR
 npm run replay -- ls du            # named pages; identical to how the full run replays them
-npm run replay -- --shard=2/7      # one seventh of the pages; CI gives each of the seven a runner
+npm run replay -- --shard=2/7      # one part of a seven-way split; CI gives each part a runner
 npm run audit:links -- --verbose   # the link graph on its own, advisory findings included
 npm run voice    # prose against .claude/reference/voice.md; a hook runs it per file as you write
 npm run browser  # search and narrow-screen layout, in a real browser against a served build
@@ -184,8 +184,11 @@ there are, which is why no other document lists them. Every category except `com
 `content/commands/<slug>/index.md` paired with `examples.yaml`.
 
 Slugs are unique per category rather than site-wide, so `related:` accepts either a bare slug or
-`category/slug`, and says so when a bare one is ambiguous. Two pages sharing a slug may not both
-have a replay setup script, since those are named `scripts/fixtures/<slug>.sh`.
+`category/slug`, and says so when a bare one is ambiguous. Two pages sharing a slug may not have a
+replay setup script at all, not even one of them: those are named `scripts/fixtures/<slug>.sh`, so
+a shared slug with a script attached belongs to a page nothing can identify, and everything stored
+per page would credit it to whichever of the two was found first.
+`test/replayTimings.test.ts` names any such pair, and the replay refuses to start.
 
 ## Where to look
 

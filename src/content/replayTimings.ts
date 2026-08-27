@@ -11,9 +11,10 @@
 import { readFileSync } from "node:fs";
 import { REPLAY_TIMINGS_FILE } from "../paths.js";
 
-/** Seconds per page from the last recorded full run, keyed by page name. Negative and
- *  non-numeric entries are dropped rather than trusted: the file is hand-editable, and a
- *  negative cost would pull a shard's load below zero and collect pages there. */
+/** Seconds per page from the last recorded full run, keyed `category/slug` as
+ *  `test/verification-baseline.json` is. Negative and non-numeric entries are dropped rather than
+ *  trusted: the file is machine-written but hand-editable, and a negative cost would pull a
+ *  shard's load below zero and collect pages there. */
 export function readTimings(file: string = REPLAY_TIMINGS_FILE): Record<string, number> {
   try {
     const parsed: unknown = JSON.parse(readFileSync(file, "utf-8"));

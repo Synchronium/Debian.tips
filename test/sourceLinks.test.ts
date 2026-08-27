@@ -58,9 +58,11 @@ describe("the source files each page links to", () => {
     // The estimate a reader is shown before running the command. Advisory, like the file it comes
     // from: a page added since the last recording says nothing rather than guessing, which on the
     // page whose subject is not claiming unchecked things is the only acceptable default.
+    // Keyed `category/slug`, because slugs are unique per category and not site-wide: looking a
+    // page up by slug alone would hand `/compare/x/` the time recorded for `/concepts/x/`.
     const timings = readTimings();
     const wrong = model.pages.filter((page) => {
-      const expected = page.sources.replayable ? timings[page.slug] : undefined;
+      const expected = page.sources.replayable ? timings[`${page.category}/${page.slug}`] : undefined;
       return page.sources.replaySeconds !== expected;
     });
     expect(wrong.map((page) => page.url)).toEqual([]);

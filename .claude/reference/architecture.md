@@ -127,19 +127,28 @@ than another `related:` entry.
 
 ## CI/deploy
 
-`.github/workflows/ci.yml` runs two kinds of job in parallel, on every PR and push to `main`:
+`.github/workflows/ci.yml` runs two kinds of job in parallel, on every PR and push to `main`, and
+they are the whole of what gates a deploy:
 
 - `check`: format, typecheck (both configs), tests, build, pagefind, linkcheck, link audit, then
   `pa11y-ci` against the built site. Exactly what `npm run check` runs locally.
-- `replay`, as seven sharded jobs on seven runners: the examples, for real, each page in a Docker
+- `replay`, as sharded jobs one runner each: the examples, for real, each page in a Docker
   sandbox of its own. A PR replays what its diff touched; a push to `main` replays everything.
   Which shard takes which page is `scripts/lib/replayShard.ts`, balanced from recorded timings
-  and held to covering every page by `test/replayShard.test.ts`.
+  and held to covering every page by `test/replayShard.test.ts`. Whether the count in the matrix
+  is still the one those timings justify is `npm run shards`, reported rather than gated, for the
+  reason ADR-0023 gives. The matrix is the only place the count is written.
 
 `.github/workflows/drift.yml` replays the whole site weekly on a schedule, serially on one
 runner. It gates nothing; it is there because Debian's archive moves without a commit, and a push
 to `main` is the only other thing that would notice. Kept out of `ci.yml` on purpose: Deploy keys
 off a CI conclusion, so a scheduled one would publish the site on a timer.
+
+`.github/workflows/record-timings.yml` re-records those timings after a green push to `main`, from
+the replay that just ran, and commits them. Also kept out of `ci.yml` on purpose, and for a second
+reason on top of drift's: Deploy waits for CI's last job, so a recorder in there would delay every
+deploy and could fail one over an artifact. ADR-0023, and `scripts/merge-timings.ts` is what
+decides whether the figures are worth a commit.
 
 `.github/workflows/deploy.yml` builds and publishes `dist/` to GitHub Pages on `workflow_run` of
 CI, gated on the whole workflow succeeding and pinned to the same commit. All of it runs on

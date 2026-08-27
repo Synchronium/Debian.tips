@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { ShardError, parseShard, readTimings, shardPages } from "../scripts/lib/replayShard.js";
+import {
+  ShardError,
+  justifiedShardCount,
+  parseShard,
+  readTimings,
+  shardPages,
+  slowestShardSeconds,
+} from "../scripts/lib/replayShard.js";
 
 /* Sharding trades a property this harness depends on for wall clock: with one run there was
  * nothing to get wrong, and with four there is a partition to get right. A page in no shard goes
@@ -124,5 +131,55 @@ describe("reading the timings file", () => {
   it("treats a missing or malformed file as no timings rather than an error", () => {
     expect(readTimings("/nonexistent/replay-timings.json")).toEqual({});
     expect(readTimings("/etc/hostname")).toEqual({});
+  });
+});
+
+/* How many shards CI runs, checked against what the pages actually cost.
+ *
+ * The number lived in a comment beside the matrix, with the measurements that justified it
+ * written out underneath. Both went stale the moment a page was added, and a comment restating
+ * data the repository already holds is the kind CLAUDE.md rules out: nothing was checking it, so
+ * it drifted for as long as nobody happened to recompute the table by hand.
+ *
+ * Now the workflow states the count and this states why it is right, which also closes the gap
+ * that made automation unsafe. Recording timings from CI ages nothing, because the only figures
+ * left are in the file being rewritten.
+ *
+ * The curve itself is `scripts/lib/replayShard.ts`, not this file. `scripts/merge-timings.ts` asks
+ * the same question of a candidate recording before writing it, so that the commit CI makes cannot
+ * be the thing that fails this test on somebody else's next push.
+ */
+/* What the curve says, over page sets written here rather than over the recorded file.
+ *
+ * Whether the count in `ci.yml` currently suits the recorded times is `npm run shards`, and it is
+ * deliberately not a test. That comparison has one moving part nobody here controls: the recorder
+ * rewrites `replay-timings.json` on every push to main, and it cannot write a workflow file, so
+ * the figures move and the count does not. As a test it would fail on a contributor's machine for
+ * a bot commit no CI run ever saw, over a number that costs wall clock and never coverage. As a
+ * step in the workflow that writes the figures, it asks the one person who can act for one line.
+ *
+ * What is worth pinning is the shape of the function, which these do with timings of their own. */
+describe("the shard count a set of timings justifies", () => {
+  it("adds a runner while one still pays for itself", () => {
+    // The direction that costs time rather than money. Four equal pages halve and halve again, so
+    // stopping at one shard would be leaving three quarters of the wall clock on the table.
+    const even = { a: 20, b: 20, c: 20, d: 20 };
+    expect(justifiedShardCount(Object.keys(even), even)).toBeGreaterThan(1);
+  });
+
+  it("never asks for more shards than there are pages", () => {
+    // A shard per page is the most that can help, and past it every extra runner reports an empty
+    // shard and exits 0. The search has to stop somewhere and this is where.
+    const two = { a: 5, b: 5 };
+    expect(justifiedShardCount(["a", "b"], two)).toBeLessThanOrEqual(2);
+  });
+
+  it("stops where the floor is, since no count beats the slowest page", () => {
+    // One page dominating is the shape this site has: `apt` alone is most of the slowest shard.
+    // Splitting the rest finer cannot help once every other page fits beside it.
+    const dominated = { heavy: 60, a: 10, b: 10, c: 10 };
+    const names = Object.keys(dominated);
+    const wants = justifiedShardCount(names, dominated);
+    expect(slowestShardSeconds(names, dominated, wants)).toBe(60);
   });
 });

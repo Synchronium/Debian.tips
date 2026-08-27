@@ -31,26 +31,34 @@ import { REPLAY_TIMINGS_FILE, ROOT, SANDBOX_SCRIPT, fixtureScript } from "../src
 import { replayCommandPage } from "./replay-command-page.js";
 import { replayProsePage } from "./replay-prose-page.js";
 import { SANDBOX_FLAVOUR, type SandboxFlavour } from "./lib/sandbox.js";
-import { type Shard, ShardError, parseShard, readTimings, shardPages } from "./lib/replayShard.js";
+import { type Shard, ShardError, parseShard, shardCosts, shardPages } from "./lib/replayShard.js";
 import {
+  ambiguousSlugs,
   commandPages as listCommandPages,
   hasSetupScript,
+  pageId,
   prosePages as listProsePages,
 } from "./lib/replayPages.js";
 
 const args = process.argv.slice(2);
 const FLAGS = ["--changed", "--record-timings"];
+const VALUE_FLAGS = ["--shard=", "--timings-out="];
 const unknownFlags = args.filter(
-  (arg) => arg.startsWith("-") && !FLAGS.includes(arg) && !arg.startsWith("--shard="),
+  (arg) => arg.startsWith("-") && !FLAGS.includes(arg) && !VALUE_FLAGS.some((f) => arg.startsWith(f)),
 );
 if (unknownFlags.length) {
   console.error(
-    `replay: unexpected argument ${unknownFlags[0]} (accepts ${FLAGS.join(", ")}, --shard=<i>/<n>)`,
+    `replay: unexpected argument ${unknownFlags[0]} (accepts ${FLAGS.join(", ")}, --shard=<i>/<n>, --timings-out=<file>)`,
   );
   process.exit(2);
 }
 const onlyChanged = args.includes("--changed");
 const recordTimings = args.includes("--record-timings");
+// Where a shard leaves its own measurements for something else to merge, which is how CI records
+// timings without any shard being allowed to write the file every shard reads. Unlike
+// --record-timings this makes no claim to be complete, so it carries no restriction: whoever
+// merges the parts is the one that can see whether the whole site is covered.
+const timingsOut = args.find((arg) => arg.startsWith("--timings-out="))?.slice("--timings-out=".length);
 
 let shard: Shard = { index: 1, total: 1 };
 try {
@@ -66,6 +74,19 @@ try {
 if (recordTimings && (shard.total > 1 || onlyChanged || args.some((a) => !a.startsWith("-")))) {
   console.error("replay: --record-timings needs the full run, so it cannot be combined with");
   console.error("  --shard, --changed, or named pages.");
+  process.exit(2);
+}
+
+// Before anything asks which page a slug means. A setup script names a slug and no category, so a
+// slug two pages share cannot be attributed to either, and every page's cost, timing and estimate
+// is stored per page. Refusing here beats a stack trace out of the shard partition, which is where
+// this surfaces otherwise, several steps from the two files that caused it.
+const ambiguous = ambiguousSlugs();
+if (ambiguous.length) {
+  console.error("replay: a setup script names a slug and no category, so these have one each and");
+  console.error("  name two pages, and nothing can say which page the script belongs to:");
+  console.error(`    ${ambiguous.join(", ")}`);
+  console.error("  Rename one page of each pair, or drop the script.");
   process.exit(2);
 }
 
@@ -163,7 +184,7 @@ const unfixtured = pages.filter((name) => !hasSetupScript(name));
 const replayable = pages.filter(hasSetupScript);
 // Sorted only so the report reads in a predictable order. Each page gets its own container, so
 // the order carries nothing else: it cannot change any page's result.
-const runnable = shardPages(replayable, shard, readTimings()).sort();
+const runnable = shardPages(replayable, shard, shardCosts(replayable)).sort();
 
 if (replayable.length === 0) {
   console.log(onlyChanged ? "no changed page has examples to replay." : "nothing to replay.");
@@ -336,6 +357,20 @@ if (unfixtured.length) {
   console.log(`not replayed${scope}, no scripts/fixtures/<slug>.sh: ${unfixtured.join(", ")}`);
 }
 
+// Sorted by name rather than by duration, so the diff between two recordings reads as "what
+// changed" rather than as a reordering.
+const measured = (): Record<string, number> =>
+  Object.fromEntries(
+    [...elapsed]
+      .map(([name, seconds]) => [pageId(name), seconds] as const)
+      .sort(([a], [b]) => a.localeCompare(b)),
+  );
+
+if (timingsOut) {
+  writeFileSync(timingsOut, `${JSON.stringify(measured(), null, 2)}\n`);
+  console.log(`Wrote ${elapsed.size} page times to ${timingsOut}`);
+}
+
 if (recordTimings) {
   // A page whose sandbox never started has no time to record, and writing the file without it
   // drops that page to the default of a couple of seconds. The heavy pages are exactly the ones
@@ -347,10 +382,7 @@ if (recordTimings) {
     console.error(`\nNot recording timings: no time for ${unrecorded.join(", ")}.`);
     console.error(`  ${relative(ROOT, REPLAY_TIMINGS_FILE)} is unchanged. Re-run once the run is clean.`);
   } else {
-    // Sorted by name rather than by duration, so the diff between two recordings reads as "what
-    // changed" rather than as a reordering.
-    const sorted = Object.fromEntries([...elapsed].sort(([a], [b]) => a.localeCompare(b)));
-    writeFileSync(REPLAY_TIMINGS_FILE, `${JSON.stringify(sorted, null, 2)}\n`);
+    writeFileSync(REPLAY_TIMINGS_FILE, `${JSON.stringify(measured(), null, 2)}\n`);
     console.log(`Recorded ${elapsed.size} page times in ${relative(ROOT, REPLAY_TIMINGS_FILE)}`);
     console.log("These only balance --shard. A stale figure costs wall clock, never coverage.");
   }

@@ -27,9 +27,11 @@ CI runs two kinds of job in parallel:
   both places.
 - **`replay`**: builds the sandbox image, then replays pages, each in a container of its own. A
   pull request replays only what its diff touched; a push to `main` replays everything. It is a
-  matrix of seven shards on seven runners, each taking a share of the pages balanced by recorded
-  timings; `scripts/lib/replayShard.ts` decides which pages, and `test/replayShard.test.ts` holds
-  the property that every page lands in exactly one shard.
+  matrix of shards, one runner each, taking a share of the pages balanced by recorded timings.
+  `scripts/lib/replayShard.ts` decides which pages, and `test/replayShard.test.ts` holds the one
+  property that must never break: every page lands in exactly one shard. Whether the count still
+  suits the recorded timings is `npm run shards`, which `record-timings.yml` runs and nothing
+  gates on. The count is not written down here for that reason.
 
 There was a third job, `replay-shuffled`, which replayed the whole site again in a seeded random
 order. [ADR-0020](0020-one-container-per-page.md) removed it: pages no longer share a container,
@@ -40,6 +42,13 @@ rather than a gate: it blocks nothing and nothing waits for it, and it exists be
 input to this repository that moves without a commit is Debian's archive. It is a separate
 workflow rather than a scheduled job inside CI because Deploy triggers on `workflow_run` of CI,
 so a scheduled CI conclusion would publish the site on a timer.
+
+A fourth, `record-timings.yml`, keeps the figures that balance the shards, from the replay CI has
+just finished. Separate for the same reason as `drift.yml` and a second one:
+[ADR-0023](0023-ci-records-the-replay-timings.md) has both. Deploy waits for CI's *last* job, so a
+recorder inside CI would sit between a push and the site being live, and its refusals, which are
+about artifacts rather than about pages, would hold back a green build. Out here it can refuse
+loudly and gate nothing.
 
 Deploy triggers on `workflow_run` of CI, runs only when `conclusion == 'success'`, and checks out
 `github.event.workflow_run.head_sha` rather than the tip of the branch.

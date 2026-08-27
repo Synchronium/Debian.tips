@@ -36,8 +36,8 @@ jobs:
   replay:
     runs-on: ubuntu-latest
     # Serial on one runner rather than sharded the way CI does it. Nothing waits on this one, so
-    # the seven runners CI spends to keep a deploy quick buy nothing here, and one runner for
-    # seven minutes is fewer runner-minutes than seven paying for their own checkout and image.
+    # the runners CI spends to keep a deploy quick buy nothing here, and one runner for the whole
+    # site is fewer runner-minutes than a shard each paying for its own checkout and image.
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
