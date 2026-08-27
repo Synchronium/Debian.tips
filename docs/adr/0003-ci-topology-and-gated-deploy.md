@@ -28,9 +28,10 @@ CI runs two kinds of job in parallel:
 - **`replay`**: builds the sandbox image, then replays pages, each in a container of its own. A
   pull request replays only what its diff touched; a push to `main` replays everything. It is a
   matrix of shards, one runner each, taking a share of the pages balanced by recorded timings.
-  `scripts/lib/replayShard.ts` decides which pages, and `test/replayShard.test.ts` holds two
-  properties: that every page lands in exactly one shard, and that the count in the matrix is the
-  one the recorded timings justify. The count is not written down here for that reason.
+  `scripts/lib/replayShard.ts` decides which pages, and `test/replayShard.test.ts` holds the one
+  property that must never break: every page lands in exactly one shard. Whether the count still
+  suits the recorded timings is `npm run shards`, which `record-timings.yml` runs and nothing
+  gates on. The count is not written down here for that reason.
 
 There was a third job, `replay-shuffled`, which replayed the whole site again in a seeded random
 order. [ADR-0020](0020-one-container-per-page.md) removed it: pages no longer share a container,

@@ -162,11 +162,11 @@ this workflow's conclusion, which makes the slowest shard part of the time betwe
 site being live. With that understood, the count should sit wherever the curve stops moving.
 
 Where that is, is not written down anywhere any more. It was in a comment beside the matrix, and
-[ADR-0023](0023-ci-records-the-replay-timings.md) moved it into `test/replayShard.test.ts`, which
-computes the curve from the recorded timings and fails on either side of the answer. So the
-workflow states a count and no measurements, this record states the argument and no measurements,
-and the number is checked rather than remembered. Changing it is still one line in
-`.github/workflows/ci.yml`, and the test says which line and what to.
+[ADR-0023](0023-ci-records-the-replay-timings.md) moved it into `scripts/lib/replayShard.ts`, which
+computes the curve from the recorded timings. `npm run shards` prints it and says which count it
+justifies. So the workflow states a count and no measurements, this record states the argument and
+no measurements, and the number is computed rather than remembered. Changing it is still one line
+in `.github/workflows/ci.yml`, and the report says which line and what to.
 
 Revisit when the slowest single page dominates the shard budget rather than merely setting it,
 which the current count already does: the slowest shard is within seconds of the `apt` page on its

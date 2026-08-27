@@ -85,8 +85,9 @@ export const UNTIMED_SECONDS = 10;
  *
  *  Greedy longest-processing-time. It is not optimal in general and does not need to be: the
  *  bound that matters is the slowest single page, and putting the heavy pages first is what
- *  reaches it. Measured 2026-08-26 over the real timings, seven shards came out at 62.8 seconds,
- *  which is the `apt` page's own time: the split has reached the floor and no packing beats it.
+ *  reaches it. On this site it does reach it, with the slowest shard costing what the heaviest
+ *  page costs on its own, so no packing beats it. `npm run shards` prints that curve from the
+ *  recorded times; a figure written out here would be one more that nobody re-measures.
  *
  *  Deterministic for a given page set: pages are ordered by time and then by name, and ties
  *  between equally-loaded shards go to the lowest index. Two runs of the same commit therefore

@@ -57,10 +57,8 @@ jobs:
           github-token: ${{ github.token }}
       # Refuses to write unless the parts cover every page that opts into the replay, so a shard
       # that vanished leaves the previous figures in place instead of a file with holes in it. It
-      # also writes nothing when the change is too small to be worth a commit, and nothing when
-      # the new figures would put the CI shard count on the wrong side of the curve. All three
-      # decisions therefore show up as whether the file moved, and the step below has no output to
-      # parse.
+      # also writes nothing when the change is too small to be worth a commit. Both decisions
+      # therefore show up as whether the file moved, and the step below has no output to parse.
       - name: Merge the shards' measurements
         run: npx tsx scripts/merge-timings.ts shard-timings
       - name: Commit them
@@ -86,3 +84,16 @@ jobs:
           # The commit CI replayed, not this workflow's own `GITHUB_SHA`, which is main's tip and
           # may be a commit nothing here measured.
           MEASURED: ${{ github.event.workflow_run.head_sha }}
+      # Last, and after the push, because the figures are worth keeping whatever this says. The
+      # count lives in `ci.yml` and nothing here can write a workflow file: the token a workflow
+      # is handed may not, whatever `permissions` it asks for. So the two halves of one decision
+      # move at different speeds, and this is where they are compared.
+      #
+      # Red here asks a human for one line and blocks nothing: `deploy.yml` gates on CI, this
+      # workflow gates on nothing, and a count that no longer suits the figures costs wall clock
+      # rather than coverage. Running it before the push instead, and refusing to record until
+      # the matrix agreed, left neither half able to move: the recorder would not write the
+      # figures that justify the new count, and the count could not be changed to one the
+      # committed figures did not yet justify.
+      - name: Does the shard count still suit them?
+        run: npm run shards

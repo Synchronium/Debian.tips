@@ -5,7 +5,8 @@
 - **Enforced by:** `.github/workflows/record-timings.yml`;
   `scripts/merge-timings.ts`, which refuses to write a file that does not cover every page;
   `test/replayTimings.test.ts`, which fails when too many pages have no recorded time;
-  `test/replayShard.test.ts`, which holds the shard count to what the timings justify
+  `scripts/check-shard-count.ts` (`npm run shards`), run by that workflow, which reports when the
+  shard count no longer suits the recorded timings
 
 ## Context
 
@@ -61,18 +62,29 @@ the recording had to stay manual to keep a human beside it.
   the token.
 - `npm run replay -- --record-timings` stays, for recording by hand.
 
-**And the figures leave the comment.** `test/replayShard.test.ts` computes the curve from the
-recorded timings and holds the shard count to it, failing on either side of the right answer and
-printing what the count should be. The workflow states the count and the reasoning; it states no
-measurement. That is the change that makes the automation safe rather than merely convenient.
+**And the figures leave the comment.** The curve is computed from the recorded timings, in
+`scripts/lib/replayShard.ts`, and `npm run shards` reports whether the count `ci.yml` runs is still
+the one they justify. The workflow states the count and the reasoning; it states no measurement.
 
-**Which means the recorder must not write figures that fail that test.** The two halves are one
-decision and CI can only change one of them. A recording that moved the curve would be committed
-without a run, because the push is made with `GITHUB_TOKEN`, and would then go red on the next
-contributor's `npm run check` for a change that was not theirs. So `merge-timings.ts` asks what
-count a candidate file would justify and refuses when that is not the count `ci.yml` runs, naming
-the number a human has to change first. The curve is computed once, in `scripts/lib/replayShard.ts`,
-so the test and the recorder cannot hold different opinions about it.
+**That report is not a test, and the recorder does not wait for it.** The count and the figures are
+one decision living in two files, and only the figures have an automatic writer: a workflow may not
+write a workflow file, whatever `permissions` it asks for, because the token it is given lacks the
+scope. So the figures move on their own and the count cannot.
+
+Both of the obvious ways to hold them together fail, and fail towards the same place.
+
+Making it a test fails a contributor's `npm run check` for a bot commit no CI run ever saw, over a
+number they did not touch. Having the recorder refuse to write figures that would fail such a test
+wedges the pair: the matrix cannot be changed to a count the committed figures do not yet justify,
+and the figures that justify it are exactly what the recorder is refusing to write. Neither half
+can move first. The likeliest trigger is the first real recording, since it replaces arm64 figures
+with amd64 ones and a single page decides the count.
+
+So the recorder records, always, and `npm run shards` runs afterwards as the last step of the
+workflow that did the recording. Red there asks the one person who can act for one line, and blocks
+nothing: that workflow gates no deploy, and a count that no longer suits the figures costs wall
+clock rather than coverage. It is the same reasoning that keeps the recorder out of `ci.yml`,
+applied one level in.
 
 The timings are keyed `category/slug`, as `test/verification-baseline.json` is. They were keyed by
 bare slug, which is how the replay names a page but not how anything is stored here.
@@ -103,10 +115,16 @@ to deliver an advisory figure would be a worse trade than a figure that is occas
 older.
 
 **Nothing here can fail a build.** The recorder gates nothing and nothing waits for it, so every
-way it can go red leaves both the CI badge and the deploy alone. That is what lets it refuse
+way it can go red leaves both the CI badge and the deploy alone. That is what lets it speak up
 loudly, which is the behaviour every check in it wants: a hole in the parts, an overlap, a curve
 the shard count no longer sits on. A recorder that could turn a green build red would have to be
 written to shrug those off instead.
+
+**The shard count can lag the figures, and only a human closes the gap.** The recorder cannot write
+`ci.yml`, so between a recording that moves the curve and somebody editing the matrix, CI runs a
+count the figures no longer justify. That interval costs wall clock and nothing else, and
+`npm run shards` is red for the whole of it, on a workflow whose red nobody has to clear before
+shipping. Ignoring it indefinitely is possible, which is the price of not making it a gate.
 
 **Nothing here decides whether a page is replayed.** The file stays advisory in both directions:
 stale, the shards balance worse; missing, every page still runs. If that ever stops being true,
@@ -118,10 +136,15 @@ checks.
 Revisit when the threshold stops matching what balance needs and bot commits become noise in
 `git log`, which the consequence above says to expect rather than to be surprised by.
 
-Revisit if the recorder starts refusing on the shard curve often. Once is the site telling
-somebody to change the matrix, which is the arrangement working. Repeatedly means the count is
-sitting on the boundary, and the answer there is `WORTH_A_RUNNER` rather than the recording: a
-threshold that flips on a second of jitter is asking a question with no stable answer.
+Revisit if `npm run shards` starts going red often. Once is the site telling somebody to change
+the matrix, which is the arrangement working. Repeatedly means the count is sitting on the
+boundary, and the answer there is `WORTH_A_RUNNER` rather than the recording: a threshold that
+flips on a second of jitter is asking a question with no stable answer.
+
+Revisit if the matrix is left disagreeing with the figures for long. The report was kept out of
+the gates on the grounds that a wrong count costs only wall clock; if it turns out that nobody
+acts on a red nothing blocks, that reasoning was wrong about people rather than about builds, and
+the answer is a job that opens an issue the way `drift.yml` does.
 
 Revisit if `replay-timings.json` ever gains a reader that is not advisory. A file CI writes must
 not become a file that decides what CI checks.

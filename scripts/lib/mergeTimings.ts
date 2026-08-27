@@ -42,7 +42,6 @@ export function hasMoved(before: number, after: number): boolean {
 export const MERGE = {
   incomplete: "incomplete",
   overlapping: "overlapping",
-  unbalanced: "unbalanced",
   unchanged: "unchanged",
   write: "write",
 } as const;
@@ -57,17 +56,11 @@ export interface MergeInput {
   overlapping: string[];
   /** What `scripts/replay-timings.json` holds now. */
   current: Record<string, number>;
-  /** The shard count a candidate file would justify, and the one CI is configured to run. Passed
-   *  in rather than read here, so that this module stays a function of its arguments and the test
-   *  can put the two out of step without editing a workflow. */
-  shardCountFor: (timings: Record<string, number>) => number;
-  configuredShards: number;
 }
 
 export type MergeResult =
   | { kind: typeof MERGE.incomplete; missing: string[]; covered: number; expected: number }
   | { kind: typeof MERGE.overlapping; pages: string[] }
-  | { kind: typeof MERGE.unbalanced; wants: number; configured: number }
   | { kind: typeof MERGE.unchanged; surplus: string[]; expected: number }
   | {
       kind: typeof MERGE.write;
@@ -121,9 +114,14 @@ export function combineParts(files: string[]): { merged: Record<string, number>;
   return { merged, overlapping };
 }
 
-/** The whole decision, in the order the reasons rule each other out. */
+/** The whole decision, in the order the reasons rule each other out.
+ *
+ *  Only about the figures. Whether the shard count still suits them is `check-shard-count.ts`,
+ *  asked after the write rather than before it: the two are one decision, but this writer can
+ *  change only the figures, and refusing to record until a human changed the other half left
+ *  neither able to move. */
 export function mergeTimings(input: MergeInput): MergeResult {
-  const { expected, merged, current, shardCountFor, configuredShards } = input;
+  const { expected, merged, current } = input;
 
   if (input.overlapping.length) {
     return { kind: MERGE.overlapping, pages: [...new Set(input.overlapping)].sort() };
@@ -158,17 +156,6 @@ export function mergeTimings(input: MergeInput): MergeResult {
 
   if (added.length === 0 && removed.length === 0 && moved.length === 0) {
     return { kind: MERGE.unchanged, surplus, expected: expected.length };
-  }
-
-  // The figures and the shard count are one decision, and this writer can only change half of it.
-  // `test/replayShard.test.ts` holds the count in `ci.yml` to what the recorded times justify, and
-  // the commit this write becomes runs no CI, so a recording that moved the curve would leave the
-  // next contributor's `npm run check` red for a change that was not theirs, on a commit no run
-  // ever went near. Refusing leaves figures that are merely stale, which costs wall clock and
-  // nothing else, and says which number a human has to change first.
-  const wants = shardCountFor(next);
-  if (wants !== configuredShards) {
-    return { kind: MERGE.unbalanced, wants, configured: configuredShards };
   }
 
   return { kind: MERGE.write, next, added, removed, moved, surplus };

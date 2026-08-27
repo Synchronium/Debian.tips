@@ -40,23 +40,8 @@ afterEach(() => {
 
 const site = ["commands/ls", "commands/tar", "concepts/paths"];
 const whole = { "commands/ls": 2, "commands/tar": 7, "concepts/paths": 3 };
-/** The shard count these figures justify. Fixed by default, so that only the test about the shard
- *  guard varies it and every other case is reading a decision about drift. */
-const STEADY_SHARDS = 7;
-const merge = (
-  merged: Record<string, number>,
-  current: Record<string, number>,
-  overlapping: string[] = [],
-  shardCountFor: (timings: Record<string, number>) => number = () => STEADY_SHARDS,
-) =>
-  mergeTimings({
-    expected: site,
-    merged,
-    overlapping,
-    current,
-    shardCountFor,
-    configuredShards: STEADY_SHARDS,
-  });
+const merge = (merged: Record<string, number>, current: Record<string, number>, overlapping: string[] = []) =>
+  mergeTimings({ expected: site, merged, overlapping, current });
 
 describe("collecting the parts a sharded replay leaves", () => {
   it("finds them however download-artifact laid them out", () => {
@@ -147,28 +132,16 @@ describe("deciding whether to write the timings", () => {
     expect(result.surplus).toEqual(["commands/gone"]);
   });
 
-  it("refuses figures that would put CI on the wrong number of shards", () => {
-    // The one refusal that is not about the parts. `test/replayShard.test.ts` holds the matrix in
-    // ci.yml to what the recorded times justify, and this write becomes a commit that runs no CI,
-    // so recording a curve the matrix no longer sits on would go red on the next contributor's
-    // push, for a change that was not theirs.
-    const result = merge({ ...whole, "commands/tar": 40 }, whole, [], () => STEADY_SHARDS + 1);
-    expect(result.kind).toBe(MERGE.unbalanced);
-    if (result.kind !== MERGE.unbalanced) throw new Error("unreachable");
-    expect(result.wants).toBe(STEADY_SHARDS + 1);
-    expect(result.configured).toBe(STEADY_SHARDS);
-  });
-
-  it("does not ask about shards when there is nothing to write", () => {
-    // Cheaper, but mostly so that a curve the current file already fails cannot start reporting
-    // itself on every push as though this run had caused it.
-    let asked = false;
-    const result = merge(whole, whole, [], () => {
-      asked = true;
-      return STEADY_SHARDS + 1;
-    });
-    expect(result.kind).toBe(MERGE.unchanged);
-    expect(asked).toBe(false);
+  it("records figures whatever they do to the shard count", () => {
+    // The merge has no opinion about the count, on purpose. It can write only the figures, and a
+    // workflow cannot write the workflow file the count lives in, so refusing to record until the
+    // two agreed left neither able to move: no recording without the matrix change, and no matrix
+    // change the committed figures justified. `npm run shards` asks the question afterwards.
+    // 7 to 40 seconds on the heaviest of three pages is exactly the shape that moves the curve.
+    const result = merge({ ...whole, "commands/tar": 40 }, whole);
+    expect(result.kind).toBe(MERGE.write);
+    if (result.kind !== MERGE.write) throw new Error("unreachable");
+    expect(result.next["commands/tar"]).toBe(40);
   });
 
   it("writes every page's figure once any page has moved", () => {

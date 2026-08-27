@@ -135,8 +135,9 @@ they are the whole of what gates a deploy:
 - `replay`, as sharded jobs one runner each: the examples, for real, each page in a Docker
   sandbox of its own. A PR replays what its diff touched; a push to `main` replays everything.
   Which shard takes which page is `scripts/lib/replayShard.ts`, balanced from recorded timings
-  and held to covering every page by `test/replayShard.test.ts`, which also holds the count in the
-  matrix to the one those timings justify. The matrix is the only place it is written.
+  and held to covering every page by `test/replayShard.test.ts`. Whether the count in the matrix
+  is still the one those timings justify is `npm run shards`, reported rather than gated, for the
+  reason ADR-0023 gives. The matrix is the only place the count is written.
 
 `.github/workflows/drift.yml` replays the whole site weekly on a schedule, serially on one
 runner. It gates nothing; it is there because Debian's archive moves without a commit, and a push
