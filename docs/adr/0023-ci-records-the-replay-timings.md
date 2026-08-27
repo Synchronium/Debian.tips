@@ -66,6 +66,14 @@ recorded timings and holds the shard count to it, failing on either side of the 
 printing what the count should be. The workflow states the count and the reasoning; it states no
 measurement. That is the change that makes the automation safe rather than merely convenient.
 
+**Which means the recorder must not write figures that fail that test.** The two halves are one
+decision and CI can only change one of them. A recording that moved the curve would be committed
+without a run, because the push is made with `GITHUB_TOKEN`, and would then go red on the next
+contributor's `npm run check` for a change that was not theirs. So `merge-timings.ts` asks what
+count a candidate file would justify and refuses when that is not the count `ci.yml` runs, naming
+the number a human has to change first. The curve is computed once, in `scripts/lib/replayShard.ts`,
+so the test and the recorder cannot hold different opinions about it.
+
 The timings are keyed `category/slug`, as `test/verification-baseline.json` is. They were keyed by
 bare slug, which is how the replay names a page but not how anything is stored here.
 
@@ -107,9 +115,13 @@ checks.
 
 ## Revisit when
 
-Revisit when the threshold stops matching what balance needs: either bot commits become frequent
-enough to be noise in the log, or the shard test starts failing on a curve the recorded figures
-were too slow to reflect.
+Revisit when the threshold stops matching what balance needs and bot commits become noise in
+`git log`, which the consequence above says to expect rather than to be surprised by.
+
+Revisit if the recorder starts refusing on the shard curve often. Once is the site telling
+somebody to change the matrix, which is the arrangement working. Repeatedly means the count is
+sitting on the boundary, and the answer there is `WORTH_A_RUNNER` rather than the recording: a
+threshold that flips on a second of jitter is asking a question with no stable answer.
 
 Revisit if `replay-timings.json` ever gains a reader that is not advisory. A file CI writes must
 not become a file that decides what CI checks.

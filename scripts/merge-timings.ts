@@ -23,6 +23,7 @@ import { REPLAY_TIMINGS_FILE, ROOT } from "../src/paths.js";
 import { readTimings } from "../src/content/replayTimings.js";
 import { MERGE, combineParts, mergeTimings, partFiles } from "./lib/mergeTimings.js";
 import { pageId, replayableSlugs } from "./lib/replayPages.js";
+import { configuredShardCount, justifiedShardCount, shardCosts } from "./lib/replayShard.js";
 
 const directory = process.argv[2];
 if (!directory || !existsSync(directory)) {
@@ -41,11 +42,16 @@ const here = relative(ROOT, REPLAY_TIMINGS_FILE);
 // names both figures for every page that moved.
 const current = readTimings();
 const { merged, overlapping } = combineParts(files);
+const slugs = replayableSlugs();
 const result = mergeTimings({
-  expected: replayableSlugs().map(pageId).sort(),
+  expected: slugs.map(pageId).sort(),
   merged,
   overlapping,
   current,
+  // The candidate file is keyed `category/slug` and the partition works in bare slugs, so the
+  // question has to be asked through `shardCosts`, exactly as a run asks it.
+  shardCountFor: (timings) => justifiedShardCount(slugs, shardCosts(slugs, timings)),
+  configuredShards: configuredShardCount(),
 });
 
 if (result.kind === MERGE.overlapping) {
@@ -57,6 +63,15 @@ if (result.kind === MERGE.overlapping) {
   console.error(`merge-timings: the parts cover ${result.covered} of ${result.expected} pages.`);
   console.error(`  Missing: ${result.missing.join(", ")}`);
   console.error(`  ${here} is unchanged.`);
+  process.exit(1);
+} else if (result.kind === MERGE.unbalanced) {
+  const [wants, runs] = [result.wants, result.configured];
+  console.error(`merge-timings: these figures justify ${wants} shards, and CI runs ${runs}.`);
+  console.error("  Writing them would fail test/replayShard.test.ts on somebody else's next");
+  console.error("  push, from a commit no CI run ever saw.");
+  console.error(`  Change the matrix in .github/workflows/ci.yml to ${wants}, and the push that`);
+  console.error("  does it will record these figures.");
+  console.error(`  ${here} is unchanged; stale figures cost wall clock and nothing else.`);
   process.exit(1);
 } else if (result.kind === MERGE.unchanged) {
   console.log(`No material change across ${result.expected} pages; leaving ${here} alone.`);

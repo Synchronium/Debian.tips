@@ -14,7 +14,10 @@
 // is keeping those few pages apart. Splitting the sorted list round-robin instead does that only
 // by accident, and on the same timings it came out 47% slower across seven shards. The gap widens
 // as shards are added, because there are fewer pages left to absorb a badly placed heavy one.
+import { readFileSync } from "node:fs";
+import { parse } from "yaml";
 import { readTimings } from "../../src/content/replayTimings.js";
+import { CI_WORKFLOW_FILE } from "../../src/paths.js";
 import { pageId } from "./replayPages.js";
 
 // Re-exported so the replay and its tests keep asking this module for everything about sharding,
@@ -105,4 +108,60 @@ export function shardPages(names: string[], shard: Shard, timings: Record<string
     load[lightest]! += cost(name);
   }
   return assigned[shard.index - 1]!.sort();
+}
+
+/** How long a run of `total` shards takes: the slowest shard, since they run in parallel and the
+ *  job is not done until the last one is.
+ *
+ *  Partitioned by the real `shardPages`, so this is the split CI will get rather than an idealised
+ *  one. Here rather than in the test that reads it because `scripts/merge-timings.ts` asks the
+ *  same question of a candidate file before writing it, and two implementations of this curve
+ *  would let CI be held to one answer and the recorder write figures that assume another. */
+export function slowestShardSeconds(names: string[], timings: Record<string, number>, total: number): number {
+  const cost = (name: string): number => timings[name] ?? UNTIMED_SECONDS;
+  return Math.max(
+    ...Array.from({ length: total }, (_, i) =>
+      shardPages(names, { index: i + 1, total }, timings).reduce((sum, n) => sum + cost(n), 0),
+    ),
+  );
+}
+
+/** What a runner has to buy to be worth adding, as a fraction of the slowest shard without it.
+ *
+ *  A floor exists that no count can beat, because a page is never split across shards: the slowest
+ *  shard can never be quicker than the slowest page. Approaching it costs a runner per few
+ *  seconds, and this is where that stops being worth a machine. */
+export const WORTH_A_RUNNER = 0.05;
+
+/** The number of shards these timings justify: the fewest at which another runner would not pay.
+ *
+ *  Deploy waits on the replay (ADR-0003), so the slowest shard is time between a push and the site
+ *  being live rather than a number in a log, which is what makes the runners worth spending at
+ *  all. The count is bounded by the page count, since a shard per page is the most that can help.
+ *
+ *  This is what `.github/workflows/ci.yml` is held to, and it moves as pages are added. That is
+ *  the reason the workflow states its count and no measurements: the curve is here, computed from
+ *  the recorded file, rather than written out beside the matrix where nothing checks it. */
+export function justifiedShardCount(names: string[], timings: Record<string, number>): number {
+  for (let total = 1; total < names.length; total++) {
+    const now = slowestShardSeconds(names, timings, total);
+    if (slowestShardSeconds(names, timings, total + 1) > now * (1 - WORTH_A_RUNNER)) return total;
+  }
+  return Math.max(names.length, 1);
+}
+
+/** The shard count `.github/workflows/ci.yml` is configured to run.
+ *
+ *  Read from the workflow rather than repeated anywhere, because the matrix is the only place the
+ *  count is written: the workflow's own expressions read it back as `strategy.job-total`. A second
+ *  copy would let the two disagree, and whatever compared against the copy would then be approving
+ *  a number CI does not use. */
+export function configuredShardCount(file: string = CI_WORKFLOW_FILE): number {
+  const workflow: unknown = parse(readFileSync(file, "utf-8"));
+  const shards = (workflow as { jobs?: Record<string, { strategy?: { matrix?: { shard?: unknown } } }> })
+    .jobs?.["replay"]?.strategy?.matrix?.shard;
+  if (!Array.isArray(shards) || shards.length === 0) {
+    throw new Error(`no replay shard matrix in ${file}`);
+  }
+  return shards.length;
 }
