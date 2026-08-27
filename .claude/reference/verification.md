@@ -35,7 +35,7 @@ the sandbox and diffs the real result against what the page claims:
 
 ```sh
 npm run replay              # every page, each in a sandbox of its own (ADR-0020)
-npm run replay -- --shard=2/7        # a seventh of them; CI runs seven shards on seven runners
+npm run replay -- --shard=2/7        # one part of a seven-way split; CI runs a shard per runner
 npm run replay -- --record-timings   # full run, and rewrite what balances those shards by hand
 npm run replay -- wget curl # just these
 
@@ -44,7 +44,7 @@ name=$(scripts/sandbox.sh start)
 npx tsx scripts/replay-command-page.ts "$name" wc scripts/fixtures/wc.sh   # -> "wc (as root): 25/25 ..."
 ```
 
-`npm run replay` runs in CI separately from the `check` job (`.github/workflows/ci.yml`), as seven
+`npm run replay` runs in CI separately from the `check` job (`.github/workflows/ci.yml`), as
 sharded jobs in parallel with it, because "the generator is broken" and "a page is lying" want
 different people looking at them. It stays out of `npm run check` so that command needs nothing but
 Node: the replay needs Docker, and a check you can't run without a daemon isn't one to fold into
