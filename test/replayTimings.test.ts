@@ -1,7 +1,7 @@
 import { relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import { readTimings } from "../scripts/lib/replayShard.js";
-import { allPages, hasSetupScript } from "../scripts/lib/replayPages.js";
+import { allPages, hasSetupScript, pageId } from "../scripts/lib/replayPages.js";
 import { REPLAY_TIMINGS_FILE, ROOT } from "../src/paths.js";
 
 /* `scripts/replay-timings.json` is what balances the CI shards, and it is the one file here that
@@ -31,7 +31,7 @@ describe("the recorded replay timings", () => {
     const timings = readTimings();
     const untimed = allPages()
       .filter(hasSetupScript)
-      .filter((page) => timings[page] === undefined)
+      .filter((page) => timings[pageId(page)] === undefined)
       .sort();
 
     expect(
@@ -52,8 +52,12 @@ describe("the recorded replay timings", () => {
     // The other direction of the same rule. A recorded time for a page with no setup script would
     // mean either that the file was hand-edited or that the run put an opted-out page in a
     // container, and both are worth hearing about.
-    const timings = readTimings();
-    const optedOut = Object.keys(timings).filter((page) => !hasSetupScript(page));
+    //
+    // Comparing whole `category/slug` keys rather than slugs, so an entry naming a real page in
+    // the wrong category fails here instead of matching a setup script that belongs to another
+    // page and being counted as timed.
+    const recordable = new Set(allPages().filter(hasSetupScript).map(pageId));
+    const optedOut = Object.keys(readTimings()).filter((page) => !recordable.has(page));
     expect(optedOut).toEqual([]);
   });
 

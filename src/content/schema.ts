@@ -41,9 +41,10 @@ export type Category = (typeof CATEGORIES)[number];
  *
  *  Derived rather than listed, because a new category left out of a listed copy fails silently:
  *  its pages would never be replayed, under a total that still looked right. */
-export type ProseCategory = Exclude<Category, "commands">;
+export const COMMANDS_CATEGORY = "commands" as const satisfies Category;
+export type ProseCategory = Exclude<Category, typeof COMMANDS_CATEGORY>;
 export const PROSE_CATEGORIES: readonly ProseCategory[] = CATEGORIES.filter(
-  (category): category is ProseCategory => category !== "commands",
+  (category): category is ProseCategory => category !== COMMANDS_CATEGORY,
 );
 
 export const TIERS = ["flagship", "standard", "light"] as const;

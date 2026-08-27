@@ -1,5 +1,31 @@
+import { readFileSync } from "node:fs";
+import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
-import { ShardError, parseShard, readTimings, shardPages } from "../scripts/lib/replayShard.js";
+import {
+  ShardError,
+  UNTIMED_SECONDS,
+  parseShard,
+  readTimings,
+  shardCosts,
+  shardPages,
+} from "../scripts/lib/replayShard.js";
+import { allPages, hasSetupScript } from "../scripts/lib/replayPages.js";
+import { CI_WORKFLOW_FILE } from "../src/paths.js";
+
+/** How many shards the `replay` job runs, read from the workflow rather than repeated here.
+ *
+ *  The matrix is the only place the count is written: the workflow's own expressions read it back
+ *  as `strategy.job-total`. A second copy in this file would let the two disagree, and the test
+ *  would then approve a number CI does not use. */
+function shardCountInWorkflow(): number {
+  const workflow: unknown = parse(readFileSync(CI_WORKFLOW_FILE, "utf-8"));
+  const shards = (workflow as { jobs?: Record<string, { strategy?: { matrix?: { shard?: unknown } } }> })
+    .jobs?.["replay"]?.strategy?.matrix?.shard;
+  if (!Array.isArray(shards) || shards.length === 0) {
+    throw new Error(`no replay shard matrix in ${CI_WORKFLOW_FILE}`);
+  }
+  return shards.length;
+}
 
 /* Sharding trades a property this harness depends on for wall clock: with one run there was
  * nothing to get wrong, and with four there is a partition to get right. A page in no shard goes
@@ -124,5 +150,73 @@ describe("reading the timings file", () => {
   it("treats a missing or malformed file as no timings rather than an error", () => {
     expect(readTimings("/nonexistent/replay-timings.json")).toEqual({});
     expect(readTimings("/etc/hostname")).toEqual({});
+  });
+});
+
+/* How many shards CI runs, checked against what the pages actually cost.
+ *
+ * The number lived in a comment beside the matrix, with the measurements that justified it
+ * written out underneath. Both went stale the moment a page was added, and a comment restating
+ * data the repository already holds is the kind CLAUDE.md rules out: nothing was checking it, so
+ * it drifted for as long as nobody happened to recompute the table by hand.
+ *
+ * Now the workflow states the count and this states why it is right, which also closes the gap
+ * that made automation unsafe. Recording timings from CI ages nothing, because the only figures
+ * left are in the file being rewritten.
+ */
+describe("the number of shards CI runs", () => {
+  /** What a runner has to buy to be worth adding, as a fraction of the slowest shard without it.
+   *
+   *  A floor exists that no count can beat: a page is never split, so the slowest shard can never
+   *  be quicker than the slowest page. Approaching it costs a runner per few seconds, and this is
+   *  where that stops being worth a machine. */
+  const WORTH_A_RUNNER = 0.05;
+
+  const pages = allPages().filter(hasSetupScript);
+  const costs = shardCosts(pages);
+  const cost = (name: string): number => costs[name] ?? UNTIMED_SECONDS;
+
+  /** What a run of `total` shards would take: the slowest shard, since they run in parallel and
+   *  the job is not done until the last one is. Partitioned by the real `shardPages`, so this
+   *  measures the split CI will actually get rather than an idealised one. */
+  const slowest = (total: number): number =>
+    Math.max(
+      ...Array.from({ length: total }, (_, i) =>
+        shardPages(pages, { index: i + 1, total }, costs).reduce((sum, n) => sum + cost(n), 0),
+      ),
+    );
+
+  const configured = shardCountInWorkflow();
+  const curve = (): string =>
+    [
+      "  shards  " + Array.from({ length: configured + 2 }, (_, i) => String(i + 1).padStart(5)).join(""),
+      "  slowest " +
+        Array.from({ length: configured + 2 }, (_, i) => String(Math.round(slowest(i + 1))).padStart(5)).join(
+          "",
+        ),
+      `  the slowest single page is ${Math.round(Math.max(...pages.map(cost)))}s, which no count beats`,
+    ].join("\n");
+
+  it("buys enough with its last runner to justify it", () => {
+    if (configured === 1) return;
+    const without = slowest(configured - 1);
+    const bought = without - slowest(configured);
+    expect(
+      bought >= without * WORTH_A_RUNNER,
+      `Shard ${configured} buys only ${Math.round(bought)}s of the ${Math.round(without)}s that ` +
+        `${configured - 1} shards take, which is not worth a machine. Drop the matrix in ` +
+        `.github/workflows/ci.yml to ${configured - 1}.\n\n${curve()}`,
+    ).toBe(true);
+  });
+
+  it("is not so few that another runner would still pay", () => {
+    const now = slowest(configured);
+    const bought = now - slowest(configured + 1);
+    expect(
+      bought < now * WORTH_A_RUNNER,
+      `An ${configured + 1}th shard would take another ${Math.round(bought)}s off ` +
+        `${Math.round(now)}s. Add it: deploy waits on this job, so the slowest shard is time ` +
+        `between a push and the site being live.\n\n${curve()}`,
+    ).toBe(true);
   });
 });

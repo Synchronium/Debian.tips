@@ -8,7 +8,7 @@
 // from one list and present in another, which reads as a page nobody has to explain.
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { PROSE_CATEGORIES } from "../../src/content/schema.js";
+import { COMMANDS_CATEGORY, PROSE_CATEGORIES, type Category } from "../../src/content/schema.js";
 import { CONTENT_DIR, commandsDir, fixtureScript, proseSlug } from "../../src/paths.js";
 
 /** Every command page, by slug. One directory per command under `content/commands/`. */
@@ -37,6 +37,37 @@ export function prosePages(): string[] {
  *  test permanently red with a remedy that could not clear it. */
 export function allPages(): string[] {
   return [...commandPages(), ...prosePages()];
+}
+
+/** The site-wide name for a page, `category/slug`.
+ *
+ *  A run calls a page by its bare slug. That is what names its setup script and what you type to
+ *  replay one. Anything *stored* per page is keyed this way instead, so that two files of per-page
+ *  data can be read side by side. `scripts/replay-timings.json` and
+ *  `test/verification-baseline.json` disagreed about it for as long as both existed.
+ *
+ *  Throws on a slug two categories share. Slugs are unique per category, not site-wide, so a bare
+ *  one does not always name a page. Among pages that opt into the replay it always does: their
+ *  setup scripts are `scripts/fixtures/<slug>.sh`, and two pages cannot own one file. Every real
+ *  caller is therefore safe and this throw unreachable. It is here for the day the fixture naming
+ *  changes, when the alternative is timing the wrong page and never hearing about it. */
+export function pageId(page: string): string {
+  const found = categoriesOf(page);
+  if (found.length === 0) throw new Error(`no page called ${page}`);
+  if (found.length > 1) {
+    throw new Error(`${page} is ambiguous: ${found.map((c) => `${c}/${page}`).join(", ")}`);
+  }
+  return `${found[0]}/${page}`;
+}
+
+function categoriesOf(page: string): Category[] {
+  const found: Category[] = commandPages().includes(page) ? [COMMANDS_CATEGORY] : [];
+  for (const category of PROSE_CATEGORIES) {
+    const dir = join(CONTENT_DIR, category);
+    if (!existsSync(dir)) continue;
+    if (readdirSync(dir).some((file) => proseSlug(file) === page)) found.push(category);
+  }
+  return found;
 }
 
 /** Whether a page opts into the replay, which it does by having a setup script.

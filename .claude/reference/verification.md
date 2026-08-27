@@ -36,7 +36,7 @@ the sandbox and diffs the real result against what the page claims:
 ```sh
 npm run replay              # every page, each in a sandbox of its own (ADR-0020)
 npm run replay -- --shard=2/7        # a seventh of them; CI runs seven shards on seven runners
-npm run replay -- --record-timings   # full run, and rewrite what balances those shards
+npm run replay -- --record-timings   # full run, and rewrite what balances those shards by hand
 npm run replay -- wget curl # just these
 
 # or drive one page directly, which is what the above does per page:
@@ -44,7 +44,7 @@ name=$(scripts/sandbox.sh start)
 npx tsx scripts/replay-command-page.ts "$name" wc scripts/fixtures/wc.sh   # -> "wc (as root): 25/25 ..."
 ```
 
-`npm run replay` runs in CI separately from the `check` job (`.github/workflows/ci.yml`), as four
+`npm run replay` runs in CI separately from the `check` job (`.github/workflows/ci.yml`), as seven
 sharded jobs in parallel with it, because "the generator is broken" and "a page is lying" want
 different people looking at them. It stays out of `npm run check` so that command needs nothing but
 Node: the replay needs Docker, and a check you can't run without a daemon isn't one to fold into
@@ -59,6 +59,14 @@ worth running by hand to reproduce what a red CI shard ran. Starting several at 
 machine is not: that is the contention `.claude/skills/ship/SKILL.md` §1 records, where
 `packages-kept-back` and `release-channels` report as lying because their local apt repository
 times out under load. CI does not hit it because each shard has a runner to itself.
+
+The recorded file those shards are balanced from is written by CI rather than by hand. A push to
+main replays every page, so the whole site is timed on every push; each shard writes what it
+measured with `--timings-out`, and a `record-timings` job merges the parts and commits the result.
+ADR-0023 has the reasoning, including why the commit does not start CI again. The upshot for
+anyone writing pages is that adding one no longer accrues a debt: `--record-timings` is still
+there for recording by hand, but nothing needs it. It refuses to run under `--shard`, `--changed`
+or named pages, because a partial recording would drop every page it did not run.
 
 That invocation is correct for every page. Some pages have to replay as the unprivileged
 `user`, meaning anything printing file ownership (`tar -tvf`, `ls -l`) or documenting a permission

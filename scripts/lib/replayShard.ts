@@ -15,11 +15,30 @@
 // by accident, and on the same timings it came out 47% slower across seven shards. The gap widens
 // as shards are added, because there are fewer pages left to absorb a badly placed heavy one.
 import { readTimings } from "../../src/content/replayTimings.js";
+import { pageId } from "./replayPages.js";
 
 // Re-exported so the replay and its tests keep asking this module for everything about sharding,
 // while the file itself has one reader. The build needs the same figures, to tell a reader how
 // long re-running a page takes, and `src/` cannot import from `scripts/`.
 export { readTimings };
+
+/** The recorded timings, projected onto the bare page names a run shards.
+ *
+ *  The file is keyed `category/slug` and a run names its pages by slug, so something has to
+ *  translate between them. Here, once. Three call sites need it, and each would otherwise pick
+ *  its own convention. `pageId` explains which key belongs where.
+ *
+ *  A page with no recorded time is left out, never given a zero. `shardPages` then sees an
+ *  absence and charges `UNTIMED_SECONDS`; a zero would make a new page look like the quickest on
+ *  the site and collect the rest of them on its shard. */
+export function shardCosts(names: string[], timings = readTimings()): Record<string, number> {
+  return Object.fromEntries(
+    names.flatMap((name) => {
+      const seconds = timings[pageId(name)];
+      return seconds === undefined ? [] : [[name, seconds] as const];
+    }),
+  );
+}
 
 /** What a shard argument parses to. `index` is 1-based, matching how `--shard=2/4` reads and how
  *  a CI matrix numbers its jobs. */
@@ -57,7 +76,7 @@ export function parseShard(value: string): Shard {
  *  saves when it does not: over-charging an unknown displaces genuinely heavy pages in the
  *  ordering, and most pages on this site are quick. `test/replayTimings.test.ts` is the real
  *  answer to a stale file, and this constant only limits the damage in the meantime. */
-const UNTIMED_SECONDS = 10;
+export const UNTIMED_SECONDS = 10;
 
 /** Assigns pages to shards longest-first, each to whichever shard is lightest so far.
  *

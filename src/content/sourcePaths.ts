@@ -88,7 +88,7 @@ export function pageSources(
     files.push({ path: repoPath(skips), label: "examples the batch cannot run, and how each was checked instead" });
   }
 
-  const recorded = replayTimings()[slug];
+  const recorded = replayTimings()[`${category}/${slug}`];
   return {
     files,
     replayable,
