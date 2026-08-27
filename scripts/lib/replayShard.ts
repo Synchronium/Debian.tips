@@ -151,6 +151,48 @@ export function justifiedShardCount(names: string[], timings: Record<string, num
   return Math.max(names.length, 1);
 }
 
+/** How much longer than the best available split a run may take before the count should change.
+ *  A low bar. This is wall clock, and deploy waits on it. */
+const WASTED_WAIT = 0.05;
+
+/** How many runners past the justified count may sit there earning nothing before that is
+ *  reported. A high bar. Nothing waits on them.
+ *
+ *  The heaviest page sets the floor, so it decides the count, and its replay time varies from one
+ *  run to the next. Set this narrower than that variation and every recording asks for the matrix
+ *  to be changed back to what the recording before it asked for. */
+const SPARE_RUNNERS = 2;
+
+export const SHARD_COUNT = { ok: "ok", tooFew: "too-few", tooMany: "too-many" } as const;
+export type ShardCountVerdict = (typeof SHARD_COUNT)[keyof typeof SHARD_COUNT];
+
+/** Whether a configured shard count still suits these timings. Each direction is judged on its own
+ *  terms, since the two mistakes cost different things.
+ *
+ *  **Too few costs wall clock.** Deploy waits on the slowest shard (ADR-0003), and the cost falls
+ *  on every push.
+ *
+ *  **Too many costs runner-minutes.** Nothing waits on those. An extra shard takes a share of the
+ *  pages and finishes early; a run is never slower for having one.
+ *
+ *  A runner that has stopped earning is therefore not doing harm. One threshold for both
+ *  directions reports it as though it were, and past the floor that describes every runner: no
+ *  count beats the slowest single page, so beyond a certain number they all take the same time.
+ *  Whether that number has been reached depends on the heaviest page, which varies. */
+export function shardCountVerdict(
+  names: string[],
+  timings: Record<string, number>,
+  configured: number,
+): { kind: ShardCountVerdict; wants: number } {
+  const wants = justifiedShardCount(names, timings);
+  const best = slowestShardSeconds(names, timings, wants);
+  if (slowestShardSeconds(names, timings, configured) > best * (1 + WASTED_WAIT)) {
+    return { kind: SHARD_COUNT.tooFew, wants };
+  }
+  if (configured > wants + SPARE_RUNNERS) return { kind: SHARD_COUNT.tooMany, wants };
+  return { kind: SHARD_COUNT.ok, wants };
+}
+
 /** The shard count `.github/workflows/ci.yml` is configured to run.
  *
  *  Read from the workflow rather than repeated anywhere, because the matrix is the only place the

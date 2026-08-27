@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  SHARD_COUNT,
   ShardError,
   justifiedShardCount,
   parseShard,
   readTimings,
+  shardCountVerdict,
   shardPages,
   slowestShardSeconds,
 } from "../scripts/lib/replayShard.js";
@@ -181,5 +183,47 @@ describe("the shard count a set of timings justifies", () => {
     const names = Object.keys(dominated);
     const wants = justifiedShardCount(names, dominated);
     expect(slowestShardSeconds(names, dominated, wants)).toBe(60);
+  });
+});
+
+/* Whether a configured count still suits a set of timings.
+ *
+ * These hold the asymmetry rather than the thresholds. Too few shards costs wall clock on every
+ * push, since deploy waits on the slowest shard. Too many costs runner-minutes nobody waits for.
+ * One threshold for both directions cannot tell those apart, and past the floor it reads every
+ * runner as waste, on a page set whose heaviest page decides where the floor is.
+ */
+describe("judging a configured shard count", () => {
+  // One page dominating, which is the shape this site has. `heavy` sets a floor no count beats.
+  const slow = { heavy: 76, a: 12, b: 12, c: 12, d: 12, e: 12, f: 12 };
+  const fast = { heavy: 30, a: 12, b: 12, c: 12, d: 12, e: 12, f: 12 };
+  const verdict = (t: Record<string, number>, configured: number) =>
+    shardCountVerdict(Object.keys(t), t, configured).kind;
+
+  it("says nothing about runners that stopped earning but cost nothing", () => {
+    // Past the floor an extra shard finishes early and the run takes exactly as long. There is
+    // nothing to report: asking for the matrix to shrink would be asking for zero seconds.
+    const names = Object.keys(slow);
+    const wants = justifiedShardCount(names, slow);
+    expect(slowestShardSeconds(names, slow, wants + 2)).toBe(slowestShardSeconds(names, slow, wants));
+    expect(verdict(slow, wants + 2)).toBe(SHARD_COUNT.ok);
+  });
+
+  it("still objects to runners far past any use", () => {
+    // The margin covers a heavy page that varies. It is not a licence to keep any number.
+    expect(verdict(slow, justifiedShardCount(Object.keys(slow), slow) + 5)).toBe(SHARD_COUNT.tooMany);
+  });
+
+  it("objects as soon as too few costs real time", () => {
+    // The low bar. This cost is paid on every push, and deploy waits on it.
+    expect(verdict(fast, 1)).toBe(SHARD_COUNT.tooFew);
+  });
+
+  it("holds one count across a heaviest page that halves", () => {
+    // The property the asymmetry exists for. A count that suits the fast measurement survives the
+    // slow one, so a page that varies cannot make this alternate.
+    const wants = justifiedShardCount(Object.keys(fast), fast);
+    expect(verdict(fast, wants)).toBe(SHARD_COUNT.ok);
+    expect(verdict(slow, wants)).toBe(SHARD_COUNT.ok);
   });
 });

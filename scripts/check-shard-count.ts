@@ -19,16 +19,17 @@ import { relative } from "node:path";
 import { CI_WORKFLOW_FILE, ROOT } from "../src/paths.js";
 import { replayableSlugs } from "./lib/replayPages.js";
 import {
+  SHARD_COUNT,
   configuredShardCount,
-  justifiedShardCount,
   shardCosts,
+  shardCountVerdict,
   slowestShardSeconds,
 } from "./lib/replayShard.js";
 
 const slugs = replayableSlugs();
 const costs = shardCosts(slugs);
 const configured = configuredShardCount();
-const wants = justifiedShardCount(slugs, costs);
+const { kind, wants } = shardCountVerdict(slugs, costs, configured);
 
 /** The curve either side of what CI runs, so a reader can see the shape rather than take the
  *  verdict on trust. The slowest single page is printed with it because no count beats it, and a
@@ -44,16 +45,18 @@ function curve(): string {
   ].join("\n");
 }
 
-if (wants === configured) {
-  console.log(`The recorded times justify ${wants} shards, which is what CI runs.`);
+if (kind === SHARD_COUNT.ok) {
+  const spare = configured > wants ? `, and ${configured} costs nothing over ${wants}` : "";
+  console.log(`CI runs ${configured} shards; the recorded times justify ${wants}${spare}.`);
   process.exit(0);
 }
 
-console.error(`The recorded times justify ${wants} shards, and CI runs ${configured}.`);
+console.error(`CI runs ${configured} shards, and the recorded times justify ${wants}.`);
 console.error(
-  wants > configured
-    ? "  Another runner would still pay for itself, and deploy waits on the slowest shard."
-    : "  A runner is being spent on seconds it no longer buys.",
+  kind === SHARD_COUNT.tooFew
+    ? `  ${configured} takes ${Math.round(slowestShardSeconds(slugs, costs, configured))}s against ` +
+        `${Math.round(slowestShardSeconds(slugs, costs, wants))}s, and deploy waits on that.`
+    : "  Those runners are not earning, and have not been for longer than this page set swings.",
 );
 console.error(`  Change the matrix in ${relative(ROOT, CI_WORKFLOW_FILE)} to ${wants}. It is the`);
 console.error("  only place the count is written; the workflow reads it back as job-total.");

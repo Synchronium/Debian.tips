@@ -50,6 +50,27 @@ jobs:
             echo "repository=$(scripts/sandbox.sh registry)"
             echo "hash=$(scripts/sandbox.sh context-hash)"
           } >> "$GITHUB_OUTPUT"
+      # Nothing to do when this exact context is already published.
+      #
+      # The trigger watches this file's own path as well as the Dockerfile, so that a change to how
+      # publishing works can republish without the image changing. Adding arm64 needed exactly
+      # that. The cost of it is that editing a comment here would otherwise rebuild two
+      # architectures under emulation and push a byte-identical image over a tag that already
+      # holds it.
+      #
+      # The registry is asked rather than anything local. It holds the answer.
+      - name: Is it already published?
+        id: existing
+        run: |
+          if scripts/ghcr-tag-readable.sh "$REPOSITORY" "$HASH"; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "$REPOSITORY:${HASH:0:12} is already published; nothing to build."
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          REPOSITORY: ${{ steps.image.outputs.repository }}
+          HASH: ${{ steps.image.outputs.hash }}
       # Both architectures, because the two consumers do not share one: CI runners are amd64 and
       # the devcontainer this site is written in is arm64. A single-platform image is worse than
       # no image for the other one, because it is accepted rather than refused: `docker pull`
@@ -60,9 +81,12 @@ jobs:
       #
       # arm64 is emulated here, which is slow, and this is where that is affordable: it gates
       # nothing and runs when the Dockerfile changes.
-      - uses: docker/setup-qemu-action@v4
-      - uses: docker/setup-buildx-action@v4
-      - uses: docker/login-action@v4
+      - if: steps.existing.outputs.published != 'true'
+        uses: docker/setup-qemu-action@v4
+      - if: steps.existing.outputs.published != 'true'
+        uses: docker/setup-buildx-action@v4
+      - if: steps.existing.outputs.published != 'true'
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -70,7 +94,8 @@ jobs:
       # Built here rather than by `sandbox.sh`, because this needs to push and to label in one
       # step. The label has to match the tag: `sandbox.sh` checks both before it trusts a pulled
       # image, so an image published without it is one every consumer will refuse and rebuild.
-      - uses: docker/build-push-action@v7
+      - if: steps.existing.outputs.published != 'true'
+        uses: docker/build-push-action@v7
         with:
           context: scripts/sandbox
           platforms: linux/amd64,linux/arm64
@@ -81,33 +106,23 @@ jobs:
       # to a build, which is the state this workflow exists to end, and it would do it silently.
       # The package is public so that a fresh devcontainer skips the build too, not only CI.
       #
-      # Asked of the registry anonymously, which is the property that actually matters and the
-      # only way to establish it: a package is created private, nothing in the REST API can change
-      # that, and the visibility a token can read is not the same claim as an unauthenticated pull
-      # succeeding. So this reports rather than fixes, and a maintainer sets the package public
-      # once, by hand, after the first publish.
+      # Only after a push. The step above has already answered this whenever it found the tag.
       #
-      # A warning rather than a failure. The image is published either way, and a consumer that
-      # cannot pull it builds, so failing the job here would report a slower replay as a broken
-      # one. An annotation puts it on the run summary instead of in the log where nobody looks.
+      # A warning, never a failure. The image is published either way, and a consumer that cannot
+      # pull it builds instead, so failing here would report a slower replay as a broken one. An
+      # annotation puts it on the run summary rather than in the log, where nobody looks.
+      #
+      # Nothing can fix it from here. A package is created private and no API call changes that,
+      # so a maintainer sets it public once, by hand, after the first publish.
       - name: Check it can be pulled without a token
-        env:
-          REPOSITORY: ${{ steps.image.outputs.repository }}
-          HASH: ${{ steps.image.outputs.hash }}
+        if: steps.existing.outputs.published != 'true'
         run: |
-          path=${REPOSITORY#ghcr.io/}
-          # `|| true` because a step that runs under `set -e` would otherwise fail here rather
-          # than warn: the token endpoint refuses a repository it will not serve anonymously,
-          # which is the answer this is asking for and not an error.
-          token=$(curl -fsSL "https://ghcr.io/token?service=ghcr.io&scope=repository:$path:pull" |
-            jq -r '.token // empty' || true)
-          if curl -fsS -o /dev/null \
-            -H "Authorization: Bearer $token" \
-            -H 'Accept: application/vnd.oci.image.index.v1+json' \
-            -H 'Accept: application/vnd.docker.distribution.manifest.list.v2+json' \
-            "https://ghcr.io/v2/$path/manifests/$HASH"; then
+          if scripts/ghcr-tag-readable.sh "$REPOSITORY" "$HASH"; then
             echo "$REPOSITORY can be pulled without a token"
           else
             echo "::warning::$REPOSITORY is not readable without a token, so every consumer will" \
               "build instead of pulling. Set the package public once, by hand, in its settings."
           fi
+        env:
+          REPOSITORY: ${{ steps.image.outputs.repository }}
+          HASH: ${{ steps.image.outputs.hash }}
