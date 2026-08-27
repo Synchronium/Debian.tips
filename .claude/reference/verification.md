@@ -49,8 +49,15 @@ sharded jobs in parallel with it, because "the generator is broken" and "a page 
 different people looking at them. It stays out of `npm run check` so that command needs nothing but
 Node: the replay needs Docker, and a check you can't run without a daemon isn't one to fold into
 the everyday gate. Serially the whole site replays in roughly four and a half minutes, and the
-slowest CI shard in about a minute; a cold run adds building the sandbox image, which the workflow
+slowest CI shard in about a minute; a run with no image yet adds fetching one, which the workflow
 does as its own step so the log says which half any slowness is in.
+
+That step is usually a pull. `.github/workflows/publish-sandbox.yml` publishes the image whenever
+anything under `scripts/sandbox/` changes, tagged with a hash of that directory's contents, and
+`scripts/sandbox.sh` pulls the tag matching its own checkout before it considers building. It
+builds when there is nothing to pull, which is what keeps the registry a shortcut rather than
+something the replay depends on; ADR-0024 has the reasoning. `SANDBOX_REGISTRY=` empty forces a
+local build.
 
 `--shard` takes a whole run and hands one part of it back, balanced from the timings in
 `scripts/lib/replayShard.ts`'s recorded file, so it composes with `--changed` but not with named

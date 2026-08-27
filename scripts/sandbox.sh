@@ -13,29 +13,100 @@ IMAGE="debian-tips-sandbox:trixie"
 DOCKERFILE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/sandbox" && pwd)"
 NAME_PREFIX="content-sandbox-"
 
+# Where a prebuilt image is looked for before building one. Published by
+# .github/workflows/publish-sandbox.yml whenever the build context changes, and tagged with the
+# hash of that context, so a tag names one exact Dockerfile rather than a moving "latest".
+#
+# Public, so no login is needed to pull: a fresh devcontainer and a CI runner both skip the build.
+# Set SANDBOX_REGISTRY empty to always build locally.
+SANDBOX_REGISTRY="${SANDBOX_REGISTRY-ghcr.io/synchronium/debian-tips-sandbox}"
+
 # Builds the image when it's missing *or* out of date. Checking only for existence meant a
 # Dockerfile edit never reached an already-built image, and the symptom is misleading:
 # examples replay against a stale toolset and fail as though the page were wrong. Adding
 # `patch` to the image once surfaced days later as the diff page dropping to 16/17.
 #
-# The staleness test is a label holding the newest mtime in the build context, rather than the
-# image's own creation time. Those are not the same thing: a rebuild that hits the layer cache
-# keeps the *cached* layer's creation time, so an image compared that way stays permanently older
-# than the context that just rebuilt it, and every call rebuilds. That went unnoticed while the
-# replay started one container per run and shouted once. Starting one per page made it 56 rebuild
+# The staleness test is a label holding a hash of the build context, rather than the image's own
+# creation time. Those are not the same thing: a rebuild that hits the layer cache keeps the
+# *cached* layer's creation time, so an image compared that way stays permanently older than the
+# context that just rebuilt it, and every call rebuilds. That went unnoticed while the replay
+# started one container per run and shouted once. Starting one per page made it 56 rebuild
 # attempts and 56 lines of log, which is how it was found.
 #
+# **A hash of the contents, not of when they were last touched.** Git does not record mtimes, so a
+# fresh clone stamps every file with the moment it was checked out: an mtime says which working
+# copy a file came from and nothing about what is in it. Two machines with the same commit agree
+# on this hash and disagree on every mtime, which is what lets an image built on one of them be
+# recognised on the other. It also stops `touch Dockerfile` costing a rebuild.
+#
 # Anything in the build context counts, not just the Dockerfile, so whatever gets added alongside
-# it later is covered without editing this.
-CONTEXT_LABEL="tips.context-mtime"
+# it later is covered without editing this. Sorted before hashing, because `find` returns
+# directory order and two machines do not share one, and sorted under `LC_ALL=C`, because
+# collation is itself a locale setting: two machines that disagree about where `aB` sorts against
+# `ab` hash one commit two ways, and both then build.
+#
+# Modes are hashed beside the contents, because `COPY` carries the executable bit into the image.
+# A `chmod +x` on a context file changes what gets built without changing a byte of what is in it,
+# and a hash blind to that accepts the stale image it exists to reject.
+#
+# Hashed from inside the directory, so the paths that go into it are `./Dockerfile` rather than
+# `/home/runner/work/...`. `sha256sum` prints the path beside the digest, and an absolute one
+# would put the checkout location into the hash: the same commit would then have a different hash
+# on a runner and on a laptop, which is the mtime problem again wearing a hash.
+CONTEXT_LABEL="tips.context-hash"
+context_hash() {
+  (
+    cd "$DOCKERFILE_DIR" &&
+      { find . -type f -exec sha256sum {} +; find . -type f -printf '%m %p\n'; } |
+      LC_ALL=C sort | sha256sum | cut -d' ' -f1
+  )
+}
+
 ensure_image() {
-  local newest stamp
-  newest=$(find "$DOCKERFILE_DIR" -type f -printf '%T@\n' 2>/dev/null | sort -rn | head -1)
+  local wanted stamp reason pulled arch host
+  wanted=$(context_hash)
   if stamp=$(docker image inspect -f "{{index .Config.Labels \"$CONTEXT_LABEL\"}}" "$IMAGE" 2>/dev/null); then
-    [[ -n "$newest" && "$stamp" == "$newest" ]] && return
-    echo "sandbox: $DOCKERFILE_DIR is newer than $IMAGE, rebuilding" >&2
+    [[ "$stamp" == "$wanted" ]] && return
+    reason="$DOCKERFILE_DIR has changed since $IMAGE was built"
+  else
+    reason="there is no $IMAGE for this build context"
   fi
-  docker build --label "$CONTEXT_LABEL=$newest" -t "$IMAGE" "$DOCKERFILE_DIR" >&2
+  # A published image for this exact context, if there is one. Pulling 500MB beats installing
+  # thirty packages: measured on a CI runner the build is 41 seconds, and it was being paid by
+  # every shard of every run because a runner is always cold.
+  #
+  # **Falling back to a build is what makes this safe rather than a dependency.** A registry
+  # outage, a tag nobody published, no network at all: each of them costs the build that used to
+  # happen anyway. Nothing here can fail because the pull did, which is why every rejection below
+  # says what it found and then goes on to build.
+  #
+  # The tag is the context hash, and the label is checked as well as the tag. A tag is a name
+  # somebody chose and can be moved or mistyped; the label is what the build recorded about the
+  # context it was built from. Requiring both means an image can only be accepted for the
+  # Dockerfile it was actually built from, and a mislabelled one costs a build rather than a run
+  # of the wrong toolset, which is the failure this whole staleness check exists to prevent.
+  #
+  # Architecture is checked too, because an image for the wrong one arrives looking correct: a
+  # single-platform manifest pulls with a warning rather than an error, carries the right label,
+  # and then every container started from it dies with `exec format error`. The tag says which
+  # Dockerfile, the label says the build agreed, and this says the result can run here at all.
+  if [[ -n "$SANDBOX_REGISTRY" ]] && docker pull -q "$SANDBOX_REGISTRY:$wanted" >/dev/null 2>&1; then
+    pulled=$(docker image inspect -f "{{index .Config.Labels \"$CONTEXT_LABEL\"}}" \
+      "$SANDBOX_REGISTRY:$wanted" 2>/dev/null || true)
+    arch=$(docker image inspect -f '{{.Architecture}}' "$SANDBOX_REGISTRY:$wanted" 2>/dev/null || true)
+    host=$(docker version -f '{{.Server.Arch}}' 2>/dev/null || true)
+    if [[ "$pulled" != "$wanted" ]]; then
+      echo "sandbox: $SANDBOX_REGISTRY:${wanted:0:12} is not labelled for this context" >&2
+    elif [[ "$arch" != "$host" ]]; then
+      echo "sandbox: $SANDBOX_REGISTRY:${wanted:0:12} is $arch, and this daemon is $host" >&2
+    else
+      docker tag "$SANDBOX_REGISTRY:$wanted" "$IMAGE"
+      echo "sandbox: pulled $SANDBOX_REGISTRY:${wanted:0:12}" >&2
+      return
+    fi
+  fi
+  echo "sandbox: $reason, building" >&2
+  docker build --label "$CONTEXT_LABEL=$wanted" -t "$IMAGE" "$DOCKERFILE_DIR" >&2
 }
 
 require_sandbox_name() {
@@ -50,6 +121,8 @@ usage() {
   cat >&2 <<EOF
 Usage:
   $0 build                               build the sandbox image if it is missing or stale
+  $0 context-hash                        print the hash this build context tags to
+  $0 registry                            print the repository a published image is pulled from
   $0 start [--systemd] [name]            start a disposable sandbox, prints its name
   $0 exec [-u user] <name> <command...>  run a command inside the sandbox (bash -c)
   $0 stop <name>                         stop and remove the sandbox
@@ -66,6 +139,22 @@ case "$cmd" in
   # image with no context label, which reads as stale, and the next `start` rebuilds it anyway.
   build)
     ensure_image
+    ;;
+  # What this checkout's build context hashes to, which is the tag a published image carries.
+  # Exposed so that .github/workflows/publish-sandbox.yml can tag with it rather than working it
+  # out again: a second implementation would agree until one of the two was edited, and then no
+  # consumer would recognise any published tag, silently, with slowness as the only symptom.
+  context-hash)
+    context_hash
+    ;;
+  # Where a published image is pulled from, for the same reason: the workflow has to push the
+  # repository this pulls from, and a name spelled out in both places agrees right up until one of
+  # them is edited. Publishing under a name nothing looks for fails no build and shows no error.
+  # It refuses when there is no registry rather than printing an empty name, because a caller
+  # asking this needs one, and an empty answer would be pushed to as `:hash`.
+  registry)
+    [[ -n "$SANDBOX_REGISTRY" ]] || { echo "error: SANDBOX_REGISTRY is empty" >&2; exit 1; }
+    echo "$SANDBOX_REGISTRY"
     ;;
   start)
     ensure_image

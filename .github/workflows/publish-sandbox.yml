@@ -1,0 +1,112 @@
+name: Publish sandbox
+# Publishes the replay sandbox image, so that nothing has to build it.
+#
+# The image is what every page is replayed inside (ADR-0020), and building it takes 41 seconds of
+# `apt-get install` on a cold runner. Every replay shard was paying that, and a runner is always
+# cold, so a push spent it once per shard for an image that changes a few times a year.
+#
+# **Out of band, and gating nothing.** It runs when the build context changes, beside CI rather
+# than before it, so no push ever waits for a registry. The push that changes the Dockerfile
+# builds locally on every shard exactly as it does today; every push after it pulls instead. A
+# publish that fails, or that has not happened yet, costs the build that used to happen anyway,
+# because `scripts/sandbox.sh` falls back to building when there is nothing to pull.
+#
+# Tagged with a hash of the build context rather than `latest`, so a tag names one exact
+# Dockerfile. That is what lets a consumer decide whether a published image is the one its own
+# checkout describes, instead of trusting that whoever pushed last pushed the right thing.
+on:
+  push:
+    branches: [main]
+    paths: [scripts/sandbox/**, .github/workflows/publish-sandbox.yml]
+  # For re-publishing after the package has been deleted, or a tag has been removed, without
+  # having to touch the Dockerfile to trigger it.
+  workflow_dispatch:
+
+# `packages: write` is the whole reason this is its own workflow rather than a step in one that
+# already checks out the repository: nothing that replays pages needs to be able to publish.
+permissions: { contents: read, packages: write }
+# Queued rather than cancelled, unlike every other workflow here. A cancelled run of a workflow
+# that gates something is retried by the push that cancelled it; a cancelled run of this one
+# leaves that context hash with no image at all, permanently, and the trigger is path-filtered so
+# nothing later reruns it. There is nothing to save by cancelling either, since this gates no push
+# and runs a few times a year.
+concurrency: { group: publish-sandbox, cancel-in-progress: false }
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Both asked of `scripts/sandbox.sh` rather than written out again here. The tag is what
+      # every consumer looks for, and a second copy of either half agrees until one of them is
+      # edited; the failure then is silent, because publishing under a name nothing pulls breaks
+      # no build. Everything would just build, having found no tag it recognised, and the only
+      # symptom is the slowness this workflow exists to remove.
+      - name: Work out what to publish, and where
+        id: image
+        run: |
+          {
+            echo "repository=$(scripts/sandbox.sh registry)"
+            echo "hash=$(scripts/sandbox.sh context-hash)"
+          } >> "$GITHUB_OUTPUT"
+      # Both architectures, because the two consumers do not share one: CI runners are amd64 and
+      # the devcontainer this site is written in is arm64. A single-platform image is worse than
+      # no image for the other one, because it is accepted rather than refused: `docker pull`
+      # warns and hands it over, and the containers then fail with `exec format error` instead.
+      # `sandbox.sh` checks the architecture of what it pulled for that reason, so the cost of
+      # getting this wrong is a build rather than a broken replay, but getting it right is what
+      # lets the second architecture skip the build at all.
+      #
+      # arm64 is emulated here, which is slow, and this is where that is affordable: it gates
+      # nothing and runs when the Dockerfile changes.
+      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      # Built here rather than by `sandbox.sh`, because this needs to push and to label in one
+      # step. The label has to match the tag: `sandbox.sh` checks both before it trusts a pulled
+      # image, so an image published without it is one every consumer will refuse and rebuild.
+      - uses: docker/build-push-action@v7
+        with:
+          context: scripts/sandbox
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.image.outputs.repository }}:${{ steps.image.outputs.hash }}
+          labels: tips.context-hash=${{ steps.image.outputs.hash }}
+      # A published image nobody can pull without a token would leave every consumer falling back
+      # to a build, which is the state this workflow exists to end, and it would do it silently.
+      # The package is public so that a fresh devcontainer skips the build too, not only CI.
+      #
+      # Asked of the registry anonymously, which is the property that actually matters and the
+      # only way to establish it: a package is created private, nothing in the REST API can change
+      # that, and the visibility a token can read is not the same claim as an unauthenticated pull
+      # succeeding. So this reports rather than fixes, and a maintainer sets the package public
+      # once, by hand, after the first publish.
+      #
+      # A warning rather than a failure. The image is published either way, and a consumer that
+      # cannot pull it builds, so failing the job here would report a slower replay as a broken
+      # one. An annotation puts it on the run summary instead of in the log where nobody looks.
+      - name: Check it can be pulled without a token
+        env:
+          REPOSITORY: ${{ steps.image.outputs.repository }}
+          HASH: ${{ steps.image.outputs.hash }}
+        run: |
+          path=${REPOSITORY#ghcr.io/}
+          # `|| true` because a step that runs under `set -e` would otherwise fail here rather
+          # than warn: the token endpoint refuses a repository it will not serve anonymously,
+          # which is the answer this is asking for and not an error.
+          token=$(curl -fsSL "https://ghcr.io/token?service=ghcr.io&scope=repository:$path:pull" |
+            jq -r '.token // empty' || true)
+          if curl -fsS -o /dev/null \
+            -H "Authorization: Bearer $token" \
+            -H 'Accept: application/vnd.oci.image.index.v1+json' \
+            -H 'Accept: application/vnd.docker.distribution.manifest.list.v2+json' \
+            "https://ghcr.io/v2/$path/manifests/$HASH"; then
+            echo "$REPOSITORY can be pulled without a token"
+          else
+            echo "::warning::$REPOSITORY is not readable without a token, so every consumer will" \
+              "build instead of pulling. Set the package public once, by hand, in its settings."
+          fi

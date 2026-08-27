@@ -46,8 +46,9 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      # Its own step, so the log says whether a slow run was the image or the replay.
-      - name: Build the sandbox image
+      # Its own step, so the log says whether a slow run was the image or the replay. Pulls a
+      # published image when there is one for this Dockerfile, and builds when there is not.
+      - name: Fetch or build the sandbox image
         run: scripts/sandbox.sh build
       - name: Replay every page
         id: replay
