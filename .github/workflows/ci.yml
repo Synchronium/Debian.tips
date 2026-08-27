@@ -98,9 +98,10 @@ jobs:
       # the replay separately, so if this job ever gets slow, that says which half to fix.
       #
       # Usually a pull now. `publish-sandbox.yml` puts the image in a registry whenever the build
-      # context changes, and a runner is always cold, so this step used to spend 41 seconds
-      # installing thirty packages on every shard of every push. It still builds when there is
-      # nothing to pull, which is what keeps a registry from being something CI depends on.
+      # context changes, and a runner is always cold, so this step used to install thirty packages
+      # on every shard of every push, in anything from 18 seconds to 52. It still builds when
+      # there is nothing to pull, which is what keeps a registry from being something CI depends
+      # on.
       - name: Fetch or build the sandbox image
         run: scripts/sandbox.sh build
       # A pull request replays the pages its diff touches, and everything if it touched the

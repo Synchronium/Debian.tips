@@ -11,12 +11,16 @@
 ## Context
 
 Every page is replayed inside one image (ADR-0020), and that image is the only thing pages share.
-Building it is `apt-get update` plus thirty packages, which measured 41 seconds on a CI runner.
+Building it is `apt-get update` plus thirty packages.
 
-A runner is always cold, so every replay shard paid it: six shards, 41 seconds each, on every push
-to main. That is about 250 runner-seconds per push and 41 seconds on the critical path that
-`deploy.yml` waits for, for an image whose Dockerfile changes a few times a year. `drift.yml` pays
-it weekly too.
+A runner is always cold, so every replay shard paid for that. Measured over three pushes before
+this changed, the build took 18 to 52 seconds with a median around 23, which is about 140 to 180
+runner-seconds per push spread across six shards. The Dockerfile changes a few times a year.
+`drift.yml` pays it weekly too.
+
+**The spread is the more interesting half of that.** Wall clock is set by the slowest shard, so a
+step that is usually 23 seconds and occasionally 52 costs the deploy its worst case rather than
+its typical one.
 
 Trimming the build is not the lever. `apt-get update` is 4 seconds and `man-db` another 8; the
 rest is the package list, and that list is deliberate. ADR-0020 makes this image the only shared
@@ -57,8 +61,15 @@ does today, because the publish for that context has not finished. Every push af
 
 ## Consequences
 
-**A push spends about 250 runner-seconds less, and reaches the site sooner.** The critical path
-loses most of a 41-second step.
+**A push spends about 67 runner-seconds less, and reaches the site a little sooner.** Measured on
+the first push that pulled: the image step went from 18-28 seconds per shard to 7-16, 136 seconds
+to 69 across the six, and the slowest replay job from 124 seconds to 111.
+
+That is a modest saving, and smaller than the build times suggested on their own, because the
+slowest replay job is the one carrying the heaviest page rather than the one with the slowest
+image step. The steadier claim is the one about spread: the step's tail was 28, 41 and 52 seconds
+over three builds, and 16 seconds at worst over a pull. What this mostly buys is a step that no
+longer occasionally costs a minute.
 
 **The image the replay uses is now an artifact rather than a build.** That is the real change, and
 the content-addressed tag is what keeps it honest: a pulled image is accepted only for the exact

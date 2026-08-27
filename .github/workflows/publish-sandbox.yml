@@ -1,9 +1,10 @@
 name: Publish sandbox
 # Publishes the replay sandbox image, so that nothing has to build it.
 #
-# The image is what every page is replayed inside (ADR-0020), and building it takes 41 seconds of
-# `apt-get install` on a cold runner. Every replay shard was paying that, and a runner is always
-# cold, so a push spent it once per shard for an image that changes a few times a year.
+# The image is what every page is replayed inside (ADR-0020), and building it is `apt-get install`
+# of thirty packages: 18 to 52 seconds on a cold runner, and a runner is always cold. Every replay
+# shard was paying that, once per shard per push, for an image that changes a few times a year.
+# ADR-0024 has the measurements either side.
 #
 # **Out of band, and gating nothing.** It runs when the build context changes, beside CI rather
 # than before it, so no push ever waits for a registry. The push that changes the Dockerfile
