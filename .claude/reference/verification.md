@@ -62,7 +62,9 @@ times out under load. CI does not hit it because each shard has a runner to itse
 
 The recorded file those shards are balanced from is written by CI rather than by hand. A push to
 main replays every page, so the whole site is timed on every push; each shard writes what it
-measured with `--timings-out`, and a `record-timings` job merges the parts and commits the result.
+measured with `--timings-out`, and `.github/workflows/record-timings.yml` merges the parts and
+commits the result once CI is green. A workflow of its own rather than a job in CI, so that a
+recorder that gates nothing cannot hold back a deploy that does.
 ADR-0023 has the reasoning, including why the commit does not start CI again. The upshot for
 anyone writing pages is that adding one no longer accrues a debt: `--record-timings` is still
 there for recording by hand, but nothing needs it. It refuses to run under `--shard`, `--changed`

@@ -116,9 +116,10 @@ jobs:
         run: npm run replay -- --changed --shard=${{ matrix.shard }}/${{ strategy.job-total }}
         env:
           REPLAY_DIFF_BASE: origin/${{ github.base_ref }}
-      # `--timings-out` on the full run only. A shard writes what it measured and nothing else:
-      # the file every shard reads is written once, by `record-timings` below, from all the parts
-      # together. A pull request measures a fraction of a fraction and records nothing.
+      # `--timings-out` on the full run only, and it leaves an artifact rather than a file anything
+      # here reads. `record-timings.yml` collects the parts after this workflow finishes; a shard
+      # may not write the file every shard reads, because each holds a fraction of the site. A
+      # pull request measures a fraction of a fraction and records nothing.
       - name: Replay every page
         if: github.event_name != 'pull_request'
         run: npm run replay -- --shard=${{ matrix.shard }}/${{ strategy.job-total }} --timings-out=shard-timings.json
@@ -128,65 +129,7 @@ jobs:
         with:
           name: replay-timings-${{ matrix.shard }}
           path: shard-timings.json
+          # Long enough for `record-timings.yml` to collect them once this workflow finishes, and
+          # no longer: nothing reads them after that, and a stale part collected by a later run
+          # would be a page timed by a replay of different content.
           retention-days: 1
-
-  # Records how long each page took, from the run that just happened.
-  #
-  # The measurements are a by-product of a job CI already runs: a push to main replays every page,
-  # so the whole site is timed on every push and was, until this job existed, thrown away with the
-  # runners. Nothing extra is replayed to produce this.
-  #
-  # Measured on the machines the figures are for. They balance amd64 runners, and were previously
-  # taken from whatever architecture happened to run the recording by hand.
-  #
-  # It commits to main. That is deliberate and ADR-0023 is the record of why, including why the
-  # commit does not start CI again.
-  record-timings:
-    needs: replay
-    # `success()` is spelled out because writing any `if` at all replaces the implicit one that a
-    # `needs:` job gets. Without it this would run after a red replay and record the timings of a
-    # run whose pages do not agree with the site.
-    if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    permissions: { contents: write }
-    steps:
-      # `ref` is the branch, not the pushed commit. A push event otherwise checks out a detached
-      # HEAD, which has no upstream to push back to. Taking the tip of main also means the merge
-      # below sees whatever page set main now has, so a page added while the replay ran shows up
-      # as a hole and stops the write instead of being recorded with a time nothing measured.
-      - uses: actions/checkout@v7
-        with:
-          ref: main
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      - uses: actions/download-artifact@v8
-        with:
-          pattern: replay-timings-*
-          path: shard-timings
-      # Refuses to write unless the parts cover every page that opts into the replay, so a shard
-      # that vanished leaves the previous figures in place instead of a file with holes in it. It
-      # also writes nothing when the change is too small to be worth a commit. Both decisions
-      # therefore show up as whether the file moved, and the step below has no output to parse.
-      - name: Merge the shards' measurements
-        run: npx tsx scripts/merge-timings.ts shard-timings
-      - name: Commit them
-        run: |
-          set -euo pipefail
-          if git diff --quiet -- scripts/replay-timings.json; then
-            echo "Nothing to commit."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add scripts/replay-timings.json
-          # What prevents the loop is the token: a push made with the default GITHUB_TOKEN starts
-          # no workflow run. `[skip ci]` is belt and braces, and keeps that true on the day
-          # someone swaps the token for one that does.
-          git commit -m "Record replay timings from ${GITHUB_SHA:0:7} [skip ci]"
-          # Someone pushing while the replay ran makes this a non-fast-forward, and that is fine:
-          # the next push measures the site again and records it. Retrying, or rebasing, would be
-          # a job that fights for main to deliver a figure that is advisory either way.
-          git push || echo "main moved while this ran; leaving it to the next push."

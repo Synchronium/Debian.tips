@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Recorded:** 2026-08-27
-- **Enforced by:** the `record-timings` job in `.github/workflows/ci.yml`;
+- **Enforced by:** `.github/workflows/record-timings.yml`;
   `scripts/merge-timings.ts`, which refuses to write a file that does not cover every page;
   `test/replayTimings.test.ts`, which fails when too many pages have no recorded time;
   `test/replayShard.test.ts`, which holds the shard count to what the timings justify
@@ -44,7 +44,13 @@ the recording had to stay manual to keep a human beside it.
 - Each `replay` shard writes what it measured with `--timings-out`, as an artifact. No shard may
   write `replay-timings.json`: each holds a fraction of the site, and a partial write would drop
   every page it did not run.
-- A `record-timings` job merges the parts after a green full run on main, and pushes the result.
+- A separate workflow, `record-timings.yml`, merges the parts after a green full run on main and
+  pushes the result. Separate rather than a job in CI, because [ADR-0003](0003-ci-topology-and-gated-deploy.md)
+  gates deploy on CI's conclusion. A job inside CI could hold back a green build for a reason that
+  says nothing about the site, such as an artifact that did not upload or a page added to main
+  while the replay ran, and even when green it would add its own checkout and install to the time
+  between a push and the site being live. Out here it runs beside the deploy rather than before
+  it, and a failure is a red mark on a workflow that gates nothing.
 - `scripts/merge-timings.ts` refuses to write unless the parts cover every page that opts into the
   replay, which is the completeness rule `--record-timings` already enforced for a serial run.
 - It writes only on a material change: a page added or removed, or a page that moved by both 20%
@@ -82,6 +88,12 @@ keeps them rare. Anyone reading `git log` for content changes will see them.
 abandoned rather than retried: the next push measures the site again. A job that fought for main
 to deliver an advisory figure would be a worse trade than a figure that is occasionally one run
 older.
+
+**Nothing here can fail a build.** The recorder gates nothing and nothing waits for it, so every
+way it can go red leaves both the CI badge and the deploy alone. That is what lets it refuse
+loudly, which is the behaviour every check in it wants: a hole in the parts, an overlap, a curve
+the shard count no longer sits on. A recorder that could turn a green build red would have to be
+written to shrug those off instead.
 
 **Nothing here decides whether a page is replayed.** The file stays advisory in both directions:
 stale, the shards balance worse; missing, every page still runs. If that ever stops being true,

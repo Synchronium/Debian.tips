@@ -1,0 +1,88 @@
+name: Record timings
+# Records how long each page took, from the replay CI has just finished.
+#
+# The measurements are a by-product of a job CI already runs: a push to main replays every page,
+# so the whole site is timed on every push and was, until this workflow existed, thrown away with
+# the runners. Nothing extra is replayed to produce this, and the figures are taken on the
+# machines they are for, which the recording by hand never was. ADR-0023 is the record of why.
+#
+# **A workflow of its own, rather than a job in CI, because it must not be able to fail a build.**
+# `deploy.yml` gates on CI's conclusion, so a job inside CI puts this on the path to the site in
+# two ways. A red job here would hold back a green build, and this job can go red for reasons that
+# say nothing about the site: an artifact that did not upload, a page added to main while the
+# replay ran. And even when green it would add a checkout, an `npm ci` and a merge to the time
+# between a push and the site being live, which is the budget the CI shard count spends runners
+# to protect. Out here it runs beside the deploy instead of before it, and a failure is a red mark
+# on a workflow that gates nothing.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+permissions: { contents: write, actions: read }
+# One recorder at a time. Two overlapping runs would both push, and the loser would be doing the
+# work twice to lose a race it was told to abandon. `cancel-in-progress` because the later run
+# measured the more recent site.
+concurrency: { group: record-timings, cancel-in-progress: true }
+jobs:
+  record:
+    # Only a green full replay is worth recording: a red one has pages that do not agree with the
+    # site, and its timings would describe a run nobody would want repeated. `workflow_run` fires
+    # on cancellation and failure too, so this is the whole gate. The `event` check keeps this to
+    # pushes, since a pull request replays a fraction of the site.
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      # `ref` is the branch, not the commit CI tested. A `workflow_run` job otherwise checks out
+      # the default branch's tip in a detached HEAD, which has no upstream to push back to. Taking
+      # the branch also means the merge below sees whatever page set main now has, so a page added
+      # while the replay ran shows up as a hole rather than being recorded with a time nothing
+      # measured.
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # `run-id` and a token are what read another workflow run's artifacts. Without them this
+      # looks in *this* run, which uploaded nothing, and the merge below reports the whole site
+      # missing.
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: replay-timings-*
+          path: shard-timings
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      # Refuses to write unless the parts cover every page that opts into the replay, so a shard
+      # that vanished leaves the previous figures in place instead of a file with holes in it. It
+      # also writes nothing when the change is too small to be worth a commit, and nothing when
+      # the new figures would put the CI shard count on the wrong side of the curve. All three
+      # decisions therefore show up as whether the file moved, and the step below has no output to
+      # parse.
+      - name: Merge the shards' measurements
+        run: npx tsx scripts/merge-timings.ts shard-timings
+      - name: Commit them
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- scripts/replay-timings.json; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/replay-timings.json
+          # What prevents the loop is the token: a push made with the default GITHUB_TOKEN starts
+          # no workflow run, so no CI run finishes, so this workflow is not triggered again.
+          # `[skip ci]` is belt and braces, and keeps that true on the day someone swaps the token
+          # for one that does.
+          git commit -m "Record replay timings from ${MEASURED:0:7} [skip ci]"
+          # Someone pushing while the replay ran makes this a non-fast-forward, and that is fine:
+          # the next push measures the site again and records it. Retrying, or rebasing, would be
+          # a job that fights for main to deliver a figure that is advisory either way.
+          git push || echo "main moved while this ran; leaving it to the next push."
+        env:
+          # The commit CI replayed, not this workflow's own `GITHUB_SHA`, which is main's tip and
+          # may be a commit nothing here measured.
+          MEASURED: ${{ github.event.workflow_run.head_sha }}
