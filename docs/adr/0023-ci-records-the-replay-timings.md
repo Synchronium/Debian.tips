@@ -53,9 +53,9 @@ the recording had to stay manual to keep a human beside it.
   it, and a failure is a red mark on a workflow that gates nothing.
 - `scripts/merge-timings.ts` refuses to write unless the parts cover every page that opts into the
   replay, which is the completeness rule `--record-timings` already enforced for a serial run.
-- It writes only on a material change: a page added or removed, or a page that moved by both 20%
-  and two seconds. Runner times jitter, and without a threshold the file would churn on every
-  push.
+- It writes only on a material change: a page added or removed, or a page that moved by two
+  seconds, and by a fifth of itself if it is one of the heavy ones. Runner times jitter, and
+  without a bar the file would be rewritten on every push for figures nothing could act on.
 - The push uses the default `GITHUB_TOKEN`. Pushes made with it start no workflow run, so there
   is no loop. `[skip ci]` in the message is a second line of defence for the day someone swaps
   the token.
@@ -81,8 +81,13 @@ is for, which the manual recording never was.
 the timing commit does not start CI, so a new figure reaches the site with the next real push. The
 figure is an estimate a reader is given before running a command, so a push of lag costs nothing.
 
-**Main gets bot commits.** They are small, they name the commit they measured, and the threshold
-keeps them rare. Anyone reading `git log` for content changes will see them.
+**Main gets bot commits, and not rarely.** They are small and they name the commit they measured,
+but the threshold is a weaker filter than it looks. Most pages on this site are quick, and for a
+page below the floor the two-second bar is the only one that applies, since a fifth of a
+second-long page is already met by anything that clears two seconds. One page of the majority
+having a slow container start is enough to earn a commit, and it only takes one. Whether that is
+noise in `git log` is the thing to watch; the alternative is a bar high enough to ignore a page
+that really did double, and the figures are only worth having if they track.
 
 **A push during a replay loses that recording.** The bot's push is then a non-fast-forward and is
 abandoned rather than retried: the next push measures the site again. A job that fought for main

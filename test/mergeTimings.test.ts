@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   MERGE,
+  MOVED_FRACTION,
   MOVED_SECONDS,
   combineParts,
   hasMoved,
@@ -157,5 +158,23 @@ describe("what counts as a page having moved", () => {
 
   it("is symmetric: a page getting quicker is drift too", () => {
     expect(hasMoved(60, 40)).toBe(hasMoved(40, 60));
+  });
+
+  it("holds a light page to the absolute bar and nothing else", () => {
+    // The half of the filter that is not there for most of this site, asserted so that nobody
+    // reasons from the fraction about a page it cannot bind. Below the crossover a fifth of the
+    // page is a fraction of a second, met by anything that cleared two seconds long ago.
+    const light = MOVED_SECONDS / MOVED_FRACTION / 2;
+    expect(light * MOVED_FRACTION).toBeLessThan(MOVED_SECONDS);
+    expect(hasMoved(light, light + MOVED_SECONDS)).toBe(true);
+  });
+
+  it("hands over to the fraction exactly where the two bars agree", () => {
+    // The crossover is derived rather than chosen: at this cost the fraction is two seconds, and
+    // above it the fraction is the higher bar. No third constant, and nothing to keep in step.
+    const crossover = MOVED_SECONDS / MOVED_FRACTION;
+    expect(crossover * MOVED_FRACTION).toBe(MOVED_SECONDS);
+    expect(hasMoved(crossover, crossover + MOVED_SECONDS)).toBe(true);
+    expect(hasMoved(crossover * 2, crossover * 2 + MOVED_SECONDS)).toBe(false);
   });
 });

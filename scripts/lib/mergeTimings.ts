@@ -10,22 +10,31 @@ import { join } from "node:path";
 
 /** How much a page's time has to move before rewriting the file earns its commit.
  *
- *  Both bars, not either. Runner timings jitter, and on a site whose median page is under two
- *  seconds a relative bar alone would fire constantly on pages too small to affect any shard's
- *  load; an absolute bar alone would fire on every heavy page for a rounding error. Together they
- *  come to "a page big enough to matter has moved enough to matter", which is the only drift that
- *  changes how a run is balanced.
+ *  Whichever bar is higher for the page in hand, which is not the same as "both bars" even though
+ *  requiring both is how it is written. Only one of the two is ever the binding one, and which it
+ *  is depends on the page:
  *
- *  A page appearing or disappearing is always material, whatever these say. That is the case the
- *  whole arrangement exists for: a new page is the reason the file goes stale, and it starts out
- *  charged the untimed fallback rather than its real cost. */
+ *  - Two seconds is two seconds of a shard's load wherever the page lands, so the absolute bar is
+ *    the floor everywhere. Below `MOVED_SECONDS / MOVED_FRACTION` seconds it is also the only bar
+ *    there is, because a fifth of a page that size is a fraction of a second and anything that
+ *    cleared two seconds cleared that long ago.
+ *  - Above it the fraction takes over, and stops a couple of seconds on a minute-long page reading
+ *    as drift when it is a slow container start.
+ *
+ *  Worth spelling out because more than half the pages here are under two seconds, so for most of
+ *  this site the fraction is doing nothing and the two-second bar is the whole filter. Reading
+ *  this as two independent tests, both of which a page must survive, overestimates how much gets
+ *  through it. ADR-0023 carries what that means for how often the recorder commits. */
 export const MOVED_FRACTION = 0.2;
 export const MOVED_SECONDS = 2;
 
-/** Whether a page's recorded time has drifted far enough to be worth rewriting the file for. */
+/** Whether a page's recorded time has drifted far enough to be worth rewriting the file for.
+ *
+ *  A page appearing or disappearing is always material, whatever this says. That is the case the
+ *  whole arrangement exists for: a new page is the reason the file goes stale, and it starts out
+ *  charged the untimed fallback rather than its real cost. */
 export function hasMoved(before: number, after: number): boolean {
-  const delta = Math.abs(after - before);
-  return delta >= MOVED_SECONDS && delta >= before * MOVED_FRACTION;
+  return Math.abs(after - before) >= Math.max(MOVED_SECONDS, before * MOVED_FRACTION);
 }
 
 /** What the merge concluded. A closed set rather than a boolean and some fields, so that the
