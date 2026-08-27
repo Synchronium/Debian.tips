@@ -1,0 +1,82 @@
+# ADR-0024: The sandbox image is published, and identified by its contents
+
+- **Status:** Accepted
+- **Recorded:** 2026-08-27
+- **Enforced by:** `scripts/sandbox.sh`, which hashes the build context, checks that hash against
+  a pulled image's label as well as its tag, and builds when either is missing or disagrees;
+  `.github/workflows/publish-sandbox.yml`, which publishes with the tag and label the script
+  expects
+
+## Context
+
+Every page is replayed inside one image (ADR-0020), and that image is the only thing pages share.
+Building it is `apt-get update` plus thirty packages, which measured 41 seconds on a CI runner.
+
+A runner is always cold, so every replay shard paid it: six shards, 41 seconds each, on every push
+to main. That is about 250 runner-seconds per push and 41 seconds on the critical path that
+`deploy.yml` waits for, for an image whose Dockerfile changes a few times a year. `drift.yml` pays
+it weekly too.
+
+Trimming the build is not the lever. `apt-get update` is 4 seconds and `man-db` another 8; the
+rest is the package list, and that list is deliberate. ADR-0020 makes this image the only shared
+thing precisely so that no setup script installs its own tool, where it would depend on a network
+fetch and pay for it before every example.
+
+There was a prerequisite in the way. `sandbox.sh` decided whether its image was stale by comparing
+a label holding **the newest mtime in the build context**. Git does not record mtimes, so a fresh
+clone stamps every file with the moment it was checked out: the label said which working copy a
+file came from and nothing about what was in it. It could never match an image built anywhere
+else, and on CI it had always meant a rebuild, unnoticed because CI built unconditionally.
+
+## Decision
+
+**The image is published to a public registry, tagged with a hash of its build context, and
+consumers pull it when they can and build when they cannot.**
+
+- `sandbox.sh` hashes the build context: file contents and paths relative to the context
+  directory, sorted. The same commit gives the same hash on any machine.
+- `.github/workflows/publish-sandbox.yml` builds and pushes
+  `ghcr.io/synchronium/debian-tips-sandbox:<hash>` when anything under `scripts/sandbox/` changes.
+  It gates nothing and runs beside CI, so no push ever waits on a registry.
+- `sandbox.sh build` pulls that tag if it exists, and builds if it does not.
+- A pulled image is accepted only when its **label** matches too, not just its tag. A tag is a
+  name somebody chose and can be moved or mistyped; the label is what the build recorded about the
+  context it came from.
+- The package is public, so no login is needed to pull it. A fresh devcontainer skips the build as
+  well as a CI runner.
+
+**Falling back to a build is what makes this a shortcut rather than a dependency.** A registry
+outage, a tag nobody published, a mislabelled image, no network: each costs the build that used to
+happen every time anyway. The push that changes the Dockerfile still builds on every shard, as it
+does today, because the publish for that context has not finished. Every push after it pulls.
+
+## Consequences
+
+**A push spends about 250 runner-seconds less, and reaches the site sooner.** The critical path
+loses most of a 41-second step.
+
+**The image the replay uses is now an artifact rather than a build.** That is the real change, and
+the content-addressed tag is what keeps it honest: a pulled image is accepted only for the exact
+Dockerfile the checkout describes, so "your page starts from the image" (ADR-0020) still means the
+image this repository specifies. What is trusted is that GHCR returns what was pushed to it.
+
+**A published image can be wrong in a way a built one cannot.** If a bad image were pushed under a
+correct tag *and* label, every consumer would use it. Nothing but the publish workflow can write
+that tag, and it builds from the same context it hashes, so this needs the workflow itself to be
+wrong rather than the registry.
+
+**`touch scripts/sandbox/Dockerfile` no longer costs a rebuild**, which the mtime label made
+certain. A real edit still does.
+
+**The first publish needs a hand.** A package is created private, and the token a workflow holds
+cannot change that, so the visibility step reports rather than fails and somebody sets it public
+once. Until then every consumer falls back to building, which is the old behaviour.
+
+## Revisit when
+
+Revisit if pulling stops being much faster than building, which would mean either that the image
+has grown a great deal or that the package list has shrunk to almost nothing.
+
+Revisit if anything starts depending on the pull succeeding. The fallback is the whole safety
+argument: the moment a missing image is an error rather than a slower run, a registry becomes
+something the site's verification cannot proceed without.

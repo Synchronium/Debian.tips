@@ -1,0 +1,71 @@
+name: Publish sandbox
+# Publishes the replay sandbox image, so that nothing has to build it.
+#
+# The image is what every page is replayed inside (ADR-0020), and building it takes 41 seconds of
+# `apt-get install` on a cold runner. Every replay shard was paying that, and a runner is always
+# cold, so a push spent it once per shard for an image that changes a few times a year.
+#
+# **Out of band, and gating nothing.** It runs when the build context changes, beside CI rather
+# than before it, so no push ever waits for a registry. The push that changes the Dockerfile
+# builds locally on every shard exactly as it does today; every push after it pulls instead. A
+# publish that fails, or that has not happened yet, costs the build that used to happen anyway,
+# because `scripts/sandbox.sh` falls back to building when there is nothing to pull.
+#
+# Tagged with a hash of the build context rather than `latest`, so a tag names one exact
+# Dockerfile. That is what lets a consumer decide whether a published image is the one its own
+# checkout describes, instead of trusting that whoever pushed last pushed the right thing.
+on:
+  push:
+    branches: [main]
+    paths: [scripts/sandbox/**, .github/workflows/publish-sandbox.yml]
+  # For re-publishing after the package has been deleted, or a tag has been removed, without
+  # having to touch the Dockerfile to trigger it.
+  workflow_dispatch:
+
+# `packages: write` is the whole reason this is its own workflow rather than a step in one that
+# already checks out the repository: nothing that replays pages needs to be able to publish.
+permissions: { contents: read, packages: write }
+concurrency: { group: publish-sandbox, cancel-in-progress: true }
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Work out what this context hashes to
+        id: context
+        # The same hash `scripts/sandbox.sh` computes, asked of the script itself rather than
+        # reimplemented here. Two implementations would agree until one of them was edited, and
+        # the failure then is silent: every consumer would build, having found no tag it
+        # recognised, and the only symptom is the slowness this workflow exists to remove.
+        run: echo "hash=$(scripts/sandbox.sh context-hash)" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      # Built here rather than by `sandbox.sh`, because this needs to push and to label in one
+      # step. The label has to match the tag: `sandbox.sh` checks both before it trusts a pulled
+      # image, so an image published without it is one every consumer will refuse and rebuild.
+      - uses: docker/build-push-action@v7
+        with:
+          context: scripts/sandbox
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/debian-tips-sandbox:${{ steps.context.outputs.hash }}
+          labels: tips.context-hash=${{ steps.context.outputs.hash }}
+      # A published image nobody can pull without a token would leave every consumer falling back
+      # to a build, which is the state this workflow exists to end, and it would do it silently.
+      # The package is public so that a fresh devcontainer skips the build too, not only CI.
+      #
+      # Only the first publish creates the package, and it is private until told otherwise, so
+      # this runs every time and is a no-op once it has taken. `|| true` because the REST call
+      # needs a token with `packages` scope on the *user*, which `github.token` is not: when it
+      # cannot, it says so and the maintainer sets the package public once, by hand.
+      - name: Make sure it can be pulled without a token
+        run: |
+          gh api -X PATCH "user/packages/container/debian-tips-sandbox" \
+            -f visibility=public >/dev/null 2>&1 \
+            && echo "package is public" \
+            || echo "could not set visibility from here; set the package public once in the UI."
+        env:
+          GH_TOKEN: ${{ github.token }}

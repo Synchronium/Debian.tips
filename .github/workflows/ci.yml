@@ -53,11 +53,11 @@ jobs:
     # Worth spending runners to approach that floor, because **deploy waits on this**:
     # `deploy.yml` triggers on this workflow's conclusion, so the slowest shard is time between a
     # push and the site being live rather than a number in a log. Worth stopping once another
-    # runner buys seconds, which is the trade `test/replayShard.test.ts` holds this count to. That
-    # test computes the curve from the recorded timings and fails on either side of the right
-    # answer, printing what the count should be. Nothing here restates its figures: the curve
-    # moves as pages are added, and a measurement written into this comment would go stale between
-    # one page and the next with nothing to catch it.
+    # runner buys seconds, which is the trade `npm run shards` holds this count to. It computes
+    # the curve from the recorded timings and says which count they justify, and
+    # `record-timings.yml` runs it after every recording. Nothing here restates its figures: the
+    # curve moves as pages are added, and a measurement written into this comment would go stale
+    # between one page and the next with nothing to catch it.
     #
     # A runner each is also why this is not the CPU contention that has produced false failures
     # here before (.claude/skills/ship/SKILL.md): that is about two heavy jobs sharing one machine,
@@ -67,8 +67,8 @@ jobs:
     # timings. Deploy keys off the whole workflow's conclusion, so every shard has to pass.
     #
     # The shard list below is the only place the count is written. The expressions read it back as
-    # `strategy.job-total` and the test reads it from this file, so changing the split is editing
-    # one line here and running the tests to hear whether the new number is defensible.
+    # `strategy.job-total` and `npm run shards` reads it from this file, so changing the split is
+    # editing one line here and running that to hear whether the new number is defensible.
     #
     # That one-line property holds only while `shard` is the sole matrix dimension and nothing is
     # added by `include`. `job-total` counts jobs rather than shard values, so a second dimension
@@ -94,11 +94,14 @@ jobs:
           cache: npm
       # Only the yaml parser is needed, but `npm ci` is what the lockfile guarantees.
       - run: npm ci
-      # Built here rather than inside the first `sandbox.sh start` so the log shows image
-      # build time and replay time separately, so if this job ever gets slow, that says
-      # which half to fix. Caching the image (docker buildx + actions/cache) is the next
-      # lever if the build dominates; it isn't worth the failure modes until it does.
-      - name: Build the sandbox image
+      # Fetched here rather than inside the first `sandbox.sh start` so the log shows this and
+      # the replay separately, so if this job ever gets slow, that says which half to fix.
+      #
+      # Usually a pull now. `publish-sandbox.yml` puts the image in a registry whenever the build
+      # context changes, and a runner is always cold, so this step used to spend 41 seconds
+      # installing thirty packages on every shard of every push. It still builds when there is
+      # nothing to pull, which is what keeps a registry from being something CI depends on.
+      - name: Fetch or build the sandbox image
         run: scripts/sandbox.sh build
       # A pull request replays the pages its diff touches, and everything if it touched the
       # harness, where one change can move any page's output. A push to main always replays the

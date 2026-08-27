@@ -13,6 +13,14 @@ IMAGE="debian-tips-sandbox:trixie"
 DOCKERFILE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/sandbox" && pwd)"
 NAME_PREFIX="content-sandbox-"
 
+# Where a prebuilt image is looked for before building one. Published by
+# .github/workflows/publish-sandbox.yml whenever the build context changes, and tagged with the
+# hash of that context, so a tag names one exact Dockerfile rather than a moving "latest".
+#
+# Public, so no login is needed to pull: a fresh devcontainer and a CI runner both skip the build.
+# Set SANDBOX_REGISTRY empty to always build locally.
+SANDBOX_REGISTRY="${SANDBOX_REGISTRY-ghcr.io/synchronium/debian-tips-sandbox}"
+
 # Builds the image when it's missing *or* out of date. Checking only for existence meant a
 # Dockerfile edit never reached an already-built image, and the symptom is misleading:
 # examples replay against a stale toolset and fail as though the page were wrong. Adding
@@ -45,11 +53,34 @@ context_hash() {
 }
 
 ensure_image() {
-  local wanted stamp
+  local wanted stamp pulled
   wanted=$(context_hash)
   if stamp=$(docker image inspect -f "{{index .Config.Labels \"$CONTEXT_LABEL\"}}" "$IMAGE" 2>/dev/null); then
     [[ "$stamp" == "$wanted" ]] && return
     echo "sandbox: $DOCKERFILE_DIR has changed since $IMAGE was built, rebuilding" >&2
+  fi
+  # A published image for this exact context, if there is one. Pulling 500MB beats installing
+  # thirty packages: measured on a CI runner the build is 41 seconds, and it was being paid by
+  # every shard of every run because a runner is always cold.
+  #
+  # **Falling back to a build is what makes this safe rather than a dependency.** A registry
+  # outage, a tag nobody published, no network at all: each of them costs the build that used to
+  # happen anyway. Nothing here can fail because the pull did.
+  #
+  # The tag is the context hash, and the label is checked as well as the tag. A tag is a name
+  # somebody chose and can be moved or mistyped; the label is what the build recorded about the
+  # context it was built from. Requiring both means an image can only be accepted for the
+  # Dockerfile it was actually built from, and a mislabelled one costs a build rather than a run
+  # of the wrong toolset, which is the failure this whole staleness check exists to prevent.
+  if [[ -n "$SANDBOX_REGISTRY" ]] && docker pull -q "$SANDBOX_REGISTRY:$wanted" >/dev/null 2>&1; then
+    pulled=$(docker image inspect -f "{{index .Config.Labels \"$CONTEXT_LABEL\"}}" \
+      "$SANDBOX_REGISTRY:$wanted" 2>/dev/null || true)
+    if [[ "$pulled" == "$wanted" ]]; then
+      docker tag "$SANDBOX_REGISTRY:$wanted" "$IMAGE"
+      echo "sandbox: pulled $SANDBOX_REGISTRY:${wanted:0:12}" >&2
+      return
+    fi
+    echo "sandbox: $SANDBOX_REGISTRY:${wanted:0:12} is not labelled for this context, building" >&2
   fi
   docker build --label "$CONTEXT_LABEL=$wanted" -t "$IMAGE" "$DOCKERFILE_DIR" >&2
 }
@@ -66,6 +97,7 @@ usage() {
   cat >&2 <<EOF
 Usage:
   $0 build                               build the sandbox image if it is missing or stale
+  $0 context-hash                        print the hash this build context tags to
   $0 start [--systemd] [name]            start a disposable sandbox, prints its name
   $0 exec [-u user] <name> <command...>  run a command inside the sandbox (bash -c)
   $0 stop <name>                         stop and remove the sandbox
@@ -82,6 +114,13 @@ case "$cmd" in
   # image with no context label, which reads as stale, and the next `start` rebuilds it anyway.
   build)
     ensure_image
+    ;;
+  # What this checkout's build context hashes to, which is the tag a published image carries.
+  # Exposed so that .github/workflows/publish-sandbox.yml can tag with it rather than working it
+  # out again: a second implementation would agree until one of the two was edited, and then no
+  # consumer would recognise any published tag, silently, with slowness as the only symptom.
+  context-hash)
+    context_hash
     ;;
   start)
     ensure_image

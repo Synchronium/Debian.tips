@@ -91,6 +91,7 @@ command shown. These records keep that claim honest.
 | [0017](0017-every-page-links-to-its-own-sources.md) | Every page links to the files that produced it |
 | [0022](0022-no-snapshot-tests-and-no-pixel-baselines.md) | No snapshot tests and no pixel baselines; the gates assert named properties |
 | [0023](0023-ci-records-the-replay-timings.md) | CI records the replay timings and commits them, from the run it already does |
+| [0024](0024-the-sandbox-image-is-published.md) | The sandbox image is published and identified by its contents, not rebuilt everywhere |
 
 ## Adding one
 
