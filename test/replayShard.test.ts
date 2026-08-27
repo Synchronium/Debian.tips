@@ -9,7 +9,7 @@ import {
   shardCosts,
   shardPages,
 } from "../scripts/lib/replayShard.js";
-import { allPages, hasSetupScript } from "../scripts/lib/replayPages.js";
+import { replayableSlugs } from "../scripts/lib/replayPages.js";
 import { CI_WORKFLOW_FILE } from "../src/paths.js";
 
 /** How many shards the `replay` job runs, read from the workflow rather than repeated here.
@@ -172,7 +172,7 @@ describe("the number of shards CI runs", () => {
    *  where that stops being worth a machine. */
   const WORTH_A_RUNNER = 0.05;
 
-  const pages = allPages().filter(hasSetupScript);
+  const pages = replayableSlugs();
   const costs = shardCosts(pages);
   const cost = (name: string): number => costs[name] ?? UNTIMED_SECONDS;
 

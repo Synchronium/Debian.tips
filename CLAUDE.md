@@ -184,8 +184,11 @@ there are, which is why no other document lists them. Every category except `com
 `content/commands/<slug>/index.md` paired with `examples.yaml`.
 
 Slugs are unique per category rather than site-wide, so `related:` accepts either a bare slug or
-`category/slug`, and says so when a bare one is ambiguous. Two pages sharing a slug may not both
-have a replay setup script, since those are named `scripts/fixtures/<slug>.sh`.
+`category/slug`, and says so when a bare one is ambiguous. Two pages sharing a slug may not have a
+replay setup script at all, not even one of them: those are named `scripts/fixtures/<slug>.sh`, so
+a shared slug with a script attached belongs to a page nothing can identify, and everything stored
+per page would credit it to whichever of the two was found first.
+`test/replayTimings.test.ts` names any such pair, and the replay refuses to start.
 
 ## Where to look
 

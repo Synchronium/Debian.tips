@@ -19,7 +19,7 @@ import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "
 import { join, relative } from "node:path";
 import { REPLAY_TIMINGS_FILE, ROOT } from "../src/paths.js";
 import { readTimings } from "../src/content/replayTimings.js";
-import { allPages, hasSetupScript, pageId } from "./lib/replayPages.js";
+import { pageId, replayableSlugs } from "./lib/replayPages.js";
 
 /** How much a page's time has to move before rewriting the file earns its commit.
  *
@@ -80,7 +80,7 @@ if (overlapping.length) {
   process.exit(1);
 }
 
-const expected = allPages().filter(hasSetupScript).map(pageId).sort();
+const expected = replayableSlugs().map(pageId).sort();
 const missing = expected.filter((page) => merged[page] === undefined);
 if (missing.length) {
   console.error(

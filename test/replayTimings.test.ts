@@ -1,7 +1,7 @@
 import { relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import { readTimings } from "../scripts/lib/replayShard.js";
-import { allPages, hasSetupScript, pageId } from "../scripts/lib/replayPages.js";
+import { ambiguousSlugs, pageId, replayableSlugs } from "../scripts/lib/replayPages.js";
 import { REPLAY_TIMINGS_FILE, ROOT } from "../src/paths.js";
 
 /* `scripts/replay-timings.json` is what balances the CI shards, and it is the one file here that
@@ -29,8 +29,7 @@ const RECORD_COMMAND = "npm run replay -- --record-timings";
 describe("the recorded replay timings", () => {
   it("still describe the site, give or take a few pages", () => {
     const timings = readTimings();
-    const untimed = allPages()
-      .filter(hasSetupScript)
+    const untimed = replayableSlugs()
       .filter((page) => timings[pageId(page)] === undefined)
       .sort();
 
@@ -56,9 +55,22 @@ describe("the recorded replay timings", () => {
     // Comparing whole `category/slug` keys rather than slugs, so an entry naming a real page in
     // the wrong category fails here instead of matching a setup script that belongs to another
     // page and being counted as timed.
-    const recordable = new Set(allPages().filter(hasSetupScript).map(pageId));
+    const recordable = new Set(replayableSlugs().map(pageId));
     const optedOut = Object.keys(readTimings()).filter((page) => !recordable.has(page));
     expect(optedOut).toEqual([]);
+  });
+
+  it("can name every page the replay runs", () => {
+    // Both checks above key by `category/slug`, and a slug two pages share cannot be turned into
+    // one. Slugs are unique per category rather than site-wide, and a setup script is
+    // `scripts/fixtures/<slug>.sh`, so a shared slug with a script attached belongs to a page
+    // nothing can identify: the cost that balances a shard, the time recorded against it and the
+    // estimate the page shows a reader would all be one page's, applied to two.
+    //
+    // Left to itself this surfaces as an "is ambiguous" throw from inside the shard partition,
+    // several steps from the two files that caused it. Here it names them, and the remedy is to
+    // rename one page of the pair or drop the script.
+    expect(ambiguousSlugs()).toEqual([]);
   });
 
   it("is read from a file that exists and parses", () => {

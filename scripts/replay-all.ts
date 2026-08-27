@@ -33,6 +33,7 @@ import { replayProsePage } from "./replay-prose-page.js";
 import { SANDBOX_FLAVOUR, type SandboxFlavour } from "./lib/sandbox.js";
 import { type Shard, ShardError, parseShard, shardCosts, shardPages } from "./lib/replayShard.js";
 import {
+  ambiguousSlugs,
   commandPages as listCommandPages,
   hasSetupScript,
   pageId,
@@ -73,6 +74,19 @@ try {
 if (recordTimings && (shard.total > 1 || onlyChanged || args.some((a) => !a.startsWith("-")))) {
   console.error("replay: --record-timings needs the full run, so it cannot be combined with");
   console.error("  --shard, --changed, or named pages.");
+  process.exit(2);
+}
+
+// Before anything asks which page a slug means. A setup script names a slug and no category, so a
+// slug two pages share cannot be attributed to either, and every page's cost, timing and estimate
+// is stored per page. Refusing here beats a stack trace out of the shard partition, which is where
+// this surfaces otherwise, several steps from the two files that caused it.
+const ambiguous = ambiguousSlugs();
+if (ambiguous.length) {
+  console.error("replay: a setup script names a slug and no category, so these have one each and");
+  console.error("  name two pages, and nothing can say which page the script belongs to:");
+  console.error(`    ${ambiguous.join(", ")}`);
+  console.error("  Rename one page of each pair, or drop the script.");
   process.exit(2);
 }
 

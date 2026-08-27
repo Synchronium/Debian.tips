@@ -46,11 +46,15 @@ export function allPages(): string[] {
  *  data can be read side by side. `scripts/replay-timings.json` and
  *  `test/verification-baseline.json` disagreed about it for as long as both existed.
  *
- *  Throws on a slug two categories share. Slugs are unique per category, not site-wide, so a bare
- *  one does not always name a page. Among pages that opt into the replay it always does: their
- *  setup scripts are `scripts/fixtures/<slug>.sh`, and two pages cannot own one file. Every real
- *  caller is therefore safe and this throw unreachable. It is here for the day the fixture naming
- *  changes, when the alternative is timing the wrong page and never hearing about it. */
+ *  Throws on a slug two categories share, rather than guessing, because the wrong guess is a page
+ *  charged another page's cost and shown another page's estimate, with nothing to say so. Slugs
+ *  are unique per category, not site-wide, so a bare one does not always name a page.
+ *
+ *  Callers pass slugs that a setup script opted in, and it is tempting to argue that those are
+ *  always unambiguous: the script is `scripts/fixtures/<slug>.sh`, and two pages cannot own one
+ *  file. They cannot, but `hasSetupScript` answers from the filename alone, so when one of two
+ *  same-slug pages has a script it says yes to both. `replayableSlugs` is the list that has
+ *  already dealt with that, and is what a caller wants. */
 export function pageId(page: string): string {
   const found = categoriesOf(page);
   if (found.length === 0) throw new Error(`no page called ${page}`);
@@ -77,4 +81,29 @@ function categoriesOf(page: string): Category[] {
  *  timings check, over what could have been recorded. */
 export function hasSetupScript(page: string): boolean {
   return existsSync(fixtureScript(page));
+}
+
+/** Every slug a full run replays, each naming exactly one page.
+ *
+ *  What the callers of `hasSetupScript` all wanted, and none of them could ask for. A slug shared
+ *  by two pages is legal (`src/content/schema.ts` scopes slugs to a category), and a setup script
+ *  carries a slug and no category, so a shared slug with a script attached is a page set nothing
+ *  can key by page. `ambiguousSlugs` is that state, reported rather than guessed at.
+ *
+ *  Also the place duplicates are removed. A shared slug reaches `allPages` twice, and a run over
+ *  that list would put the same page in a container twice under one name. */
+export function replayableSlugs(): string[] {
+  const ambiguous = new Set(ambiguousSlugs());
+  return [...new Set(allPages())].filter((page) => hasSetupScript(page) && !ambiguous.has(page));
+}
+
+/** Replayable slugs that name more than one page, which is a defect rather than a configuration.
+ *
+ *  Empty in a healthy repository, and `test/replayTimings.test.ts` holds it that way. Separate
+ *  from `replayableSlugs` so that the run and the test can say *which* slugs and what to do about
+ *  them, instead of a page quietly dropping out of the replay. */
+export function ambiguousSlugs(): string[] {
+  return [...new Set(allPages())]
+    .filter((page) => hasSetupScript(page) && categoriesOf(page).length > 1)
+    .sort();
 }
