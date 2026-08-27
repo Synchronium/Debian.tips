@@ -18,24 +18,40 @@ NAME_PREFIX="content-sandbox-"
 # examples replay against a stale toolset and fail as though the page were wrong. Adding
 # `patch` to the image once surfaced days later as the diff page dropping to 16/17.
 #
-# The staleness test is a label holding the newest mtime in the build context, rather than the
-# image's own creation time. Those are not the same thing: a rebuild that hits the layer cache
-# keeps the *cached* layer's creation time, so an image compared that way stays permanently older
-# than the context that just rebuilt it, and every call rebuilds. That went unnoticed while the
-# replay started one container per run and shouted once. Starting one per page made it 56 rebuild
+# The staleness test is a label holding a hash of the build context, rather than the image's own
+# creation time. Those are not the same thing: a rebuild that hits the layer cache keeps the
+# *cached* layer's creation time, so an image compared that way stays permanently older than the
+# context that just rebuilt it, and every call rebuilds. That went unnoticed while the replay
+# started one container per run and shouted once. Starting one per page made it 56 rebuild
 # attempts and 56 lines of log, which is how it was found.
 #
+# **A hash of the contents, not of when they were last touched.** Git does not record mtimes, so a
+# fresh clone stamps every file with the moment it was checked out: an mtime says which working
+# copy a file came from and nothing about what is in it. Two machines with the same commit agree
+# on this hash and disagree on every mtime, which is what lets an image built on one of them be
+# recognised on the other. It also stops `touch Dockerfile` costing a rebuild.
+#
 # Anything in the build context counts, not just the Dockerfile, so whatever gets added alongside
-# it later is covered without editing this.
-CONTEXT_LABEL="tips.context-mtime"
+# it later is covered without editing this. Sorted before hashing, because `find` returns
+# directory order and two machines do not share one.
+#
+# Hashed from inside the directory, so the paths that go into it are `./Dockerfile` rather than
+# `/home/runner/work/...`. `sha256sum` prints the path beside the digest, and an absolute one
+# would put the checkout location into the hash: the same commit would then have a different hash
+# on a runner and on a laptop, which is the mtime problem again wearing a hash.
+CONTEXT_LABEL="tips.context-hash"
+context_hash() {
+  (cd "$DOCKERFILE_DIR" && find . -type f -exec sha256sum {} + | sort -k2 | sha256sum | cut -d' ' -f1)
+}
+
 ensure_image() {
-  local newest stamp
-  newest=$(find "$DOCKERFILE_DIR" -type f -printf '%T@\n' 2>/dev/null | sort -rn | head -1)
+  local wanted stamp
+  wanted=$(context_hash)
   if stamp=$(docker image inspect -f "{{index .Config.Labels \"$CONTEXT_LABEL\"}}" "$IMAGE" 2>/dev/null); then
-    [[ -n "$newest" && "$stamp" == "$newest" ]] && return
-    echo "sandbox: $DOCKERFILE_DIR is newer than $IMAGE, rebuilding" >&2
+    [[ "$stamp" == "$wanted" ]] && return
+    echo "sandbox: $DOCKERFILE_DIR has changed since $IMAGE was built, rebuilding" >&2
   fi
-  docker build --label "$CONTEXT_LABEL=$newest" -t "$IMAGE" "$DOCKERFILE_DIR" >&2
+  docker build --label "$CONTEXT_LABEL=$wanted" -t "$IMAGE" "$DOCKERFILE_DIR" >&2
 }
 
 require_sandbox_name() {
