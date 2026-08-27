@@ -272,6 +272,20 @@
     "fixtures": 0,
     "unpaired": 0
   },
+  "concepts/processes-and-signals": {
+    "checked": 10,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
+  "concepts/terminal-shell-and-tty": {
+    "checked": 9,
+    "byShape": 1,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
   "debian/apt-essentials": {
     "checked": 4,
     "byShape": 2,

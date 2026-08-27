@@ -11,6 +11,8 @@ related: [systemctl, journalctl, kill-whatever-is-using-a-port, xargs]
 
 `ps` prints the process table as it stood at the moment the command ran. Nothing about it
 updates, and a process that started and exited a second earlier leaves no trace in it.
+[Processes and signals](/concepts/processes-and-signals/) explains what those entries are,
+including the letters in the `STAT` column.
 
 ## Three option syntaxes
 

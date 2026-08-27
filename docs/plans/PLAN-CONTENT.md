@@ -321,8 +321,23 @@ Verification, rather than the writing, is the constraint here. See §11.3.
   didn't take, why cron doesn't have your `PATH`. Its replay found the harness rule now recorded
   in the page skill: the sandbox workdir sits inside `$HOME`, so `~/.profile` adds `~/bin` to
   `PATH` whenever that directory exists and the setup script has to remove it.
-- **P1 Terminal, shell, tty, console and session**: the +1638 question. Pulls in Ctrl-C vs
-  Ctrl-Z vs Ctrl-D, why Ctrl-S freezes your terminal (+974), and what `$TERM` is for.
+- **SHIPPED 2026-08-27 as `concepts/terminal-shell-and-tty`**: +1638 and +974. Ctrl-C and Ctrl-Z
+  went to the processes page a day earlier, so this one keeps the tty itself and takes the two
+  keystrokes that send no signal: Ctrl-D as end of input, and Ctrl-S as flow control.
+
+  **The harness has no terminal, which turned out to be the page's best asset rather than its
+  blocker.** `script -qec '<command>' /dev/null` allocates a pseudo-terminal and runs a command
+  under it, so a block can have one or not, deliberately, and the page shows the same command
+  giving two answers either side of that line. Nine blocks, eight exact. The two limits are in
+  the fixture's comment: the pty is always `/dev/pts/0` because examples run one at a time, and
+  `stty size` reads `0 0` because nothing sets a window size on it, which rules out any block
+  whose output depends on terminal width.
+- **SHIPPED 2026-08-27 as `concepts/processes-and-signals`**, to the scope recorded below. One
+  trap the plan did not anticipate, now in the fixture's comment: **a background process in an
+  example inherits the harness's stdout and holds the whole batch open until it exits.** An
+  orphaned `sleep 300` still attached to the pipe took the replay from nine seconds to five
+  minutes, and reported 10/10 throughout, because every claim on the page was true. Anything an
+  example deliberately leaves running has to redirect first. Original entry, for the record:
 - **P1 Processes, signals and job control**: PIDs, parent/child, orphans reparenting to PID 1,
   zombies, the signal table, catchable against uncatchable, the 128+N exit convention, and why
   `-9` destroys rather than stops. Then the half that ties it together: **a signal is delivered
@@ -921,7 +936,7 @@ with `apt-file` and both remaining §6.2 articles.
 |---|---|---|
 | 1. Namesake gap | **done** | Nothing. `apt-file` and both §6.2 articles shipped 2026-08-26 |
 | 2. Scripting 7–14 | **untouched** | All eight lessons |
-| 3. Concepts | **1 of 3** | terminal/shell/tty, processes-and-signals |
+| 3. Concepts | **done** | Nothing. The three P1 concept pages shipped 2026-08-23 and 2026-08-27 |
 | 4. Perl track | **blocked** | The §10.4 `order:` change first, then 9 pages |
 | 5. Processes and everyday files | **3 of 7** | `kill`, job control, `cp`/`mv`, `rm` |
 | 6. Comparisons | **4 of ~19** | Everything not listed in §10.1 as written |
@@ -939,12 +954,20 @@ top-100 bash questions, near-zero verification cost, and it removes the "course 
 halfway" problem. On the evidence in §3.1 this outranks everything except finishing Wave 1, and
 it has been passed over for a week in favour of command pages, which §3.1 explicitly rates lower.
 
-**Wave 3: the environment and terminal concepts (§5).** The `PATH`/startup-files page shipped
-2026-08-23. The terminal/shell/tty page and processes-and-signals remain, and
-processes-and-signals is next: §5 records the scope decision it was waiting on, and writing it
-unblocks three Wave 5 pages rather than one. Taking those command pages first would repeat the
-situation `kill-whatever-is-using-a-port` was in, referencing commands and concepts with nothing
-to link to, and would additionally leave each of them re-explaining signals in its own words.
+**Wave 3: the environment and terminal concepts (§5). Finished 2026-08-27.** The
+`PATH`/startup-files page shipped on 2026-08-23, processes-and-signals and terminal/shell/tty on
+2026-08-27. Between them they answer +1638, +974 and +813, which was the largest block of
+unclaimed demand this plan had.
+
+The three cross-reference each other rather than overlapping. §5's scope note records how the
+boundaries were drawn, which happened before any of them was written. Anything added to §5 from
+here should say which of the three it sits next to.
+
+Wave 5's `kill` and job-control pages now have a concept page to build on. Written the other way
+round, each would have re-explained signals in its own words and referenced ideas with nothing to
+link to, which is the position `kill-whatever-is-using-a-port` had been in. That recipe also
+carried a factual error until this page caught it: it told the reader to escalate to `kill -9`
+when a process is stuck in uninterruptible sleep, the one case where `-9` cannot help.
 
 **Wave 4: the Perl track (§8).** Still blocked on the §10.4 `order:` generalisation, which
 has not been made. Everything else about the wave stands.

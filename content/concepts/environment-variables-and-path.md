@@ -161,7 +161,9 @@ bash -lc 'echo $PATH'
 ```
 
 That is a **login** shell, built from `/etc/profile` and `~/.profile`. The non-login interactive
-shell above had a different list, inherited from whatever started it. On Debian:
+shell above had a different list, inherited from whatever started it. Interactive is a third
+question again, answered by
+[whether the shell has a terminal](/concepts/terminal-shell-and-tty/). On Debian:
 
 - `/etc/environment` is read by PAM for every login session. It is a plain list of
   `NAME=value` lines, not a script, so `PATH="$PATH:/opt/bin"` does not work there.

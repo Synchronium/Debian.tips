@@ -50,20 +50,21 @@ jobs:
     # Seven shards, each on its own runner. There is a floor no count can beat, because a page is
     # never split across shards: the slowest shard can never be quicker than the slowest page.
     #
-    # Measured 2026-08-26, over 433 seconds of serial replay with `apt` the slowest page at 60:
+    # Measured 2026-08-27, over 460 seconds of serial replay with `apt` the slowest page at 67:
     #
     #   shards   5    6    7    8
-    #   slowest  87   72   62   60
+    #   slowest  92   77   67   67
     #
     # Seven is where that flattens. The sixth and seventh runners buy 15 and 10 seconds; the
-    # eighth buys two, which is not worth a machine. Buying the first ten is, because **deploy
+    # eighth buys nothing, because seven already sits on the floor. Buying the first ten is
+    # still worth a machine, because **deploy
     # waits on this**: `deploy.yml` triggers on this workflow's conclusion, so the slowest shard
     # is time between a push and the site being live rather than a number in a log.
     #
     # Re-measure before changing the count, because the curve moves as pages are added, and it is
-    # measured here rather than in prose that would go stale beside it. Once seven sits on the
-    # floor the lever is the `apt` page's setup script instead, which ADR-0020's "Revisit when"
-    # holds.
+    # measured here rather than in prose that would go stale beside it. Now that seven sits on
+    # the floor, the lever is the `apt` page's setup script instead, which ADR-0020's
+    # "Revisit when" holds.
     #
     # Each shard is its own runner, so this is not the CPU contention that has produced false
     # failures here before (.claude/skills/ship/SKILL.md): that is about two heavy jobs sharing

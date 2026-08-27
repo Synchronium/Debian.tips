@@ -22,6 +22,8 @@ switches to one name per line and drops the colour.
 That is why `ls | wc -l` counts entries correctly while the same listing on screen shows four
 across a line. Both are `ls` doing what it was asked. `-1` forces one per line and `-C` forces
 columns, so a script that cares should say which it wants rather than inherit the default.
+[Terminal, shell and tty](/concepts/terminal-shell-and-tty/) covers the check itself, and what
+else changes with it.
 
 **Every example on this page was captured through a pipe**, so the listings below are the
 one-per-line form. At a terminal, the short ones will appear in columns.

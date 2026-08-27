@@ -27,7 +27,9 @@ python3  87 root 3u  IPv4 1792818      0t0  TCP *:9000 (LISTEN)
 - `-i :9000` filters `lsof`'s (list open files) output to sockets on port 9000, on any address.
 - The `PID` column is what you need next: `kill 87` stops that specific process. Try a plain
   `kill` first (sends `SIGTERM`, letting the process shut down cleanly) before escalating to
-  `kill -9` (`SIGKILL`, immediate and unconditional).
+  `kill -9` (`SIGKILL`, immediate and unconditional). `SIGTERM` gives the process a chance to
+  release a lock or finish a write; `SIGKILL` does not, and
+  [processes and signals](/concepts/processes-and-signals/) shows what that costs.
 - `lsof` is not installed by default on Debian (`sudo apt install lsof`), which is the reason
   the `ss` variation below is worth knowing.
 
@@ -65,6 +67,8 @@ line, working directory, or owner) before deciding whether killing it is the rig
 
 All three commands default to TCP. A port bound over UDP (common for DNS resolvers or some
 monitoring agents) needs `-i udp:9000` for `lsof`, `sport = :9000` with `-u` instead of `-t` for
-`ss`, or `9000/udp` for `fuser`. If `kill` doesn't work and the process lingers, it's usually
-stuck in an uninterruptible wait (disk I/O, most often), and `kill -9` (`SIGKILL`) is the next
-step, bypassing the process's own shutdown handling entirely.
+`ss`, or `9000/udp` for `fuser`. If `kill` doesn't work and the process lingers, `kill -9`
+(`SIGKILL`) is the next step, bypassing the process's own shutdown handling entirely. If `-9`
+doesn't work either, the process is in an uninterruptible wait on disk or network I/O. Nothing
+will move it until that wait ends.
+[Processes and signals](/concepts/processes-and-signals/) covers how to tell the two cases apart.
