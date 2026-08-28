@@ -9,29 +9,34 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { UNTIMED_SECONDS } from "./replayShard.js";
 
-/** How much a page's time has to move before rewriting the file earns its commit.
+/** The bar a page's time has to clear before rewriting the file earns its commit.
  *
- *  Whichever bar is higher for the page in hand, which is not the same as "both bars" even though
- *  requiring both is how it is written. Only one of the two is ever binding, and which it is
- *  depends on the page: below `MOVED_SECONDS / MOVED_FRACTION` seconds the absolute bar is the
- *  only one there is, and above it the fraction takes over.
+ *  Three regimes, because the pages here differ in cost by a factor of fifty and no single measure
+ *  suits them all. A multiple of the page while the page is small. A flat tolerance through the
+ *  middle, where most of the site sits. A fraction again at the top, among the few pages heavy
+ *  enough to decide the shard count.
  *
- *  **The absolute bar is what the balancer already tolerates not knowing.** `UNTIMED_SECONDS` is
- *  what a page with no recorded time is charged, so a page that moved less than that has moved
- *  inside the error the partition is built to absorb. Recording it buys nothing and costs a
- *  commit. Deriving the number rather than choosing one also means the two move together: raise
- *  what the balancer tolerates and this follows.
+ *  **`MOVED_SECONDS` is the flat middle**, and it is `UNTIMED_SECONDS`: the cost the balancer
+ *  charges a page it knows nothing about. Drift smaller than that sits inside an error the
+ *  partition already absorbs. Recording it buys nothing and costs a commit. The two constants are
+ *  tied, not merely equal: raise what the balancer tolerates and this rises with it.
  *
- *  **The fraction is what protects the heavy pages.** Most of this site replays in seconds, so
- *  the absolute bar governs almost every page and the fraction reaches only the few that decide
- *  the shard count. Those are also the ones that vary most in absolute terms, on the order of
- *  tens of seconds between runs of identical content, so the bar that judges them has to be
- *  proportional. It is kept well under the swing that has actually moved the shard count, since a
- *  fraction set above that would filter out the one change most worth having.
+ *  **`MOVED_FRACTION` governs the heavy pages.** Those wait on a network, and vary by tens of
+ *  seconds between runs of identical content, where a flat bar would report noise as news. It
+ *  stays well under the swing that has actually moved the shard count. Above that it would filter
+ *  out the one measurement most worth keeping.
  *
- *  ADR-0023 carries what these mean for how often the recorder commits. */
+ *  **`MOVED_MULTIPLE` governs the quickest**, and removes a dead end. A page costing most of a
+ *  minute is noticed after moving a fifth; a page costing a second would have to grow tenfold to
+ *  reach the flat bar, and nothing justifies that difference. These pages wait on a container
+ *  starting instead of on a network, so they move with how loaded the runner is. Growing by half
+ *  again as much as itself and shrinking back on the next run is ordinary here. Quadrupling is
+ *  not.
+ *
+ *  ADR-0023 carries what the three mean for how often the recorder commits. */
 export const MOVED_FRACTION = 0.2;
 export const MOVED_SECONDS = UNTIMED_SECONDS;
+export const MOVED_MULTIPLE = 3;
 
 /** Whether a page's recorded time has drifted far enough to be worth rewriting the file for.
  *
@@ -39,7 +44,8 @@ export const MOVED_SECONDS = UNTIMED_SECONDS;
  *  whole arrangement exists for: a new page is the reason the file goes stale, and it starts out
  *  charged the untimed fallback rather than its real cost. */
 export function hasMoved(before: number, after: number): boolean {
-  return Math.abs(after - before) >= Math.max(MOVED_SECONDS, before * MOVED_FRACTION);
+  const bar = Math.min(Math.max(MOVED_SECONDS, before * MOVED_FRACTION), before * MOVED_MULTIPLE);
+  return Math.abs(after - before) >= bar;
 }
 
 /** What the merge concluded. A closed set rather than a boolean and some fields, so that the
@@ -90,12 +96,11 @@ export function partFiles(dir: string): string[] {
 
 /** Combines the parts, and says which pages arrived in more than one.
  *
- *  A part that will not parse, or that holds something other than an object, is skipped rather
- *  than thrown on. Every page it should have carried then reports as a hole, which is the outcome
- *  that stops the write and names what is missing; a throw here would have been a stack trace
- *  naming a file in a temporary directory instead. Non-numeric and negative entries are dropped
- *  for the reason `readTimings` drops them: a negative cost pulls a shard's load down and collects
- *  pages there. */
+ *  A part that will not parse, or that holds something other than an object, is skipped instead of
+ *  thrown on. Every page it should have carried then reports as a hole. That stops the write and
+ *  names what is missing, where a throw would have given a stack trace naming a file in a
+ *  temporary directory. Non-numeric and negative entries go the way `readTimings` sends them: a
+ *  negative cost pulls a shard's load down and collects pages there. */
 export function combineParts(files: string[]): { merged: Record<string, number>; overlapping: string[] } {
   const merged: Record<string, number> = {};
   const overlapping: string[] = [];

@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   MERGE,
   MOVED_FRACTION,
+  MOVED_MULTIPLE,
   MOVED_SECONDS,
   combineParts,
   hasMoved,
@@ -157,8 +158,21 @@ describe("deciding whether to write the timings", () => {
 });
 
 describe("what counts as a page having moved", () => {
-  it("ignores anything under the absolute bar, however large a share of the page it is", () => {
-    expect(hasMoved(0.5, 0.5 + MOVED_SECONDS / 2)).toBe(false);
+  it("judges the quickest pages by a multiple of themselves", () => {
+    // Below `MOVED_SECONDS / MOVED_MULTIPLE` the absolute bar is out of reach: a page costing half
+    // a second would have to grow twentyfold to meet it, while a page costing a minute is noticed
+    // after a fifth. The multiple is what removes that, and it is the binding bar only down here.
+    const tiny = MOVED_SECONDS / MOVED_MULTIPLE / 2;
+    expect(hasMoved(tiny, tiny * (MOVED_MULTIPLE + 1))).toBe(true);
+    expect(hasMoved(tiny, tiny * MOVED_MULTIPLE)).toBe(false);
+  });
+
+  it("leaves a quick page alone for the drift a loaded runner explains", () => {
+    // These pages wait on a container starting rather than on a network, so they move with how
+    // busy the runner is: growing by half again as much as itself and shrinking back on the next
+    // run is ordinary. The multiple sits clear of that, so ordinary is not recorded.
+    expect(hasMoved(1.2, 3.1)).toBe(false);
+    expect(hasMoved(0.9, 2.3)).toBe(false);
   });
 
   it("catches a heavy page that really has changed", () => {

@@ -103,21 +103,25 @@ is for, which the manual recording never was.
 the timing commit does not start CI, so a new figure reaches the site with the next real push. The
 figure is an estimate a reader is given before running a command, so a push of lag costs nothing.
 
-**Main gets bot commits, and how often depends on two numbers.** They are small and they name the
-commit they measured. The threshold that decides is `max(MOVED_SECONDS, before * MOVED_FRACTION)`,
-and the two halves govern different pages: almost everything here replays in seconds and is judged
-by the absolute bar alone, while only the few pages heavy enough to decide the shard count ever
-reach the fraction.
+**Main gets bot commits, and how often depends on three numbers.** They are small and they name
+the commit they measured. The bar a page has to clear is one of three, by how much the page costs:
+a multiple of itself while it is small, a flat tolerance through the middle where most of the site
+sits, and a fraction again among the few pages heavy enough to decide the shard count. The pages
+differ in cost by a factor of fifty, and no single measure suits them all.
 
-Both bounds are argued rather than tuned. The absolute bar is `UNTIMED_SECONDS`, what the balancer
-already charges a page whose cost it does not know, so drift smaller than that is inside the error
-the partition absorbs by design. The fraction is held below the swing that has actually moved the
+All three are argued rather than tuned. The flat one is `UNTIMED_SECONDS`, what the balancer
+already charges a page whose cost it does not know, so drift below it is inside the error the
+partition absorbs by design. The fraction is held under the swing that has actually moved the
 shard count, since raising it past that would filter out the one measurement most worth having.
+The multiple sits clear of what a loaded runner does to a page that waits on a container starting
+rather than on a network, which is a good deal more, proportionally, than anything the other two
+see.
 
-Measured over the recordings this has produced, that writes on roughly one push in five. The
-narrower pair it replaced wrote on every one, which is what prompted the change: those pages vary
-by tens of seconds between runs of identical content, so a bar set for a quiet site reported noise
-as news.
+Measured over the recordings this has produced, that writes on roughly one push in five, and the
+one write is the heaviest page making the move that changed the shard count. The narrower bar it
+replaced wrote on every push, which is what prompted the change: the pages that matter vary by
+tens of seconds between runs of identical content, so a bar set for a quiet site reported noise as
+news.
 
 **A push during a replay loses that recording.** The bot's push is then a non-fast-forward and is
 abandoned rather than retried: the next push measures the site again. A job that fought for main
