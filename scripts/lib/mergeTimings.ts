@@ -7,26 +7,31 @@
 // wait.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { UNTIMED_SECONDS } from "./replayShard.js";
 
 /** How much a page's time has to move before rewriting the file earns its commit.
  *
  *  Whichever bar is higher for the page in hand, which is not the same as "both bars" even though
- *  requiring both is how it is written. Only one of the two is ever the binding one, and which it
- *  is depends on the page:
+ *  requiring both is how it is written. Only one of the two is ever binding, and which it is
+ *  depends on the page: below `MOVED_SECONDS / MOVED_FRACTION` seconds the absolute bar is the
+ *  only one there is, and above it the fraction takes over.
  *
- *  - Two seconds is two seconds of a shard's load wherever the page lands, so the absolute bar is
- *    the floor everywhere. Below `MOVED_SECONDS / MOVED_FRACTION` seconds it is also the only bar
- *    there is, because a fifth of a page that size is a fraction of a second and anything that
- *    cleared two seconds cleared that long ago.
- *  - Above it the fraction takes over, and stops a couple of seconds on a minute-long page reading
- *    as drift when it is a slow container start.
+ *  **The absolute bar is what the balancer already tolerates not knowing.** `UNTIMED_SECONDS` is
+ *  what a page with no recorded time is charged, so a page that moved less than that has moved
+ *  inside the error the partition is built to absorb. Recording it buys nothing and costs a
+ *  commit. Deriving the number rather than choosing one also means the two move together: raise
+ *  what the balancer tolerates and this follows.
  *
- *  Worth spelling out because more than half the pages here are under two seconds, so for most of
- *  this site the fraction is doing nothing and the two-second bar is the whole filter. Reading
- *  this as two independent tests, both of which a page must survive, overestimates how much gets
- *  through it. ADR-0023 carries what that means for how often the recorder commits. */
+ *  **The fraction is what protects the heavy pages.** Most of this site replays in seconds, so
+ *  the absolute bar governs almost every page and the fraction reaches only the few that decide
+ *  the shard count. Those are also the ones that vary most in absolute terms, on the order of
+ *  tens of seconds between runs of identical content, so the bar that judges them has to be
+ *  proportional. It is kept well under the swing that has actually moved the shard count, since a
+ *  fraction set above that would filter out the one change most worth having.
+ *
+ *  ADR-0023 carries what these mean for how often the recorder commits. */
 export const MOVED_FRACTION = 0.2;
-export const MOVED_SECONDS = 2;
+export const MOVED_SECONDS = UNTIMED_SECONDS;
 
 /** Whether a page's recorded time has drifted far enough to be worth rewriting the file for.
  *

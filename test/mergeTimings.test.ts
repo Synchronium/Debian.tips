@@ -11,6 +11,7 @@ import {
   mergeTimings,
   partFiles,
 } from "../scripts/lib/mergeTimings.js";
+import { UNTIMED_SECONDS } from "../scripts/lib/replayShard.js";
 
 /* `.github/workflows/record-timings.yml` writes `scripts/replay-timings.json` from artifacts, on
  * main, with a token that can push. That is the one script here whose only home is a workflow, so
@@ -175,15 +176,33 @@ describe("what counts as a page having moved", () => {
   it("holds a light page to the absolute bar and nothing else", () => {
     // The half of the filter that is not there for most of this site, asserted so that nobody
     // reasons from the fraction about a page it cannot bind. Below the crossover a fifth of the
-    // page is a fraction of a second, met by anything that cleared two seconds long ago.
+    // page is a fraction of a second, met long before anything clears the absolute bar.
     const light = MOVED_SECONDS / MOVED_FRACTION / 2;
     expect(light * MOVED_FRACTION).toBeLessThan(MOVED_SECONDS);
     expect(hasMoved(light, light + MOVED_SECONDS)).toBe(true);
   });
 
+  it("ignores drift the balancer already tolerates not knowing", () => {
+    // The absolute bar is `UNTIMED_SECONDS`, which is what a page with no recorded time at all is
+    // charged. A page that moved less than that has moved inside the error the partition absorbs
+    // by design, so recording it would buy nothing and cost a commit. Tied rather than copied, so
+    // raising what the balancer tolerates raises this with it.
+    expect(MOVED_SECONDS).toBe(UNTIMED_SECONDS);
+    expect(hasMoved(4, 4 + UNTIMED_SECONDS - 0.1)).toBe(false);
+  });
+
+  it("still records the size of swing that has moved the shard count", () => {
+    // The safety bound on the fraction, and the reason it is not raised to quieten the recorder.
+    // The heaviest page has changed by a third between runs, and that change is what took the
+    // justified shard count from one number to another. A fraction above that would filter out
+    // the one measurement most worth having.
+    const heavy = 76;
+    expect(hasMoved(heavy, heavy * (1 - 1 / 3))).toBe(true);
+  });
+
   it("hands over to the fraction exactly where the two bars agree", () => {
-    // The crossover is derived rather than chosen: at this cost the fraction is two seconds, and
-    // above it the fraction is the higher bar. No third constant, and nothing to keep in step.
+    // The crossover is derived rather than chosen: at this cost the two bars are equal, and above
+    // it the fraction is the higher one. No third constant, and nothing to keep in step.
     const crossover = MOVED_SECONDS / MOVED_FRACTION;
     expect(crossover * MOVED_FRACTION).toBe(MOVED_SECONDS);
     expect(hasMoved(crossover, crossover + MOVED_SECONDS)).toBe(true);

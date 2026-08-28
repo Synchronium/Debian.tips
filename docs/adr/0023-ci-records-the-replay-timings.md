@@ -11,7 +11,7 @@
 ## Context
 
 `scripts/replay-timings.json` records how long each page took on the last full replay. Two things
-read it: the shard partition, which uses it to balance seven CI runners, and the build, which uses
+read it: the shard partition, which uses it to balance the CI runners, and the build, which uses
 it to tell a reader roughly how long re-running a page will take.
 
 It was written by `npm run replay -- --record-timings`, a full serial replay on a maintainer's
@@ -54,9 +54,11 @@ the recording had to stay manual to keep a human beside it.
   it, and a failure is a red mark on a workflow that gates nothing.
 - `scripts/merge-timings.ts` refuses to write unless the parts cover every page that opts into the
   replay, which is the completeness rule `--record-timings` already enforced for a serial run.
-- It writes only on a material change: a page added or removed, or a page that moved by two
-  seconds, and by a fifth of itself if it is one of the heavy ones. Runner times jitter, and
-  without a bar the file would be rewritten on every push for figures nothing could act on.
+- It writes only on a material change: a page added or removed, or a page whose time moved by
+  more than the balancer already tolerates not knowing, and by a fifth of itself if it is heavy
+  enough for that to be the higher bar. Runner times vary by tens of seconds on the heaviest pages
+  between runs of identical content, so without a bar the file is rewritten on every push for
+  figures nothing could act on.
 - The push uses the default `GITHUB_TOKEN`. Pushes made with it start no workflow run, so there
   is no loop. `[skip ci]` in the message is a second line of defence for the day someone swaps
   the token.
@@ -101,13 +103,21 @@ is for, which the manual recording never was.
 the timing commit does not start CI, so a new figure reaches the site with the next real push. The
 figure is an estimate a reader is given before running a command, so a push of lag costs nothing.
 
-**Main gets bot commits, and not rarely.** They are small and they name the commit they measured,
-but the threshold is a weaker filter than it looks. Most pages on this site are quick, and for a
-page below the floor the two-second bar is the only one that applies, since a fifth of a
-second-long page is already met by anything that clears two seconds. One page of the majority
-having a slow container start is enough to earn a commit, and it only takes one. Whether that is
-noise in `git log` is the thing to watch; the alternative is a bar high enough to ignore a page
-that really did double, and the figures are only worth having if they track.
+**Main gets bot commits, and how often depends on two numbers.** They are small and they name the
+commit they measured. The threshold that decides is `max(MOVED_SECONDS, before * MOVED_FRACTION)`,
+and the two halves govern different pages: almost everything here replays in seconds and is judged
+by the absolute bar alone, while only the few pages heavy enough to decide the shard count ever
+reach the fraction.
+
+Both bounds are argued rather than tuned. The absolute bar is `UNTIMED_SECONDS`, what the balancer
+already charges a page whose cost it does not know, so drift smaller than that is inside the error
+the partition absorbs by design. The fraction is held below the swing that has actually moved the
+shard count, since raising it past that would filter out the one measurement most worth having.
+
+Measured over the recordings this has produced, that writes on roughly one push in five. The
+narrower pair it replaced wrote on every one, which is what prompted the change: those pages vary
+by tens of seconds between runs of identical content, so a bar set for a quiet site reported noise
+as news.
 
 **A push during a replay loses that recording.** The bot's push is then a non-fast-forward and is
 abandoned rather than retried: the next push measures the site again. A job that fought for main
