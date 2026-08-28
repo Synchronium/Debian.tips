@@ -12,6 +12,11 @@ Inventory refreshed 2026-08-24. §2, §11.5, §12 and §13 were a week out of da
 counted from the tree rather than remembered; the backlogs in §4 to §9 gained shipped markers.
 Nothing in §3 was re-sampled, so the vote counts throughout are still the 2026-08-18 figures.
 
+Refreshed again 2026-08-28, after the file basics landed. §1.1, §2, §12 and §13 are recounted
+from the tree. §3.1 gains a note it had earned: its ranking has now been overridden on every
+batch since it was written, and saying why is more useful than restating it. §4.4 gains an entry
+for a page this document never listed, which is the same point from the other end.
+
 ## §1. How this document works
 
 Each backlog is roughly ordered by priority within itself. When a page ships, move it to §13 so
@@ -24,15 +29,19 @@ this file stays a live map rather than a wishlist. Batches are suggested groupin
 covers it; require at least two pages that will plausibly use it; prefer nouns for subject tags
 and adjectives for audience tags. Add it in the batch that needs it, not speculatively.
 
-Current usage is lopsided and worth watching. Recounted 2026-08-24 from page frontmatter:
-`performance` still has **zero** pages, and `archives` has one. `cron`, `disk`, `environment`,
-`search` and `ssh` have two. A tag with one page is a dead end for a reader who clicks it. Either
-the backlog below fills them or they should be retired.
+Current usage is lopsided and worth watching. Recounted 2026-08-28 from page frontmatter:
+`performance` still has **zero** pages and `archives` has one. `cron`, `disk` and `ssh` have two;
+`environment` and `regex` have three. A tag with one page is a dead end for a reader who clicks
+it. Either the backlog below fills them or they should be retired.
 
-`disk` was the worst of these until `du` was written; `df` (§4.6) takes it to three, which is the
-cheapest remaining fix and an argument for pulling that page forward out of Wave 8. `performance`
-has no page in prospect anywhere in this document, so it is the one genuinely facing retirement
-rather than filling.
+`terminal` was on that list in August and is now on seven pages, which is what a concept page
+plus a pager page does to a tag: the fix for a thin tag is usually one page that everything else
+already wanted to link.
+
+`disk` is the one left with the cheapest fix. `df` (§4.6) takes it to three and needs no harness
+work, which is the argument for pulling it forward out of Wave 8. `performance` has no page in
+prospect anywhere in this document, so it is the one genuinely facing retirement rather than
+filling.
 
 ### §1.2. Verification is part of the page, not polish afterwards
 
@@ -46,25 +55,28 @@ a batch doesn't discover it halfway through.
 
 ## §2. Where the site is now
 
-Counted 2026-08-24 by `verificationStats` in `src/content/verificationStats.ts`, which is the
+Counted 2026-08-28 by `verificationStats` in `src/content/verificationStats.ts`, which is the
 same routine the about page renders from, so these figures are the ones the site itself publishes
 rather than a second tally that can drift from them.
 
-**56 pages. 1,218 documented outputs, of which 1,201 are re-run on every push** and 17 are
-exempted in a `.skip` file that names how each was verified instead. 1,300 examples across 29
-command pages, 98 blocks of sample data, and 53 outputs declared `volatile:` and compared by
-shape.
+**69 pages. 1,482 documented outputs re-run on every push**, across 37 command pages and 31 of
+the written articles, with 32 more documented and exempted, each naming how it was verified
+instead. 1,537 examples across the command pages, 116 blocks of sample data, and 70 outputs
+declared `volatile:`.
+
+Thirteen pages in four days, against the six days for nineteen that §12 measured in August. The
+rate note at the end of §12 still holds and so does its conclusion.
 
 **Every page replays.** `unreplayedCommandPages` and `unreplayedProsePages` are both zero: there
 is no page left whose outputs nothing re-runs. That closes the largest item in §11.5.
 
 | Category | Pages | State |
 |---|---|---|
-| `commands` | apt, awk, chmod, cowsay, crontab, curl, cut, diff, dpkg, du, find, grep, head, journalctl, jq, ls, ps, sed, sort, ssh, systemctl, tail, tar, tee, tr, uniq, wc, wget, xargs | 29 pages, all replayed. Text processing is now complete enough to stop being the priority. Debian package tooling opened with `apt` and `dpkg`. `ps` and `du` open the process and disk groups at one page each. **Still no network-diagnostic or user-management coverage.** |
-| `concepts` | environment-variables-and-path, exit-codes-and-error-handling, file-permissions-explained, pipes-and-redirection | 4 pages. Still the thinnest category relative to demand: §3.1 rates this layer above any command page. |
+| `commands` | apt, apt-cache, apt-file, awk, cat, chmod, chown, cowsay, cp, crontab, curl, cut, diff, dpkg, du, find, grep, head, journalctl, jq, less, ls, mv, ps, rm, sed, sort, ssh, systemctl, tail, tar, tee, tr, uniq, wc, wget, xargs | 37 pages, all replayed. Text processing was complete enough to stop being the priority and now has `cat` and `less` under it as well. **The file basics closed 2026-08-28**: `cat`, `cp`, `mv`, `rm`, `less`, `chown`. Debian package tooling is done to the §4.1 P1 line. `ps` and `du` still open the process and disk groups at one page each, and there is **still no network-diagnostic coverage and no user-management page beyond `chown`**. |
+| `concepts` | environment-variables-and-path, exit-codes-and-error-handling, file-permissions-explained, pipes-and-redirection, processes-and-signals, terminal-shell-and-tty | 6 pages, and Wave 3 is finished. §3.1 rates this layer above any command page, and the three highest-demand ones are now written, so the next concept is a §5 P2 rather than a P1. |
 | `scripting` | your-first-script, variables-and-quoting, conditionals-and-test, loops, script-arguments, functions | Unchanged. Lessons 1–6 of a course that should run to ~13, stopping one lesson before the highest-demand topics. |
 | `recipes` | bulk-rename-files, copy-files-between-machines, find-the-largest-files, kill-whatever-is-using-a-port, monitor-a-log-in-real-time | 5 pages, unchanged in count but **all five now replay**, which they did not on 2026-08-18. |
-| `debian` | apt-essentials, systemd-services, third-party-repositories, release-channels | 4 pages, unchanged. Bounded by §10.0.1 to the explainer shape, which is why the week's Debian work landed in the two categories below instead. |
+| `debian` | apt-essentials, install-a-deb-file, list-installed-packages, release-channels, systemd-services, third-party-repositories, which-package-provides-a-file | 7 pages. Bounded by §10.0.1 to the explainer shape, which still holds: the three added in August are explainers, and the errors beside them went to `troubleshooting`. |
 | `troubleshooting` | could-not-get-lock-dpkg-frontend, packages-kept-back, repository-is-not-signed, sudo-command-not-found | **New since the last revision.** §10.2 was a proposal; the category exists and holds all four of §6.1's P1 pages. |
 | `compare` | apt-vs-apt-get, cron-vs-systemd-timers, remove-vs-purge-vs-autoremove, sh-vs-bash-vs-dash | **New since the last revision.** §10.1 was a proposal; the category exists with 4 of its ~19 candidates written. |
 
@@ -87,6 +99,26 @@ addresses more real demand than the next twenty command pages would.**
 
 The single most-upvoted bash question of all time (+4324) is "get the source directory of a Bash
 script from within the script itself", which is a lesson-9 topic rather than a command page.
+
+**Added 2026-08-28: this ranking has lost every batch since it was written.** Command pages went
+out on 08-23, 08-24, 08-26 and 08-28; the scripting course has not moved since 08-18. Two things
+are true at once, and only one of them is in this section.
+
+The vote data measures demand across every Linux user on the internet, and it is right that
+script mechanics dominate it. What it cannot see is this site's own link graph, which is a second
+kind of demand entirely. `cat` was named in prose on thirty-one pages, none of which could link
+anywhere, and every fixture block on the site is read back with `cat <name>`. No Stack Exchange
+question ranks `cat`, because nobody asks about it.
+
+Those two signals want different things and both are real. A page the site already names is
+cheap, closes a hole a reader can see today, and pays its cost back in links; a scripting lesson
+answers more questions but starts with nothing pointing at it. The count that has been missing is
+the second one, and it is one command away: `npm run audit:links -- --verbose` would have found
+`cat` in August.
+
+None of that settles Wave 2, which is untouched at ten days. A ranking that has been overridden
+four times running is not describing how the work is chosen, and a plan that does not describe
+that is not being used. §12 says what to do about it.
 
 ### §3.2. The most repeated question shape is "what is the difference between X and Y"
 
@@ -206,10 +238,18 @@ The everyday commands, none of which have pages. Low glamour, high traffic.
   column, hidden files, sorting, time styles, symlinks. Built around the terminal-versus-pipe
   rule, because every example is captured through a pipe and the columned form a reader sees at a
   prompt is therefore not what the page can show.
-- **P1 `cp` / `mv`** (standard, combined): `-r -a -i -n -u`, trailing-slash semantics, the
-  "copy contents of a folder" question (+1380) that trips everyone.
-- **P1 `rm`** (standard): `-r -f -i`, `--one-file-system`, the `rm -rf $VAR/` disaster and how to
-  not have it. `danger: true` throughout.
+- **SHIPPED 2026-08-28 `cp`** and **`mv`** (light each, not combined as estimated): the two are
+  usable apart, so the skill's one-command-per-page rule applied. Both replay against a new
+  `mk_site_tree` in `_common.sh`, shared with `rm` and `chown`, because the four teach the same
+  distinctions against each other: a destination that exists against one that does not, a symlink
+  against the file behind it, a directory's write bit against a file's. The "copy contents of a
+  folder" question (+1380) is on `cp` as three examples rather than one, since `site/.`,
+  `site/` and `site` are three different answers.
+- **SHIPPED 2026-08-28 `rm`** (light): `-r -f -i -I`, the `rm -rf $VAR/` disaster, and the
+  directory-write-bit rule that decides what may be deleted. `danger: true` throughout. Its
+  replay found a behaviour worth the page on its own: `rm -r link/` on a symlink to a directory
+  empties the target and *then* reports that the link is not a directory, exiting 1 with
+  everything already gone.
 - **P2 `ln`** (standard): hard vs symbolic, why `ln -s` argument order confuses, dangling links.
 - **P2 `stat` / `file` / `basename` / `dirname` / `realpath`** (standard, combined as "inspecting
   files and paths"): the last three are constant in scripts.
@@ -221,6 +261,17 @@ The everyday commands, none of which have pages. Low glamour, high traffic.
 
 ### §4.4. Text processing: filling out a strong group
 
+- **SHIPPED 2026-08-28 `cat`** (standard). **This document had no entry for it**, in this group
+  or in §4.3, until the page was written. It was found by `npm run audit:links -- --verbose`
+  rather than by any backlog here: thirty-one pages named `cat` in prose with nowhere to link,
+  which was more than any other absent command by a wide margin.
+
+  Worth keeping as a marker of how §3 can miss. The evidence in that section is Stack Exchange
+  vote counts, and a command has to be *asked about* to appear in them. Nobody asks what `cat`
+  does, so the method is blind to exactly the commands a reader meets first. `cp`, `mv` and `rm`
+  were in §4.3 only because +1380 happened to be about copying a folder. The page itself is two
+  thirds about things people do ask: where "useless use of cat" stops being true, and `cat -A`
+  against the carriage returns that stop a script running.
 - **SHIPPED 2026-08-23 `xargs`** (flagship): `-I{}`, `-0` with `find -print0`, `-P` for
   parallelism, why bare `xargs` breaks on spaces.
 - **SHIPPED 2026-08-19 `tee`** (light): the link target the pipes concept page had been
@@ -241,7 +292,13 @@ The everyday commands, none of which have pages. Low glamour, high traffic.
 
 - **P1 `sudo` / `su`** (standard, combined): `sudo -i` vs `su -`, `visudo`, and the Debian
   "sudo: command not found" trap (§3.3). High Debian specificity.
-- **P1 `chown` / `chgrp`** (standard): the direct companion to the written `chmod` page.
+- **SHIPPED 2026-08-28 `chown`** (light, not standard as estimated), with `chgrp` folded in as
+  planned. The companion `chmod` had been missing: `file-permissions-explained` named the owner
+  and the group in its second paragraph and had nothing to link. It replays as root, unlike the
+  three pages it shares `mk_site_tree` with, because every example doing its subject needs the
+  privilege; the refusals are shown with `sudo -u user` from that root shell. Two facts on it
+  were checked rather than assumed, and both are the sort a reference usually asserts: `chown`
+  clears the setuid bit, and a plain `chown` follows a symlink while `-h` does not.
 - **P2 `adduser` / `useradd` / `usermod` / `deluser`** (standard, combined): including the
   Debian-specific "`adduser` is the one you want, `useradd` is the low-level one" (+90).
 - **P2 `id` / `groups` / `who` / `w` / `last`** (light, combined): who am I, who else is here.
@@ -287,9 +344,24 @@ Verification, rather than the writing, is the constraint here. See §11.3.
 
 ### §4.8. Shell, environment & terminal
 
-- **P1 `less` / `man` / `apropos`** (standard, combined as "reading things in the terminal"):
-  what the man page section numbers mean (+775), searching inside `less`, `-S` for wide output.
-  A page about how to use the documentation is a good page for a documentation site.
+- **SHIPPED 2026-08-28 `less`** (standard), alone rather than combined. `man` and `apropos` are
+  usable without it and it without them, so the skill's one-command-per-page rule split what this
+  entry had joined.
+
+  It needed a decision about shape that is worth recording, because any interactive command will
+  hit it. The half a reader wants is keystrokes, and no example can show one: driving `less`
+  under a pseudo-terminal with `script -qec` hangs waiting for a key, which would wedge a replay
+  rather than fail it. So the keys are a table in the page body, checked against `less --help` in
+  the sandbox rather than written from memory, and `examples.yaml` carries only what produces
+  output. Thirteen of its twenty-eight examples have none, which is the shape `ssh` and `crontab`
+  already have.
+
+  The checkable half turned out to be the surprising half: `less` stops being a pager the moment
+  it is not talking to a terminal, copying its input through and dropping every display flag in
+  silence, so `less -N file > out` writes a file with no numbers in it.
+- **P1 `man` / `apropos`** (standard, combined): what the section numbers mean (+775), `man -k`,
+  and how to read a synopsis line. A page about how to use the documentation is a good page for a
+  documentation site, and the `less` page now exists for it to link to.
 - **P2 `date`** (standard): formatting, `-d` parsing, epoch conversion, ISO 8601. Constant in
   scripts and in `find -newermt`.
 - **P2 `history` / `alias` / readline keys** (standard, combined): `Ctrl-R`, `!!`, `!$`,
@@ -925,23 +997,30 @@ one arriving. Worth making a defect before the prose categories grow further.
 Eight waves. Each is a coherent batch, each ships something a reader would notice, and the order
 is demand-first with verification cost as the tiebreak.
 
-**How the waves have actually been run, as of 2026-08-24.** Not in order. The work has been
+**How the waves have actually been run, as of 2026-08-28.** Not in order. The work has been
 picked page by page across four waves at once, which is why no wave is finished and why the
 sequencing below needs reading as a set of open fronts rather than a queue. That is not a
 complaint about the choices: `ls` and `xargs` were both worth writing when they were written.
-That was written while Wave 1 sat at three-quarters done. **Wave 1 finished on 2026-08-26**,
-with `apt-file` and both remaining §6.2 articles.
+**Wave 1 finished on 2026-08-26** with `apt-file` and both remaining §6.2 articles, and
+**Wave 3 on 2026-08-27**.
 
 | Wave | Status | What remains |
 |---|---|---|
 | 1. Namesake gap | **done** | Nothing. `apt-file` and both §6.2 articles shipped 2026-08-26 |
-| 2. Scripting 7–14 | **untouched** | All eight lessons |
+| 2. Scripting 7–14 | **untouched** | All eight lessons. Ten days at the top of the order without being started |
 | 3. Concepts | **done** | Nothing. The three P1 concept pages shipped 2026-08-23 and 2026-08-27 |
 | 4. Perl track | **blocked** | The §10.4 `order:` change first, then 9 pages |
-| 5. Processes and everyday files | **3 of 7** | `kill`, job control, `cp`/`mv`, `rm` |
+| 5. Processes and everyday files | **6 of 8** | `kill`, and job control. `cp`, `mv`, `rm` shipped 2026-08-28, alongside `cat` and `less`, which were not in the wave |
 | 6. Comparisons | **4 of ~19** | Everything not listed in §10.1 as written |
 | 7. Recipes | **untouched** | All P1 recipes; the existing five were verified, not added to |
 | 8. Networking and disk | **1 page** | `du` is written; `df` is the other page needing no harness work. Everything else waits on a resolver fixture and a loop device |
+
+**Two waves are finished and the one this document ranks first has not been started.** Wave 1 was
+the stated blocker for Wave 2 and it has been gone since 08-26; two more command batches went out
+after that. §3.1 records what the ranking misses and why it keeps being overridden. What it does
+not excuse is Wave 2 having no page at all, and the next batch should either be lessons 7 and 8
+or this section should be rewritten to rank something else first. Leaving it as the stated
+priority while it is never chosen is the worst of the three options.
 
 **Wave 1: the namesake gap (§4.1, §6.1, §6.2).** The §10.2 decision it was waiting on has been
 taken, the `troubleshooting` category exists, and all four P1 error pages are written, as are
@@ -972,9 +1051,15 @@ when a process is stuck in uninterruptible sleep, the one case where `-9` cannot
 **Wave 4: the Perl track (§8).** Still blocked on the §10.4 `order:` generalisation, which
 has not been made. Everything else about the wave stands.
 
-**Wave 5: processes, and the files everyone uses (§4.2, §4.3).** `ls` and `xargs` are done.
-`ps`, `kill`, job control, `cp`/`mv` and `rm` remain, and `ps` is the next page after this
-revision.
+**Wave 5: processes, and the files everyone uses (§4.2, §4.3).** The files half is finished:
+`ls`, `xargs`, `cp`, `mv` and `rm`, plus `cat` and `less`, which belonged to the wave in
+everything but this document's listing of it. The processes half is `ps` alone, with `kill` and
+job control still open. Both of those now have `processes-and-signals` to build on, which is the
+order §5's scope note argued for.
+
+The next files-and-directories page is `ln` or the combined `stat`/`file`/`basename`/`dirname`
+entry, both §4.3 P2, and `COMMAND_GROUPS` already reserves `make-and-link` and `inspect-files`
+for them.
 
 **Wave 6: comparisons (§10.1).** Four written, ahead of schedule relative to this plan, which
 had them waiting for their underlying command pages. The four that exist are all package
@@ -989,9 +1074,9 @@ this wave starts with harness work (a local resolver fixture and a loop-device s
 any page can be written honestly. **`du` and `df` were the exception and were pulled out of this
 wave.** `du` is written; `df` is the same argument and still open. See §4.6.
 
-Running alongside: the tag-coverage problem in §1.1, now down to `performance` at zero and
-`archives` at one, and the `0/0` reporting hole in §11.5. The five unreplayed recipes that used
-to head this list are done.
+Running alongside: the tag-coverage problem in §1.1, still `performance` at zero and `archives`
+at one, and the `0/0` reporting hole in §11.5, which nothing has touched. The five unreplayed
+recipes that used to head this list are done.
 
 ### Scale, honestly
 
@@ -1064,3 +1149,21 @@ starts. Wave 1 is the current counter-example.
   `mk_projects`. The recipe had been building its own `projects/` tree with different files and
   sizes, so the site showed two trees under one name; the shared one now backs both, and the
   recipe's ranking was recaptured against it.
+- **2026-08-26**: Wave 1 closed. `apt-cache` and `apt-file` as command pages, and the three
+  remaining §6.2 articles: `list-installed-packages`, `install-a-deb-file` and
+  `which-package-provides-a-file`. §11.1 narrowed as a result, because `apt-cache`'s fixture
+  repository declares `Architectures=all` and a version table can be published against it.
+- **2026-08-27**: Wave 3 closed with `processes-and-signals` and `terminal-shell-and-tty`. The
+  second found that `script -qec` gives a block a pseudo-terminal on purpose, so a page can show
+  the same command answering differently either side of that line; the first found that a
+  background process in an example inherits the harness's stdout and holds the whole batch open,
+  which took one replay from nine seconds to five minutes while reporting 10/10 throughout.
+- **2026-08-28**: The file basics, six pages: `cat`, `cp`, `mv`, `rm`, `less` and `chown`. The
+  four that touch files share one `mk_site_tree` in `_common.sh`. `cat` was on no backlog in this
+  document and was found by the link audit; `less` needed the shape decision recorded in §4.8;
+  `rm` documents a `rm -r link/` that empties a directory and then reports that it could not.
+
+  `test/replayTimings.test.ts` was re-thought in the same branch rather than nudged. It allowed
+  three untimed pages and named `npm run replay -- --record-timings` as the remedy, both of which
+  predate ADR-0023: nothing local records timings now, so a branch adding four pages failed a
+  gate only a merge to main could clear. The budget measures pages per push instead.
