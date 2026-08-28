@@ -199,7 +199,7 @@ sections:
         level: intermediate
       - title: "See what a trailing newline does to -d"
         code: 'printf "one;two;three\n" | xargs -d";" -n1 echo | cat -A'
-        description: "With `-d`, the newline is no longer a separator, so it stays inside the final item. `cat -A` marks line ends with `$`, showing the extra one that `echo` then prints."
+        description: "With `-d`, the newline is no longer a separator, so it stays inside the final item. [`cat -A`](/commands/cat/) marks line ends with `$`, showing the extra one that `echo` then prints."
         output: |2
           one$
           two$

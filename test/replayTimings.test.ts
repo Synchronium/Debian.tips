@@ -14,17 +14,24 @@ import { REPLAY_TIMINGS_FILE, ROOT } from "../src/paths.js";
  * anything to say about it.
  *
  * So the file is allowed to drift by a few pages and no further. A budget rather than an exact
- * match, because requiring one would mean a full replay before any new page could ship, and the
- * fallback in `replayShard.ts` already absorbs a page or two.
+ * match, because the only writer is the workflow ADR-0023 put on main: a branch cannot record,
+ * so an exact match would fail every branch that adds a page and could be cleared only by
+ * merging it.
+ *
+ * The budget is therefore sized as pages-per-push rather than as tolerance for forgetting. A
+ * batch of new pages reaches main in one push and is timed by the next one, and until then each
+ * of them is charged `UNTIMED_SECONDS`. That error runs in the safe direction: a new page here
+ * has cost a second or two against a fallback of ten, so the partition holds back rather than
+ * overruns. The dangerous direction is a page that was recorded and has since grown, which this
+ * test cannot see and `hasMoved` in `mergeTimings.ts` exists to catch.
  *
  * Counted over the pages that *opt into* the replay, never over every page. A page with no setup
  * script is never put in a container and so never has a time to record, and counting it here made
- * the budget exhaustible by pages that could not be recorded: four such pages and this fails
- * permanently, printing a command that cannot clear it. `/about/` publishes the count of pages in
+ * the budget exhaustible by pages that could not be recorded: enough such pages and this fails
+ * permanently, printing a remedy that cannot clear it. `/about/` publishes the count of pages in
  * exactly that state, so it is a state the site plans for rather than a hypothetical. */
 
-const BUDGET = 3;
-const RECORD_COMMAND = "npm run replay -- --record-timings";
+const BUDGET = 8;
 
 describe("the recorded replay timings", () => {
   it("still describe the site, give or take a few pages", () => {
@@ -41,8 +48,9 @@ describe("the recorded replay timings", () => {
         "",
         ...untimed.map((page) => `  ${page}`),
         "",
-        `Re-record on a full clean run: ${RECORD_COMMAND}`,
-        "It refuses anything less than the whole site, so run it when the replay is green.",
+        "Nothing local records these: a push to main replays every page and the recorder commits",
+        "the result, so the fix is to land what is already written rather than to measure it here.",
+        "More than a batch of pages listed above means that recorder has stopped running.",
       ].join("\n"),
     ).toEqual([]);
   });

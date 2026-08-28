@@ -1,0 +1,200 @@
+command: chown
+fixtures:
+  - name: site
+    note: "the tree the [cp](/commands/cp/), [mv](/commands/mv/) and [rm](/commands/rm/) pages use, owned by `user` before every example"
+    from: ls -lAR site
+    content: |2
+      site:
+      total 16
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 assets
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 backups
+      -rw-r--r-- 1 user user   36 Jun  1 09:00 index.html
+      lrwxrwxrwx 1 user user    9 Jun 18 09:00 latest.css -> style.css
+      -rw-r--r-- 1 user user   33 Jun 20 09:00 style.css
+
+      site/assets:
+      total 4
+      -rw-r--r-- 1 user user 35 Jun 10 09:00 logo.svg
+
+      site/backups:
+      total 0
+  - name: notes.txt
+    note: "one line, owned by `user`, beside `site/` rather than inside it"
+    content: |
+      Rebuild before deploying.
+  - name: "the accounts"
+    note: "a second account and a second group for the files to be handed to, both created by the setup script"
+    from: "id deploy; id user"
+    content: |
+      uid=1500(deploy) gid=1500(webdev) groups=1500(webdev)
+      uid=1000(user) gid=1000(user) groups=1000(user)
+sections:
+  - title: "Setting the owner and the group"
+    intro: "`chown owner file`, `chown owner:group file`, `chown :group file`. Every one of these needs root, which is the first thing to know about the command."
+    examples:
+      - title: "Change who owns a file"
+        code: chown deploy notes.txt && ls -l notes.txt
+        description: "The owner column changes and the group is left alone, so the file is now `deploy`'s but still in `user`'s group."
+        output: |
+          -rw-r--r-- 1 deploy user 26 Jun 10 09:00 notes.txt
+        level: basic
+        tags: [beginner, sysadmin]
+      - title: "Change both at once"
+        code: chown deploy:webdev notes.txt && ls -l notes.txt
+        description: "A colon separates the two. A dot works as well and is older; the colon is preferred because a username may legally contain a dot."
+        output: |
+          -rw-r--r-- 1 deploy webdev 26 Jun 10 09:00 notes.txt
+        level: basic
+        tags: [beginner, sysadmin]
+      - title: "Change only the group"
+        code: chown :webdev notes.txt && ls -l notes.txt
+        description: "Leave the name off the left of the colon and the owner is untouched."
+        output: |
+          -rw-r--r-- 1 user webdev 26 Jun 10 09:00 notes.txt
+        level: basic
+      - title: "Or use chgrp, which does nothing else"
+        code: chgrp webdev notes.txt && ls -l notes.txt
+        description: "`chgrp` is `chown :group` with its own name, and it takes the same `-R`, `-v` and `--reference` flags. Use whichever reads better in the script you are writing."
+        output: |
+          -rw-r--r-- 1 user webdev 26 Jun 10 09:00 notes.txt
+        level: basic
+        tags: [beginner]
+      - title: "Set the group to the new owner's own"
+        code: 'chown deploy: notes.txt && ls -l notes.txt'
+        description: "A trailing colon with nothing after it means \"and that account's login group\". `deploy`'s is `webdev`, so both columns change from one argument."
+        output: |
+          -rw-r--r-- 1 deploy webdev 26 Jun 10 09:00 notes.txt
+        level: intermediate
+      - title: "Say what changed"
+        code: chown -v deploy notes.txt
+        description: "`-v` (`--verbose`) prints a line per file whether or not anything moved."
+        output: |
+          changed ownership of 'notes.txt' from user to deploy
+        level: basic
+      - title: "Say only what actually changed"
+        code: 'chown -c deploy notes.txt; chown -c deploy notes.txt; echo "the second run printed nothing"'
+        description: "`-c` (`--changes`) is `-v` without the noise: it reports the files it altered and stays quiet about the ones already correct. On a `chown -R` over a tree that is mostly right, this is the difference between one line and ten thousand."
+        output: |
+          changed ownership of 'notes.txt' from user to deploy
+          the second run printed nothing
+        level: intermediate
+        tags: [sysadmin]
+      - title: "Reject a name that does not exist"
+        code: chown nosuchuser notes.txt
+        description: "The check happens before anything is touched, and the exit status is `1`. A numeric id is never rejected this way, because any number is a valid owner."
+        output: |
+          chown: invalid user: 'nosuchuser'
+        level: basic
+
+  - title: "Whole trees"
+    examples:
+      - title: "Recurse into a directory"
+        code: chown -R deploy:webdev site && stat -c '%U:%G %n' site site/assets site/assets/logo.svg
+        description: "`-R` (`--recursive`) covers the directory, everything in it and everything below. `stat -c` is used here in place of [ls](/commands/ls/) because it prints no timestamps."
+        output: |
+          deploy:webdev site
+          deploy:webdev site/assets
+          deploy:webdev site/assets/logo.svg
+        level: basic
+        tags: [beginner, sysadmin]
+      - title: "A glob is not the same as -R"
+        code: touch site/.htaccess && chown user:user site/.htaccess && chown -R deploy site/* && stat -c '%U %n' site/.htaccess site/index.html
+        description: "`site/*` is expanded by the shell, and a plain glob skips anything beginning with a dot. The `.htaccess` keeps its old owner while everything visible changes, which on a web root is the file you least wanted to miss."
+        danger: true
+        output: |
+          user site/.htaccess
+          deploy site/index.html
+        level: intermediate
+        tags: [sysadmin]
+      - title: "Name the directory and the dotfiles come too"
+        code: touch site/.htaccess && chown user:user site/.htaccess && chown -R deploy site && stat -c '%U %n' site/.htaccess site/index.html
+        description: "`chown -R deploy site` walks the directory itself, so nothing depends on what the shell decided to expand."
+        output: |
+          deploy site/.htaccess
+          deploy site/index.html
+        level: intermediate
+      - title: "Change only the files a particular account owns"
+        code: chown --from=user:user deploy:webdev notes.txt site/index.html && ls -l notes.txt
+        description: "`--from` makes the change conditional, and anything with a different owner is passed over. This is the flag for tidying up after one account on a tree that several of them write to."
+        output: |
+          -rw-r--r-- 1 deploy webdev 26 Jun 10 09:00 notes.txt
+        level: advanced
+        tags: [sysadmin]
+      - title: "Copy the ownership from another file"
+        code: chown deploy notes.txt && chown --reference=notes.txt site/index.html && ls -l site/index.html
+        description: "`--reference` takes both columns from the file you name, so nothing has to be spelled out. Useful when restoring a file from a backup beside one that was left alone."
+        output: |
+          -rw-r--r-- 1 deploy user 36 Jun  1 09:00 site/index.html
+        level: advanced
+
+  - title: "What an ordinary account may and may not do"
+    intro: "Linux has no way to give a file to someone else unless you are root. The rule exists so that disk quotas cannot be dodged by handing a large file to a stranger, and it catches people out because it applies to files you already own."
+    examples:
+      - title: "You cannot give away a file you own"
+        code: sudo -u user chown deploy notes.txt
+        description: "`user` owns `notes.txt` outright and still cannot pass it on. Only root may change an owner."
+        output: |
+          chown: changing ownership of 'notes.txt': Operation not permitted
+        level: basic
+        tags: [permissions, beginner]
+      - title: "You cannot change the group to one you are not in"
+        code: sudo -u user chgrp webdev notes.txt
+        description: "The group half is not root-only, but it is restricted: you must own the file *and* belong to the group you are naming."
+        output: |
+          chgrp: changing group of 'notes.txt': Operation not permitted
+        level: intermediate
+        tags: [permissions]
+      - title: "Join the group and the same command works"
+        code: usermod -aG webdev user && sudo -u user chgrp webdev notes.txt && ls -l notes.txt
+        description: "`usermod -aG` adds a supplementary group, and `-a` is what stops it replacing every other group the account is in. This is how a deployment account is given write access to a shared directory."
+        output: |
+          -rw-r--r-- 1 user webdev 26 Jun 10 09:00 notes.txt
+        level: intermediate
+        tags: [permissions, sysadmin]
+      - title: "Giving a file away only goes one way"
+        code: chown deploy notes.txt && sudo -u user chown user notes.txt
+        description: "Root moved the file to `deploy` and `user` cannot take it back, because taking it back is also a change of owner. Anything a script hands to another account has to be handed back by root."
+        danger: true
+        output: |
+          chown: changing ownership of 'notes.txt': Operation not permitted
+        level: intermediate
+        tags: [permissions, sysadmin]
+
+  - title: "Symlinks, ids and one silent side effect"
+    examples:
+      - title: "chown follows a symlink"
+        code: chown deploy site/latest.css && ls -l site/latest.css site/style.css
+        description: "The link is untouched and `style.css`, the file behind it, has changed hands. A symlink's own ownership means almost nothing, so this is usually what you wanted."
+        output: |
+          lrwxrwxrwx 1 user   user  9 Jun 18 09:00 site/latest.css -> style.css
+          -rw-r--r-- 1 deploy user 33 Jun 20 09:00 site/style.css
+        level: intermediate
+      - title: "Or change the link and leave the file alone"
+        code: chown -h deploy site/latest.css && ls -l site/latest.css site/style.css
+        description: "`-h` (`--no-dereference`) does the opposite of the default. Worth adding to any `-R` over a tree whose symlinks point somewhere you have no business rewriting."
+        output: |
+          lrwxrwxrwx 1 deploy user  9 Jun 18 09:00 site/latest.css -> style.css
+          -rw-r--r-- 1 user   user 33 Jun 20 09:00 site/style.css
+        level: advanced
+      - title: "Ownership is a number underneath"
+        code: chown 1500:1500 notes.txt && ls -ln notes.txt
+        description: "Names are looked up in `/etc/passwd` and `/etc/group`; the filesystem stores integers. `ls -ln` shows the numbers, which is the view you want on a mounted disk from another machine, where the names will not line up."
+        output: |
+          -rw-r--r-- 1 1500 1500 26 Jun 10 09:00 notes.txt
+        level: advanced
+        tags: [sysadmin]
+      - title: "chown clears setuid and setgid"
+        code: chmod u+s notes.txt && ls -l notes.txt && chown deploy notes.txt && ls -l notes.txt
+        description: "The `S` in the first listing is the setuid bit, and it is gone from the second. The kernel drops it on any change of owner, because a setuid file that changed hands would run as its new owner without anyone having said so. See [chmod](/commands/chmod/) for what the bit does when it is set deliberately."
+        output: |
+          -rwSr--r-- 1 user user 26 Jun 10 09:00 notes.txt
+          -rw-r--r-- 1 deploy user 26 Jun 10 09:00 notes.txt
+        level: advanced
+        tags: [permissions, security]
+      - title: "Hand a config file back to root"
+        code: chown root:root site/index.html && ls -l site/index.html
+        description: "The usual last step after editing something under `/etc` as a copy in your home directory. Ownership by root plus mode 644 is what most of `/etc` looks like."
+        output: |
+          -rw-r--r-- 1 root root 36 Jun  1 09:00 site/index.html
+        level: basic
+        tags: [sysadmin]

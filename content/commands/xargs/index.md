@@ -52,9 +52,10 @@ above. `-0` reads bytes literally and takes neither quotes nor backslashes as sp
 ## Putting the item somewhere other than the end
 
 Everything so far appends items to the end of the command, which is where most commands want their
-filenames. `cp` does not: its destination has to come last, which is exactly where `xargs` puts
-the items. `xargs cp` builds `cp file1 file2 file3`, and `cp` reads that last name as the
-destination directory, failing with `target 'file3': Not a directory`.
+filenames. [`cp`](/commands/cp/) does not: its destination has to come last, which is exactly
+where `xargs` puts the items. `xargs cp` builds `cp file1 file2 file3`, and `cp` reads that last
+name as the destination directory, failing with `target 'file3': Not a directory`. `cp -t` and
+`mv -t` exist for this, naming the destination up front.
 
 `-I` solves that by naming a placeholder. Every occurrence of that placeholder in the command is
 replaced with the incoming item, wherever it appears:

@@ -13,7 +13,7 @@ fixtures:
 
 sections:
   - title: "Reading the journal"
-    intro: "`journalctl` opens a pager by default. `--no-pager` is what you want in a script or when piping, and every example here uses it."
+    intro: "`journalctl` opens [less](/commands/less/) by default. `--no-pager` is what you want in a script or when piping, and every example here uses it."
     examples:
       - title: "Show the most recent entries"
         code: journalctl -n 3 --no-pager -o cat

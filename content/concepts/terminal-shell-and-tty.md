@@ -199,7 +199,8 @@ xterm-256color|xterm with 256 colors,
 Your emulator sets `$TERM` when it starts the shell. Two common complaints come out of that.
 
 Over SSH the value travels with you and describes *your* terminal. A `$TERM` the remote machine
-has no entry for gives you "terminal is not fully functional" and a broken-looking `less`.
+has no entry for gives you "terminal is not fully functional" and a broken-looking
+[`less`](/commands/less/).
 Install `ncurses-term` there, or set `TERM=xterm` for the session.
 
 In cron or a systemd unit there is no terminal and usually no `$TERM` at all. `clear` and `tput`

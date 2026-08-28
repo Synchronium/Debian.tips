@@ -103,8 +103,8 @@ sections:
         description: >-
           `grep` reads stdin when no file is given, so it slots into any pipeline,
           though here `cat config.conf | grep listen` could just as well be
-          `grep listen config.conf`. Keep `cat` when the input already came from
-          an earlier pipe stage.
+          `grep listen config.conf`. Keep [`cat`](/commands/cat/) when the input already came
+          from an earlier pipe stage, or when there are two files to join before searching.
         output: |2
           listen 8080
         level: basic

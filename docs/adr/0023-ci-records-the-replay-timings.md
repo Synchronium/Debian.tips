@@ -94,7 +94,10 @@ bare slug, which is how the replay names a page but not how anything is stored h
 ## Consequences
 
 **Nobody waits for a timing run.** Adding pages no longer accrues a debt that falls due as a red
-test every third page.
+test every third page. `test/replayTimings.test.ts` still caps how many pages may go untimed, but
+the cap now measures how many arrive in one push rather than how long a maintainer may put off
+recording: a branch has no way to record, so a cap set for the manual era makes the branch that
+adds a batch of pages fail a gate only a merge can clear.
 
 **The figures describe the machine they balance.** They are measured on the runners the partition
 is for, which the manual recording never was.

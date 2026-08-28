@@ -9,7 +9,8 @@ tier: standard
 related: [file-permissions-explained, find]
 ---
 
-`chmod` changes who can read, write, or execute a file or directory. Every file has three
+`chmod` changes who can read, write, or execute a file or directory. It never changes *who* the
+owner and the group are, which is [chown](/commands/chown/)'s job. Every file has three
 permission classes (owner, group, and everyone else), and `chmod` sets them either as a
 three-digit **numeric mode** (`chmod 644 file`) or as a targeted **symbolic** edit (`chmod u+x
 file`). For the full owner/group/other model, what each bit means on a directory, and how

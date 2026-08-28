@@ -1,0 +1,238 @@
+command: mv
+fixtures:
+  - name: site
+    note: "the tree the [cp](/commands/cp/) and [rm](/commands/rm/) pages use as well, including `latest.css`, which is a symlink to `style.css`"
+    from: ls -lAR site
+    content: |2
+      site:
+      total 16
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 assets
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 backups
+      -rw-r--r-- 1 user user   36 Jun  1 09:00 index.html
+      lrwxrwxrwx 1 user user    9 Jun 18 09:00 latest.css -> style.css
+      -rw-r--r-- 1 user user   33 Jun 20 09:00 style.css
+
+      site/assets:
+      total 4
+      -rw-r--r-- 1 user user 35 Jun 10 09:00 logo.svg
+
+      site/backups:
+      total 0
+  - name: notes.txt
+    note: "one line, beside `site/` rather than inside it"
+    content: |
+      Rebuild before deploying.
+sections:
+  - title: "Renaming and moving"
+    intro: "There is no separate rename command on Debian. `mv old new` is a rename when both names are in the same directory and a move when they are not, and it is the same operation either way."
+    examples:
+      - title: "Rename a file"
+        code: mv notes.txt README.txt && ls *.txt
+        description: "One file afterwards, under the new name. Unlike [cp](/commands/cp/), nothing is left behind."
+        output: |
+          README.txt
+        level: basic
+        tags: [beginner]
+      - title: "Move a file into a directory"
+        code: mv notes.txt site/backups/ && ls site/backups
+        description: "A destination that is a directory means \"in here, keeping the name\". The directory has to exist; `mv` never creates one."
+        output: |
+          notes.txt
+        level: basic
+        tags: [beginner]
+      - title: "Move several files at once"
+        code: mv site/index.html site/style.css site/backups/ && ls site/backups
+        description: "With more than two arguments the last has to be a directory, as it does for `cp`."
+        output: |
+          index.html
+          style.css
+        level: basic
+        tags: [beginner]
+      - title: "Move whatever a glob matched"
+        code: mv site/*.css site/backups/ && ls site/backups
+        description: "The shell expands the glob and hands `mv` the list, so the symlink `latest.css` is moved alongside the file it points at. `mv` sees filenames and nothing else."
+        output: |
+          latest.css
+          style.css
+        level: basic
+      - title: "Say what was renamed"
+        code: mv -v notes.txt README.txt
+        description: "`-v` (`--verbose`) says `renamed` for a move within one filesystem. Across filesystems it says `copied` instead, which is a useful thing to see on a move you expected to be instant."
+        output: |
+          renamed 'notes.txt' -> 'README.txt'
+        level: basic
+      - title: "Rename a directory"
+        code: mv site/backups site/archive && ls site
+        description: "Directories need no flag. `mv` is renaming an entry in the parent directory, whether that entry is a file or a tree of ten thousand."
+        output: |
+          archive
+          assets
+          index.html
+          latest.css
+          style.css
+        level: basic
+        tags: [beginner]
+      - title: "Put the destination first"
+        code: mv -t site/backups site/index.html site/style.css && ls site/backups
+        description: "`-t` (`--target-directory`) is the form to use with [xargs](/commands/xargs/) or `find -exec`, where the filenames arrive at the end of the command."
+        output: |
+          index.html
+          style.css
+        level: advanced
+        tags: [scripting]
+
+  - title: "Overwriting is the default here too"
+    examples:
+      - title: "An existing destination is replaced without warning"
+        code: mv notes.txt site/index.html && cat site/index.html
+        description: "The page that was in `index.html` is gone and `notes.txt` no longer exists either, so there is nothing to put back."
+        danger: true
+        output: |
+          Rebuild before deploying.
+        level: basic
+        tags: [beginner]
+      - title: "Ask first"
+        code: mv -i notes.txt site/index.html < /dev/null; echo; head -1 site/index.html
+        description: "`-i` (`--interactive`) prompts per file. The `< /dev/null` answers nothing, which `mv` reads as no; at a terminal you would type `y` or `n`."
+        output: |
+          mv: overwrite 'site/index.html'?
+          <!doctype html>
+        level: basic
+        tags: [beginner]
+      - title: "Refuse silently instead"
+        code: mv -n notes.txt site/index.html && head -1 site/index.html
+        description: "`-n` (`--no-clobber`) leaves both files where they are. The exit status is still zero, so a script that cares whether the move happened has to check for itself."
+        output: |
+          <!doctype html>
+        level: intermediate
+        tags: [scripting]
+      - title: "Keep the file being replaced"
+        code: mv --backup=numbered notes.txt site/index.html && ls site/
+        description: "The old `index.html` becomes `index.html.~1~` and the move goes ahead. `numbered` never reuses a backup name, where plain `--backup` overwrites its single `~` copy on the second run."
+        output: |
+          assets
+          backups
+          index.html
+          index.html.~1~
+          latest.css
+          style.css
+        level: intermediate
+
+  - title: "Where the directory ends up"
+    intro: "Moving a directory onto a name that already exists puts it inside, exactly as `cp -r` does. This is the surprise that arrives on the second run of a command that worked the first time."
+    examples:
+      - title: "A destination that does not exist is a rename"
+        code: mv site published && ls published
+        description: "`published` is created and `site` is gone. One entry changed in the parent directory."
+        output: |
+          assets
+          backups
+          index.html
+          latest.css
+          style.css
+        level: basic
+      - title: "A destination that does exist is a move into it"
+        code: mkdir published && mv site published && ls published
+        description: "`published/site` now holds the tree. Nothing is lost, but the path everything sits at has changed, which breaks the next command in a script that assumed the first case."
+        danger: true
+        output: |
+          site
+        level: intermediate
+      - title: "Insist on the destination name"
+        code: mkdir published && mv -T site published; ls published
+        description: "`-T` (`--no-target-directory`) refuses to treat the destination as a directory to move into, so `site` replaces the empty `published` rather than landing inside it. On a destination that is a non-empty directory it fails instead."
+        output: |
+          assets
+          backups
+          index.html
+          latest.css
+          style.css
+        level: advanced
+        tags: [scripting]
+      - title: "mv will not move a directory into itself"
+        code: mv site site/backups; ls site
+        description: "Caught before anything is touched. `mv` compares the two resolved paths first, and the listing afterwards shows the tree intact. Not every recursive operation is this careful: `rm -r` on a symlink is the counter-example."
+        output: |
+          mv: cannot move 'site' to a subdirectory of itself, 'site/backups/site'
+          assets
+          backups
+          index.html
+          latest.css
+          style.css
+        level: intermediate
+      - title: "Ask for a file that is not there"
+        code: mv missing.txt elsewhere.txt
+        description: "The message goes to standard error and the exit status is `1`. Nothing partial happens, because there was nothing to move."
+        output: |
+          mv: cannot stat 'missing.txt': No such file or directory
+        level: basic
+
+  - title: "A rename is not a copy"
+    intro: "Within one filesystem `mv` changes a directory entry and touches no data at all, however large the file is. Across filesystems it copies the bytes and deletes the original, and that difference shows up in the timing, in the inode and in what an interrupted move leaves behind."
+    examples:
+      - title: "The file keeps its inode, so nothing was copied"
+        code: before=$(stat -c %i notes.txt); mv notes.txt README.txt; [ "$before" = "$(stat -c %i README.txt)" ] && echo "same inode, so nothing was copied"
+        description: "The inode is the file; the name is an entry pointing at it. Renaming a 10GB file inside one filesystem is as quick as renaming an empty one."
+        output: |
+          same inode, so nothing was copied
+        level: advanced
+      - title: "Across filesystems it really is a copy"
+        code: before=$(stat -c %i notes.txt); mv notes.txt /dev/shm/notes.txt; [ "$before" = "$(stat -c %i /dev/shm/notes.txt)" ] && echo same || echo "new inode, so the bytes were copied"; rm -f /dev/shm/notes.txt
+        description: "`/dev/shm` is a tmpfs, so it is a different filesystem from `$HOME`. The new file has a new inode, the move takes as long as the file is big, and an interruption partway can leave a truncated copy at the destination with the original still in place."
+        output: |
+          new inode, so the bytes were copied
+        level: advanced
+        tags: [sysadmin]
+      - title: "Permission is on the directory, not the file"
+        code: mkdir locked && chmod 500 locked && mv notes.txt locked/
+        description: "`locked` is readable and searchable but not writable. Adding an entry to a directory is a write to that directory, so the move fails whoever happens to own `notes.txt`. See [file permissions explained](/concepts/file-permissions-explained/)."
+        output: |
+          mv: cannot move 'notes.txt' to 'locked/notes.txt': Permission denied
+        level: intermediate
+        tags: [permissions]
+      - title: "Replace a file in one step"
+        code: cp site/index.html tmp.html && sed -i 's/deb1/deb2/' tmp.html && mv tmp.html site/index.html && cat site/index.html
+        description: "A rename within one filesystem is atomic. Nothing ever reads a half-written `index.html`. Editing the file in place with `sed -i` gives no such guarantee. Use this shape for anything another process might be reading."
+        output: |
+          <!doctype html>
+          <title>deb2</title>
+        level: advanced
+        tags: [scripting, sysadmin]
+
+  - title: "Symlinks and awkward names"
+    examples:
+      - title: "mv moves the link, never what it points at"
+        code: mv site/latest.css moved.css && readlink moved.css
+        description: "`style.css` stays where it was. The symlink is now in your current directory, still holding the text `style.css`. Nothing beside it goes by that name, so it resolves to nothing."
+        output: |
+          style.css
+        level: intermediate
+      - title: "A trailing slash on a symlink is an error"
+        code: mv site/latest.css/ moved.css
+        description: "The slash asserts that `latest.css` is a directory. `mv` resolves the link, finds a regular file and refuses. [rm](/commands/rm/) treats that same slash quite differently, at the cost of a directory."
+        output: |
+          mv: cannot stat 'site/latest.css/': Not a directory
+        level: advanced
+      - title: "Rename a file whose name begins with a dash"
+        code: printf x > ./-output.html && mv -- -output.html saved.html && ls saved.html
+        description: "`--` ends the options, so the name after it is read as a filename however it starts. `./-output.html` does the same job without needing the flag."
+        output: |
+          saved.html
+        level: advanced
+
+  - title: "Renaming in bulk, and only when newer"
+    examples:
+      - title: "There is no glob rename, so use a loop"
+        code: for f in site/assets/*.svg; do mv "$f" "${f%.svg}.min.svg"; done && ls site/assets
+        description: "`mv *.svg *.min.svg` cannot work: the shell expands both globs before `mv` runs, and the second matches nothing. `${f%.svg}` strips the suffix one file at a time. [Bulk rename files](/recipes/bulk-rename-files/) covers the rest, including `rename` from the `rename` package."
+        output: |
+          logo.min.svg
+        level: intermediate
+        tags: [scripting]
+      - title: "Move only if the source is newer"
+        code: touch -d 2026-01-01 old.css && mv -uv site/style.css old.css; echo "exit $?"
+        description: "`-u` (`--update`) skips a destination that is the same age or newer. `old.css` is dated January and `style.css` June, so the move goes ahead."
+        output: |
+          renamed 'site/style.css' -> 'old.css'
+          exit 0
+        level: intermediate

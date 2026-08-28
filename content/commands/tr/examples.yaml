@@ -121,7 +121,7 @@ sections:
         description: >-
           A blank line is just two adjacent newlines, and `-s` squeezes any run of them down to
           one, which eliminates the blank line completely rather than leaving a single blank
-          line the way `cat -s` does.
+          line the way [`cat -s`](/commands/cat/) does.
         output: |
           a
           b

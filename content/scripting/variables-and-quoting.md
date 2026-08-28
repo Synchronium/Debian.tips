@@ -34,7 +34,7 @@ rm: cannot remove 'backup.tar.gz': No such file or directory
 ```
 
 Without quotes, bash performs *word splitting* on the variable's value before passing it to
-`rm`, so `rm $file` runs `rm my backup.tar.gz`, which treats `my` and `backup.tar.gz` as two
+[`rm`](/commands/rm/), so `rm $file` runs `rm my backup.tar.gz`, which treats `my` and `backup.tar.gz` as two
 separate arguments, pointing at individual files that don't exist. The file is untouched, but
 only by luck; if a file named `my` or `backup.tar.gz` had existed, this would have deleted the
 wrong thing.

@@ -462,7 +462,8 @@ sections:
           A file with no permissions at all can still be deleted, because removing a directory
           entry is controlled by the directory's write bit, not the target file's mode. Locking a
           file down to 000 does not protect it from deletion by anyone who can write to its
-          parent directory.
+          parent directory. [rm](/commands/rm/) has the same rule from the other side, including
+          what the sticky bit on `/tmp` is there to fix.
         level: intermediate
         tags: [sysadmin]
       - title: "chmod changes existing files; umask governs new ones"

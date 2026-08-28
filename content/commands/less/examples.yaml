@@ -1,0 +1,197 @@
+command: less
+fixtures:
+  - name: report.txt
+    note: "forty numbered lines, the same file the [wc](/commands/wc/) and [head](/commands/head/) pages count"
+    from: head -3 report.txt; echo '…'; tail -1 report.txt
+    content: |
+      line 1 of the report
+      line 2 of the report
+      line 3 of the report
+      …
+      line 40 of the report
+  - name: access.log
+    note: "ten requests in combined log format, as the second file for the examples that open two"
+    content: |
+      203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
+      203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
+      198.51.100.7 - - [13/Aug/2026:09:14:22] "GET /index.html HTTP/1.1" 200 512
+      198.51.100.7 - - [13/Aug/2026:09:14:25] "GET /missing.html HTTP/1.1" 404 162
+      203.0.113.5 - - [13/Aug/2026:09:15:47] "GET /index.html HTTP/1.1" 200 512
+      192.0.2.44 - - [13/Aug/2026:09:16:03] "POST /login HTTP/1.1" 302 0
+      192.0.2.44 - - [13/Aug/2026:09:16:04] "GET /dashboard HTTP/1.1" 200 4021
+      198.51.100.7 - - [13/Aug/2026:09:18:51] "GET /index.html HTTP/1.1" 200 512
+      203.0.113.5 - - [13/Aug/2026:09:19:10] "GET /api/status HTTP/1.1" 500 89
+      192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
+sections:
+  - title: "Opening a file"
+    intro: "`less report.txt` and then `q`. Everything here needs a terminal to do anything at all, which is why none of it carries output: these flags change the screen `less` draws, and a replay has no screen."
+    examples:
+      - title: "Page through a file"
+        code: less report.txt
+        description: "Forty lines, one screen at a time, `q` to leave. Nothing is loaded up front. A log far larger than memory opens straight away, where [cat](/commands/cat/) would spend both the time and the memory."
+        level: basic
+        tags: [beginner]
+      - title: "Number the lines while reading"
+        code: less -N report.txt
+        description: "`-N` (`--LINE-NUMBERS`) puts a line number in the left margin. Typing `-N` at the `:` prompt toggles it without restarting, which is true of most of these flags."
+        level: basic
+        tags: [beginner]
+      - title: "Stop long lines wrapping"
+        code: less -S access.log
+        description: "`-S` (`--chop-long-lines`) truncates each line at the right edge instead of folding it onto the next row, so one log entry stays on one line. The arrow keys scroll sideways to read the rest."
+        level: basic
+      - title: "Start at the end of the file"
+        code: less +G access.log
+        description: "Anything after `+` is a command run as the file opens, and `G` is the key for the last line. On a log, where the newest entry is the one you came for, that is how to open it."
+        level: intermediate
+        tags: [monitoring]
+      - title: "Start at the first match instead"
+        code: less +/500 access.log
+        description: "`+/pattern` searches as it opens and stops on the first hit, with `n` for the next. Add `-p` in place of `+/` for the same thing spelled as an option."
+        level: intermediate
+      - title: "Follow a file as it grows"
+        code: less +F /var/log/syslog
+        description: "`+F` behaves like `tail -f`, printing new lines as they arrive. `Ctrl-C` drops back into the file where you can search and scroll, and `F` starts following again. [tail](/commands/tail/) cannot do that second half."
+        level: intermediate
+        tags: [monitoring, sysadmin]
+      - title: "Keep the text on screen after quitting"
+        code: less -X report.txt
+        description: "`-X` (`--no-init`) stops `less` restoring the screen on exit, so what you were reading is still in the scrollback. `-F` (`--quit-if-one-screen`) pairs with it: a file that fits on one screen is printed and `less` exits without waiting for `q`."
+        level: intermediate
+      - title: "Keep the colours"
+        code: ls --color=always -l | less -R
+        description: "`-R` (`--RAW-CONTROL-CHARS`) passes ANSI colour codes through to the terminal instead of showing them as `ESC[0m`. Without it, any coloured output paged through `less` is unreadable."
+        level: intermediate
+
+  - title: "less only pages when it is talking to a terminal"
+    intro: "Give `less` anywhere to write other than a terminal and it stops being a pager. It copies its input to its output and exits, which is exactly what [cat](/commands/cat/) does."
+    examples:
+      - title: "A piped less is a cat"
+        code: less report.txt | head -3
+        description: "No pager, no prompt, no waiting for `q`. The bytes go straight down the pipe."
+        output: |
+          line 1 of the report
+          line 2 of the report
+          line 3 of the report
+        level: basic
+        tags: [beginner]
+      - title: "The display flags are dropped in silence"
+        code: less -N report.txt | head -3
+        description: "`-N` asked for line numbers and there are none. Nothing warns you, so `less -N report.txt > numbered.txt` writes a file identical to the input."
+        danger: true
+        output: |
+          line 1 of the report
+          line 2 of the report
+          line 3 of the report
+        level: intermediate
+      - title: "The options are still parsed, though"
+        code: LESS=--nosuchflag less report.txt | head -2
+        description: "`less` reads its default options from `$LESS` before anything else, and complains here about one that does not exist. The complaint proves the variable was read; the file is then copied through regardless."
+        output: |
+          There is no nosuchflag option ("less --help" for help)
+          line 1 of the report
+          line 2 of the report
+        level: advanced
+        tags: [environment]
+      - title: "Several files are simply joined"
+        code: less report.txt access.log | sed -n '39,42p'
+        description: "Interactively these are two files with `:n` and `:p` to move between them. Down a pipe they are one stream, and the join between them is invisible."
+        output: |
+          line 39 of the report
+          line 40 of the report
+          203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
+          203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
+        level: intermediate
+      - title: "more is not the same"
+        code: more report.txt | head -4
+        description: "`more` prints a header naming each file even when nothing is watching, so it cannot be dropped into a pipeline the way `less` can. The joke that \"less is more\" is about the keys and the backward scrolling."
+        output: |
+          ::::::::::::::
+          report.txt
+          ::::::::::::::
+          line 1 of the report
+        level: intermediate
+
+  - title: "Files less will not just show you"
+    examples:
+      - title: "A file that is not there"
+        code: less missing.txt
+        description: "One line on standard error, and no pager is started. `less` names the file without the `less:` prefix most commands put in front of an error."
+        output: |
+          missing.txt: No such file or directory
+        level: basic
+      - title: "A directory"
+        code: less /etc
+        description: "`less` reads files. Use [ls](/commands/ls/) for what is in a directory."
+        output: |
+          /etc is a directory
+        level: basic
+      - title: "Forcing it to open one anyway"
+        code: gzip -n -c access.log > access.log.gz && less -f /etc | head -2
+        description: "`-f` (`--force`) tells `less` to open anything, including a directory or a device. What comes back from a directory is not text and reads as an error."
+        output: |
+          read error
+        level: advanced
+      - title: "A binary file gets a question first"
+        code: gzip -n -c access.log > access.log.gz && less access.log.gz | head -2
+        description: "The prompt waits for `y` at a terminal. With nothing to answer it, `less` stops and prints nothing else. `-f` skips the question; `lesspipe` answers it properly."
+        output: |
+          "access.log.gz" may be a binary file.  See it anyway?
+        level: intermediate
+
+  - title: "Compressed files, and the hook that makes them readable"
+    intro: "Debian ships a filter called `lesspipe` that `less` can run over a file before showing it. It handles gzip, tar, deb, PDF and a dozen other formats. It is off until you switch it on."
+    examples:
+      - title: "The direct answer for a gzipped file"
+        code: gzip -n -c access.log > access.log.gz && zless access.log.gz | head -2
+        description: "`zless` decompresses and pages in one step. A `zcat`, a `zgrep` and a `zdiff` sit beside it, all from the same package as `gzip`."
+        output: |
+          203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
+          203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
+        level: basic
+        tags: [archives]
+      - title: "Or teach less to do it for every format at once"
+        code: gzip -n -c access.log > access.log.gz && eval "$(lesspipe)" && less access.log.gz | head -2
+        description: "`lesspipe` prints the two `export` lines that set `$LESSOPEN` and `$LESSCLOSE`. `eval` runs them. From then on `less` on a `.gz`, a `.tar` or a `.deb` shows you what is inside it."
+        output: |
+          203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
+          203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
+        level: intermediate
+        tags: [archives, environment]
+      - title: "Debian writes the hook for you and leaves it off"
+        code: grep lesspipe ~/.bashrc
+        description: "The line is in the `.bashrc` every new account starts from, commented out. Uncommenting it is the whole of the setup. It also explains why `less` on an archive behaves differently on two machines that look identical."
+        output: |
+          # make less more friendly for non-text input files, see lesspipe(1)
+          #[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+        level: intermediate
+        tags: [environment, debian]
+
+  - title: "Everything else that hands you to less"
+    examples:
+      - title: "man pages are paged, unless nobody is watching"
+        code: man ls | head -1
+        description: "`man` runs its output through a pager. That pager makes the same terminal check `less` does, so piped you get the formatted page and no prompt."
+        output: |
+          LS(1)                            User Commands                            LS(1)
+        level: basic
+        tags: [beginner]
+      - title: "Choose the pager yourself"
+        code: PAGER=cat man ls | head -1
+        description: "`$PAGER` is the general setting and `$MANPAGER` overrides it for `man` alone. `man --pager=cat` does the same thing for one invocation."
+        output: |
+          LS(1)                            User Commands                            LS(1)
+        level: intermediate
+        tags: [environment]
+      - title: "Turn the pager off where a command offers it"
+        code: journalctl --no-pager -n 20
+        description: "[journalctl](/commands/journalctl/) and [systemctl](/commands/systemctl/) both start `less` when they have a terminal, which is unhelpful in a script that only wants the text. `--no-pager` is their way of saying what a pipe would have said."
+        level: intermediate
+        tags: [systemd, scripting]
+      - title: "Check what a key does without leaving the shell"
+        code: less --help | col -b | grep -E "Forward forever|Display only matching" | tr -s " \t" " "
+        description: "`less --help` is the same list `h` shows from inside. It arrives with backspace overstrike for the bold, which is what `col -b` removes; `tr` then collapses the column padding."
+        output: |2
+           F Forward forever; like "tail -f".
+           &pattern * Display only matching lines.
+        level: advanced

@@ -17,7 +17,8 @@ For the flags themselves rather than the model behind them, see [`chmod`](/comma
 ## Owner, group, and everyone else
 
 Every file and directory has one **owner** (a user) and one **group**, plus a category for
-**everyone else**. Each of those three gets its own set of three permissions: **r**ead,
+**everyone else**. [`chown`](/commands/chown/) sets those two; `chmod` below sets what each of
+them may do. Each of those three gets its own set of three permissions: **r**ead,
 **w**rite, and e**x**ecute. [`ls -l`](/commands/ls/) shows all nine bits in a row:
 
 <!-- verify: shape the size, timestamp and link count are this file's, not a fixed value -->

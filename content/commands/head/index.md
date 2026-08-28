@@ -6,7 +6,7 @@ category: commands
 tags: [text-processing, files]
 updated: 2026-08-23
 tier: light
-related: [tail, grep, sort, wc]
+related: [tail, cat, grep, sort, wc]
 ---
 
 `head` prints the first 10 lines of each file it is given, or of standard input. `-n` changes the

@@ -6,7 +6,7 @@ category: commands
 tags: [text-processing, monitoring, sysadmin]
 updated: 2026-08-23
 tier: standard
-related: [head, grep, journalctl, monitor-a-log-in-real-time]
+related: [head, cat, grep, journalctl, monitor-a-log-in-real-time]
 ---
 
 `tail` prints the last 10 lines of each file it is given, or of standard input. `-n` changes the

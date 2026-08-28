@@ -1,0 +1,242 @@
+command: cp
+fixtures:
+  - name: site
+    note: "the tree the [mv](/commands/mv/) and [rm](/commands/rm/) pages use as well, including `latest.css`, which is a symlink to `style.css`"
+    from: ls -lAR site
+    content: |2
+      site:
+      total 16
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 assets
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 backups
+      -rw-r--r-- 1 user user   36 Jun  1 09:00 index.html
+      lrwxrwxrwx 1 user user    9 Jun 18 09:00 latest.css -> style.css
+      -rw-r--r-- 1 user user   33 Jun 20 09:00 style.css
+
+      site/assets:
+      total 4
+      -rw-r--r-- 1 user user 35 Jun 10 09:00 logo.svg
+
+      site/backups:
+      total 0
+  - name: notes.txt
+    note: "one line, beside `site/` rather than inside it"
+    content: |
+      Rebuild before deploying.
+sections:
+  - title: "Copying a file"
+    intro: "`cp source destination`. A destination that is a directory means the copy goes inside it under the same name. Anything else is the name the copy takes."
+    examples:
+      - title: "Copy a file to a new name"
+        code: cp notes.txt notes.bak && ls notes.*
+        description: "Two files afterwards, with the same contents. [mv](/commands/mv/) does the same job without leaving the original behind."
+        output: |
+          notes.bak
+          notes.txt
+        level: basic
+        tags: [beginner]
+      - title: "Copy a file into a directory"
+        code: cp site/index.html site/backups/ && ls site/backups
+        description: "The name is unchanged. The destination directory has to exist already, because `cp` creates files and never directories."
+        output: |
+          index.html
+        level: basic
+        tags: [beginner]
+      - title: "Copy several files at once"
+        code: cp site/index.html site/style.css site/backups/ && ls site/backups
+        description: "With more than two arguments the last one has to be a directory. Every argument before it is copied into it."
+        output: |
+          index.html
+          style.css
+        level: basic
+        tags: [beginner]
+      - title: "Say what was copied where"
+        code: cp -v site/index.html published.html
+        description: "`-v` (`--verbose`) prints one line per file. Worth adding to any `cp -r` over a tree you have not looked inside."
+        output: |
+          'site/index.html' -> 'published.html'
+        level: basic
+      - title: "Put the destination first"
+        code: cp -t site/backups site/index.html site/style.css && ls site/backups
+        description: "`-t` (`--target-directory`) names the destination up front, so the filenames can come from somewhere else. [xargs](/commands/xargs/) needs this form, since it appends its arguments to the end of the command."
+        output: |
+          index.html
+          style.css
+        level: advanced
+        tags: [scripting]
+
+  - title: "Overwriting is the default"
+    intro: "`cp` replaces an existing destination without asking and without keeping a copy of what was there."
+    examples:
+      - title: "An existing file is replaced in silence"
+        code: cp site/style.css site/index.html && cat site/index.html
+        description: "No prompt, no message, no backup. `index.html` now holds the stylesheet. What was in it is not recoverable."
+        danger: true
+        output: |
+          body { font-family: monospace; }
+        level: basic
+        tags: [beginner]
+      - title: "Ask before each overwrite"
+        code: cp -i notes.txt site/index.html < /dev/null; echo; head -1 site/index.html
+        description: "`-i` (`--interactive`) prompts, and anything other than a yes leaves the destination alone. At a terminal you would type `y` or `n`. The `< /dev/null` answers nothing, which `cp` takes as a no."
+        output: |
+          cp: overwrite 'site/index.html'?
+          <!doctype html>
+        level: basic
+        tags: [beginner]
+      - title: "Refuse without asking"
+        code: cp -n notes.txt site/index.html && head -1 site/index.html
+        description: "`-n` (`--no-clobber`) skips any destination that exists. Better than `-i` in a script, where there is nobody to answer the prompt."
+        output: |
+          <!doctype html>
+        level: intermediate
+        tags: [scripting]
+      - title: "Keep the file you are about to overwrite"
+        code: cp --backup=numbered notes.txt site/index.html && ls site/
+        description: "The old `index.html` is renamed `index.html.~1~` before the copy lands. `--backup` on its own uses a single `~` suffix and overwrites that on the second run; `numbered` never reuses a name."
+        output: |
+          assets
+          backups
+          index.html
+          index.html.~1~
+          latest.css
+          style.css
+        level: intermediate
+      - title: "Take a backup of a file before editing it"
+        code: cp notes.txt{,.bak} && ls notes.*
+        description: "`notes.txt{,.bak}` is brace expansion: the shell turns it into `notes.txt notes.txt.bak` before `cp` runs. Nothing about it is a `cp` feature. It saves typing the name twice."
+        output: |
+          notes.txt
+          notes.txt.bak
+        level: intermediate
+
+  - title: "Copying a directory"
+    intro: "A directory needs `-r`. What the copy ends up called then depends on whether the destination already exists, which is why the second run of a `cp -r` can do something different from the first."
+    examples:
+      - title: "cp refuses a directory without -r"
+        code: cp site published
+        description: "It says which argument it skipped and copies nothing. `-R` does the same job, and so does the long form `--recursive`."
+        output: |
+          cp: -r not specified; omitting directory 'site'
+        level: basic
+        tags: [beginner]
+      - title: "Copy a whole tree"
+        code: cp -r site published && ls published
+        description: "`published` did not exist beforehand. It is created as a copy of `site`, holding the same five entries."
+        output: |
+          assets
+          backups
+          index.html
+          latest.css
+          style.css
+        level: basic
+        tags: [beginner]
+      - title: "The same command twice puts the tree inside itself"
+        code: cp -r site published && cp -r site published && ls published
+        description: "By the second run `published` exists. `site` is copied *into* it instead, giving you `published/site`. A `cp -r` that is safe to repeat needs the destination named exactly, never a directory it might land in."
+        danger: true
+        output: |
+          assets
+          backups
+          index.html
+          latest.css
+          site
+          style.css
+        level: intermediate
+      - title: "Copy the contents rather than the directory"
+        code: mkdir published && cp -r site/. published/ && ls published
+        description: "`site/.` names the contents rather than the directory. They land directly in `published`, however many times you run it. A deployment script that runs more than once usually wants this form."
+        output: |
+          assets
+          backups
+          index.html
+          latest.css
+          style.css
+        level: intermediate
+      - title: "A trailing slash on the source changes nothing"
+        code: mkdir published && cp -r site/ published/ && ls published
+        description: "`site/` is still the directory itself. This nests, exactly as the bare name did. `rsync` reads that same trailing slash as \"the contents of\", so a habit built on one of them misfires on the other."
+        output: |
+          site
+        level: intermediate
+
+  - title: "What survives the copy"
+    intro: "A copy is a new file. It gets a new timestamp by default, and its mode comes from your current umask. Several flags ask for more than that."
+    examples:
+      - title: "A plain copy is stamped with the time you made it"
+        code: cp site/index.html published.html && date -r published.html +%F
+        description: "`site/index.html` was last written in June and the copy is dated today. `date -r` reads a file's modification time. It stands in for `ls -l` because it prints nothing but the date."
+        volatile: "the date is whatever day you run the command"
+        compare: shape
+        output: |
+          2026-08-28
+        level: basic
+      - title: "Keep the timestamp and the mode"
+        code: cp -p site/index.html published.html && date -r published.html +%F
+        description: "`-p` (`--preserve`) carries over the modification time, the mode and, where you have the privilege for it, the ownership. Without root you cannot give a file away, so the owner becomes you regardless."
+        output: |
+          2026-06-01
+        level: basic
+        tags: [permissions]
+      - title: "Preserve everything across a whole tree"
+        code: cp -a site published && ls -l published/index.html
+        description: "`-a` (`--archive`) is `-dR --preserve=all`: recursive, preserving, and leaving symlinks as symlinks. It is the flag for copying a directory you intend to keep rather than read."
+        output: |
+          -rw-r--r-- 1 user user 36 Jun  1 09:00 published/index.html
+        level: intermediate
+        tags: [sysadmin]
+      - title: "Recreate the source path under the destination"
+        code: mkdir dist && cp --parents site/assets/logo.svg dist && find dist -type f
+        description: "`--parents` copies the directories named in the source path as well as the file. The layout is repeated under `dist`. The destination has to be a directory that already exists."
+        output: |
+          dist/site/assets/logo.svg
+        level: advanced
+      - title: "Make a hard link instead of a copy"
+        code: cp -l notes.txt hard.txt && stat -c '%h links' notes.txt hard.txt
+        description: "`-l` (`--link`) makes a second name for the same data rather than a second copy of it. Both names report a link count of two and reach the same inode. Edit one and the other shows the change."
+        output: |
+          2 links
+          2 links
+        level: advanced
+      - title: "Make a symlink instead of a copy"
+        code: cp -s notes.txt link.txt && readlink link.txt
+        description: "`-s` (`--symbolic-link`) writes a symlink rather than copying anything. A relative target is only allowed when the link lands in the current directory; anywhere else `cp` insists on an absolute path, because the text it writes is stored verbatim."
+        output: |
+          notes.txt
+        level: advanced
+
+  - title: "Symlinks, and the flag that changes what you get"
+    examples:
+      - title: "cp follows a symlink by default"
+        code: cp site/latest.css copy.css && stat -c '%F %s' copy.css
+        description: "`latest.css` points at `style.css`. What arrives is a regular file holding the stylesheet."
+        output: |
+          regular file 33
+        level: intermediate
+      - title: "Copy the link itself"
+        code: cp -P site/latest.css copy.css && readlink copy.css
+        description: "`-P` (`--no-dereference`) copies the symlink as a symlink, target text and all. It is still relative, so it now points at a `style.css` beside `copy.css` rather than the one in `site/`."
+        output: |
+          style.css
+        level: intermediate
+      - title: "-a keeps links across a whole tree"
+        code: cp -a site published && stat -c '%F' published/latest.css
+        description: "`-d` is `-P` plus preserving hard links, and `-a` includes it. A `cp -r` without either turns every symlink in the tree into a full copy of whatever it pointed at."
+        output: |
+          symbolic link
+        level: intermediate
+        tags: [sysadmin]
+
+  - title: "Copying only what changed"
+    examples:
+      - title: "Skip a destination that is already up to date"
+        code: mkdir published && cp -p site/style.css published/ && cp -uv site/style.css published/; echo done
+        description: "The first `cp -p` puts a copy in place with the same timestamp, so `-u` (`--update`) finds nothing to do and `-v` prints nothing. The `echo` is the only sign the command ran."
+        output: |
+          done
+        level: intermediate
+      - title: "Copy it once the source is newer"
+        code: mkdir published && cp -p site/style.css published/ && touch site/style.css && cp -uv site/style.css published/
+        description: "With the source's timestamp moved to now by `touch`, `-u` copies. For a whole tree of files, [rsync over ssh](/recipes/copy-files-between-machines/) answers this question better than `cp` does."
+        output: |
+          'site/style.css' -> 'published/style.css'
+        level: intermediate

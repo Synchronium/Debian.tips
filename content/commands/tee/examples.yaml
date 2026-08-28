@@ -180,7 +180,7 @@ sections:
         tags: [sysadmin, scripting]
       - title: "Check who ends up owning the file"
         code: echo 'vm.swappiness=10' | sudo tee /etc/sysctl.d/99-swappiness.conf > /dev/null && stat -c '%U %G %a %s' /etc/sysctl.d/99-swappiness.conf
-        description: "Owned by `root`, mode 644, because `tee` created it as the elevated user. `stat -c` is used here rather than `ls -l` because it prints no timestamp - see [chmod](/commands/chmod/) for what the mode means."
+        description: "Owned by `root`, mode 644, because `tee` created it as the elevated user. `stat -c` is used here rather than `ls -l` because it prints no timestamp - see [chmod](/commands/chmod/) for what the mode means and [chown](/commands/chown/) for changing the two names in front of it."
         output: |
           root root 644 17
         level: advanced

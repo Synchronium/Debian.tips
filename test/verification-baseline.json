@@ -27,6 +27,13 @@
     "fixtures": 6,
     "unpaired": 0
   },
+  "commands/cat": {
+    "checked": 38,
+    "byShape": 1,
+    "exempt": 0,
+    "fixtures": 4,
+    "unpaired": 0
+  },
   "commands/chmod": {
     "checked": 43,
     "byShape": 0,
@@ -34,11 +41,25 @@
     "fixtures": 2,
     "unpaired": 0
   },
+  "commands/chown": {
+    "checked": 22,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 3,
+    "unpaired": 0
+  },
   "commands/cowsay": {
     "checked": 51,
     "byShape": 0,
     "exempt": 0,
     "fixtures": 4,
+    "unpaired": 0
+  },
+  "commands/cp": {
+    "checked": 26,
+    "byShape": 1,
+    "exempt": 0,
+    "fixtures": 2,
     "unpaired": 0
   },
   "commands/crontab": {
@@ -118,9 +139,23 @@
     "fixtures": 5,
     "unpaired": 0
   },
+  "commands/less": {
+    "checked": 15,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 2,
+    "unpaired": 0
+  },
   "commands/ls": {
     "checked": 52,
     "byShape": 1,
+    "exempt": 0,
+    "fixtures": 2,
+    "unpaired": 0
+  },
+  "commands/mv": {
+    "checked": 25,
+    "byShape": 0,
     "exempt": 0,
     "fixtures": 2,
     "unpaired": 0
@@ -130,6 +165,13 @@
     "byShape": 25,
     "exempt": 0,
     "fixtures": 1,
+    "unpaired": 0
+  },
+  "commands/rm": {
+    "checked": 23,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 2,
     "unpaired": 0
   },
   "commands/sed": {

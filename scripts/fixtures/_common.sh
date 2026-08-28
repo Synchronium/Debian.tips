@@ -107,6 +107,40 @@ touch -d "2026-06-26 10:00:00" .   # the tree root, so the fixture listing does 
 cd ..
 chown -R user:user projects 2>/dev/null || true
 ) }
+mk_site_tree() { (
+# A small tree with one nested directory and one empty one, shared by the pages that copy,
+# move and delete. Those three teach the same distinctions against each other - a directory
+# that exists versus one that does not, a file versus the link to it - so a reader moving
+# between them should meet one `site/` rather than three that resemble each other.
+#
+# Modes, ownership and mtimes are all set explicitly, for the reasons `mk_projects` gives
+# above: the umask belongs to the host rather than the image, and `cp -u` and `ls -lt` both
+# read timestamps a fresh checkout would otherwise stamp with the time of the checkout.
+#
+# style.css is deliberately the newest file and index.html the oldest, which is what lets
+# `cp -u` copy one and skip the other without either page having to touch a timestamp first.
+mkdir -p site/assets site/backups
+printf '<!doctype html>\n<title>deb1</title>\n' > site/index.html
+printf 'body { font-family: monospace; }\n' > site/style.css
+printf '<svg width="16" height="16"></svg>\n' > site/assets/logo.svg
+printf 'Rebuild before deploying.\n' > notes.txt
+
+# All three pages have to say what they do to a symlink rather than to the file behind it, and
+# each answers it differently: cp follows by default, mv never does, rm never does. A tree with
+# no symlink in it cannot show any of that.
+ln -s style.css site/latest.css
+
+chmod 644 site/index.html site/style.css site/assets/logo.svg notes.txt
+chmod 755 site site/assets site/backups
+
+touch -d "2026-06-01 09:00:00" site/index.html
+touch -d "2026-06-20 09:00:00" site/style.css
+touch -d "2026-06-10 09:00:00" site/assets/logo.svg
+touch -d "2026-06-10 09:00:00" notes.txt
+touch -h -d "2026-06-18 09:00:00" site/latest.css
+touch -d "2026-06-15 10:00:00" site/assets site/backups site
+chown -R user:user site notes.txt 2>/dev/null || true
+) }
 mk_users_csv() { cat > users.csv <<'EOF'
 name,age,department
 Alice,34,Engineering

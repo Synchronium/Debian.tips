@@ -33,7 +33,7 @@ IMG_0003.jpg
   not a regex), leaving the base name to rebuild with a new extension.
 - `mv` itself prints nothing on success, which is why the loop ends with `ls *.jpg`. The
   listing above is the proof the rename happened, not output from the loop.
-- `mv -- "$f" "..."` renames the file. The `--` tells `mv` that no more flags follow, which
+- `mv -- "$f" "..."` renames the file. The `--` tells [`mv`](/commands/mv/) that no more flags follow, which
   matters if a filename happens to start with a `-`. Quoting `"$f"` is what makes this safe for
   filenames containing spaces (see
   [Variables and quoting](/scripting/variables-and-quoting/)). The same job built as a pipeline

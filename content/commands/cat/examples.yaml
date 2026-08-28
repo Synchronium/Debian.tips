@@ -1,0 +1,426 @@
+command: cat
+fixtures:
+  - name: access.log
+    note: "the same combined-format log the [tail](/commands/tail/) and [grep](/commands/grep/) pages use"
+    content: |
+      203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
+      203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
+      198.51.100.7 - - [13/Aug/2026:09:14:22] "GET /index.html HTTP/1.1" 200 512
+      198.51.100.7 - - [13/Aug/2026:09:14:25] "GET /missing.html HTTP/1.1" 404 162
+      203.0.113.5 - - [13/Aug/2026:09:15:47] "GET /index.html HTTP/1.1" 200 512
+      192.0.2.44 - - [13/Aug/2026:09:16:03] "POST /login HTTP/1.1" 302 0
+      192.0.2.44 - - [13/Aug/2026:09:16:04] "GET /dashboard HTTP/1.1" 200 4021
+      198.51.100.7 - - [13/Aug/2026:09:18:51] "GET /index.html HTTP/1.1" 200 512
+      203.0.113.5 - - [13/Aug/2026:09:19:10] "GET /api/status HTTP/1.1" 500 89
+      192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
+  - name: access.log.1
+    note: "the rotated half of the same log, every entry earlier than the ten above"
+    content: |
+      203.0.113.5 - - [12/Aug/2026:23:58:11] "GET /index.html HTTP/1.1" 200 512
+      198.51.100.7 - - [12/Aug/2026:23:59:02] "GET /about.html HTTP/1.1" 200 1044
+      192.0.2.44 - - [13/Aug/2026:00:01:40] "GET /index.html HTTP/1.1" 200 512
+      203.0.113.5 - - [13/Aug/2026:00:04:19] "POST /login HTTP/1.1" 401 0
+  - name: notes.txt
+    note: "ten lines, four of them blank, in runs of one and two"
+    content: |
+      Release checklist
+
+      - bump the version
+
+
+      - run the full replay
+      - tag and push
+
+
+      Nothing is done yet.
+  - name: deploy.sh
+    note: "shown through `cat -A`, because a plain listing hides the carriage returns and the tab this file exists to carry"
+    from: cat -A deploy.sh
+    content: |
+      #!/bin/sh^M$
+      set -e^M$
+      if [ -d dist ]; then^M$
+      ^Irsync -a dist/ web@deb1:/srv/www/^M$
+      fi^M$
+sections:
+  - title: "Printing a file"
+    intro: "With one filename `cat` copies that file to standard output and stops. No pager, no headers, no numbering unless you ask."
+    examples:
+      - title: "Print a file to the screen"
+        code: cat access.log
+        description: "The whole file, in order, with nothing added. For a file long enough to scroll past you want [head](/commands/head/), [tail](/commands/tail/) or [less](/commands/less/) instead."
+        output: |
+          203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
+          203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
+          198.51.100.7 - - [13/Aug/2026:09:14:22] "GET /index.html HTTP/1.1" 200 512
+          198.51.100.7 - - [13/Aug/2026:09:14:25] "GET /missing.html HTTP/1.1" 404 162
+          203.0.113.5 - - [13/Aug/2026:09:15:47] "GET /index.html HTTP/1.1" 200 512
+          192.0.2.44 - - [13/Aug/2026:09:16:03] "POST /login HTTP/1.1" 302 0
+          192.0.2.44 - - [13/Aug/2026:09:16:04] "GET /dashboard HTTP/1.1" 200 4021
+          198.51.100.7 - - [13/Aug/2026:09:18:51] "GET /index.html HTTP/1.1" 200 512
+          203.0.113.5 - - [13/Aug/2026:09:19:10] "GET /api/status HTTP/1.1" 500 89
+          192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
+        level: basic
+        tags: [beginner]
+      - title: "Let the shell open the file instead"
+        code: cat < access.log.1
+        description: "Identical output by a different route. `cat` is handed an already-open standard input and never learns the filename. `wc -l < file` prints a bare number for the same reason."
+        output: |
+          203.0.113.5 - - [12/Aug/2026:23:58:11] "GET /index.html HTTP/1.1" 200 512
+          198.51.100.7 - - [12/Aug/2026:23:59:02] "GET /about.html HTTP/1.1" 200 1044
+          192.0.2.44 - - [13/Aug/2026:00:01:40] "GET /index.html HTTP/1.1" 200 512
+          203.0.113.5 - - [13/Aug/2026:00:04:19] "POST /login HTTP/1.1" 401 0
+        level: intermediate
+      - title: "Ask for a file that is not there"
+        code: cat missing.txt
+        description: "The message goes to standard error, so a redirect of standard output does not capture it. Nothing is printed and nothing is created."
+        output: |
+          cat: missing.txt: No such file or directory
+        level: basic
+        tags: [beginner]
+      - title: "One missing file out of several is still a failure"
+        code: 'cat notes.txt missing.txt > /dev/null; echo "exit $?"'
+        description: "`cat` prints every file it can read and exits `1` regardless. A script that concatenates a list of files needs to check this, because the output looks complete."
+        output: |
+          cat: missing.txt: No such file or directory
+          exit 1
+        level: intermediate
+        tags: [scripting]
+      - title: "cat will not print a directory"
+        code: cat .
+        description: "It reports the directory and moves on. Use [ls](/commands/ls/) for the contents of a directory and `cat` for the contents of a file."
+        output: |
+          cat: .: Is a directory
+        level: basic
+      - title: "Read a file whose name begins with a dash"
+        code: printf 'saved by a typo\n' > ./-output.html && cat -- -output.html
+        description: "A mistyped `curl -o -output.html` leaves a file `cat` would otherwise read as a bundle of flags. `--` ends the options, and `./-output.html` works too."
+        output: |
+          saved by a typo
+        level: advanced
+
+  - title: "Joining files"
+    intro: "Extra filenames are extra arguments. `cat` reads them in the order you wrote them and puts nothing between them, so joining a rotated log to a current one is a matter of naming the older file first."
+    examples:
+      - title: "Join a rotated log to the current one"
+        code: cat access.log.1 access.log | head -6
+        description: "The four rotated entries come first, then the current log picks up where they left off. `head` is here only to keep the page short; without it you get all fourteen lines."
+        output: |
+          203.0.113.5 - - [12/Aug/2026:23:58:11] "GET /index.html HTTP/1.1" 200 512
+          198.51.100.7 - - [12/Aug/2026:23:59:02] "GET /about.html HTTP/1.1" 200 1044
+          192.0.2.44 - - [13/Aug/2026:00:01:40] "GET /index.html HTTP/1.1" 200 512
+          203.0.113.5 - - [13/Aug/2026:00:04:19] "POST /login HTTP/1.1" 401 0
+          203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
+          203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
+        level: basic
+        tags: [beginner]
+      - title: "Name them the other way round and the timestamps run backwards"
+        code: cat access.log access.log.1 | tail -2
+        description: "`cat` sorts nothing. The last two lines of this stream are the oldest requests in either file, because `access.log.1` was named second."
+        output: |
+          192.0.2.44 - - [13/Aug/2026:00:01:40] "GET /index.html HTTP/1.1" 200 512
+          203.0.113.5 - - [13/Aug/2026:00:04:19] "POST /login HTTP/1.1" 401 0
+        level: basic
+      - title: "Write the joined result to a new file"
+        code: cat access.log.1 access.log > combined.log && wc -l combined.log
+        description: "Fourteen lines, four from the rotated file and ten from the current one. The redirect is the shell's work. `cat` only supplies the stream."
+        output: |2
+          14 combined.log
+        level: basic
+        tags: [beginner]
+      - title: "Append one file to the end of another"
+        code: cat access.log.1 >> notes.txt && wc -l notes.txt
+        description: "`>>` adds to the file instead of replacing it. Ten lines of `notes.txt` become fourteen. See [pipes and redirection](/concepts/pipes-and-redirection/) for the difference between the two."
+        output: |2
+          14 notes.txt
+        level: basic
+        tags: [beginner]
+      - title: "Never redirect into a file you are also reading"
+        code: cat access.log.1 access.log > combined.log && wc -l combined.log && cat access.log.1 combined.log > combined.log; wc -l combined.log
+        description: "The shell truncates `combined.log` before `cat` starts, so the fourteen lines are gone by the time anything is read. GNU `cat` notices and refuses to read its own output file, which saves you from an infinite file but not from the four lines you are left with. Write to a new name and [mv](/commands/mv/) it into place."
+        danger: true
+        output: |2
+          14 combined.log
+          cat: combined.log: input file is output file
+          4 combined.log
+        level: intermediate
+      - title: "A file with no final newline runs into the next one"
+        code: printf 'first file, no trailing newline' > partial.txt && cat partial.txt notes.txt | head -1
+        description: "`cat` copies bytes and adds none, so a file that does not end in a newline is joined to the next file mid-line. Most editors do not show the difference. A join like this one is usually where it first appears."
+        output: |
+          first file, no trailing newlineRelease checklist
+        level: intermediate
+      - title: "Confirm the missing newline before you join anything"
+        code: printf 'first file, no trailing newline' > partial.txt && cat -A partial.txt
+        description: "Every complete line ends `$` under `-A`. This one has none at all: the file ends without a newline."
+        output: |
+          first file, no trailing newline
+        level: intermediate
+
+  - title: "Numbering lines and collapsing blank runs"
+    examples:
+      - title: "Number every line"
+        code: cat -n notes.txt
+        description: "`-n` numbers all ten lines, blank ones included. The number is right-aligned in six columns and followed by a tab."
+        output: |2
+               1	Release checklist
+               2
+               3	- bump the version
+               4
+               5
+               6	- run the full replay
+               7	- tag and push
+               8
+               9
+              10	Nothing is done yet.
+        level: basic
+        tags: [beginner]
+      - title: "Number only the lines with something on them"
+        code: cat -b notes.txt
+        description: "`-b` skips the blanks, so the five real lines are numbered one to five and the file keeps its shape. It overrides `-n` when both are given."
+        output: |2
+               1	Release checklist
+
+               2	- bump the version
+
+
+               3	- run the full replay
+               4	- tag and push
+
+
+               5	Nothing is done yet.
+        level: basic
+      - title: "Collapse runs of blank lines into one"
+        code: cat -s notes.txt
+        description: "`-s` (`--squeeze-blank`) leaves a single blank line wherever there was a run of them. Useful on generated files that separate every section with three."
+        output: |
+          Release checklist
+
+          - bump the version
+
+          - run the full replay
+          - tag and push
+
+          Nothing is done yet.
+        level: basic
+      - title: "Squeeze first, then number what is left"
+        code: cat -sn notes.txt
+        description: "The flags combine, and `-s` happens first: eight lines survive the squeeze and the numbering stops at eight."
+        output: |2
+               1	Release checklist
+               2
+               3	- bump the version
+               4
+               5	- run the full replay
+               6	- tag and push
+               7
+               8	Nothing is done yet.
+        level: intermediate
+      - title: "Numbering carries on across files"
+        code: cat -n access.log.1 access.log | tail -3
+        description: "One continuous count over both files, because `cat` produced one stream. [head](/commands/head/) and [tail](/commands/tail/) restart per file and print a header naming each; `cat` does neither."
+        output: |2
+              12	198.51.100.7 - - [13/Aug/2026:09:18:51] "GET /index.html HTTP/1.1" 200 512
+              13	203.0.113.5 - - [13/Aug/2026:09:19:10] "GET /api/status HTTP/1.1" 500 89
+              14	192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
+        level: intermediate
+      - title: "Number the output of a pipeline"
+        code: grep 200 access.log | cat -n
+        description: "With no filename `cat` numbers whatever arrives on standard input. `grep -n` would number the lines by their position in the original file; this numbers the matches."
+        output: |2
+               1	203.0.113.5 - - [13/Aug/2026:09:12:01] "GET /index.html HTTP/1.1" 200 512
+               2	203.0.113.5 - - [13/Aug/2026:09:12:03] "GET /style.css HTTP/1.1" 200 231
+               3	198.51.100.7 - - [13/Aug/2026:09:14:22] "GET /index.html HTTP/1.1" 200 512
+               4	203.0.113.5 - - [13/Aug/2026:09:15:47] "GET /index.html HTTP/1.1" 200 512
+               5	192.0.2.44 - - [13/Aug/2026:09:16:04] "GET /dashboard HTTP/1.1" 200 4021
+               6	198.51.100.7 - - [13/Aug/2026:09:18:51] "GET /index.html HTTP/1.1" 200 512
+               7	192.0.2.44 - - [13/Aug/2026:09:20:33] "GET /dashboard HTTP/1.1" 200 4021
+        level: intermediate
+
+  - title: "Seeing the bytes a terminal hides"
+    intro: "A terminal draws a tab, a trailing space and a carriage return as nothing at all, so a file that looks correct can still be wrong. `cat -A` prints those bytes as visible escapes."
+    examples:
+      - title: "A shell script that will not run"
+        code: sh deploy.sh
+        description: "Five lines of ordinary shell, and `set -e` is rejected. Nothing looks wrong with the file in any editor that opens it."
+        output: |
+          deploy.sh: 2: set: Illegal option -
+        level: basic
+      - title: "Find out why with -A"
+        code: cat -A deploy.sh
+        description: "Every line ends `^M$` rather than `$`. The `^M` is a carriage return, picked up from an editor on Windows. `sh` reads it as part of the `-e` argument. `^I` on the fourth line is a tab."
+        output: |
+          #!/bin/sh^M$
+          set -e^M$
+          if [ -d dist ]; then^M$
+          ^Irsync -a dist/ web@deb1:/srv/www/^M$
+          fi^M$
+        level: basic
+        tags: [beginner]
+      - title: "Strip the carriage returns and check again"
+        code: sed -i 's/\r$//' deploy.sh && cat -A deploy.sh
+        description: "[sed](/commands/sed/) removes the return at the end of each line. The tab stays, because a tab inside a shell script is legal and was never the problem."
+        output: |
+          #!/bin/sh$
+          set -e$
+          if [ -d dist ]; then$
+          ^Irsync -a dist/ web@deb1:/srv/www/$
+          fi$
+        level: intermediate
+        tags: [scripting]
+      - title: "Mark line ends and nothing else"
+        code: cat -E notes.txt | head -4
+        description: "`-E` (`--show-ends`) puts a `$` at the end of every line. It is the flag for finding trailing spaces, which sit between the last word and the `$`."
+        output: |
+          Release checklist$
+          $
+          - bump the version$
+          $
+        level: intermediate
+      - title: "Mark tabs and nothing else"
+        code: cat -T deploy.sh
+        description: "`-T` (`--show-tabs`) writes `^I` for a tab and leaves everything else alone. This is the one to use on a Makefile, where a line indented with spaces instead of a tab is a syntax error."
+        output: |
+          #!/bin/sh
+          set -e
+          if [ -d dist ]; then
+          ^Irsync -a dist/ web@deb1:/srv/www/
+          fi
+        level: intermediate
+      - title: "Mark non-printing characters and nothing else"
+        code: cat -v deploy.sh
+        description: "`-v` shows the carriage returns as `^M` but leaves the tab as a tab, so the fourth line is still indented rather than marked. Tabs and newlines are exempt from `-v` by design, and `-T` and `-E` exist to cover them."
+        output: |
+          #!/bin/sh^M
+          set -e^M
+          if [ -d dist ]; then^M
+          	rsync -a dist/ web@deb1:/srv/www/^M
+          fi^M
+        level: advanced
+      - title: "-A is the other three together"
+        code: cat -vET deploy.sh
+        description: "`-A` (`--show-all`) is defined as `-vET`, so the two commands print the same thing. `-e` is `-vE` and `-t` is `-vT`, for when you want two of the three."
+        output: |
+          #!/bin/sh^M$
+          set -e^M$
+          if [ -d dist ]; then^M$
+          ^Irsync -a dist/ web@deb1:/srv/www/^M$
+          fi^M$
+        level: advanced
+
+  - title: "Writing a file from the terminal"
+    intro: "`cat` with no filename reads standard input. A heredoc supplies several lines of that inline, so a file can be written without another one existing to copy from."
+    examples:
+      - title: "Create a file from a heredoc"
+        code: |-
+          cat > todo.txt <<'EOF'
+          bump the version
+          run the full replay
+          EOF
+          cat todo.txt
+        description: "Everything between the delimiters becomes the file. Quoting the delimiter as `'EOF'` stops the shell expanding `$` and backticks inside the block. Leave the delimiter unquoted only when you want that expansion."
+        output: |
+          bump the version
+          run the full replay
+        level: basic
+        tags: [beginner, scripting]
+      - title: "Append a heredoc to an existing file"
+        code: |-
+          cat > todo.txt <<'EOF'
+          bump the version
+          EOF
+          cat >> todo.txt <<'EOF'
+          tag and push
+          EOF
+          cat todo.txt
+        description: "`>>` behaves the same way it does anywhere else: the second heredoc adds to the file instead of replacing it."
+        output: |
+          bump the version
+          tag and push
+        level: intermediate
+        tags: [scripting]
+      - title: "Splice standard input between two files"
+        code: cat - access.log.1 <<< "from stdin" | head -3
+        description: "A bare `-` is where standard input goes in the argument list, so you can put it before, after or between filenames. Without the `-` the standard input is ignored entirely."
+        output: |
+          from stdin
+          203.0.113.5 - - [12/Aug/2026:23:58:11] "GET /index.html HTTP/1.1" 200 512
+          198.51.100.7 - - [12/Aug/2026:23:59:02] "GET /about.html HTTP/1.1" 200 1044
+        level: advanced
+      - title: "Write a file you do not own"
+        code: cat notes.txt | sudo tee /etc/motd > /dev/null
+        description: "`sudo cat notes.txt > /etc/motd` fails, because the redirect is performed by your shell and your shell was never elevated. [tee](/commands/tee/) is the usual way round it. It takes a heredoc in place of the `cat` just as readily."
+        level: advanced
+        tags: [sysadmin, permissions]
+
+  - title: "When the pipe into cat is the wrong shape"
+    intro: "`cat file | filter` is the most criticised construction in shell. These five examples find or count the same thing, two of them with `cat` and three without."
+    examples:
+      - title: "The useless use of cat"
+        code: cat access.log | grep 404
+        description: "Correct output, one more process than the job needs. `grep` reads files perfectly well, so the `cat` and the pipe do nothing but move the bytes."
+        output: |
+          198.51.100.7 - - [13/Aug/2026:09:14:25] "GET /missing.html HTTP/1.1" 404 162
+        level: basic
+        tags: [beginner]
+      - title: "The same result, one process"
+        code: grep 404 access.log
+        description: "Every standard filter takes filenames: [grep](/commands/grep/), [sed](/commands/sed/), [awk](/commands/awk/), [sort](/commands/sort/), [wc](/commands/wc/). The pipe is for input a filename cannot express."
+        output: |
+          198.51.100.7 - - [13/Aug/2026:09:14:25] "GET /missing.html HTTP/1.1" 404 162
+        level: basic
+        tags: [beginner]
+      - title: "Two files and one filter is a job for cat"
+        code: cat access.log access.log.1 | grep -c "GET /index.html"
+        description: "`grep -c` given two filenames prints a count for each file separately. Joining them first gives one stream and one number."
+        output: |
+          6
+        level: intermediate
+      - title: "Losing the filename column a filter would print"
+        code: wc -l access.log
+        description: "[wc](/commands/wc/) prints the name of every file it was given. A number heading for a variable does not want it."
+        output: |2
+          10 access.log
+        level: basic
+      - title: "A redirect drops the filename without a second process"
+        code: wc -l < access.log
+        description: "`wc` never learns the name, so it prints the count alone. `cat access.log | wc -l` gives the same answer for the same reason and spends a process doing it."
+        output: |2
+          10
+        level: intermediate
+        tags: [scripting]
+
+  - title: "Compressed, reversed, and binary"
+    examples:
+      - title: "Read a gzipped file without unpacking it"
+        code: gzip -n -c access.log.1 > rotated.gz && zcat rotated.gz | head -2
+        description: "`zcat` is `cat` for gzipped files, and there is a `zgrep`, a `zdiff` and a `zless` beside it. `-n` on the `gzip` keeps the original name and timestamp out of the archive."
+        output: |
+          203.0.113.5 - - [12/Aug/2026:23:58:11] "GET /index.html HTTP/1.1" 200 512
+          198.51.100.7 - - [12/Aug/2026:23:59:02] "GET /about.html HTTP/1.1" 200 1044
+        level: intermediate
+        tags: [archives]
+      - title: "What plain cat makes of the same file"
+        code: gzip -n -c access.log.1 > rotated.gz && head -c 4 rotated.gz | cat -v
+        description: "The first four bytes of any gzip file, escaped by `-v` so they cannot reach the terminal as control codes. A whole binary file sent to a terminal unescaped leaves it printing garbage afterwards. `reset` puts it back."
+        output: |
+          ^_M-^K^H^@
+        level: advanced
+      - title: "Print a file backwards"
+        code: tac access.log.1
+        description: "`tac` is `cat` with the lines in reverse. Debian's `tail` has no `-r`, so `tail -n 20 | tac` is the usual way to see the end of a large file newest-first."
+        output: |
+          203.0.113.5 - - [13/Aug/2026:00:04:19] "POST /login HTTP/1.1" 401 0
+          192.0.2.44 - - [13/Aug/2026:00:01:40] "GET /index.html HTTP/1.1" 200 512
+          198.51.100.7 - - [12/Aug/2026:23:59:02] "GET /about.html HTTP/1.1" 200 1044
+          203.0.113.5 - - [12/Aug/2026:23:58:11] "GET /index.html HTTP/1.1" 200 512
+        level: intermediate
+      - title: "Read a one-line system file"
+        code: cat /etc/debian_version
+        description: "Most of what the system reports about itself is a short file somewhere under `/etc`, `/proc` or `/sys`. `cat` reads all of them. See [list installed packages](/debian/list-installed-packages/) for the ones that need a real tool instead."
+        volatile: "the point release moves whenever the machine is updated"
+        compare: shape
+        output: |
+          13.6
+        level: basic
+        tags: [debian, sysadmin]

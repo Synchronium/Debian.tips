@@ -328,7 +328,7 @@ sections:
         tags: [disk, files]
       - title: "Measure the same sparse file by length"
         code: du -h --apparent-size disk-image.img
-        description: "100M of addressable file with no blocks behind it. Copying it with `cp` rather than `cp --sparse=always` is how a 0-byte file becomes a 100M one."
+        description: "100M of addressable file with no blocks behind it. Copying it with [`cp`](/commands/cp/) rather than `cp --sparse=always` is how a 0-byte file becomes a 100M one."
         output: |2
           100M	disk-image.img
         level: intermediate

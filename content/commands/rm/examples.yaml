@@ -1,0 +1,221 @@
+command: rm
+fixtures:
+  - name: site
+    note: "the tree the [cp](/commands/cp/) and [mv](/commands/mv/) pages use as well, including `latest.css`, which is a symlink to `style.css`"
+    from: ls -lAR site
+    content: |2
+      site:
+      total 16
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 assets
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 backups
+      -rw-r--r-- 1 user user   36 Jun  1 09:00 index.html
+      lrwxrwxrwx 1 user user    9 Jun 18 09:00 latest.css -> style.css
+      -rw-r--r-- 1 user user   33 Jun 20 09:00 style.css
+
+      site/assets:
+      total 4
+      -rw-r--r-- 1 user user 35 Jun 10 09:00 logo.svg
+
+      site/backups:
+      total 0
+  - name: notes.txt
+    note: "one line, beside `site/` rather than inside it"
+    content: |
+      Rebuild before deploying.
+sections:
+  - title: "Deleting a file"
+    intro: "`rm` unlinks a name. There is no wastebasket on Debian and no undelete, so what follows is written on the assumption that every example here is final."
+    examples:
+      - title: "Delete a file"
+        code: rm notes.txt && ls notes.txt
+        description: "No output from `rm` itself. The `ls` afterwards is the only evidence you get."
+        output: |
+          ls: cannot access 'notes.txt': No such file or directory
+        level: basic
+        tags: [beginner]
+      - title: "Say what was deleted"
+        code: rm -v site/index.html site/style.css
+        description: "`-v` (`--verbose`) prints a line per file. Worth having on any `rm` whose arguments came from a glob or a pipeline rather than from your fingers."
+        output: |
+          removed 'site/index.html'
+          removed 'site/style.css'
+        level: basic
+        tags: [beginner]
+      - title: "Delete a file that is not there"
+        code: rm missing.txt
+        description: "An error on standard error and an exit status of `1`."
+        output: |
+          rm: cannot remove 'missing.txt': No such file or directory
+        level: basic
+      - title: "Ignore a file that is not there"
+        code: 'rm -f missing.txt; echo "exit $?"'
+        description: "`-f` (`--force`) suppresses the message and reports success. This is the flag a cleanup step in a script wants, so a second run does not fail on the file the first run removed."
+        output: |
+          exit 0
+        level: basic
+        tags: [scripting]
+      - title: "Delete a file whose name begins with a dash"
+        code: printf x > ./-rf && rm -- -rf && ls -a | grep -c rf
+        description: "Without `--` the shell hands `rm` a file called `-rf` and `rm` reads it as two flags. `./-rf` works as well. Both are worth knowing before the day a download lands one in your directory."
+        output: |
+          0
+        level: advanced
+
+  - title: "Nothing asks, and nothing comes back"
+    examples:
+      - title: "Ask before every file"
+        code: rm -i notes.txt < /dev/null; echo; ls notes.txt
+        description: "`-i` (`--interactive`) prompts per file, and anything other than a yes leaves it alone. Without `-i`, `rm` still prompts for a file you cannot write, but only when its input is a terminal; run the same command from a script and it deletes without a word."
+        output: |
+          rm: remove regular file 'notes.txt'?
+          notes.txt
+        level: basic
+        tags: [beginner]
+      - title: "Ask once for a whole batch"
+        code: rm -I site/index.html site/style.css site/assets/logo.svg site/latest.css < /dev/null; echo; ls site
+        description: "`-I` prompts a single time when there are more than three arguments. Three or fewer are deleted without a question, on the reasoning that a short list is one you typed and a long one came from a glob."
+        output: |
+          rm: remove 4 arguments?
+          assets
+          backups
+          index.html
+          latest.css
+          style.css
+        level: intermediate
+      - title: "An alias is a poor substitute for -I"
+        code: 'alias rm="rm -i"; alias rm; unalias rm'
+        description: "Aliasing `rm` to `rm -i` teaches you to expect a prompt. The habit follows you onto machines where the alias does not exist, and into scripts, where no alias applies at all. `rm -rf` overrides the `-i` anyway."
+        output: |
+          alias rm='rm -i'
+        level: intermediate
+        tags: [environment]
+
+  - title: "Directories"
+    examples:
+      - title: "rm on its own will not remove a directory"
+        code: rm site/backups
+        description: "Even an empty one. The refusal is deliberate: a directory is usually named by accident, as the tail of a glob."
+        output: |
+          rm: cannot remove 'site/backups': Is a directory
+        level: basic
+        tags: [beginner]
+      - title: "Remove an empty directory"
+        code: rmdir site/backups && ls site
+        description: "`rmdir` removes nothing that is not empty, which makes it the safe way to clear up a directory you believe you have already emptied. `rm -d` is the same thing spelled as a flag."
+        output: |
+          assets
+          index.html
+          latest.css
+          style.css
+        level: basic
+        tags: [beginner]
+      - title: "rmdir refuses anything with contents"
+        code: rmdir site/assets
+        description: "It will not remove the file inside for you. That refusal is the whole point of using it over `rm -r`."
+        output: |
+          rmdir: failed to remove 'site/assets': Directory not empty
+        level: basic
+      - title: "Remove a directory and everything in it"
+        code: rm -r site/assets && ls site
+        description: "`-r` (`--recursive`) descends and removes as it goes. It asks nothing and reports nothing, so `-v` is worth adding whenever you are not certain what is down there."
+        output: |
+          backups
+          index.html
+          latest.css
+          style.css
+        level: basic
+        tags: [beginner]
+      - title: "rm -rf never complains"
+        code: 'rm -rf site; echo "exit $?"; rm -rf site; echo "exit $?"'
+        description: "`-r` to descend, `-f` to skip every prompt and every complaint. The first call removed a tree. The second was given a path that no longer exists. Both are silent, and both report success: nothing in the output distinguishes deleting everything from deleting nothing."
+        danger: true
+        output: |
+          exit 0
+          exit 0
+        level: intermediate
+
+  - title: "The permission that decides"
+    intro: "Deleting a file is a write to the *directory* holding it, not to the file. Both consequences surprise people who have only ever read the mode on the file itself."
+    examples:
+      - title: "A read-only file you can still delete"
+        code: chmod 444 notes.txt && rm -f notes.txt && ls notes.txt
+        description: "`notes.txt` is `r--r--r--` and it goes anyway, because the entry naming it lives in a directory you can write. See [file permissions explained](/concepts/file-permissions-explained/) for why the mode on the file has no say."
+        output: |
+          ls: cannot access 'notes.txt': No such file or directory
+        level: intermediate
+        tags: [permissions, beginner]
+      - title: "A file you own that you cannot delete"
+        code: chmod 500 site && rm site/index.html; chmod 755 site
+        description: "You own `index.html` and you can write it. `site` is missing its write bit, so the entry cannot be removed. The `chmod` at the end puts the directory back."
+        output: |
+          rm: cannot remove 'site/index.html': Permission denied
+        level: intermediate
+        tags: [permissions]
+      - title: "Why /tmp is not a free-for-all"
+        code: stat -c '%A %n' /tmp
+        description: "The trailing `t` is the sticky bit. Everyone can write `/tmp`, so by the rule above anyone could delete anyone else's files there. The sticky bit restricts removal to the file's owner. Set it with [chmod](/commands/chmod/) `+t`."
+        output: |
+          drwxrwxrwt /tmp
+        level: advanced
+        tags: [permissions, security]
+
+  - title: "Ways to remove more than you named"
+    intro: "In each of these the command that runs is not the command you meant to type, and `rm` has no way to tell the difference. The shell has already finished with the arguments by the time `rm` sees them."
+    examples:
+      - title: "A stray space turns one argument into two"
+        code: rm notes.txt .txt
+        description: "The intention was `notes.txt` and a typo produced two arguments. `notes.txt` is gone. The only complaint is about the argument that was never a file. Now imagine the first one had been `*`."
+        danger: true
+        output: |
+          rm: cannot remove '.txt': No such file or directory
+        level: intermediate
+        tags: [beginner]
+      - title: "An unset variable expands to nothing"
+        code: unset DIR; rm -rf "$DIR"/
+        description: "`\"$DIR\"/` becomes `/` on its own, and only the `--preserve-root` failsafe stands between that and the whole machine. Quoting does not save you here; `set -u` in a script does, by refusing to expand an unset variable at all."
+        danger: true
+        output: |
+          rm: it is dangerous to operate recursively on '/'
+          rm: use --no-preserve-root to override this failsafe
+        level: intermediate
+        tags: [scripting, sysadmin]
+      - title: "A trailing slash on a symlink empties the target"
+        code: ln -s site sitelink && rm -r sitelink/; ls -A site | wc -l
+        description: "`rm` follows the slash into `site`, deletes everything it finds and *then* reports that `sitelink/` is not a directory. Both the link and the now-empty directory survive. The exit status is `1`, so a script that checks only that will carry on."
+        danger: true
+        output: |
+          rm: cannot remove 'sitelink/': Not a directory
+          0
+        level: advanced
+      - title: "Without the slash, only the link goes"
+        code: ln -s site sitelink && rm sitelink && ls -A site | wc -l
+        description: "`rm` never follows a symlink it was asked to remove. All five entries in `site` are still there. Tab completion adds that slash for you on a link to a directory, so the safe form is the one you have to delete a character to reach."
+        output: |
+          5
+        level: intermediate
+
+  - title: "Deleting many files at once"
+    intro: "A glob is expanded by the shell, so a directory with a hundred thousand files in it can produce a command line too long to run. [find](/commands/find/) is the way round that, and it also lets you look before you delete."
+    examples:
+      - title: "List what you are about to delete"
+        code: mkdir -p logs && touch logs/app.log.1 logs/app.log.2 logs/keep.log && find logs -name "*.log.[0-9]" -print | sort
+        description: "The same expression that will do the deleting, with `-print` in place of `-delete`. `sort` is needed because `find` returns entries in directory order, which is neither alphabetical nor stable."
+        output: |
+          logs/app.log.1
+          logs/app.log.2
+        level: intermediate
+        tags: [beginner]
+      - title: "Then delete exactly those"
+        code: mkdir -p logs && touch logs/app.log.1 logs/app.log.2 logs/keep.log && find logs -name "*.log.[0-9]" -delete && ls logs
+        description: "`-delete` is built into `find`, so no second command runs and no filename is ever re-parsed by a shell. `keep.log` did not match and is untouched."
+        output: |
+          keep.log
+        level: intermediate
+      - title: "Or hand them to rm safely"
+        code: mkdir -p logs && touch logs/app.log.1 logs/app.log.2 logs/keep.log && find logs -name "*.log.[0-9]" -print0 | sort -z | xargs -0 rm -v
+        description: "`-print0` and `-0` separate names with a null byte, which is the one character a filename cannot contain. Use this when you need a flag `-delete` cannot give you; see [xargs](/commands/xargs/) for what goes wrong without the null."
+        output: |
+          removed 'logs/app.log.1'
+          removed 'logs/app.log.2'
+        level: advanced
+        tags: [scripting]

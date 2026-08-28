@@ -131,7 +131,7 @@ Line one
 Line two: user
 ```
 
-The `$(whoami)` was expanded by the shell before `cat` ever saw it. The quoted `<<'EOF'` form
+The `$(whoami)` was expanded by the shell before [`cat`](/commands/cat/) ever saw it. The quoted `<<'EOF'` form
 passes every line through untouched instead.
 
 A here-string (`<<<`) is the single-line version: `cat <<< "some text"` feeds that one string in

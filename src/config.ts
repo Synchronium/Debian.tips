@@ -177,6 +177,8 @@ export const COMMAND_GROUPS: { title: string; commands: string[] }[] = [
   {
     title: "Text processing",
     commands: [
+      "cat",
+      "less",
       "grep",
       "sed",
       "awk",
