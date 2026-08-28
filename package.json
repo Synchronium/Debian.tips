@@ -16,6 +16,7 @@
     "a11y": "npx tsx scripts/pa11y-urls.ts && npx pa11y-ci -c .pa11yci.generated.json",
     "browser": "tsx scripts/browser-check.ts",
     "voice": "tsx scripts/voice-check.ts",
+    "og": "tsx scripts/og-image.ts",
     "shards": "tsx scripts/check-shard-count.ts",
     "check": "NODE_ENV=production npm run check:gate",
     "check:gate": "npm run format:check && tsc --noEmit && tsc -p tsconfig.client.json && tsc -p tsconfig.browser-check.json && vitest run && tsx src/build.ts && pagefind --site dist && tsx src/linkcheck.ts && tsx scripts/link-audit.ts",

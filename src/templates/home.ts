@@ -45,7 +45,7 @@ export function homePage(pages: Page[], cssHref: string): string {
   const body = html`
 ${raw(iconSprite())}
 <section class="hero">
-<h1>Practical tips for Debian users.</h1>
+<h1>${SITE.headline}</h1>
 <p class="hero-tagline">${SITE.description}</p>
 <button type="button" class="search-field" data-search-open aria-haspopup="dialog" aria-controls="search-dialog">
 <span aria-hidden="true" class="search-trigger-icon">⌕</span>

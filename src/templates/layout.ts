@@ -11,7 +11,7 @@ import {
   SITE,
   STANDALONE_PAGES,
 } from "../config.js";
-import { CLIENT_DIR, FONT_HREF } from "../paths.js";
+import { CLIENT_DIR, FONT_HREF, OG_IMAGE_HREF } from "../paths.js";
 import type { Category } from "../content/schema.js";
 
 export interface LayoutOptions {
@@ -238,7 +238,7 @@ ${raw(analyticsHtml())}
 <meta property="og:title" content="${opts.title}" />
 <meta property="og:description" content="${opts.description}" />
 <meta property="og:url" content="${canonical}" />
-<meta property="og:image" content="${SITE.url}/og-default.png" />
+<meta property="og:image" content="${SITE.url}${OG_IMAGE_HREF}" />
 <meta name="twitter:card" content="summary_large_image" />
 ${opts.modified ? raw(html`<meta property="article:modified_time" content="${opts.modified}" />`) : ""}
 ${opts.prevPath ? raw(html`<link rel="prev" href="${SITE.url}${opts.prevPath}" />`) : ""}

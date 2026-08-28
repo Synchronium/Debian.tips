@@ -1,9 +1,9 @@
 {
-  "//": "The one Node file that also writes browser code: the callbacks browser-check.ts hands to page.evaluate() run inside the page, so they need DOM globals, while the file around them needs node:fs. Neither of the other two configs can express that, and widening the main lib to cover it would let `document` typecheck across the whole build and harness, which is what ADR-0013 exists to prevent. Its Node-side imports are still checked without DOM by tsconfig.json, which is what keeps that invariant true.",
+  "//": "The Node files that also write browser code: the callbacks these hand to page.evaluate() run inside the page, so they need DOM globals, while the files around them need node:fs. Neither of the other two configs can express that, and widening the main lib to cover it would let `document` typecheck across the whole build and harness, which is what ADR-0013 exists to prevent. Everything here is excluded from tsconfig.json rather than checked twice, so a file joining this list has to be added in both places or it keeps the DOM-free checking it was moved here to escape.",
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["scripts/browser-check.ts"],
+  "include": ["scripts/browser-check.ts", "scripts/og-image.ts"],
   "exclude": []
 }

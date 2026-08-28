@@ -49,6 +49,12 @@ export const FONT_SOURCE = join(
 export const FONT_FILE = "source-serif-4-latin-600.woff2";
 export const FONT_HREF = `/assets/${FONT_FILE}`;
 
+/** The share card every page points social media at, copied out of `public/` by the asset step
+ *  like any other static file. Named here because two things address it: the `og:image` and
+ *  `twitter:image` tags in the layout, and `scripts/og-image.ts`, which draws it. */
+export const OG_IMAGE_FILE = "og-default.png";
+export const OG_IMAGE_HREF = `/${OG_IMAGE_FILE}`;
+
 /** Filenames fixed by the content contract rather than by configuration. */
 export const PAGE_EXTENSION = ".md";
 export const INDEX_FILE = "index.md";

@@ -10,6 +10,15 @@ export const SITE = {
   title: "debian.tips",
   tagline: "Linux tips & tricks",
   description: "Practical Linux and Debian tips, tricks, and command references.",
+  /** The homepage's opening line, and the display line on the share card. Here rather than in
+   *  `home.ts` because those two have to say the same thing: a visitor arriving from a shared
+   *  link should meet the sentence the card promised them. */
+  headline: "Practical tips for Debian users.",
+  /** The one sentence the share card has room for beyond the name, so it is the claim that
+   *  distinguishes this site rather than a restatement of `headline`. It is also a promise the
+   *  repository keeps: `npm run replay` is what makes it true, and ADR-0002 is why. Do not
+   *  reword it into something the replay does not actually check. */
+  promise: "Every example is run inside a throwaway Debian container, and run again on every push.",
   gaMeasurementId: "G-CFE8GTL7E4",
   /** The public repository, with no trailing slash. Every page links into it, and so do the
    *  footer and the about page. `blobUrl` below is the only sanctioned way to turn a repository

@@ -29,6 +29,7 @@ npm run replay -- --shard=2/7      # one part of a seven-way split; CI gives eac
 npm run audit:links -- --verbose   # the link graph on its own, advisory findings included
 npm run voice    # prose against .claude/reference/voice.md; a hook runs it per file as you write
 npm run browser  # search and narrow-screen layout, in a real browser against a served build
+npm run og       # redraws public/og-default.png, the share card, from styles/site.css
 ```
 
 `--shard` exists for CI, which gives each shard a machine of its own. One shard at a time is a
@@ -88,11 +89,12 @@ inside it, which changed every emitted page the first time this was set up.
 through `tsx`, and it imports the content types from `src/content/schema.ts` rather than keeping
 its own idea of what an `examples.yaml` contains.
 
-Two files are checked by a config of their own instead, and both are about keeping DOM globals out
-of Node code, where `document` is always a mistake (ADR-0013). `src/client/` is browser code and
-gets `tsconfig.client.json`. `scripts/browser-check.ts` is Node code that *contains* browser code,
-since the callbacks it hands to `page.evaluate()` run inside the page, and gets
-`tsconfig.browser-check.json`. **Do not widen `lib` in `tsconfig.json` to satisfy either.** That
+Some files are checked by a config of their own instead, and all of it is about keeping DOM globals
+out of Node code, where `document` is always a mistake (ADR-0013). `src/client/` is browser code
+and gets `tsconfig.client.json`. `scripts/browser-check.ts` and `scripts/og-image.ts` are Node code
+that *contains* browser code, since the callbacks they hand to `page.evaluate()` run inside the
+page, and both get `tsconfig.browser-check.json`. A file joining that list leaves `tsconfig.json`
+in the same commit, or it is checked twice and the second check is the one it was moved to escape. **Do not widen `lib` in `tsconfig.json` to satisfy either.** That
 makes `document` typecheck across the whole build and harness, and the failure it lets through is
 one that only appears at runtime. All three configs run in `npm run check`.
 
