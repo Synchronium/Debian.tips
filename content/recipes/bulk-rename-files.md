@@ -29,8 +29,9 @@ IMG_0003.jpg
 
 - `for f in *.JPG` expands to every matching filename in the current directory, one per
   iteration.
-- `${f%.JPG}` strips the literal suffix `.JPG` from the end of `$f` (a bash parameter expansion,
-  not a regex), leaving the base name to rebuild with a new extension.
+- `${f%.JPG}` strips the literal suffix `.JPG` from the end of `$f` (a
+  [parameter expansion](/scripting/parameter-expansion/), not a regex), leaving the base name to
+  rebuild with a new extension.
 - `mv` itself prints nothing on success, which is why the loop ends with `ls *.jpg`. The
   listing above is the proof the rename happened, not output from the loop.
 - `mv -- "$f" "..."` renames the file. The `--` tells [`mv`](/commands/mv/) that no more flags follow, which

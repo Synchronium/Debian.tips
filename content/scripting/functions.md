@@ -208,7 +208,9 @@ by reading, and it is worth knowing before you rely on
 
 ## What's next
 
-That is the core of the language: variables, conditions, loops, arguments and functions. From
-here the useful next steps are the pieces that make a script safe to run unattended: `trap` for
-cleanup, `set -euo pipefail`, and the error-handling patterns in
+That is the core of the language: variables, conditions, loops, arguments and functions. The two
+lessons after this one are about the values themselves rather than the control flow around them,
+[Arrays](/scripting/arrays/) and [Parameter expansion](/scripting/parameter-expansion/). For a
+script that has to run unattended, the pieces to add are `trap` for cleanup, `set -euo pipefail`,
+and the error-handling patterns in
 [Exit codes and error handling](/concepts/exit-codes-and-error-handling/).

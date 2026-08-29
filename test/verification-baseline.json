@@ -412,7 +412,35 @@
     "fixtures": 0,
     "unpaired": 0
   },
+  "scripting/a-real-script": {
+    "checked": 4,
+    "byShape": 0,
+    "exempt": 1,
+    "fixtures": 0,
+    "unpaired": 1
+  },
+  "scripting/arithmetic": {
+    "checked": 8,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
+  "scripting/arrays": {
+    "checked": 14,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
   "scripting/conditionals-and-test": {
+    "checked": 6,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
+  "scripting/debugging-and-robustness": {
     "checked": 6,
     "byShape": 0,
     "exempt": 0,
@@ -426,8 +454,22 @@
     "fixtures": 0,
     "unpaired": 0
   },
+  "scripting/here-docs": {
+    "checked": 6,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
   "scripting/loops": {
     "checked": 8,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
+  "scripting/parameter-expansion": {
+    "checked": 11,
     "byShape": 0,
     "exempt": 0,
     "fixtures": 0,
@@ -440,8 +482,22 @@
     "fixtures": 0,
     "unpaired": 0
   },
+  "scripting/traps-and-cleanup": {
+    "checked": 5,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
   "scripting/variables-and-quoting": {
     "checked": 4,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
+  "scripting/where-a-script-lives": {
+    "checked": 7,
     "byShape": 0,
     "exempt": 0,
     "fixtures": 0,

@@ -224,7 +224,7 @@ sections:
     examples:
       - title: "There is no glob rename, so use a loop"
         code: for f in site/assets/*.svg; do mv "$f" "${f%.svg}.min.svg"; done && ls site/assets
-        description: "`mv *.svg *.min.svg` cannot work: the shell expands both globs before `mv` runs, and the second matches nothing. `${f%.svg}` strips the suffix one file at a time. [Bulk rename files](/recipes/bulk-rename-files/) covers the rest, including `rename` from the `rename` package."
+        description: "`mv *.svg *.min.svg` cannot work: the shell expands both globs before `mv` runs, and the second matches nothing. `${f%.svg}` strips the suffix one file at a time, which is [parameter expansion](/scripting/parameter-expansion/). [Bulk rename files](/recipes/bulk-rename-files/) covers the rest, including `rename` from the `rename` package."
         output: |
           logo.min.svg
         level: intermediate

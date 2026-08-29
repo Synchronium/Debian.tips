@@ -46,6 +46,9 @@ Unquoted, both behave the same and both are wrong: `$@` and `$*` are each split 
 passing arguments on to another command, and `"$*"` only when you genuinely want one string,
 usually to print it.
 
+The positional parameters are an [array](/scripting/arrays/) with a fixed name, and `"${arr[@]}"`
+against `"${arr[*]}"` is this same pair of rules written out in full.
+
 ```bash
 # Forwarding arguments to another command, correctly
 grep "$pattern" "$@"

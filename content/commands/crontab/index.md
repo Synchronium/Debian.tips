@@ -37,7 +37,9 @@ environment: no `.bashrc`, no interactive `$PATH`, none of the aliases or functi
 normally has. Always use full paths to scripts and binaries inside a crontab, and set `PATH`
 explicitly at the top of the crontab if you rely on anything outside `/usr/bin` and `/bin`. See
 [environment variables and PATH](/concepts/environment-variables-and-path/) for where the
-interactive value you are comparing against comes from.
+interactive value you are comparing against comes from, and
+[A real script](/scripting/a-real-script/) for a scheduled script written to survive this: it
+resolves its own directory rather than trusting the one cron drops it in.
 
 By default `crontab` edits your own crontab. Root can manage anyone's with `-u <user>`; anyone
 else gets `must be privileged to use -u`. System-wide jobs that need to run as a specific user

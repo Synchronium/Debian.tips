@@ -94,6 +94,10 @@ Argument count: 2
 expands to all of them, and `$#` counts them. The next lesson covers why `$@` almost always
 needs to be written as `"$@"` (quoted) once arguments might contain spaces.
 
+Note the word invocation. `$0` is whatever the caller typed rather than a path to the file, which
+is why a script cannot use it to find a config file beside itself without help;
+[Where a script lives](/scripting/where-a-script-lives/) is that problem and its one-line fix.
+
 > [!TIP]
 > If `./hello.sh` fails with "command not found" rather than "permission denied," check that
 > the file exists at that path and is spelled correctly. Both errors look similar at a

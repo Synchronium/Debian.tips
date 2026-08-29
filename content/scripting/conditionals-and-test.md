@@ -30,7 +30,8 @@ argument, required so the command knows where its argument list ends. `if` just 
 they're separate words to the shell, not special syntax it parses differently.
 
 String comparison uses `=` (or `!=`), numeric comparison uses `-eq`, `-ne`, `-gt`, `-lt`, `-ge`,
-`-le`:
+`-le`. Getting those two the wrong way round is not an error and gives a wrong answer quietly, so
+[Arithmetic](/scripting/arithmetic/) shows what `[ 10 ">" 9 ]` decides and why.
 
 ```bash
 name="deb1"

@@ -215,7 +215,8 @@ to push a variable into a process that is already running.
 
 **An empty variable and an unset one are different.** `${VAR:-default}` supplies the default for
 both, `${VAR-default}` only for genuinely unset, and `printenv VAR` prints an empty line for the
-first and nothing for the second.
+first and nothing for the second. [Parameter expansion](/scripting/parameter-expansion/) has the
+rest of that family, including `${VAR:?message}` for the variables a script cannot guess at.
 
 **Quote the expansion.** `export DIR=$HOME/my documents` sets `DIR` to something that ends at the
 space. See [variables and quoting](/scripting/variables-and-quoting/) for the general rule, which

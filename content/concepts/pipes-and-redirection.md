@@ -136,6 +136,8 @@ passes every line through untouched instead.
 
 A here-string (`<<<`) is the single-line version: `cat <<< "some text"` feeds that one string in
 as stdin, without the multi-line `<<EOF ... EOF` ceremony.
+[Here-docs and generating files](/scripting/here-docs/) covers the rest of the form, including
+`<<-` and the reason a setup script writes configuration this way.
 
 ## `tee`: splitting one stream into two
 

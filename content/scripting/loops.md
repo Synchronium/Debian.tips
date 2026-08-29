@@ -27,7 +27,9 @@ deploying to prod
 
 The list is words, split the way the shell splits any other words, which is why the loop
 variable needs quoting when you use it and why an unquoted list is a trap. `for` does not know
-about files, numbers or ranges; it iterates over whatever words it is given.
+about files, numbers or ranges; it iterates over whatever words it is given. A list whose items
+contain spaces has to be an [array](/scripting/arrays/), because there is no way to write it as
+words and have the shell put it back together.
 
 ## `for` over files
 
