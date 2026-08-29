@@ -4,7 +4,6 @@
 - **Recorded:** 2026-08-27
 - **Enforced by:** `.github/workflows/record-timings.yml`;
   `scripts/merge-timings.ts`, which refuses to write a file that does not cover every page;
-  `test/replayTimings.test.ts`, which fails when too many pages have no recorded time;
   `scripts/check-shard-count.ts` (`npm run shards`), run by that workflow, which reports when the
   shard count no longer suits the recorded timings
 
@@ -94,10 +93,29 @@ bare slug, which is how the replay names a page but not how anything is stored h
 ## Consequences
 
 **Nobody waits for a timing run.** Adding pages no longer accrues a debt that falls due as a red
-test every third page. `test/replayTimings.test.ts` still caps how many pages may go untimed, but
-the cap now measures how many arrive in one push rather than how long a maintainer may put off
-recording: a branch has no way to record, so a cap set for the manual era makes the branch that
-adds a batch of pages fail a gate only a merge can clear.
+test every third page.
+
+**And nothing caps how many pages may go untimed.** `test/replayTimings.test.ts` kept such a cap
+until 2026-08-29, re-read as "how many pages arrive in one push" rather than "how long a
+maintainer may put off recording". Both readings were wrong, and the second was worse: the cap
+ran inside `check`, so exceeding it made CI's conclusion a failure, and this workflow records only
+on a success. A push of twelve pages failed the build, skipped the recording that was the cap's
+own stated remedy, skipped the deploy, and would have failed again on the next push with one more
+page to account for. Measured on run 33244721900: `check` red, all eight replay shards green,
+Record timings skipped, Deploy skipped.
+
+Removing it costs nothing, because `merge-timings.ts` already refuses to write a file that does
+not cover every page. A recording that lands is complete by construction, so the count of untimed
+pages is never a standing property of the file: it is only ever the pages added since the last
+green push, which is a description of the batch rather than a defect. What the cap was watching
+for, a recorder that has stopped running, shows as a red mark on this workflow and in
+`npm run shards`, both of which gate nothing.
+
+The same check has now failed in the same direction three times: against every page rather than
+every replayable one (`scripts/lib/replayPages.ts` carries that one), against a cap sized for
+manual recording, and against a cap sized for a batch. A file this decision made advisory in both
+directions does not want a gate at all, which is what the section above already said about
+`npm run shards` and should have said about this.
 
 **The figures describe the machine they balance.** They are measured on the runners the partition
 is for, which the manual recording never was.
@@ -165,3 +183,8 @@ the answer is a job that opens an issue the way `drift.yml` does.
 
 Revisit if `replay-timings.json` ever gains a reader that is not advisory. A file CI writes must
 not become a file that decides what CI checks.
+
+Revisit if the file is ever found badly out of date with CI green throughout. That is the case
+removing the cap gave up catching, and it needs the recorder to have stopped running without
+anybody reading its red. The answer then is a scheduled check that opens an issue, the way
+`drift.yml` does, rather than a gate back inside `check`.

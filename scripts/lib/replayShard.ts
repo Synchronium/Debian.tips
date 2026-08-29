@@ -77,8 +77,9 @@ export function parseShard(value: string): Shard {
  *  Not higher than this, though the temptation is there. Simulated against the recorded corpus,
  *  raising it further only helps while the guess about new pages holds, and costs more than it
  *  saves when it does not: over-charging an unknown displaces genuinely heavy pages in the
- *  ordering, and most pages on this site are quick. `test/replayTimings.test.ts` is the real
- *  answer to a stale file, and this constant only limits the damage in the meantime. */
+ *  ordering, and most pages on this site are quick. The real answer to a stale file is the
+ *  recording that follows the next green push, and this constant limits the damage until it
+ *  lands. It errs in the safe direction: a new page here has cost a second or two. */
 export const UNTIMED_SECONDS = 10;
 
 /** Assigns pages to shards longest-first, each to whichever shard is lightest so far.
