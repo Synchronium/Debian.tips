@@ -260,6 +260,10 @@ Three commands get round this, by three different mechanisms:
 - **`setsid command`** puts the process in a new session with no controlling terminal at all.
   There is nothing to hang up, so the question does not arise.
 
+[Keep a program running after you log out](/recipes/keep-a-program-running-after-logout/) is the
+same three commands from the other end, with `tmux` and `systemd-run` beside them and a
+recommendation between the four.
+
 None of the three is the right answer for anything you actually care about. A job that must
 survive a disconnection belongs in `tmux`, or in a systemd unit, where it also gets restarts and
 logs. [systemd services](/debian/systemd-services/) makes that case for Debian.

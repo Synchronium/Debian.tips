@@ -62,7 +62,9 @@ yes/no, use `-c` or `-q`.
 When you search multiple files, `grep` prefixes each line with the filename automatically
 (`-H` forces this even for a single file; `-h` suppresses it even for multiple files). This is
 why `grep -r "TODO" .` output is more useful than piping `find` through a single-file `grep`
-would be.
+would be. `-l` turns that same search into a list of filenames instead, which is how
+[find and replace across many files](/recipes/find-and-replace-across-files/) decides which files
+`sed` is allowed to touch.
 
 ## grep vs sed vs awk
 

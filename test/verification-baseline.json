@@ -377,6 +377,13 @@
     "fixtures": 0,
     "unpaired": 0
   },
+  "recipes/add-a-directory-to-path": {
+    "checked": 5,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
   "recipes/bulk-rename-files": {
     "checked": 1,
     "byShape": 0,
@@ -391,8 +398,29 @@
     "fixtures": 0,
     "unpaired": 0
   },
+  "recipes/find-and-replace-across-files": {
+    "checked": 5,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
+  "recipes/find-permission-denied": {
+    "checked": 4,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
   "recipes/find-the-largest-files": {
     "checked": 1,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
+  "recipes/keep-a-program-running-after-logout": {
+    "checked": 2,
     "byShape": 0,
     "exempt": 0,
     "fixtures": 0,

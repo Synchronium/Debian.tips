@@ -50,12 +50,12 @@ Counted 2026-08-29 by `verificationStats` in `src/content/verificationStats.ts`,
 same routine the about page renders from, so these figures are the ones the site itself publishes
 rather than a second tally that can drift from them.
 
-**77 pages. 1,543 documented outputs re-run on every push**, across 37 command pages and 39 of
+**81 pages. 1,559 documented outputs re-run on every push**, across 37 command pages and 43 of
 the written articles, with 33 more documented and exempted, each naming how it was verified
 instead. 1,537 examples across the command pages, 116 blocks of sample data, and 70 outputs
 declared `volatile:`.
 
-Twenty-one pages in five days, against the six days for nineteen that §12 measured in August. The
+Twenty-five pages in five days, against the six days for nineteen that §12 measured in August. The
 rate note at the end of §12 still holds and so does its conclusion.
 
 **Every page replays.** `unreplayedCommandPages` and `unreplayedProsePages` are both zero: there
@@ -66,7 +66,7 @@ is no page left whose outputs nothing re-runs. That closes the largest item in �
 | `commands` | apt, apt-cache, apt-file, awk, cat, chmod, chown, cowsay, cp, crontab, curl, cut, diff, dpkg, du, find, grep, head, journalctl, jq, less, ls, mv, ps, rm, sed, sort, ssh, systemctl, tail, tar, tee, tr, uniq, wc, wget, xargs | 37 pages. Text processing and the file basics are both complete enough to stop being the priority. Debian package tooling is done to the §4.1 P1 line. `ps` and `du` open the process and disk groups at one page each, and there is **no network-diagnostic coverage and no user-management page beyond `chown`**. |
 | `concepts` | environment-variables-and-path, exit-codes-and-error-handling, file-permissions-explained, pipes-and-redirection, processes-and-signals, terminal-shell-and-tty | 6 pages. §3.1 rates this layer above any command page, and the three highest-demand ones are written, so the next concept is a §5 P2 rather than a P1. |
 | `scripting` | your-first-script, variables-and-quoting, conditionals-and-test, loops, script-arguments, functions, arrays, parameter-expansion, where-a-script-lives, arithmetic, here-docs, traps-and-cleanup, debugging-and-robustness, a-real-script | **Complete, 2026-08-29.** 14 lessons ending in a capstone that uses all thirteen before it. The two candidate additions in §7 are the only open items, and neither is a gap a reader would notice. |
-| `recipes` | bulk-rename-files, copy-files-between-machines, find-the-largest-files, kill-whatever-is-using-a-port, monitor-a-log-in-real-time | 5 pages, none added since 2026-08-18. The cheapest backlog on the site and the least touched. |
+| `recipes` | add-a-directory-to-path, bulk-rename-files, copy-files-between-machines, find-and-replace-across-files, find-permission-denied, find-the-largest-files, keep-a-program-running-after-logout, kill-whatever-is-using-a-port, monitor-a-log-in-real-time | 9 pages. **All four P1 recipes shipped 2026-08-29**, after six weeks in which the category gained nothing. What is left is the §9 P2 list. |
 | `debian` | apt-essentials, install-a-deb-file, list-installed-packages, release-channels, systemd-services, third-party-repositories, which-package-provides-a-file | 7 pages, bounded by §10.0.1 to the explainer shape. Errors go to `troubleshooting` instead. |
 | `troubleshooting` | could-not-get-lock-dpkg-frontend, packages-kept-back, repository-is-not-signed, sudo-command-not-found | 4 pages, all of §6.1's P1 list. The §6.1 P2 list is what remains. |
 | `compare` | apt-vs-apt-get, cron-vs-systemd-timers, remove-vs-purge-vs-autoremove, sh-vs-bash-vs-dash | 4 of the ~19 candidates in §10.1, all of them package management. |
@@ -521,19 +521,19 @@ rule is a small, well-tested change; inventing a track abstraction for two cours
 
 ## §9. Recipes
 
-5 written, none added since 2026-08-18, though all five now replay. Recipes are the natural home
-for the "how do I do X" half of §3, and each one is cheap. Ordered by demand.
+9 written, and **all four P1 items shipped 2026-08-29**. Recipes are the natural home for the
+"how do I do X" half of §3, and each one is cheap. Ordered by demand.
 
-- **P1 Add a directory to `PATH` permanently**: +1412 / +1001 / +724, and the answer differs for
-  interactive shells, scripts, cron and systemd. Pairs with the §5 environment page.
-- **P1 Find and replace across many files**: `grep -rl` + `sed -i`, with `find -print0`,
-  a dry run first, and a backup. +956 / +982 / +588.
-- **P1 Keep a program running after you log out**: `nohup`, `setsid`, `tmux`, and
-  `systemd-run --user`, with an honest recommendation. +1044. Third of the three pages the §5
-  scope table divides: this one is the task, so it states the recommendation first and sends the
+- **SHIPPED 2026-08-29 `add-a-directory-to-path`** (+1412 / +1001 / +724). The Debian answer is
+  not the internet's: the stock `~/.profile` already tests for `~/bin` and `~/.local/bin`, so the
+  common case is creating a directory rather than editing a file.
+- **SHIPPED 2026-08-29 `find-and-replace-across-files`** (+956 / +982 / +588).
+- **SHIPPED 2026-08-29 `keep-a-program-running-after-logout`** (+1044). Third of the three pages
+  the §5 scope table divides, and written to that division: it recommends first and sends the
   reader to the concept page for why the alternatives differ rather than explaining SIGHUP again.
-- **P1 Exclude "permission denied" noise from `find`**: `2>/dev/null` and why that is the wrong
-  answer, `-readable`, running as the right user. +749, and a nice pipes/exit-codes callback.
+- **SHIPPED 2026-08-29 `find-permission-denied`** (+749). The exit-status callback the entry
+  predicted turned out to be the strongest thing on the page: `! -readable -prune` exits 0 where
+  `2>/dev/null` still exits 1.
 - **P2 Save everything a terminal session prints**: `tee`, `script`, and the difference. +1448.
 - **P2 Find what is listening on a port**: exists as `kill-whatever-is-using-a-port`; extend or
   cross-link once `ss` and `lsof` have pages.
@@ -832,7 +832,7 @@ queue. That is not a complaint about the choices; it is how to read what follows
 | 4. Perl track | **blocked** | The §10.4 `order:` change first, then 9 pages |
 | 5. Processes and everyday files | **6 of 8** | `kill`, and job control |
 | 6. Comparisons | **4 of ~19** | Everything not listed in §10.1 as written |
-| 7. Recipes | **untouched** | All P1 recipes |
+| 7. Recipes | **4 P1 done** 2026-08-29 | The §9 P2 list |
 | 8. Networking and disk | **1 page** | `df` needs no harness work; everything else waits on a resolver fixture and a loop device |
 
 **Wave 2: the scripting course (§7). Finished 2026-08-29.** Fourteen lessons, roughly 45% of the
@@ -856,7 +856,12 @@ files page is `ln` or the combined `stat`/`file`/`basename`/`dirname` entry, bot
 **Wave 6: comparisons (§10.1).** The four written are all package management, where the command
 pages landed first. The shell and process comparisons want Waves 2 and 5 under them.
 
-**Wave 7: recipes (§9), interleaved.** Still the right approach, still not started.
+**Wave 7: recipes (§9), interleaved.** All four P1 recipes shipped 2026-08-29. Interleaving is
+still the right approach: each one was cheap, and three of the four were written against fixtures
+and pages that already existed, which is what the wave was waiting for rather than any decision.
+The P2 list is where the remaining demand is, led by saving a terminal session (+1448) and
+freeing disk space when the root filesystem is full (+838), which ties four written pages
+together.
 
 **Wave 8: networking and disk (§4.6, §4.7).** Deliberately last: §11.2 and §11.3 mean it starts
 with harness work, a local resolver fixture and a loop-device setup, before any page can be
@@ -875,8 +880,8 @@ and the plan should not pretend otherwise.
 The measured rate is 19 pages in six days (2026-08-18 to 08-24) and 21 in five (08-24 to 08-29).
 Sustained, the backlog is a year of work, and it will not be sustained. The waves are ordered so
 that stopping after any one of them leaves the site coherent rather than half-built, which only
-holds if a wave is finished before the next one starts. Waves 1, 2 and 3 are the evidence that it
-can be: three of the eight are closed, and none of them left a stub behind.
+holds if a wave is finished before the next one starts. Waves 1, 2 and 3 are closed and Wave 7
+has cleared its P1 line, so far without leaving a stub behind.
 
 ## §13. Shipped
 
@@ -973,3 +978,17 @@ What went out, and what writing it taught that the next batch would otherwise le
   directory, so its fixture builds a tree at an absolute path of its own under `/srv`. And the
   `Terminated` line a shell prints when its child dies to a signal does not appear under the
   replay, which caught a documented output that had been captured from an interactive shell.
+- **2026-08-29**: Wave 7's P1 line, four recipes: `add-a-directory-to-path`,
+  `find-and-replace-across-files`, `find-permission-denied` and
+  `keep-a-program-running-after-logout`. 16 checked outputs, and the category had gained nothing
+  since 2026-08-18.
+
+  Two of the four turn out to have a Debian-specific answer that the general one gets wrong.
+  Debian's stock `~/.profile` already tests for `~/bin` and `~/.local/bin`, so the usual advice to
+  edit a dotfile is unnecessary for the common case; and `tmux` is not installed on a base system,
+  which is worth saying on a page that recommends it first.
+
+  A third replayed green while proving nothing, and was rewritten. The example meant to show a
+  non-login shell skipping `~/.profile` ran after the restore had removed the tool it was looking
+  for, so "not on PATH" was true for the wrong reason. Any example whose claim is that something
+  is *absent* has to create it first.

@@ -44,6 +44,10 @@ agent for a signature instead of prompting you again. If a private key's permiss
 open (readable by group or other), `ssh` refuses to use it outright rather than risk a key that
 anyone else on the box could read.
 
+A connection that drops takes everything running under it with it, which is worth arranging for
+before it happens rather than after:
+[keep a program running after you log out](/recipes/keep-a-program-running-after-logout/).
+
 ## The config file: stop retyping flags
 
 `~/.ssh/config` maps a short alias to a real hostname, user, port, and key, so `ssh deb1` can mean

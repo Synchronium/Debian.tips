@@ -42,7 +42,9 @@ a shell. The order affects both correctness and speed: put your cheapest, most-s
 first (usually `-name` or `-type`) so expensive tests like `-exec` only run against candidates
 that already passed the cheap filters. It also decides whether `-prune` works at all. To skip a whole
 directory, `-prune` has to come *before* whatever test would otherwise print or recurse into it
-(see the "skip a directory" example).
+(see the "skip a directory" example). The same idiom with `! -readable` in front of it is how you
+[search a tree without the permission denied errors](/recipes/find-permission-denied/), which is
+a better answer than `2>/dev/null` for reasons of exit status as much as of noise.
 
 ## `-exec` vs `-delete` vs piping to `xargs`
 

@@ -70,6 +70,10 @@ usually isn't one of them, deliberately: if it were, a malicious script dropped 
 directory you `cd` into could shadow a real command by sharing its name. `./hello.sh` sidesteps
 the search entirely by naming the file's exact location.
 
+To run a script of your own by name from anywhere, put it somewhere `$PATH` already looks:
+[adding a directory to your PATH](/recipes/add-a-directory-to-path/) needs no configuration at
+all on Debian if you pick the right directory.
+
 ## Arguments
 
 ```bash

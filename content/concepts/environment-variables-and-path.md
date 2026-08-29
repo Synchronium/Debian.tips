@@ -168,7 +168,9 @@ question again, answered by
 - `/etc/environment` is read by PAM for every login session. It is a plain list of
   `NAME=value` lines, not a script, so `PATH="$PATH:/opt/bin"` does not work there.
 - `/etc/profile` and `~/.profile` run for login shells. `~/.profile` is where a user's own
-  `PATH` addition belongs, and Debian's default already adds `~/bin` if it exists.
+  `PATH` addition belongs, and Debian's default already adds `~/bin` and `~/.local/bin` if they
+  exist, which is why [adding a directory to your PATH](/recipes/add-a-directory-to-path/) often
+  means creating one rather than editing anything.
 - `~/.bashrc` runs for interactive non-login shells. Debian's default `~/.profile` sources
   `~/.bashrc`, which is why edits there often seem to work for both.
 - A [systemd service](/debian/systemd-services/) inherits almost nothing from any of these.

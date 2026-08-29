@@ -72,6 +72,10 @@ keeps a backup of the original with `.bak` appended to the name first.
 
 To see what an edit would change rather than reading the whole file, pipe the result into
 [`diff`](/commands/diff/) against the original: `sed "s/ERROR/CRITICAL/g" app.log | diff app.log -`
+
+Across a whole tree rather than one file, `-i` is driven by a list of filenames from somewhere
+else; [find and replace across many files](/recipes/find-and-replace-across-files/) is that
+pipeline, including what to do about a filename with a space in it.
 prints only the lines that differ, and prints nothing at all when the script matched nothing.
 
 ## The hold space: carrying data between lines
