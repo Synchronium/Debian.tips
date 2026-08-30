@@ -102,8 +102,11 @@ cheap to honour while writing and expensive to find later.
   claim about, and those are free to differ between machines: `SigIgn` for a background job reads
   `...0006` on an arm64 devcontainer and `...200000006` on an amd64 runner, because the C library
   reserves a real-time signal the two do not agree on. The low bits that the page was teaching
-  were identical, so it passed locally and failed CI. Derive the one bit or field the example
-  claims something about, and print that.
+  were identical, so it passed locally and failed CI. Cut it at a boundary that means something,
+  `& 0x7fffffff` keeping the standard signals and dropping the real-time ones, or derive the
+  single bit the example claims something about. Not `compare: shape`, which reduces an all-digit
+  run and a hex run containing a letter to *different* tokens: it passes while both machines
+  happen to print digits and fails the day one sets a bit that spells an `a`.
 - **Right-aligned output needs `output: |2`.** `wc` and `uniq -c` pad their columns. A plain `|`
   block takes its indentation from the first line, so any later line indented *less* is silently
   re-indented (or errors), quietly changing what the page claims the command prints. Use the

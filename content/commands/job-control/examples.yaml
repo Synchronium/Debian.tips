@@ -191,7 +191,27 @@ sections:
   - title: "Outliving the shell"
     intro: "A background job is still the shell's child, and it is still in the shell's jobs table. Both of those have to be dealt with for it to survive the terminal going away, and the three usual commands each deal with a different one."
     examples:
-      - title: "See what a background job already ignores"
+      - title: "Read the mask of signals a background job ignores"
+        code: |-
+          sleep 300 >/dev/null 2>&1 &
+          sleep 0.3
+          mask=$(awk '/^SigIgn/{print $2}' /proc/$!/status)
+          printf '%08x\n' $(( 0x$mask & 0x7fffffff ))
+        description: "`SigIgn` in `/proc/<pid>/status` is the set of signals a process ignores, as hex, one bit per signal with bit 0 standing for signal 1. `6` is binary `110`, so bits 1 and 2, so signals 2 and 3: `INT` and `QUIT`. Bash starts every background job that way, which is why Ctrl-C has never reached one. The `& 0x7fffffff` keeps signals 1 to 31, the standard ones. Above those sit the real-time signals, which the C library claims a couple of for its own use, and which of them show up here is not the same on every machine."
+        output: |2
+          00000006
+        level: advanced
+      - title: "See the one bit nohup sets"
+        code: |-
+          nohup sleep 300 >/dev/null 2>&1 &
+          sleep 0.3
+          mask=$(awk '/^SigIgn/{print $2}' /proc/$!/status)
+          printf '%08x\n' $(( 0x$mask & 0x7fffffff ))
+        description: "`7` rather than `6`: bit 0 is now set, so `HUP` joins the two bash had already blocked. `nohup` sets that and then executes the program, so the setting is in place before the program runs a single instruction and there is nothing for it to override."
+        output: |2
+          00000007
+        level: advanced
+      - title: "Read those bits by name instead of counting them"
         code: |-
           sleep 300 >/dev/null 2>&1 &
           sleep 0.3
@@ -199,13 +219,13 @@ sections:
           for sig in HUP INT QUIT; do
             echo "$sig $(( (0x$mask >> ($(kill -l $sig) - 1)) & 1 ))"
           done
-        description: "`SigIgn` in `/proc/<pid>/status` is a hex bitmap of the signals a process ignores, one bit per signal, and `kill -l` turns a name into the bit to look at. Bash starts a background job with `INT` and `QUIT` already blocked, so Ctrl-C never reached it in the first place. `HUP` is not blocked, which is the gap the next three commands each fill differently."
+        description: "`kill -l` turns a signal name into its number, and the number into the bit to shift down to. The same `6` as two examples ago, spelled out: `HUP` is the gap, and it is the gap the three commands below each close differently."
         output: |2
           HUP 0
           INT 1
           QUIT 1
         level: advanced
-      - title: "See what nohup adds"
+      - title: "Confirm nohup closed the gap"
         code: |-
           nohup sleep 300 >/dev/null 2>&1 &
           sleep 0.3
@@ -213,7 +233,7 @@ sections:
           for sig in HUP INT QUIT; do
             echo "$sig $(( (0x$mask >> ($(kill -l $sig) - 1)) & 1 ))"
           done
-        description: "One bit different. `nohup` sets `HUP` to ignore and then executes the program, so the setting is in place before the program has run a single instruction and there is nothing for it to override. Reading the bit rather than printing the mask is deliberate: the high end of that number carries real-time signals the C library reserves for itself, and it is not the same on every machine."
+        description: "All three ignored. This is the whole of what `nohup` does about signals, and it is worth knowing how little that is: the job still dies if anything sends it `TERM`, and it is still in the shell's jobs table until something takes it out."
         output: |2
           HUP 1
           INT 1
