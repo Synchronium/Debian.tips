@@ -98,6 +98,12 @@ cheap to honour while writing and expensive to find later.
   `md5sum` output, which reads on the page as though the fixture were broken.
 - **Don't let an example depend on the whole working directory.** `ls *.txt | wc -l` changes
   answer whenever a fixture is added. Target a stable subset.
+- **Never print a raw bitmap or id out of `/proc`.** It carries bits the page is not making a
+  claim about, and those are free to differ between machines: `SigIgn` for a background job reads
+  `...0006` on an arm64 devcontainer and `...200000006` on an amd64 runner, because the C library
+  reserves a real-time signal the two do not agree on. The low bits that the page was teaching
+  were identical, so it passed locally and failed CI. Derive the one bit or field the example
+  claims something about, and print that.
 - **Right-aligned output needs `output: |2`.** `wc` and `uniq -c` pad their columns. A plain `|`
   block takes its indentation from the first line, so any later line indented *less* is silently
   re-indented (or errors), quietly changing what the page claims the command prints. Use the

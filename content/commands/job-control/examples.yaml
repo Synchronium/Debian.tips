@@ -192,16 +192,32 @@ sections:
     intro: "A background job is still the shell's child, and it is still in the shell's jobs table. Both of those have to be dealt with for it to survive the terminal going away, and the three usual commands each deal with a different one."
     examples:
       - title: "See what a background job already ignores"
-        code: sleep 300 >/dev/null 2>&1 & sleep 0.3; grep SigIgn /proc/$!/status
-        description: "The mask of signals the process ignores, as a hex bitmap where bit 0 is signal 1. `6` is bits 1 and 2, so `INT` and `QUIT`: bash starts a background job with those two blocked, so Ctrl-C does not reach it."
+        code: |-
+          sleep 300 >/dev/null 2>&1 &
+          sleep 0.3
+          mask=$(awk '/^SigIgn/{print $2}' /proc/$!/status)
+          for sig in HUP INT QUIT; do
+            echo "$sig $(( (0x$mask >> ($(kill -l $sig) - 1)) & 1 ))"
+          done
+        description: "`SigIgn` in `/proc/<pid>/status` is a hex bitmap of the signals a process ignores, one bit per signal, and `kill -l` turns a name into the bit to look at. Bash starts a background job with `INT` and `QUIT` already blocked, so Ctrl-C never reached it in the first place. `HUP` is not blocked, which is the gap the next three commands each fill differently."
         output: |2
-          SigIgn:	0000000000000006
+          HUP 0
+          INT 1
+          QUIT 1
         level: advanced
       - title: "See what nohup adds"
-        code: nohup sleep 300 >/dev/null 2>&1 & sleep 0.3; grep SigIgn /proc/$!/status
-        description: "`7` rather than `6`: bit 0 is set, so `HUP` is ignored too. That is the whole of what `nohup` does to the signal side, and it does it before the program starts rather than by intercepting anything later."
+        code: |-
+          nohup sleep 300 >/dev/null 2>&1 &
+          sleep 0.3
+          mask=$(awk '/^SigIgn/{print $2}' /proc/$!/status)
+          for sig in HUP INT QUIT; do
+            echo "$sig $(( (0x$mask >> ($(kill -l $sig) - 1)) & 1 ))"
+          done
+        description: "One bit different. `nohup` sets `HUP` to ignore and then executes the program, so the setting is in place before the program has run a single instruction and there is nothing for it to override. Reading the bit rather than printing the mask is deliberate: the high end of that number carries real-time signals the C library reserves for itself, and it is not the same on every machine."
         output: |2
-          SigIgn:	0000000000000007
+          HUP 1
+          INT 1
+          QUIT 1
         level: advanced
       - title: "Start something with nohup"
         code: nohup ./long-import.sh > import.log 2>&1 &

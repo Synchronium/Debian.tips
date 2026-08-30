@@ -188,7 +188,10 @@ nothing to link to, from `kill-whatever-is-using-a-port`.
   Ctrl-Z cannot be pressed by an example, so the suspend and resume pairs use `kill -STOP` and say
   so. `nohup.out` is described rather than shown, because it is written only when stdout is a
   terminal and no replay has one; what `nohup` does to the signal mask is shown instead, out of
-  `/proc/$!/status`.
+  `/proc/$!/status`. That block may not print the mask itself, which is the CI failure this page
+  cost: the high bits carry real-time signals the C library reserves, and they differ between an
+  arm64 devcontainer and an amd64 runner. The example reads the one bit it is making a claim
+  about.
 - **P2 `top`** (standard): reading load average, sort keys, renice in place; `htop` in a callout.
 - **P2 `lsof`** (standard): open files, `-i` for sockets, deleted-but-held files eating a disk.
 - **P2 `timeout` / `time` / `watch` / `sleep`** (light, combined): "run this every N seconds"
@@ -1019,6 +1022,14 @@ What went out, and what writing it taught that the next batch would otherwise le
   And bash prefixes an asynchronous job notice with `bash: line N:` when it is not interactive,
   which is not what a reader sees, so `Killed` and `deleting stopped job` notices had to be
   described rather than shown.
+
+  A fourth trap got past the local replay and failed CI, which none of the others did. Reading a
+  bitmap out of `/proc` prints bits the page is not documenting: `SigIgn` for a background job is
+  `...0006` here and `...200000006` on a runner, because bit 33 is a real-time signal the C
+  library reserves and the two machines do not agree on it. The low bits carrying the lesson were
+  identical, so the page looked right and was still unreproducible. §11.1's rule is about the
+  architecture *string*; this is the same rule about a number, and the answer is the same, which
+  is to derive what the page claims rather than print the raw value around it.
 
   One documented claim was wrong and the replay caught it. A stopped process does not hold a
   pending `TERM` in general: a default action is applied by the kernel and needs nothing from the
