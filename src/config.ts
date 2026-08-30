@@ -213,15 +213,7 @@ export const COMMAND_GROUPS: { title: string; commands: string[] }[] = [
   { title: "Archives & compression", commands: ["tar", "compression-tools", "zip"] },
   {
     title: "Processes & system",
-    commands: [
-      "ps",
-      "top-htop",
-      "kill-signals",
-      "job-control",
-      "systemctl",
-      "journalctl",
-      "system-at-a-glance",
-    ],
+    commands: ["ps", "top-htop", "kill", "job-control", "systemctl", "journalctl", "system-at-a-glance"],
   },
   {
     title: "Networking & transfer",

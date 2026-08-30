@@ -91,9 +91,9 @@ kill -l | head -3
 11) SIGSEGV	12) SIGUSR2	13) SIGPIPE	14) SIGALRM	15) SIGTERM
 ```
 
-`kill` sends one. The name oversells it. `kill` is a general "send a signal" command, and killing
-is only the default behaviour, because the default signal is TERM and the default action for TERM
-is to terminate.
+[`kill`](/commands/kill/) sends one. The name oversells it. `kill` is a general "send a signal"
+command, and killing is only the default behaviour, because the default signal is TERM and the
+default action for TERM is to terminate.
 
 A process can install a **handler** for most signals, which runs instead of the default action.
 It can also ignore a signal outright. The six you will actually use:
@@ -241,7 +241,8 @@ STAT COMMAND
 S    sleep
 ```
 
-`fg` and `bg` send CONT, and keep track of which group the terminal should be listening to.
+[`fg` and `bg`](/commands/job-control/) send CONT, and keep track of which group the terminal
+should be listening to.
 
 ## Closing the terminal sends HUP
 

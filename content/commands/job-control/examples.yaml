@@ -1,0 +1,245 @@
+command: job-control
+sections:
+  - title: "The jobs table"
+    intro: "Every example here starts its own jobs, so there is no sample data to declare. They all send the job's output to `/dev/null`, as you would with a real background job: anything it prints otherwise lands in the middle of whatever you are typing. `jobs` echoes the command back exactly as you gave it, redirect included."
+    examples:
+      - title: "List the shell's jobs"
+        code: sleep 300 >/dev/null 2>&1 & jobs
+        description: "`&` starts the command in the background and the shell adds it to a table. `jobs` prints that table: the job number in brackets, the state, and the command as you typed it."
+        output: |2
+          [1]+  Running                 sleep 300 > /dev/null 2>&1 &
+        level: basic
+      - title: "Read the plus and minus markers"
+        code: sleep 300 >/dev/null 2>&1 & sleep 200 >/dev/null 2>&1 & sleep 100 >/dev/null 2>&1 & jobs
+        description: "`+` marks the current job and `-` the one before it. Anything that takes a job spec and is given none acts on the `+` job, so those two characters decide what a bare `fg` or `bg` will do."
+        output: |2
+          [1]   Running                 sleep 300 > /dev/null 2>&1 &
+          [2]-  Running                 sleep 200 > /dev/null 2>&1 &
+          [3]+  Running                 sleep 100 > /dev/null 2>&1 &
+        level: basic
+      - title: "Start a pipeline in the background"
+        code: sleep 300 2>&1 | cat >/dev/null 2>&1 & jobs
+        description: "One entry, for a command that is two programs. The shell counts a whole pipeline as a single job, so suspending or killing one takes every stage with it instead of leaving the second half reading from a pipe nothing writes to."
+        output: |2
+          [1]+  Running                 sleep 300 2>&1 | cat > /dev/null 2>&1 &
+        level: intermediate
+      - title: "See the processes inside that one job"
+        code: sleep 300 2>&1 | cat >/dev/null 2>&1 & jobs -l
+        description: "`-l` breaks the job open: one PID per stage, indented under the job number. Job and process are different units, and this is the listing where that stops being an abstract point."
+        volatile: "the PIDs will differ, and their width sets the indentation of the second line"
+        compare: shape
+        output: |2
+          [1]+   196 Running                 sleep 300 2>&1
+                 197                       | cat > /dev/null 2>&1 &
+        level: intermediate
+      - title: "Show the PID beside each job"
+        code: sleep 300 >/dev/null 2>&1 & sleep 200 >/dev/null 2>&1 & jobs -l
+        description: "`-l` adds the process id. That is the column you need when handing a job to something outside the shell."
+        volatile: "the PIDs will differ"
+        compare: shape
+        output: |2
+          [1]-  4749 Running                 sleep 300 > /dev/null 2>&1 &
+          [2]+  4750 Running                 sleep 200 > /dev/null 2>&1 &
+        level: basic
+      - title: "Print only the PIDs"
+        code: sleep 300 >/dev/null 2>&1 & sleep 200 >/dev/null 2>&1 & jobs -p
+        description: "One PID per line and nothing else, ready to pipe into [`kill`](/commands/kill/) or [`xargs`](/commands/xargs/)."
+        volatile: "the PIDs will differ"
+        compare: shape
+        output: |2
+          4759
+          4760
+        level: basic
+      - title: "Ask about one job"
+        code: sleep 300 >/dev/null 2>&1 & sleep 200 >/dev/null 2>&1 & jobs %2
+        description: "A job spec narrows the listing to one entry."
+        output: |2
+          [2]+  Running                 sleep 200 > /dev/null 2>&1 &
+        level: basic
+      - title: "Separate the running from the stopped"
+        code: set -m; sleep 300 >/dev/null 2>&1 & sleep 200 >/dev/null 2>&1 & kill -STOP %1; sleep 0.3; jobs -r; echo ---; jobs -s
+        description: "`-r` lists only running jobs and `-s` only stopped ones. Note that stopping job 1 also made it the current job: the `+` moved."
+        output: |2
+          [2]-  Running                 sleep 200 > /dev/null 2>&1 &
+          ---
+          [1]+  Stopped                 sleep 300 > /dev/null 2>&1
+        level: intermediate
+      - title: "See a job that has finished"
+        code: sleep 0.2 & sleep 0.5; jobs
+        description: "A completed job stays in the table until it is reported once, then disappears. That is why an interactive shell prints `[1]+ Done` at some arbitrary later moment rather than the instant the job ended: it tells you the next time it draws a prompt."
+        output: |2
+          [1]+  Done                    sleep 0.2
+        level: intermediate
+      - title: "See a job that was signalled"
+        code: sleep 300 >/dev/null 2>&1 & kill %1; sleep 0.3; jobs
+        description: "`Terminated` rather than `Done`, because the job did not choose to exit. A job killed with `-9` reports `Killed` here instead."
+        output: |2
+          [1]+  Terminated              sleep 300 > /dev/null 2>&1
+        level: intermediate
+
+  - title: "Naming a job"
+    examples:
+      - title: "Signal a job by number"
+        code: sleep 300 >/dev/null 2>&1 & kill %1; sleep 0.3; jobs
+        description: "`kill` takes `%1` wherever it takes a PID. The shell resolves the spec and signals the job's process group, so a suspended pipeline goes as one thing rather than a stage at a time."
+        output: |2
+          [1]+  Terminated              sleep 300 > /dev/null 2>&1
+        level: basic
+      - title: "Name the current and previous jobs"
+        code: sleep 300 >/dev/null 2>&1 & sleep 200 >/dev/null 2>&1 & jobs %+; jobs %-
+        description: "`%+` and `%-` are the two the markers point at. `%%` is another spelling of `%+`."
+        output: |2
+          [2]+  Running                 sleep 200 > /dev/null 2>&1 &
+          [1]-  Running                 sleep 300 > /dev/null 2>&1 &
+        level: intermediate
+      - title: "Name a job by how its command starts"
+        code: sleep 300 >/dev/null 2>&1 & jobs %sle
+        description: "`%str` matches the job whose command line begins with `str`. It is an error rather than a guess if two jobs match, so this is safe to use interactively and unwise in a script."
+        output: |2
+          [1]+  Running                 sleep 300 > /dev/null 2>&1 &
+        level: intermediate
+      - title: "Name a job by any part of its command"
+        code: sleep 300 >/dev/null 2>&1 & kill %?300; sleep 0.3; jobs
+        description: "`%?str` matches on a substring rather than a prefix. Use it when the interesting part of the command is an argument."
+        output: |2
+          [1]+  Terminated              sleep 300 > /dev/null 2>&1
+        level: intermediate
+      - title: "Capture the PID of the job you just started"
+        code: 'sleep 300 >/dev/null 2>&1 & p=$!; kill "$p"; sleep 0.3; jobs'
+        description: "`$!` is the PID of the most recent background command. Save it into a variable straight away, because the next `&` overwrites it, and a script that wants to signal one particular child later has nothing else to go on."
+        output: |2
+          [1]+  Terminated              sleep 300 > /dev/null 2>&1
+        level: intermediate
+      - title: "Wait for a specific job"
+        code: sleep 1 & p=$!; wait $p; echo "exit was $?"
+        description: "`wait` blocks until the job finishes and then reports its exit status. A script that fans work out collects it back this way."
+        output: |2
+          exit was 0
+        level: intermediate
+      - title: "Wait for everything"
+        code: sleep 0.5 & sleep 1 & wait; echo "all done"
+        description: "With no argument, `wait` returns when every background job has finished. This is the last line of most scripts that fan work out."
+        output: |2
+          all done
+        level: basic
+      - title: "Wait for whichever finishes first"
+        code: sleep 0.5 & sleep 2 & wait -n; echo "first finished"
+        description: "`wait -n` returns as soon as any one job ends. A script keeping a fixed number of workers busy needs that, since waiting for the whole batch idles every worker until the slowest finishes."
+        output: |2
+          first finished
+        level: advanced
+
+  - title: "Suspending and resuming"
+    intro: "Ctrl-Z sends `TSTP` to the foreground job. No example can press it, so these use `kill -STOP`, the same thing minus the ability to be caught. All of them set `set -m` first, for the reason the next section covers."
+    examples:
+      - title: "Suspend a running job"
+        code: set -m; sleep 300 >/dev/null 2>&1 & kill -STOP %1; sleep 0.3; jobs
+        description: "The job stops where it is. It keeps its memory, its open files and any lock it was holding, so a suspended job is not a cheap thing to leave lying about."
+        output: |2
+          [1]+  Stopped                 sleep 300 > /dev/null 2>&1
+        level: basic
+      - title: "Resume it in the background"
+        code: set -m; sleep 300 >/dev/null 2>&1 & kill -STOP %1; sleep 0.3; bg %1; sleep 0.3; jobs
+        description: "`bg` sends `CONT` and leaves the job in the background. It echoes the job it acted on, and that is the first line here."
+        output: |2
+          [1]+ sleep 300 > /dev/null 2>&1 &
+          [1]+  Running                 sleep 300 > /dev/null 2>&1 &
+        level: basic
+      - title: "Resume it in the foreground"
+        code: set -m; sleep 1 & fg
+        description: "`fg` prints the command it is resuming and then waits for it, so the shell has no prompt until the job ends. A one-second job is used here for the obvious reason."
+        output: |2
+          sleep 1
+        level: basic
+      - title: "Bring back the current job with no argument"
+        code: set -m; sleep 1 & sleep 300 >/dev/null 2>&1 & fg %1
+        description: "A bare `fg` takes the `+` job: the most recently started or suspended one, rather than the one you were last thinking about. Name the job when there is more than one."
+        output: |2
+          sleep 1
+        level: intermediate
+      - title: "Check that a stopped job is really stopped"
+        code: set -m; sleep 300 >/dev/null 2>&1 & kill -STOP %1; sleep 0.3; ps -o state= -p $!
+        description: "`T` in the `ps` state column, the same letter the [`kill`](/commands/kill/) page uses. The shell's `Stopped` and the kernel's `T` are two views of one fact."
+        output: |2
+          T
+        level: intermediate
+
+  - title: "Why none of it works in a script"
+    intro: "Job control belongs to an interactive shell. Everywhere else bash switches it off, and the failure is quiet in one direction and loud in the other."
+    examples:
+      - title: "Call fg from a script"
+        code: printf "fg\n" > try.sh; bash try.sh
+        description: "The loud direction. `fg`, `bg` and `%1` all need job control, and a script has none, so the builtin refuses rather than guessing."
+        output: |2
+          try.sh: line 1: fg: no job control
+        level: intermediate
+      - title: "Stop a job without job control"
+        code: sleep 300 >/dev/null 2>&1 & kill -STOP %1; sleep 0.5; jobs; ps -o state= -p $!
+        description: "The quiet direction, and the more dangerous of the two. The process really is stopped, which the `T` on the second line shows, but the shell still calls it `Running`: without job control it is not told when a child stops, only when one exits."
+        output: |2
+          [1]+  Running                 sleep 300 > /dev/null 2>&1 &
+          T
+        level: advanced
+      - title: "Turn job control on"
+        code: set -m; sleep 300 >/dev/null 2>&1 & kill -STOP %1; sleep 0.5; jobs; ps -o state= -p $!
+        description: "The same script with `set -m`. Nothing about the process changed; the shell is now watching for the notification it was ignoring before."
+        output: |2
+          [1]+  Stopped                 sleep 300 > /dev/null 2>&1
+          T
+        level: advanced
+
+  - title: "Outliving the shell"
+    intro: "A background job is still the shell's child, and it is still in the shell's jobs table. Both of those have to be dealt with for it to survive the terminal going away, and the three usual commands each deal with a different one."
+    examples:
+      - title: "See what a background job already ignores"
+        code: sleep 300 >/dev/null 2>&1 & sleep 0.3; grep SigIgn /proc/$!/status
+        description: "The mask of signals the process ignores, as a hex bitmap where bit 0 is signal 1. `6` is bits 1 and 2, so `INT` and `QUIT`: bash starts a background job with those two blocked, so Ctrl-C does not reach it."
+        output: |2
+          SigIgn:	0000000000000006
+        level: advanced
+      - title: "See what nohup adds"
+        code: nohup sleep 300 >/dev/null 2>&1 & sleep 0.3; grep SigIgn /proc/$!/status
+        description: "`7` rather than `6`: bit 0 is set, so `HUP` is ignored too. That is the whole of what `nohup` does to the signal side, and it does it before the program starts rather than by intercepting anything later."
+        output: |2
+          SigIgn:	0000000000000007
+        level: advanced
+      - title: "Start something with nohup"
+        code: nohup ./long-import.sh > import.log 2>&1 &
+        description: "The form to actually type. Without a redirect `nohup` sends output to `nohup.out` in the current directory, but only when it started from a terminal, so a redirect you chose yourself is one less thing to be surprised by. There is no output block here because that terminal-only behaviour cannot be reproduced in a pipeline."
+        level: basic
+      - title: "Take a job out of the shell's table"
+        code: 'sleep 300 >/dev/null 2>&1 & disown; jobs; echo "still running: $(pgrep -c -x sleep)"'
+        description: "`jobs` prints nothing and the process is still there. `disown` removes the entry, so the shell no longer signals it on exit and no longer reports on it."
+        output: |2
+          still running: 1
+        level: intermediate
+      - title: "Disown one job by name"
+        code: sleep 300 >/dev/null 2>&1 & sleep 200 >/dev/null 2>&1 & disown %1; jobs
+        description: "With a job spec, only that entry goes. Job 2 is still the shell's business."
+        output: |2
+          [2]+  Running                 sleep 200 > /dev/null 2>&1 &
+        level: intermediate
+      - title: "Disown everything at once"
+        code: 'sleep 300 >/dev/null 2>&1 & sleep 200 >/dev/null 2>&1 & disown -a; jobs; echo "still running: $(pgrep -c -x sleep)"'
+        description: "`-a` clears the table. Both processes are running and neither is the shell's concern any more."
+        output: |2
+          still running: 2
+        level: intermediate
+      - title: "Keep the job listed but shield it from HUP"
+        code: sleep 300 >/dev/null 2>&1 & disown -h %1; jobs
+        description: "`-h` is the middle option: the job stays in the table, so `fg` and `jobs` still work on it, but the shell will not send it `HUP` when it exits. Reach for this when you want the job back later and are only worried about the disconnection."
+        output: |2
+          [1]+  Running                 sleep 300 > /dev/null 2>&1 &
+        level: advanced
+      - title: "Start something in a session of its own"
+        code: setsid sleep 300 >/dev/null 2>&1 & sleep 0.4; pgrep -c -x sleep
+        description: "`setsid` does not touch the jobs table or the signal mask. It puts the process in a new session with no controlling terminal at all, so there is nothing that could hang up on it. This is the mechanism a daemon uses."
+        output: |2
+          1
+        level: advanced
+      - title: "Check whether a job survived the shell"
+        code: bash -c 'sleep 300 >/dev/null 2>&1 & disown' ; sleep 0.4; pgrep -c -x sleep
+        description: "The inner shell started a job, disowned it and exited. The `sleep` is still running, now reparented to PID 1. [Processes and signals](/concepts/processes-and-signals/) covers what reparenting means for anything you left behind."
+        output: |2
+          1
+        level: advanced

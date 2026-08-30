@@ -46,13 +46,13 @@ doesn't discover it halfway through.
 
 ## §2. Where the site is now
 
-Counted 2026-08-29 by `verificationStats` in `src/content/verificationStats.ts`, which is the
+Counted 2026-08-30 by `verificationStats` in `src/content/verificationStats.ts`, which is the
 same routine the about page renders from, so these figures are the ones the site itself publishes
 rather than a second tally that can drift from them.
 
-**81 pages. 1,559 documented outputs re-run on every push**, across 37 command pages and 43 of
+**83 pages. 1,644 documented outputs re-run on every push**, across 39 command pages and 43 of
 the written articles, with 33 more documented and exempted, each naming how it was verified
-instead. 1,537 examples across the command pages, 116 blocks of sample data, and 70 outputs
+instead. 1,626 examples across the command pages, 117 blocks of sample data, and 81 outputs
 declared `volatile:`.
 
 Twenty-five pages in five days, against the six days for nineteen that §12 measured in August. The
@@ -63,7 +63,7 @@ is no page left whose outputs nothing re-runs. That closes the largest item in �
 
 | Category | Pages | State |
 |---|---|---|
-| `commands` | apt, apt-cache, apt-file, awk, cat, chmod, chown, cowsay, cp, crontab, curl, cut, diff, dpkg, du, find, grep, head, journalctl, jq, less, ls, mv, ps, rm, sed, sort, ssh, systemctl, tail, tar, tee, tr, uniq, wc, wget, xargs | 37 pages. Text processing and the file basics are both complete enough to stop being the priority. Debian package tooling is done to the §4.1 P1 line. `ps` and `du` open the process and disk groups at one page each, and there is **no network-diagnostic coverage and no user-management page beyond `chown`**. |
+| `commands` | apt, apt-cache, apt-file, awk, cat, chmod, chown, cowsay, cp, crontab, curl, cut, diff, dpkg, du, find, grep, head, job-control, journalctl, jq, kill, less, ls, mv, ps, rm, sed, sort, ssh, systemctl, tail, tar, tee, tr, uniq, wc, wget, xargs | 39 pages. Text processing and the file basics are both complete enough to stop being the priority. Debian package tooling is done to the §4.1 P1 line. **The process group is done to its P1 line as of 2026-08-30**, with `ps`, `kill` and job control between them covering what a reader can do to a running program. `du` still opens the disk group alone, and there is **no network-diagnostic coverage and no user-management page beyond `chown`**. |
 | `concepts` | environment-variables-and-path, exit-codes-and-error-handling, file-permissions-explained, pipes-and-redirection, processes-and-signals, terminal-shell-and-tty | 6 pages. §3.1 rates this layer above any command page, and the three highest-demand ones are written, so the next concept is a §5 P2 rather than a P1. |
 | `scripting` | your-first-script, variables-and-quoting, conditionals-and-test, loops, script-arguments, functions, arrays, parameter-expansion, where-a-script-lives, arithmetic, here-docs, traps-and-cleanup, debugging-and-robustness, a-real-script | **Complete, 2026-08-29.** 14 lessons ending in a capstone that uses all thirteen before it. The two candidate additions in §7 are the only open items, and neither is a gap a reader would notice. |
 | `recipes` | add-a-directory-to-path, bulk-rename-files, copy-files-between-machines, find-and-replace-across-files, find-permission-denied, find-the-largest-files, keep-a-program-running-after-logout, kill-whatever-is-using-a-port, monitor-a-log-in-real-time | 9 pages. **All four P1 recipes shipped 2026-08-29**, after six weeks in which the category gained nothing. What is left is the §9 P2 list. |
@@ -165,31 +165,37 @@ The §3.3 gap. Done to the P1 line; everything below it is P2 or lower.
 
 ### §4.2. Processes, signals & job control
 
-`ps` is written; the rest is not. `kill-whatever-is-using-a-port` still uses `kill` and `lsof`
-with no page to link to.
+Done to the P1 line as of 2026-08-30. `lsof` is the one command still named on a page with
+nothing to link to, from `kill-whatever-is-using-a-port`.
 
 - **SHIPPED 2026-08-24 `ps`** (standard), with `pgrep`/`pidof` folded in. It needs the systemd
   sandbox, and no example on it may enumerate the whole process table: the harness's own
   `timeout … bash -c … | head` wrapper appears in one, and the console count differs between the
   devcontainer and a CI runner. Both apply to `top` and `lsof` below.
-- **P1 `kill` / `pkill` / `killall`** (standard): selecting the target, which is where these three
-  differ and the only reason there are three of them. `pkill -f` against a full command line,
-  `killall` matching an exact name, sending a signal to a process group with a negative PID, and
-  `kill -0` as an existence test. Signal semantics belong to the §5 concept page: this page names
-  the flags and links for the why. +656 ("what if kill -9 doesn't work") is answered on the
-  concept page, since the answer is uninterruptible sleep rather than a command.
-- **P1 `jobs` / `fg` / `bg` / `nohup` / `disown`** (standard): the commands, on top of the
-  mechanism the concept page establishes. The `jobs` table and `%1` job specs, Ctrl-Z into `fg`
-  and `bg`, `disown` against `disown -h`, where `nohup.out` goes, `kill %1`, and the point at
-  which the honest answer is `tmux` or `systemd-run --user` instead. Reads +813 as "what do I
-  type"; see §5 for why that question splits three ways.
+- **SHIPPED 2026-08-30 `kill`** (standard), with `pkill`, `pgrep` and `killall` folded in. It
+  needs the systemd sandbox: the page kills things and then counts what is left, and under the
+  default sandbox PID 1 reaps nothing, so each killed process stayed in the table as a named
+  zombie and the counts climbed with the number of examples that had already run. `pkill -f`
+  examples carry no output block, because the replay wraps each example in `bash -c <code>` whose
+  own command line contains the pattern, so `-f` matches the harness; a verified one narrows with
+  `-u`. Signal semantics stayed on the §5 concept page, and linking rather than repeating them is
+  what kept this to a standard tier.
+- **SHIPPED 2026-08-30 `job-control`** (standard), covering `jobs`, `fg`, `bg`, `wait`, `disown`,
+  `nohup` and `setsid`. Every example redirects its background job to `/dev/null`, and not for
+  neatness: a background job inherits the harness's stdout and holds that pipe until it exits, so
+  one `sleep 300 &` wedges the replay for five minutes. A pipeline needs `2>&1 |` on the first
+  stage as well, since a redirect on the last stage leaves the first one holding the descriptor.
+  Ctrl-Z cannot be pressed by an example, so the suspend and resume pairs use `kill -STOP` and say
+  so. `nohup.out` is described rather than shown, because it is written only when stdout is a
+  terminal and no replay has one; what `nohup` does to the signal mask is shown instead, out of
+  `/proc/$!/status`.
 - **P2 `top`** (standard): reading load average, sort keys, renice in place; `htop` in a callout.
 - **P2 `lsof`** (standard): open files, `-i` for sockets, deleted-but-held files eating a disk.
 - **P2 `timeout` / `time` / `watch` / `sleep`** (light, combined): "run this every N seconds"
   (+658) and "how long did this take" (+751).
 - **P2 `free` / `uptime` / `nice` / `renice`** (light, combined): too small alone.
 - **P3 `strace`** (standard): powerful, hard to verify deterministically (§11).
-- **P3 `pidof` / `pgrep`**: folded into the `ps` page; the `kill` page should do the same.
+- **P3 `pidof` / `pgrep`**: folded into `ps` and `kill`, and needing no page of their own.
 
 ### §4.3. Files & directories
 
@@ -830,7 +836,7 @@ queue. That is not a complaint about the choices; it is how to read what follows
 | 2. Scripting 7–14 | **done** 2026-08-29 | Nothing |
 | 3. Concepts | **done** 2026-08-27 | Nothing |
 | 4. Perl track | **blocked** | The §10.4 `order:` change first, then 9 pages |
-| 5. Processes and everyday files | **6 of 8** | `kill`, and job control |
+| 5. Processes and everyday files | **done** 2026-08-30 | Nothing at P1; `ln` and the combined `stat`/`file`/`basename` entry are the §4.3 P2s |
 | 6. Comparisons | **4 of ~19** | Everything not listed in §10.1 as written |
 | 7. Recipes | **4 P1 done** 2026-08-29 | The §9 P2 list |
 | 8. Networking and disk | **1 page** | `df` needs no harness work; everything else waits on a resolver fixture and a loop device |
@@ -847,11 +853,13 @@ a course out of order would have cost more than it saved.
 
 **Wave 4: the Perl track (§8).** Blocked on the §10.4 `order:` generalisation.
 
-**Wave 5: processes, and the files everyone uses (§4.2, §4.3).** The files half is finished. The
-processes half is `ps` alone, with `kill` and job control open; both now have
-`processes-and-signals` to build on, which is the order §5's scope table argued for. The next
-files page is `ln` or the combined `stat`/`file`/`basename`/`dirname` entry, both §4.3 P2, and
-`COMMAND_GROUPS` already reserves `make-and-link` and `inspect-files` for them.
+**Wave 5: processes, and the files everyone uses (§4.2, §4.3). Finished 2026-08-30.** Writing
+`processes-and-signals` before `kill` and job control was the order §5's scope table argued for,
+and it paid: both command pages could name a signal and link for the semantics rather than
+teaching them again, and both came out standard rather than flagship because of it. What is left
+in this wave's territory is §4.3 P2, either `ln` or the combined
+`stat`/`file`/`basename`/`dirname` entry, and `COMMAND_GROUPS` reserves `make-and-link` and
+`inspect-files` for them.
 
 **Wave 6: comparisons (§10.1).** The four written are all package management, where the command
 pages landed first. The shell and process comparisons want Waves 2 and 5 under them.
@@ -872,15 +880,15 @@ and the `0/0` reporting hole in §11.5.
 
 ### Scale, honestly
 
-The backlog above is roughly 55 command pages, 14 concepts, 20 Debian articles, 9 Perl pages,
-20 recipes, 15 comparisons and 8–15 troubleshooting pages: **something like 155 pages against the
-77 that exist.** At this site's verification standard that is a very large amount of sandbox work,
+The backlog above is roughly 53 command pages, 14 concepts, 20 Debian articles, 9 Perl pages,
+20 recipes, 15 comparisons and 8–15 troubleshooting pages: **something like 153 pages against the
+83 that exist.** At this site's verification standard that is a very large amount of sandbox work,
 and the plan should not pretend otherwise.
 
 The measured rate is 19 pages in six days (2026-08-18 to 08-24) and 21 in five (08-24 to 08-29).
 Sustained, the backlog is a year of work, and it will not be sustained. The waves are ordered so
 that stopping after any one of them leaves the site coherent rather than half-built, which only
-holds if a wave is finished before the next one starts. Waves 1, 2 and 3 are closed and Wave 7
+holds if a wave is finished before the next one starts. Waves 1, 2, 3 and 5 are closed and Wave 7
 has cleared its P1 line, so far without leaving a stub behind.
 
 ## §13. Shipped
@@ -992,3 +1000,27 @@ What went out, and what writing it taught that the next batch would otherwise le
   non-login shell skipping `~/.profile` ran after the restore had removed the tool it was looking
   for, so "not on PATH" was true for the wrong reason. Any example whose claim is that something
   is *absent* has to create it first.
+- **2026-08-30**: Wave 5 closed, with `kill` and `job-control`. 85 checked outputs across two
+  setup scripts, and the process group now answers what a reader can do to a running program
+  rather than only how to look at one.
+
+  Both pages needed the systemd sandbox, for the same reason and one neither page is about: they
+  kill things and then count what is left, and the default sandbox's PID 1 is the `sleep` holding
+  the container open, which reaps nothing. Every killed process stayed in the table as a zombie
+  carrying its own name, so the counts climbed with the number of examples that had already run.
+  Any page that ends a process and then counts wants `# verify: --systemd`.
+
+  Three traps came out of the harness rather than out of Debian, and the next page in this
+  territory will meet them again. A background job inherits the example's stdout and holds that
+  pipe open until it exits, so `sleep 300 &` with no redirect stops the replay dead for five
+  minutes; a pipeline needs the redirect on its first stage too. `pkill -f` matches the
+  `bash -c <code>` the harness wraps every example in, because that command line contains the
+  pattern, so an unnarrowed `-f` example would signal the harness rather than the fixture.
+  And bash prefixes an asynchronous job notice with `bash: line N:` when it is not interactive,
+  which is not what a reader sees, so `Killed` and `deleting stopped job` notices had to be
+  described rather than shown.
+
+  One documented claim was wrong and the replay caught it. A stopped process does not hold a
+  pending `TERM` in general: a default action is applied by the kernel and needs nothing from the
+  process, so a stopped `sleep` dies where a stopped program with a handler stays put until
+  something sends `CONT`. Both halves are examples now, which cost the fixture a fourth process.

@@ -56,4 +56,6 @@ doing now: something that saturated a core this morning still reports a high fig
 
 `ps aux | grep sshd` also matches the `grep`, because `grep sshd` has `sshd` in its own command
 line. `pgrep sshd` answers the question directly, never matches itself, and prints PIDs ready for
-[killing whatever holds a port](/recipes/kill-whatever-is-using-a-port/).
+[killing whatever holds a port](/recipes/kill-whatever-is-using-a-port/). `pgrep` and its
+signal-sending twin are covered on [`kill`](/commands/kill/), which is where the selection options
+they share are set out.

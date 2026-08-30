@@ -1,0 +1,397 @@
+command: kill
+fixtures:
+  - name: "a small process tree"
+    note: "the page needs something to signal, so the setup script starts five processes. `tips-supervisor` runs two copies of `tips-worker` and waits for them; it is a session leader, so those three share one process group. `tips-stubborn` ignores `TERM` and `tips-graceful` handles it. The examples run as `root`, so `-u user` names the supervisor's tree and nothing else."
+    from: "ps -C tips-worker,tips-supervisor,tips-stubborn,tips-graceful -o user:8,comm,args --no-headers | sort"
+    content: |
+      root     tips-graceful   /bin/bash /usr/local/bin/tips-graceful
+      root     tips-stubborn   /bin/bash /usr/local/bin/tips-stubborn
+      user     tips-supervisor /bin/bash /usr/local/bin/tips-supervisor
+      user     tips-worker     /usr/local/bin/tips-worker 3600
+      user     tips-worker     /usr/local/bin/tips-worker 3600
+sections:
+  - title: "Sending a signal"
+    intro: "`kill` takes process ids. The examples below find them with `pgrep` first, because a page cannot print a PID that will still be there when you read it."
+    examples:
+      - title: "Ask a process to shut down"
+        code: kill $(pgrep -x tips-worker); sleep 0.5; pgrep -x -c tips-worker
+        description: "With no signal named, `kill` sends `TERM`. Both workers take it and go, which the `pgrep -c` afterwards confirms by counting none. The `sleep` is there because `kill` returns as soon as the signal is queued, not when the process has finished acting on it."
+        output: |2
+          0
+        level: basic
+      - title: "Name the signal instead of taking the default"
+        code: kill -TERM $(pgrep -x tips-worker); sleep 0.5; pgrep -x -c tips-worker
+        description: "The same thing said out loud. `-TERM`, `-SIGTERM`, `-15` and `-s TERM` are four spellings of one signal, and a script is easier to read for using a name."
+        output: |2
+          0
+        level: basic
+      - title: "Send a signal by number"
+        code: kill -15 $(pgrep -x tips-worker); sleep 0.5; pgrep -x -c tips-worker
+        description: "Numbers work, and older scripts are full of them, so they are worth being able to read. Above signal 31 they stop being portable between architectures, so prefer the name when you are the one writing."
+        output: |2
+          0
+        level: basic
+      - title: "Use the long form -s"
+        code: kill -s KILL $(pgrep -x tips-stubborn); sleep 0.3; pgrep -x -c tips-stubborn
+        description: "`-s` takes the signal as a separate argument. Use it when the signal comes from a variable: `kill -s \"$sig\" \"$pid\"` needs no assembly."
+        output: |2
+          0
+        level: basic
+      - title: "Signal several processes at once"
+        code: kill $(pgrep -x tips-worker) && echo sent
+        description: "`kill` accepts any number of PIDs and signals each in turn. `pgrep` prints one per line and the shell splits them into separate arguments."
+        output: |2
+          sent
+        level: basic
+      - title: "Test whether a PID exists"
+        code: kill -0 "$(pgrep -x -n tips-worker)"; echo "exit=$?"
+        description: "Signal 0 is not a signal. It runs the permission and existence checks and then sends nothing, so the exit status answers \"is this process still there, and may I signal it?\" without disturbing it. This is how a script waits for something to finish."
+        output: |2
+          exit=0
+        level: intermediate
+      - title: "See what -0 says about a PID that is gone"
+        code: kill -0 999999 2>/dev/null; echo "exit=$?"
+        description: "Status 1, and a message on stderr that the redirect discards. A script polling for a process to exit wants exactly this pair."
+        output: |2
+          exit=1
+        level: intermediate
+      - title: "Pipe PIDs into kill with xargs"
+        code: pgrep -x tips-worker | xargs kill; sleep 0.5; pgrep -x -c tips-worker
+        description: "Equivalent to the command substitution above, and the form to use when the list could be long enough to overflow a command line. [`xargs`](/commands/xargs/) also stops you sending a signal to nothing when `pgrep` finds nothing, if you add `-r`."
+        output: |2
+          0
+        level: intermediate
+      - title: "Send HUP to a program with no handler for it"
+        code: kill -HUP $(pgrep -x tips-worker | head -1); sleep 0.4; pgrep -x -c tips-worker
+        description: "`HUP` is conventionally \"reload your configuration\", but that is a convention among daemons rather than a kernel behaviour. A program that installs no handler gets the default action, which for `HUP` is to die: one worker of the two is gone."
+        output: |2
+          1
+        level: intermediate
+
+  - title: "When TERM is not enough"
+    intro: "A program can catch `TERM` and decide what to do, including nothing. `KILL` and `STOP` are the two signals it cannot catch, and they are handled by the kernel rather than by the process."
+    examples:
+      - title: "Watch a process ignore TERM"
+        code: pkill -x tips-stubborn; sleep 1; pgrep -x -c tips-stubborn
+        description: "`tips-stubborn` runs `trap '' TERM`, so the signal is delivered and discarded. A second later it is still there. Real programs reach this state by accident more often than on purpose, usually by trapping the signal to clean up and then blocking in the handler."
+        output: |2
+          1
+        level: intermediate
+      - title: "Fall back to KILL"
+        code: pkill -9 -x tips-stubborn; sleep 0.5; pgrep -x -c tips-stubborn
+        description: "`-9` is `SIGKILL`, which the process never sees. The kernel tears it down where it stands, so nothing it was holding gets released in an orderly way and any temporary file it made stays made."
+        danger: true
+        output: |2
+          0
+        level: intermediate
+      - title: "Spell the same thing with --signal"
+        code: pkill --signal KILL -x tips-stubborn; sleep 0.3; pgrep -x -c tips-stubborn
+        description: "`pkill` and `pgrep` accept GNU long options. `--signal KILL` reads better than `-9` in a script somebody else will have to change."
+        danger: true
+        output: |2
+          0
+        level: intermediate
+      - title: "Suspend a process"
+        code: 'pid=$(pgrep -x -n tips-worker); kill -STOP "$pid"; sleep 0.2; ps -o stat= -p "$pid"'
+        description: "`STOP` cannot be caught either, and it does not end the process: it takes it off the run queue and leaves it there. The `ps` state column reports `T`, for stopped."
+        output: |2
+          T
+        level: intermediate
+      - title: "Let it run again"
+        code: 'pid=$(pgrep -x -n tips-worker); kill -STOP "$pid"; sleep 0.2; ps -o stat= -p "$pid"; kill -CONT "$pid"; sleep 0.2; ps -o stat= -p "$pid"'
+        description: "`CONT` is the other half. Between the two the process holds every file, socket and lock it had. That makes `STOP` useful for pausing something expensive, and dangerous for pausing something holding a database connection."
+        output: |2
+          T
+          S
+        level: intermediate
+      - title: "Stop a process, then TERM it"
+        code: 'pid=$(pgrep -x -n tips-worker); kill -STOP "$pid"; kill -TERM "$pid"; sleep 0.5; pgrep -x -c tips-worker'
+        description: "One worker of the two is gone, stopped or not. `tips-worker` installs no handler for `TERM`, so the kernel applies the default action, and a default action needs nothing from the process."
+        output: |2
+          1
+        level: advanced
+      - title: "Do the same to a process that handles TERM"
+        code: 'pid=$(pgrep -x tips-graceful); kill -STOP "$pid"; kill -TERM "$pid"; sleep 0.5; ps -o state= -p "$pid"; kill -CONT "$pid"; sleep 0.5; pgrep -x -c tips-graceful'
+        description: "`tips-graceful` traps `TERM` and exits from the handler. A handler is code, and a stopped process runs none, so half a second later it is still there and still `T`. The `CONT` delivers the signal that was waiting and the process finally goes. A cleanup script that suspends things before ending them can wait forever on this."
+        output: |2
+          T
+          0
+        level: advanced
+
+  - title: "Selecting by name"
+    intro: "`pgrep` and `pkill` take the same selection options and differ only in what they do with the result. Everything here works on either."
+    examples:
+      - title: "Count the processes a pattern matches"
+        code: pgrep -x -c tips-worker
+        description: "`-c` prints the count instead of the PIDs, and `-x` requires the whole process name to match rather than any part of it."
+        output: |2
+          2
+        level: basic
+      - title: "List the PIDs a pattern matches"
+        code: pgrep -x tips-worker
+        description: "The default output: one PID per line, ready for `xargs` or a command substitution."
+        volatile: "the PIDs are assigned at boot and will differ on your machine"
+        compare: shape
+        output: |2
+          2724
+          2725
+        level: basic
+      - title: "Show the command line beside each PID"
+        code: pgrep -a -x tips-worker
+        description: "`-a` adds the full command line. Check the selection here before letting `pkill` act on the same pattern."
+        volatile: "the PIDs will differ"
+        compare: shape
+        output: |2
+          2724 /usr/local/bin/tips-worker 3600
+          2725 /usr/local/bin/tips-worker 3600
+        level: basic
+      - title: "Show the process name beside each PID"
+        code: pgrep -l -x tips-worker
+        description: "`-l` is the shorter form of the same idea, printing the name rather than the whole command line."
+        volatile: "the PIDs will differ"
+        compare: shape
+        output: |2
+          2724 tips-worker
+          2725 tips-worker
+        level: basic
+      - title: "See that a pattern matches on substrings by default"
+        code: pgrep -c tips-work; pgrep -x -c tips-work
+        description: "Without `-x`, the pattern is a regular expression matched anywhere in the process name, so `tips-work` finds `tips-worker`. With `-x` it has to match the whole name, and finds nothing. The second number is why `-x` belongs on anything that sends a signal."
+        output: |2
+          2
+          0
+        level: intermediate
+      - title: "Kill by exact name"
+        code: pkill -x tips-worker; sleep 0.5; pgrep -x -c tips-worker
+        description: "`pkill` with the same selection as the `pgrep` you just ran. The two share every selection option for exactly this."
+        output: |2
+          0
+        level: basic
+      - title: "Say which processes were signalled"
+        code: pkill -e -x tips-worker
+        description: "`-e` reports each process it acted on. Worth having in a script, where the alternative is a silent command and no record of what it hit."
+        volatile: "the PIDs will differ"
+        compare: shape
+        output: |2
+          tips-worker killed (pid 645)
+          tips-worker killed (pid 646)
+        level: intermediate
+      - title: "Count without listing"
+        code: pkill -c -x tips-worker
+        description: "`-c` prints how many processes were signalled and nothing else."
+        output: |2
+          2
+        level: intermediate
+      - title: "Find nothing, and see the exit status"
+        code: pkill -x nosuchproc; echo "exit=$?"
+        description: "Status 1 for no match, and no output at all. Scripts that treat any non-zero status as an error will trip on this, so test for it rather than letting `set -e` end the run."
+        output: |2
+          exit=1
+        level: intermediate
+      - title: "Match against the whole command line"
+        code: "pgrep -c -u user -f 'tips-worker 3600'"
+        description: "`-f` matches the pattern against the full command line rather than the process name. Nothing else separates two copies of one program running with different arguments."
+        output: |2
+          2
+        level: intermediate
+      - title: "See what -f actually matched"
+        code: "pgrep -u user -f 'tips-worker 3600'"
+        description: "The same selection printed. Always run this before the `pkill`, because `-f` widens what a pattern can hit by a great deal."
+        volatile: "the PIDs will differ"
+        compare: shape
+        output: |2
+          1031
+          1032
+        level: intermediate
+      - title: "Kill on a command-line match, narrowed by user"
+        code: "pkill -u user -f 'tips-worker 3600'; sleep 0.5; pgrep -c -x tips-worker"
+        description: "`-u` restricts the match to one owner. Pair it with `-f` as a habit: your own shell's command line contains the pattern you just typed, so an unnarrowed `pkill -f` can match the shell running it."
+        danger: true
+        output: |2
+          0
+        level: advanced
+      - title: "Select the newest or the oldest match"
+        code: pgrep -x -n tips-worker; pgrep -x -o tips-worker
+        description: "`-n` is the most recently started process matching the pattern and `-o` the oldest. Useful when a program is meant to be a singleton and two of it are running."
+        volatile: "the PIDs will differ, and so will which of the two is newer"
+        compare: shape
+        output: |2
+          2725
+          2724
+        level: intermediate
+      - title: "Signal every process owned by a user"
+        code: pkill -u user; sleep 0.5; pgrep -c -u user
+        description: "With no pattern at all, the selection is whatever the other options say. This ends every process belonging to `user`, including their login shell, and is the command to reach for before deleting an account rather than during an ordinary day."
+        danger: true
+        output: |2
+          0
+        level: advanced
+      - title: "Signal the processes on a terminal"
+        code: pkill -t pts/0 -x tips-worker
+        description: "`-t` selects by controlling terminal. The fixture's processes have none, so nothing is printed and nothing is signalled. A daemon is detached from every terminal, and `-t` cannot reach one."
+        level: advanced
+
+  - title: "killall"
+    intro: "`killall` is the psmisc equivalent and predates `pkill`. The difference to hold on to is that it matches names exactly by default, where `pkill` matches substrings."
+    examples:
+      - title: "Kill every process with a given name"
+        code: killall tips-worker; sleep 0.5; pgrep -c -x tips-worker
+        description: "No `-x` needed: `killall` matches the whole process name unless told otherwise."
+        output: |2
+          0
+        level: basic
+      - title: "Report what was signalled"
+        code: killall -v tips-worker
+        description: "`-v` names each process, its PID and the signal number, which is more than `pkill -e` prints."
+        volatile: "the PIDs will differ"
+        compare: shape
+        output: |2
+          Killed tips-worker(2359) with signal 15
+          Killed tips-worker(2361) with signal 15
+        level: basic
+      - title: "Wait until the processes have actually gone"
+        code: killall -w tips-worker; pgrep -x -c tips-worker
+        description: "`-w` blocks until every signalled process has exited, so the count that follows needs no `sleep` to be right. `pkill` has no equivalent, and this is the reason to keep `killall` installed."
+        output: |2
+          0
+        level: intermediate
+      - title: "Send a signal other than TERM"
+        code: killall -s STOP tips-worker; sleep 0.2; ps -o stat= -C tips-worker
+        description: "`-s` takes a name or a number, the same as `kill`. Both workers are stopped rather than ended, so `ps` prints `T` twice."
+        output: |2
+          T
+          T
+        level: intermediate
+      - title: "Match names with a regular expression"
+        code: killall -r "tips-.*"; sleep 0.5; pgrep -c "tips-"
+        description: "`-r` turns the argument into a regular expression, which is `pkill`'s default behaviour rather than an option. All five fixture processes are signalled and one survives, because `tips-stubborn` ignores `TERM`."
+        danger: true
+        output: |2
+          1
+        level: intermediate
+      - title: "Restrict to one owner"
+        code: killall -u user tips-worker; sleep 0.5; pgrep -x -c tips-worker
+        description: "`-u` is the same idea as `pkill -u`, and the same advice applies: narrow before you widen."
+        output: |2
+          0
+        level: intermediate
+      - title: "Find nothing, and be told so"
+        code: killall nosuchproc; echo "exit=$?"
+        description: "`killall` prints a message where `pkill` says nothing. Both exit 1."
+        output: |2
+          nosuchproc: no process found
+          exit=1
+        level: basic
+      - title: "Confirm before each one"
+        code: killall -i tips-worker
+        description: "`-i` asks about every match and reads the answer from the terminal, so it does nothing useful in a script or a pipeline. There is no output block here because the command waits for a keypress that the replay has no way to send."
+        level: intermediate
+
+  - title: "Children, groups and orphans"
+    intro: "A signal goes to one process. Its children are separate processes and are not included, so stopping a program and stopping what it started are two different acts."
+    examples:
+      - title: "Kill a parent and watch the children survive"
+        code: pkill -x tips-supervisor; sleep 0.5; pgrep -x -c tips-worker
+        description: "The supervisor is gone and both workers are still running. Nothing about a signal descends a process tree, so a script that ends its parent has not ended its work."
+        output: |2
+          2
+        level: intermediate
+      - title: "See who adopted the orphans"
+        code: pkill -x tips-supervisor; sleep 0.5; ps -o ppid= -C tips-worker | tr -d " " | sort -u
+        description: "A process whose parent exits is reparented to PID 1, so both workers now report the same new parent. An orphaned worker is easy to miss for that reason: it sits under nothing you would have thought to look at."
+        output: |2
+          1
+        level: advanced
+      - title: "Signal the children by their parent"
+        code: pkill -P "$(pgrep -x tips-supervisor)"; sleep 0.5; pgrep -x -c tips-worker; pgrep -x -c tips-supervisor
+        description: "`-P` selects by parent PID, so this reaches the two workers and not the supervisor. The supervisor goes anyway, because it was waiting on those children and has nothing left to wait for."
+        output: |2
+          0
+          0
+        level: advanced
+      - title: "Signal a whole process group"
+        code: 'kill -TERM -"$(ps -o pgid= -p "$(pgrep -x tips-supervisor)" | tr -d " ")"; sleep 0.5; pgrep -c -x tips-worker; pgrep -c -x tips-supervisor'
+        description: "A negative number is a process group id rather than a PID. The supervisor was started with `setsid`, so it and its two workers share one group, and one signal reaches all three."
+        danger: true
+        output: |2
+          0
+          0
+        level: advanced
+      - title: "Read the group id off a process"
+        code: ps -o pgid= -p "$(pgrep -x tips-supervisor)" | tr -d " " | wc -l
+        description: "`ps -o pgid=` prints the group without a header, right-aligned in a column, so the `tr` strips the padding. One line out, and the negative argument above takes that number."
+        output: |2
+          1
+        level: advanced
+      - title: "Signal every process in your own group"
+        code: kill -TERM -$$
+        description: "`-$$` is the shell's own group, so this ends the shell and everything running under it. There is no output block because the command would take the replay's own shell with it. Think twice before typing it anywhere else for the same reason."
+        danger: true
+        level: advanced
+
+  - title: "Signal names, numbers and the two kills"
+    examples:
+      - title: "List the signals"
+        code: kill -l | head -3
+        description: "The bash builtin prints them numbered, in columns. The first fifteen are the ones worth recognising; everything from 34 up is a real-time signal that no ordinary program uses."
+        output: |2
+           1) SIGHUP	 2) SIGINT	 3) SIGQUIT	 4) SIGILL	 5) SIGTRAP
+           6) SIGABRT	 7) SIGBUS	 8) SIGFPE	 9) SIGKILL	10) SIGUSR1
+          11) SIGSEGV	12) SIGUSR2	13) SIGPIPE	14) SIGALRM	15) SIGTERM
+        level: basic
+      - title: "Convert a number to a name"
+        code: kill -l 9
+        description: "Handy for reading a log line or an exit status. A shell reports a process killed by signal N as exit status 128+N, so status 137 is `128+9` and this is how you confirm it."
+        output: |2
+          KILL
+        level: basic
+      - title: "Convert a name to a number"
+        code: kill -l TERM
+        description: "The lookup in the other direction. `SIGTERM` works as well as `TERM`."
+        output: |2
+          15
+        level: basic
+      - title: "See the procps table instead"
+        code: /bin/kill -L | head -4
+        description: "`-L` is the binary's own listing, laid out in aligned columns with the `SIG` prefix dropped. The builtin has no such option."
+        output: |2
+           1 HUP      2 INT      3 QUIT     4 ILL      5 TRAP     6 ABRT     7 BUS
+           8 FPE      9 KILL    10 USR1    11 SEGV    12 USR2    13 PIPE    14 ALRM
+          15 TERM    16 STKFLT  17 CHLD    18 CONT    19 STOP    20 TSTP    21 TTIN
+          22 TTOU    23 URG     24 XCPU    25 XFSZ    26 VTALRM  27 PROF    28 WINCH
+        level: intermediate
+      - title: "Find out which kill you are running"
+        code: type -a kill | head -2
+        description: "The builtin comes first, so an interactive shell and a bash script both use it. `sh -c`, `sudo kill` and `find -exec kill` all reach the binary instead."
+        output: |2
+          kill is a shell builtin
+          kill is /usr/bin/kill
+        level: intermediate
+      - title: "See the binary's error message"
+        code: /bin/kill 999999
+        description: "The two disagree about wording. The builtin prefixes its message with the shell's name, and with the line number when it is in a script, so a log grep has to allow for both forms."
+        output: |2
+          /bin/kill: (999999): No such process
+        level: intermediate
+      - title: "Try to signal a process you do not own"
+        code: sudo -u user kill "$(pgrep -x tips-stubborn)"
+        description: "Signalling is permitted between processes of the same owner, or from root to anything. `tips-stubborn` belongs to root, so `user` is refused. `sudo` runs `kill` without a shell, so the message is the binary's."
+        volatile: "the PID will differ"
+        compare: shape
+        output: |2
+          kill: (2412): Operation not permitted
+        level: intermediate
+      - title: "See which packages the three commands come from"
+        code: dpkg -S $(command -v pkill) $(command -v killall)
+        description: "`pkill` and `pgrep` are part of `procps`; `killall` is part of `psmisc`. Two packages, and a machine can have one without the other."
+        output: |2
+          procps: /usr/bin/pkill
+          psmisc: /usr/bin/killall
+        level: intermediate
+      - title: "Check which of the two Debian considers essential"
+        code: dpkg-query -W -f='${Package} ${Priority}\n' procps psmisc
+        description: "`important` means every Debian install has it. `optional` means a standard install has it and a minimal one may not, so `killall` is the one to avoid depending on in a script that has to run inside a container."
+        output: |2
+          procps important
+          psmisc optional
+        level: advanced

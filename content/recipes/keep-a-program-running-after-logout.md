@@ -18,7 +18,7 @@ job dies with it.
 | Come back to it, watch it, type at it | `tmux` |
 | Fire it off and read a log later | `nohup cmd > log 2>&1 &` |
 | Have it restart on failure, survive a reboot, log to the journal | `systemd-run --user` |
-| Rescue something already running | `disown -h %1` |
+| Rescue something already running | [`disown -h %1`](/commands/job-control/) |
 
 `tmux` is the answer most of the time, and it is not installed on a base Debian system
 (`sudo apt install tmux`). Nothing else in this list lets you reattach and see what the program

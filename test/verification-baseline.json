@@ -125,6 +125,13 @@
     "fixtures": 4,
     "unpaired": 0
   },
+  "commands/job-control": {
+    "checked": 34,
+    "byShape": 3,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
   "commands/journalctl": {
     "checked": 30,
     "byShape": 5,
@@ -137,6 +144,13 @@
     "byShape": 0,
     "exempt": 0,
     "fixtures": 5,
+    "unpaired": 0
+  },
+  "commands/kill": {
+    "checked": 51,
+    "byShape": 8,
+    "exempt": 0,
+    "fixtures": 1,
     "unpaired": 0
   },
   "commands/less": {

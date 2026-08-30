@@ -25,7 +25,8 @@ python3  87 root 3u  IPv4 1792818      0t0  TCP *:9000 (LISTEN)
 **How it works:**
 
 - `-i :9000` filters `lsof`'s (list open files) output to sockets on port 9000, on any address.
-- The `PID` column is what you need next: `kill 87` stops that specific process. Try a plain
+- The `PID` column is what you need next: [`kill 87`](/commands/kill/) stops that specific
+  process. Try a plain
   `kill` first (sends `SIGTERM`, letting the process shut down cleanly) before escalating to
   `kill -9` (`SIGKILL`, immediate and unconditional). `SIGTERM` gives the process a chance to
   release a lock or finish a write; `SIGKILL` does not, and
