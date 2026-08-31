@@ -65,7 +65,7 @@ explains the timeout that fixes it properly.
 
 ## Root, and when you don't need it
 
-Anything that changes installed packages needs root, normally through `sudo`, which on Debian
+Anything that changes installed packages needs root, normally through [`sudo`](/commands/sudo/), which on Debian
 is [not always installed](/troubleshooting/sudo-command-not-found/), depending on what you
 answered about a root password when you set the machine up. Anything that only reads (`search`,
 `show`, `list`, `policy`, and any `--simulate` run) does not, and it is worth getting into the

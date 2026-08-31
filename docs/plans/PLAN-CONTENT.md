@@ -46,13 +46,13 @@ doesn't discover it halfway through.
 
 ## §2. Where the site is now
 
-Counted 2026-08-30 by `verificationStats` in `src/content/verificationStats.ts`, which is the
+Counted 2026-08-31 by `verificationStats` in `src/content/verificationStats.ts`, which is the
 same routine the about page renders from, so these figures are the ones the site itself publishes
 rather than a second tally that can drift from them.
 
-**83 pages. 1,644 documented outputs re-run on every push**, across 39 command pages and 43 of
+**84 pages. 1,677 documented outputs re-run on every push**, across 40 command pages and 43 of
 the written articles, with 33 more documented and exempted, each naming how it was verified
-instead. 1,626 examples across the command pages, 117 blocks of sample data, and 81 outputs
+instead. 1,660 examples across the command pages, 118 blocks of sample data, and 81 outputs
 declared `volatile:`.
 
 Twenty-five pages in five days, against the six days for nineteen that §12 measured in August. The
@@ -63,7 +63,7 @@ is no page left whose outputs nothing re-runs. That closes the largest item in �
 
 | Category | Pages | State |
 |---|---|---|
-| `commands` | apt, apt-cache, apt-file, awk, cat, chmod, chown, cowsay, cp, crontab, curl, cut, diff, dpkg, du, find, grep, head, job-control, journalctl, jq, kill, less, ls, mv, ps, rm, sed, sort, ssh, systemctl, tail, tar, tee, tr, uniq, wc, wget, xargs | 39 pages. Text processing and the file basics are both complete enough to stop being the priority. Debian package tooling is done to the §4.1 P1 line. **The process group is done to its P1 line as of 2026-08-30**, with `ps`, `kill` and job control between them covering what a reader can do to a running program. `du` still opens the disk group alone, and there is **no network-diagnostic coverage and no user-management page beyond `chown`**. |
+| `commands` | apt, apt-cache, apt-file, awk, cat, chmod, chown, cowsay, cp, crontab, curl, cut, diff, dpkg, du, find, grep, head, job-control, journalctl, jq, kill, less, ls, mv, ps, rm, sed, sort, ssh, sudo, systemctl, tail, tar, tee, tr, uniq, wc, wget, xargs | 40 pages. Text processing and the file basics are both complete enough to stop being the priority. Debian package tooling is done to the §4.1 P1 line. **The process group is done to its P1 line as of 2026-08-30**, with `ps`, `kill` and job control between them covering what a reader can do to a running program. `du` still opens the disk group alone, and there is **no network-diagnostic coverage and no user-management page beyond `chown`**. |
 | `concepts` | environment-variables-and-path, exit-codes-and-error-handling, file-permissions-explained, pipes-and-redirection, processes-and-signals, terminal-shell-and-tty | 6 pages. §3.1 rates this layer above any command page, and the three highest-demand ones are written, so the next concept is a §5 P2 rather than a P1. |
 | `scripting` | your-first-script, variables-and-quoting, conditionals-and-test, loops, script-arguments, functions, arrays, parameter-expansion, where-a-script-lives, arithmetic, here-docs, traps-and-cleanup, debugging-and-robustness, a-real-script | **Complete, 2026-08-29.** 14 lessons ending in a capstone that uses all thirteen before it. The two candidate additions in §7 are the only open items, and neither is a gap a reader would notice. |
 | `recipes` | add-a-directory-to-path, bulk-rename-files, copy-files-between-machines, find-and-replace-across-files, find-permission-denied, find-the-largest-files, keep-a-program-running-after-logout, kill-whatever-is-using-a-port, monitor-a-log-in-real-time | 9 pages. **All four P1 recipes shipped 2026-08-29**, after six weeks in which the category gained nothing. What is left is the §9 P2 list. |
@@ -239,8 +239,14 @@ The everyday commands. Low glamour, high traffic.
 
 ### §4.5. Users, groups & privilege
 
-- **P1 `sudo` / `su`** (standard, combined): `sudo -i` vs `su -`, `visudo`, and the Debian
-  "sudo: command not found" trap (§3.3). High Debian specificity.
+- **SHIPPED 2026-08-31 `sudo`** (standard), with `su` folded in. Chosen off-wave because the
+  link graph asked for it: `sudo` was named in prose on twelve pages with nowhere to link, the
+  largest such gap on the site and the same signal §3.1 describes finding `cat` by. It replays as
+  `user`, since as root every refusal the page is about cannot happen. The image already grants
+  `user` passwordless sudo, so the setup script adds one `PASSWD:` rule for a single command to
+  give `-n` something to refuse; that rule has to sort *after* the image's `NOPASSWD: ALL` in
+  `/etc/sudoers.d` and name a command no other example runs, or it makes an unrelated example ask
+  for a password nothing can answer.
 - **SHIPPED 2026-08-28 `chown`** (light), with `chgrp` folded in. It replays as root, unlike the
   three pages it shares `mk_site_tree` with, because every example doing its subject needs the
   privilege; the refusals are shown with `sudo -u user` from that root shell. The same will be
@@ -1039,3 +1045,20 @@ What went out, and what writing it taught that the next batch would otherwise le
   pending `TERM` in general: a default action is applied by the kernel and needs nothing from the
   process, so a stopped `sleep` dies where a stopped program with a handler stays put until
   something sends `CONT`. Both halves are examples now, which cost the fixture a fourth process.
+- **2026-08-31**: `sudo`, with `su` folded in. 31 checked outputs and one fixture block, and the
+  first page chosen from the link graph rather than from a wave: `sudo` was named on twelve pages
+  with nothing to link to, against four for the next candidate.
+
+  A page about privilege has to run without it. Replayed as `user`, because as root every refusal
+  it documents succeeds instead and `sudo whoami` answers a question nobody asked. The setup
+  script still needs privilege of its own, which the sandbox image grants, and the rule it adds to
+  give `-n` something to refuse has two constraints worth reusing: it must sort after the image's
+  own `NOPASSWD: ALL`, since sudo reads `/etc/sudoers.d` in lexical order and the last match wins,
+  and it must name a command no other example runs, or that example asks for a password and fails
+  with sudo's askpass advice rather than the line the page documents.
+
+  The working directory is the trap this page nearly shipped with. Half the point of `-i` is that
+  it moves you to root's home, which means the contrast prints the directory you started in, and
+  that is `/home/user/verify-sudo` under the replay. A reader has no such path. The fixture makes
+  `/srv/app` and the examples `cd` there first, the same answer `where-a-script-lives` reached for
+  `$PWD`.

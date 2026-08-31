@@ -19,5 +19,5 @@ screen and on disk at once.
 
 The second is the one people arrive here for. `sudo echo something > /etc/somefile` **does not
 work**, and the reason surprises everyone: `sudo` applies to `echo`, but the redirect is
-performed by your shell, which is still you. `sudo tee` moves the writing into the command that
+performed by your shell, which is still you. [`sudo tee`](/commands/sudo/) moves the writing into the command that
 was elevated, which is why every guide tells you to pipe into it.

@@ -1,0 +1,258 @@
+command: sudo
+fixtures:
+  - name: "the sudo policy these examples run under"
+    note: "`/etc/sudoers.d` is read in lexical order and the last matching rule wins, so the second file below overrides the first for one command and leaves everything else alone. The examples run as `user`; `deploy` is a second account with no privileges, so `-u` and `su` have somewhere to go that is neither root nor the account already running the command."
+    from: "sudo tail -n +1 /etc/sudoers.d/user /etc/sudoers.d/zz-page"
+    content: |
+      ==> /etc/sudoers.d/user <==
+      user ALL=(ALL) NOPASSWD:ALL
+
+      ==> /etc/sudoers.d/zz-page <==
+      user ALL=(ALL) PASSWD: /usr/bin/passwd
+sections:
+  - title: "Running a command as someone else"
+    intro: "`sudo` takes a command, not a shell. Everything after the program name is that program's arguments, and anything the shell would do with them happens before `sudo` is involved."
+    examples:
+      - title: "Run one command as root"
+        code: whoami; sudo whoami
+        description: "The first line is you, the second the identity the command ran with. Only that one command is privileged: the shell you typed it into is unchanged."
+        output: |2
+          user
+          root
+        level: basic
+      - title: "See the full identity a command runs with"
+        code: sudo id
+        description: "Not just the user id. The group list is replaced too, so a command run under `sudo` is in root's groups and not in yours."
+        output: |2
+          uid=0(root) gid=0(root) groups=0(root)
+        level: basic
+      - title: "Run as some other account"
+        code: cd /srv/app; sudo -u deploy id -un; sudo -u deploy pwd
+        description: "`-u` takes any user, and root is only the default. The working directory is left alone, which matters when the command you are running takes a relative path."
+        output: |2
+          deploy
+          /srv/app
+        level: basic
+      - title: "Watch a command fail without sudo"
+        code: ls /root; echo "exit=$?"
+        description: "Root's home directory is mode 700, so an ordinary account cannot list it. `ls` exits 2 rather than 1: it distinguishes a serious failure from merely finding nothing."
+        output: |2
+          ls: cannot open directory '/root': Permission denied
+          exit=2
+        level: basic
+      - title: "Run the same thing with it"
+        code: sudo ls -A /root
+        description: "`-A` includes the dotfiles and leaves out `.` and `..`, which on a home directory is most of what there is to see."
+        output: |2
+          .bashrc
+          .profile
+          .ssh
+        level: basic
+      - title: "See that the exit status is the command's own"
+        code: sudo false; echo "exit=$?"
+        description: "`sudo` returns what the command returned, so a script can test it as normal. `sudo` refusing is also exit 1, with a message on stderr, so a script that has to know why it stopped cannot tell the two apart on the status alone."
+        output: |2
+          exit=1
+        level: intermediate
+      - title: "Refuse to prompt at all"
+        code: sudo -n whoami
+        description: "`-n` fails rather than asking for a password. Use it anywhere a prompt would hang: a cron job, a script running under a service manager, anything with no terminal attached."
+        output: |2
+          root
+        level: intermediate
+      - title: "See what -n does when a password is needed"
+        code: sudo -n passwd --status deploy; echo "exit=$?"
+        description: "The policy on this machine wants a password for `passwd` and no other command, so `-n` refuses this one and allowed the last one. A policy is written per command, not per account."
+        output: |2
+          sudo: a password is required
+          exit=1
+        level: intermediate
+
+  - title: "What the environment loses"
+    intro: "`env_reset` is on by default on Debian, so a command under `sudo` does not inherit your environment. It gets a small one built from the policy instead."
+    examples:
+      - title: "Compare the two PATHs"
+        code: echo "$PATH"; sudo printenv PATH
+        description: "The second is `secure_path` from `/etc/sudoers`, and nothing you set can change it. This is why `sudo` finds `/usr/sbin` programs your own shell does not, and why a command in `~/bin` or `/opt` is suddenly not found."
+        output: |2
+          /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games
+          /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+        level: basic
+      - title: "Watch a variable fail to arrive"
+        code: FOO=bar sudo printenv FOO; echo "exit=$?"
+        description: "Nothing is printed and `printenv` exits 1, because `FOO` was removed on the way through. A script that sets a variable and then calls `sudo` expecting the command to see it will get no error, just different behaviour."
+        output: |2
+          exit=1
+        level: intermediate
+      - title: "Pass the environment through anyway"
+        code: FOO=bar sudo -E printenv FOO
+        description: "`-E` keeps what you had, and the policy can forbid it. Reach for it when a build or a proxy setting has to survive, and not as a habit: the reset exists so that a variable you did not think about, such as `LD_PRELOAD`, cannot follow a command into root."
+        output: |2
+          bar
+        level: intermediate
+      - title: "See where HOME points"
+        code: printenv HOME; sudo printenv HOME
+        description: "Debian's sudo sets `HOME` to the target user's, so a command that writes a dotfile writes it into `/root`. `-H` asks for exactly this and therefore changes nothing here; it is worth knowing on a system whose policy has been changed."
+        output: |2
+          /home/user
+          /root
+        level: intermediate
+      - title: "Compare a login shell with a plain one"
+        code: cd /srv/app; sudo pwd; sudo -i pwd
+        description: "`-i` is the closest thing to logging in as root: it starts a login shell, so the working directory becomes root's home and root's shell startup files run. Without it you stay where you already were."
+        output: |2
+          /srv/app
+          /root
+        level: intermediate
+      - title: "Keep the directory but take the shell"
+        code: cd /srv/app; sudo -s pwd; sudo -s printenv HOME
+        description: "`-s` runs your shell as root without the login part, so the directory stays and `HOME` still moves. Between `-i`, `-s` and neither, the question is whose startup files you want to run, and the answer is usually neither."
+        output: |2
+          /srv/app
+          /root
+        level: advanced
+      - title: "Combine -i with another account"
+        code: cd /srv/app; sudo -u deploy -i pwd; sudo -u deploy pwd
+        description: "The same distinction applied to a service account: with `-i` you land in its home and read its profile, without it you are only borrowing its identity."
+        output: |2
+          /home/deploy
+          /srv/app
+        level: advanced
+      - title: "See what a login shell does to PATH"
+        code: sudo -i printenv PATH
+        description: "Still `secure_path`. A login shell would normally build `PATH` from `/etc/login.defs` and root's profile, and the sudoers setting wins over both."
+        output: |2
+          /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+        level: advanced
+
+  - title: "The redirect that still runs as you"
+    intro: "The most common way `sudo` appears not to work. The shell sets up redirection before it runs anything, and the shell is not privileged."
+    examples:
+      - title: "Watch a redirect fail"
+        code: |-
+          printf 'sudo echo written > /etc/tips.conf\n' > try.sh
+          bash try.sh
+          echo "exit=$?"
+        description: "The error names the file, not `echo` and not `sudo`, because `sudo` never ran: the shell tried to create `/etc/tips.conf` as `user` and stopped there. Run from a file here so the message carries a filename, as it would in a script of your own."
+        output: |2
+          try.sh: line 1: /etc/tips.conf: Permission denied
+          exit=1
+        level: basic
+      - title: "Write the file with tee"
+        code: echo written | sudo tee /etc/tips.conf
+        description: "[`tee`](/commands/tee/) does the opening, and `tee` is the thing running under `sudo`. It also prints what it wrote, so add `> /dev/null` when you do not want that echoed back."
+        output: |2
+          written
+        level: basic
+      - title: "Append instead of replacing"
+        code: echo appended | sudo tee -a /etc/tips.conf
+        description: "`-a` is `>>` to `tee`'s `>`. Getting this wrong on a config file replaces it, so prefer `tee` over the shell form even once you know the trap."
+        output: |2
+          appended
+        level: basic
+      - title: "Give the redirect its own shell"
+        code: "sudo sh -c 'echo written > /etc/tips.conf'; sudo cat /etc/tips.conf"
+        description: "The other way round: run a shell under `sudo` and let that shell do the redirecting. Quote it carefully, because everything inside is expanded by the privileged shell rather than yours."
+        output: |2
+          written
+        level: intermediate
+
+  - title: "Finding out what you may do"
+    examples:
+      - title: "List your own privileges"
+        code: sudo -l
+        description: "The defaults in force and every rule that matches you. Worth running on an unfamiliar machine before assuming either that you can do something or that you cannot."
+        output: |2
+          Matching Defaults entries for user on deb1:
+              env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin, use_pty
+
+          User user may run the following commands on deb1:
+              (ALL) NOPASSWD: ALL
+              (ALL) PASSWD: /usr/bin/passwd
+        level: basic
+      - title: "Try to read the policy directly"
+        code: grep -c . /etc/sudoers; echo "exit=$?"
+        description: "Mode 440 and owned by root, so you cannot read the file that decides what you may do. `sudo -l` exists because of this: it answers the question without handing over the policy."
+        output: |2
+          grep: /etc/sudoers: Permission denied
+          exit=2
+        level: intermediate
+      - title: "Read it with the privilege it describes"
+        code: sudo grep -E "^(Defaults|root|%sudo)" /etc/sudoers
+        description: "Debian's shipped policy, with the comments stripped out. Four defaults and two grants, and the last line is the one that matters: membership of the `sudo` group carries the privilege."
+        output: |2
+          Defaults	env_reset
+          Defaults	mail_badpass
+          Defaults	secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+          Defaults	use_pty
+          root	ALL=(ALL:ALL) ALL
+          %sudo	ALL=(ALL:ALL) ALL
+        level: intermediate
+      - title: "See who is in the sudo group"
+        code: getent group sudo
+        description: "Empty here, and `user` can still run `sudo`, because this machine grants it through a file in `/etc/sudoers.d` instead. Group membership is the usual route on Debian and not the only one, so ask `sudo -l` rather than inferring an answer from this."
+        output: |2
+          sudo:x:27:
+        level: intermediate
+      - title: "Check a sudoers file before it takes effect"
+        code: sudo visudo -c -f /etc/sudoers.d/zz-page
+        description: "`visudo` normally opens an editor and refuses to save a file that does not parse. `-c -f` runs only the check, for a file you wrote with something else or that a configuration management tool dropped in."
+        output: |2
+          /etc/sudoers.d/zz-page: parsed OK
+        level: intermediate
+      - title: "See what a typo looks like"
+        code: |-
+          printf 'user ALL=(ALL) NOPASWD:ALL\n' > bad.conf
+          sudo visudo -c -f bad.conf
+          echo "exit=$?"
+        description: "One missing `S`. A file like this dropped straight into `/etc/sudoers.d` can lock every account out of `sudo` at once. That is why the editing tool is the one that checks, and why editing over ssh with no second session open is a bad afternoon waiting to happen."
+        danger: true
+        output: |2
+          bad.conf:1:27: syntax error
+          user ALL=(ALL) NOPASWD:ALL
+                                    ^
+          exit=1
+        level: advanced
+
+  - title: "su, and when it is the one you want"
+    intro: "`su` switches account rather than running one command, and it wants the target account's password. The examples below reach it through `sudo`, because a password prompt is the one thing a page of captured output cannot show you."
+    examples:
+      - title: "Switch to another account with a login shell"
+        code: "sudo su - deploy -c 'pwd; echo \"$PATH\"'"
+        description: "The `-` is the entire difference. It makes this a login shell, so the working directory becomes `deploy`'s home and `PATH` is built from `/etc/login.defs` and that account's profile: no `sbin` directories, because those are for administrators."
+        output: |2
+          /home/deploy
+          /usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games
+        level: intermediate
+      - title: "Switch without the login part"
+        code: "cd /srv/app; sudo su deploy -c 'pwd; echo \"$PATH\"'"
+        description: "Same account, and everything else inherited from whoever ran it. The directory has not changed and `PATH` is still the privileged one, so a process running as `deploy` is searching root's directories. Leaving the `-` off is the single most common mistake with this command."
+        output: |2
+          /srv/app
+          /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+        level: intermediate
+      - title: "Confirm where a login shell puts you"
+        code: "sudo su - deploy -c 'whoami; printenv HOME'"
+        description: "Both the identity and the home directory, and a service account usually needs both before it will run anything: a program that writes to `~` and finds root's home has been started the wrong way."
+        output: |2
+          deploy
+          /home/deploy
+        level: intermediate
+      - title: "Become root interactively"
+        code: su -
+        description: "What you type on a machine with no `sudo`, and it asks for the root password. There is no output block because the command opens a shell and waits, so nothing a batch run can capture would be what you see."
+        level: basic
+      - title: "See which packages the two come from"
+        code: dpkg -S $(command -v su) $(command -v sudo)
+        description: "Two different packages, and only one of them is part of every Debian system."
+        output: |2
+          util-linux: /usr/bin/su
+          sudo: /usr/bin/sudo
+        level: intermediate
+      - title: "Check which one Debian always installs"
+        code: dpkg-query -W -f='${Package} ${Priority}\n' util-linux sudo
+        description: "`required` means the system will not work without it. `optional` means a standard install has it and a minimal one may not, so a script that has to run on any Debian machine should reach for `su` or for neither."
+        output: |2
+          sudo optional
+          util-linux required
+        level: advanced

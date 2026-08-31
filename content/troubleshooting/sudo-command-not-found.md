@@ -8,7 +8,7 @@ updated: 2026-08-22
 related: [file-permissions-explained, apt, apt-essentials, could-not-get-lock-dpkg-frontend]
 ---
 
-On a fresh Debian install, `sudo` is frequently not there at all:
+On a fresh Debian install, [`sudo`](/commands/sudo/) is frequently not there at all:
 
 <!-- verify: skip quoted here to open the page; reproduced for real further down -->
 ```

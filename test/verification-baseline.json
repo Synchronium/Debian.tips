@@ -209,6 +209,13 @@
     "fixtures": 2,
     "unpaired": 0
   },
+  "commands/sudo": {
+    "checked": 31,
+    "byShape": 0,
+    "exempt": 0,
+    "fixtures": 1,
+    "unpaired": 0
+  },
   "commands/systemctl": {
     "checked": 53,
     "byShape": 1,

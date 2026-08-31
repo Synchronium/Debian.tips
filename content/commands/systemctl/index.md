@@ -94,7 +94,7 @@ not.
 
 Querying state needs no privileges: `status`, `is-active`, `list-units` and `cat` all work as any
 user. Changing it needs root, so `start`, `stop`, `enable`, `mask` and `daemon-reload` want
-`sudo`. The examples below show `sudo` where it is genuinely required.
+[`sudo`](/commands/sudo/). The examples below show `sudo` where it is genuinely required.
 
 > [!NOTE]
 > Examples that alter a service use `deploy-agent`, a unit that exists only for this page. The
