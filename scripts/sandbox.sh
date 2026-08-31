@@ -123,7 +123,7 @@ Usage:
   $0 build                               build the sandbox image if it is missing or stale
   $0 context-hash                        print the hash this build context tags to
   $0 registry                            print the repository a published image is pulled from
-  $0 start [--systemd] [name]            start a disposable sandbox, prints its name
+  $0 start [--systemd|--privileged] [n]  start a disposable sandbox, prints its name
   $0 exec [-u user] <name> <command...>  run a command inside the sandbox (bash -c)
   $0 stop <name>                         stop and remove the sandbox
   $0 list                                list running sandboxes
@@ -158,12 +158,18 @@ case "$cmd" in
     ;;
   start)
     ensure_image
-    systemd=0
-    if [[ "${1:-}" == "--systemd" ]]; then systemd=1; shift; fi
+    # Two grants above the default, and a page asks for the weaker one where it can.
+    # --privileged is what mounting a filesystem or attaching a loop device needs; --systemd is
+    # that plus PID 1 and the host's cgroup tree, which systemd will not start without.
+    flavour=default
+    case "${1:-}" in
+      --systemd) flavour=systemd; shift ;;
+      --privileged) flavour=privileged; shift ;;
+    esac
     name="${1:-${NAME_PREFIX}$$-${RANDOM}}"
     require_sandbox_name "$name"
 
-    if (( systemd )); then
+    if [[ "$flavour" == "systemd" ]]; then
       # Same image: systemd is already installed. What the systemctl and journalctl pages
       # need isn't more packages, it's PID 1: with `sleep` as init, every example on those
       # pages prints "System has not been booted with systemd as init system (PID 1)".
@@ -173,6 +179,10 @@ case "$cmd" in
       # That's why it isn't the default. Pages ask for it explicitly with a
       # `# verify: --systemd` line in their setup script, so the stronger grant is visible
       # in the page's own fixtures rather than applied to everything.
+      #
+      # A page that only needs to mount something wants --privileged below instead. This one
+      # covers that too, and asking for it anyway would mean booting an init system to answer
+      # a question about free space.
       docker run -d --rm --name "$name" --hostname deb1 \
         --privileged --cgroupns=host \
         -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
@@ -195,6 +205,12 @@ case "$cmd" in
         docker stop "$name" >/dev/null 2>&1 || true
         exit 1
       fi
+    elif [[ "$flavour" == "privileged" ]]; then
+      # The capabilities without the init system. `df` needs this: a container's own filesystems
+      # belong to the host, at sizes that differ between a laptop and a runner and under names no
+      # reader has, so a page reporting on one mounts its own. Nothing to wait for, since PID 1
+      # is still the image's `sleep`.
+      docker run -d --rm --name "$name" --hostname deb1 --privileged "$IMAGE" >/dev/null
     else
       docker run -d --rm --name "$name" --hostname deb1 "$IMAGE" >/dev/null
     fi

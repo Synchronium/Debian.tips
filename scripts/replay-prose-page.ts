@@ -105,7 +105,7 @@ export function replayProsePage(options: ProseReplayOptions): ReplayResult {
     command: slug,
     tool: SANDBOX_TOOL.prosePage,
     asUser: directives.asUser,
-    needsSystemd: directives.needsSystemd,
+    flavour: directives.flavour,
     setupPath,
   });
 

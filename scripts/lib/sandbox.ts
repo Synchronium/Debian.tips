@@ -8,7 +8,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { FIXTURE_DIR, SANDBOX_SCRIPT } from "../../src/paths.js";
-import { ReplayError } from "./replayMetadata.js";
+import { ReplayError, SANDBOX_FLAVOUR, type SandboxFlavour, isPrivileged } from "./replayMetadata.js";
 
 /** Seconds an example may run before `timeout` kills it. Pages document commands that
  *  block for ever (`tail -f`, `journalctl -f`); a timed-out example reports as a mismatch. */
@@ -65,11 +65,18 @@ export interface Sandbox {
   readonly restore: string;
 }
 
-/** How a sandbox is booted. `systemd` costs `--privileged` and the host's cgroup tree, so it is
- *  asked for per page (see `SETUP_DIRECTIVE` in `replayMetadata.ts`) rather than applied to
- *  everything. */
-export const SANDBOX_FLAVOUR = { default: "default", systemd: "systemd" } as const;
-export type SandboxFlavour = (typeof SANDBOX_FLAVOUR)[keyof typeof SANDBOX_FLAVOUR];
+/** Position of CAP_SYS_ADMIN in a capability set, which is the one mounting needs. */
+const CAP_SYS_ADMIN = 21n;
+
+/** Whether an effective capability set, as `/proc/self/status` spells it, can mount.
+ *
+ *  One bit rather than a comparison against a whole mask: the rest of the set differs between
+ *  kernels and Docker versions, and none of the rest is what a page asked for. Exported for
+ *  `test/sandboxFlavour.test.ts`, since the alternative is starting two containers to test it. */
+export function hasSysAdmin(capEff: string): boolean {
+  const bits = /^[0-9a-f]+$/i.test(capEff) ? BigInt(`0x${capEff}`) : 0n;
+  return ((bits >> CAP_SYS_ADMIN) & 1n) === 1n;
+}
 
 /** The tools that open a sandbox. The value names the tool's working directory inside the
  *  container, which is what keeps two of them running at once out of each other's files, so
@@ -91,8 +98,8 @@ export interface OpenOptions {
   tool: SandboxTool;
   /** Run examples as the unprivileged `user` rather than root. */
   asUser: boolean;
-  /** Require a sandbox booted with systemd as PID 1. */
-  needsSystemd: boolean;
+  /** The sandbox this page has to run in, from its setup script's `# verify:` line. */
+  flavour: SandboxFlavour;
   /** The page's setup script. Without one, no fixtures are created and nothing is restored. */
   setupPath?: string | undefined;
 }
@@ -103,7 +110,7 @@ export interface OpenOptions {
  *
  *  Exits the process with a diagnostic rather than returning a broken sandbox. */
 export function openSandbox(options: OpenOptions): Sandbox {
-  const { name, command, tool, asUser, needsSystemd, setupPath } = options;
+  const { name, command, tool, asUser, flavour, setupPath } = options;
   const workdir = `/home/user/${tool}-${command}`;
   const setupInSandbox = `/tmp/setup-${command}.sh`;
 
@@ -113,12 +120,23 @@ export function openSandbox(options: OpenOptions): Sandbox {
       maxBuffer: MAX_BUFFER_BYTES,
     });
 
-  if (needsSystemd) {
+  // Checked rather than assumed, because a page replayed in a sandbox weaker than it asked for
+  // fails in a way that reads as the page being wrong: every mount is refused, so every figure
+  // is missing, and the score looks like drift rather than a mis-started container.
+  if (flavour === SANDBOX_FLAVOUR.systemd) {
     const init = exec("cat /proc/1/comm", { asRoot: true }).trim();
     if (init !== SANDBOX_FLAVOUR.systemd) {
       throw new ReplayError(
         `${command} declares "# verify: --systemd" but ${name} is running "${init}" as PID 1.\n` +
           `Start one with: ${SANDBOX_SCRIPT} start --systemd`,
+      );
+    }
+  } else if (isPrivileged(flavour)) {
+    const capabilities = exec(`awk '/^CapEff/{print $2}' /proc/self/status`, { asRoot: true }).trim();
+    if (!hasSysAdmin(capabilities)) {
+      throw new ReplayError(
+        `${command} declares "# verify: --privileged" but ${name} cannot mount anything.\n` +
+          `Start one with: ${SANDBOX_SCRIPT} start --privileged`,
       );
     }
   }

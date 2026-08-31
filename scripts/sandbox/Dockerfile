@@ -12,6 +12,11 @@ FROM debian:trixie
 # `gnupg` and `apt-utils` are here for the same reason, though no page documents them: three
 # pages build a small local apt repository with `apt-ftparchive` and sign it, and whichever of
 # them ran first was installing both for everyone after it.
+#
+# `e2fsprogs` is for pages about filesystems. A container's own are the host's, so a page
+# reporting on one has to make its own on a loop device, and `mkfs.ext4` is what makes it. It is
+# a base-install package on Debian, so its presence here changes nothing a page could observe;
+# a page still needs a `--privileged` sandbox to use it.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openssh-client openssh-server \
     tar zstd gzip bzip2 xz-utils \
@@ -19,6 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl rsync less man-db procps iproute2 iputils-ping \
     cron python3 wget \
     sudo ca-certificates openssl \
+    e2fsprogs \
     gnupg apt-utils \
     jq lsof psmisc cowsay \
     && rm -rf /var/lib/apt/lists/*

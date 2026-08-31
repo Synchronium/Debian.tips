@@ -26,11 +26,16 @@
 import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { relative } from "node:path";
-import { ReplayError, readSetupDirectives } from "./lib/replayMetadata.js";
+import {
+  ReplayError,
+  SANDBOX_FLAVOUR,
+  readSetupDirectives,
+  type SandboxFlavour,
+} from "./lib/replayMetadata.js";
 import { REPLAY_TIMINGS_FILE, ROOT, SANDBOX_SCRIPT, fixtureScript } from "../src/paths.js";
 import { replayCommandPage } from "./replay-command-page.js";
 import { replayProsePage } from "./replay-prose-page.js";
-import { SANDBOX_FLAVOUR, type SandboxFlavour } from "./lib/sandbox.js";
+
 import { type Shard, ShardError, parseShard, shardCosts, shardPages } from "./lib/replayShard.js";
 import {
   ambiguousSlugs,
@@ -208,8 +213,7 @@ try {
 // A page declaring `# verify: --systemd` needs a sandbox booted with systemd as PID 1, which
 // costs --privileged and the host's cgroup tree, so it is asked for per page rather than given
 // to every page.
-const flavourOf = (name: string): SandboxFlavour =>
-  readSetupDirectives(fixtureScript(name)).needsSystemd ? SANDBOX_FLAVOUR.systemd : SANDBOX_FLAVOUR.default;
+const flavourOf = (name: string): SandboxFlavour => readSetupDirectives(fixtureScript(name)).flavour;
 
 /** Names a container after the run that owns it and the page it is replaying, so `docker ps`
  *  during a long run says what is happening, and so the sweep below can tell three things apart:
@@ -313,7 +317,9 @@ const started = Date.now();
 for (const name of runnable) {
   const pageStarted = Date.now();
   const setupPath = fixtureScript(name);
-  const startArgs = flavourOf(name) === SANDBOX_FLAVOUR.systemd ? ["start", "--systemd"] : ["start"];
+  // The flag is the flavour, so a new one needs no case added here.
+  const flavour = flavourOf(name);
+  const startArgs = flavour === SANDBOX_FLAVOUR.default ? ["start"] : ["start", `--${flavour}`];
   startArgs.push(containerFor(name));
   try {
     live = execFileSync(SANDBOX_SCRIPT, startArgs, { encoding: "utf-8" }).trim();

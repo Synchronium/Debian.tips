@@ -122,12 +122,13 @@ UNIT FILE                    STATE    PRESET
 apt-daily-upgrade.timer      enabled  enabled
 apt-daily.timer              enabled  enabled
 dpkg-db-backup.timer         enabled  enabled
+e2scrub_all.timer            enabled  enabled
 fstrim.timer                 enabled  enabled
 man-db.timer                 enabled  enabled
 report.timer                 disabled enabled
 systemd-tmpfiles-clean.timer static   -
 
-7 unit files listed.
+8 unit files listed.
 ```
 
 Package updates, the dpkg database backup, `fstrim` and the man page index are all timers.

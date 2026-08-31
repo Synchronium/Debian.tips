@@ -89,14 +89,29 @@ denial, since root simply doesn't get denied. Each of those says so itself, with
 `# verify: --user` line in its setup script that both `replay-command-page.ts` and
 `adopt-real-output.ts` read.
 
-A second directive, `# verify: --systemd`, asks for a sandbox booted with systemd as PID 1
-(`scripts/sandbox.sh start --systemd`). The `systemctl` and `journalctl` pages need it: the
-default sandbox runs `sleep` as PID 1, where every such example prints "System has not been
-booted with systemd as init system (PID 1). Can't operate." It is the same image, with systemd
-already installed, but a different runtime, costing `--privileged` and the host's cgroup tree,
-which is why it is opt-in per page rather than the default. `npm run replay` starts only the
-flavours the selected pages ask for, and `replay-command-page.ts` refuses to replay a `--systemd`
-page in a sandbox whose PID 1 isn't systemd rather than producing a page of identical errors. Replayed as root, `chmod` scores 9/42 and `tar` 32/42 on pages that
+Two more directives name a stronger sandbox, and a page asks for the weaker of them where it can.
+
+`# verify: --privileged` (`scripts/sandbox.sh start --privileged`) grants the capabilities to
+mount a filesystem or attach a loop device. The `df` page needs it: a container's own filesystems
+are the host's, reported as `overlay` at a size that differs between a laptop and a runner, so a
+page about free space mounts filesystems of its own with `size=` and `nr_inodes=` pinned and
+measures those. `mkfs.ext4` is in the image for the same reason, so a page needing a real
+on-disk filesystem can make one on a loop device rather than settling for `tmpfs`.
+
+`# verify: --systemd` (`start --systemd`) is that plus systemd as PID 1, and the host's cgroup
+tree with it, because systemd manages cgroups and will not start without them. The `systemctl`
+and `journalctl` pages need it: the default sandbox runs `sleep` as PID 1, where every such
+example prints "System has not been booted with systemd as init system (PID 1). Can't operate."
+So does any page that kills a process and then counts what is left, since `sleep` reaps nothing
+and every killed process stays in the table as a zombie carrying its own name.
+
+Both are the same image and a different runtime, which is why they are opt-in per page rather
+than the default: the grant a page needs is visible in that page's own fixtures. `npm run replay`
+starts only the flavours the selected pages ask for, and `openSandbox` refuses to replay a page
+in a sandbox weaker than it asked for rather than producing a page of identical errors: a
+`--systemd` page is checked against PID 1, a `--privileged` one against CAP_SYS_ADMIN in
+`/proc/self/status`. The two were one flag until 2026-08-31, and splitting them stopped `df`
+having to boot an init system to answer a question about free space. Replayed as root, `chmod` scores 9/42 and `tar` 32/42 on pages that
 are entirely correct, which reads exactly like a page that has drifted; the mode is part of the
 score, so it's printed alongside it.
 

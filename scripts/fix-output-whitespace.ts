@@ -42,7 +42,7 @@ function main(): void {
     command,
     tool: SANDBOX_TOOL.fixWhitespace,
     asUser,
-    needsSystemd: directives.needsSystemd,
+    flavour: directives.flavour,
     setupPath,
   });
   const captured = captureAll(

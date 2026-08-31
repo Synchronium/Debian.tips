@@ -151,10 +151,11 @@ UNIT FILE               STATE   PRESET
 apt-daily-upgrade.timer enabled enabled
 apt-daily.timer         enabled enabled
 dpkg-db-backup.timer    enabled enabled
+e2scrub_all.timer       enabled enabled
 fstrim.timer            enabled enabled
 man-db.timer            enabled enabled
 
-5 unit files listed.
+6 unit files listed.
 ```
 
 That is Debian refreshing your package lists, backing up the dpkg database, trimming SSDs and

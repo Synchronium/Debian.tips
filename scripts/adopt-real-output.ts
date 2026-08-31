@@ -65,7 +65,7 @@ function main(): void {
     command,
     tool: SANDBOX_TOOL.adopt,
     asUser,
-    needsSystemd: directives.needsSystemd,
+    flavour: directives.flavour,
     setupPath,
   });
 

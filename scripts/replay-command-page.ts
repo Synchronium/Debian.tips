@@ -100,7 +100,7 @@ export function replayCommandPage(options: ReplayOptions): ReplayResult {
     command,
     tool: SANDBOX_TOOL.commandPage,
     asUser,
-    needsSystemd: directives.needsSystemd,
+    flavour: directives.flavour,
     setupPath,
   });
 

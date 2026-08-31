@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # Fixtures for content/commands/df/examples.yaml. Must match its `fixtures:` block.
 #
-# verify: --systemd
+# verify: --privileged
 #
-# Not for systemd. `--systemd` is the only sandbox flavour that runs `--privileged`, and mounting
-# a filesystem needs CAP_SYS_ADMIN. Everything below is about what `df` reports, and `df` can only
-# report what is mounted.
+# Mounting a filesystem needs CAP_SYS_ADMIN. Everything below is about what `df` reports, and `df`
+# can only report what is mounted.
 #
 # The alternative was to document the container's own filesystems, and it is not an alternative at
 # all. A container's root is `overlay`, on a disk belonging to whoever is running it: 224G in this
