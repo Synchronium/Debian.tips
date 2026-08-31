@@ -48,6 +48,6 @@ links to somewhere else looks nearly empty. `-L` follows them and measures the t
 
 ## When du and df disagree
 
-`du` adds up what it can reach by walking the tree. `df` asks the filesystem how many blocks are
-free. A file deleted while a process still holds it open belongs to neither, so `df` counts space
+`du` adds up what it can reach by walking the tree. [`df`](/commands/df/) asks the filesystem how
+many blocks are free. A file deleted while a process still holds it open belongs to neither, so `df` counts space
 `du` cannot find, and it comes back when that process exits.

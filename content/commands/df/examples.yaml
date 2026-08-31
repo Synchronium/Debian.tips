@@ -1,0 +1,207 @@
+command: df
+fixtures:
+  - name: "two filesystems with sizes this page chose"
+    note: "the setup script mounts two `tmpfs` filesystems with a fixed size and a fixed inode count, so every figure below is one it set rather than a property of the machine running it. `/srv/backups` holds a single 40M file called `site-backup.tar`; `/srv/small` is empty and has 32 inodes, few enough to run out of in one example."
+    from: "df -h --output=fstype,size,itotal,target /srv/backups /srv/small"
+    content: |2
+      Type   Size Inodes Mounted on
+      tmpfs  100M   4.9K /srv/backups
+      tmpfs   10M     32 /srv/small
+sections:
+  - title: "Reading the output"
+    intro: "`df` takes a path and answers about the filesystem that path is on. Without one it reports every mounted filesystem, which on a real machine is a long list."
+    examples:
+      - title: "List every mounted filesystem"
+        code: df -h
+        description: "What most people type, and the one form this page cannot show you: the list is whatever your machine has mounted, at whatever size, and half of it is pseudo-filesystems the kernel keeps for itself. Every other example here names a path, and naming one is the better habit anyway."
+        level: basic
+      - title: "Ask how much room is left"
+        code: df -h /srv/backups
+        description: "`-h` prints sizes people can read. Six columns: the device, its total size, how much is used, how much is available, that as a percentage, and where it is mounted."
+        output: |2
+          Filesystem      Size  Used Avail Use% Mounted on
+          tmpfs           100M   40M   60M  40% /srv/backups
+        level: basic
+      - title: "See what it prints without -h"
+        code: df /srv/backups
+        description: "Blocks of 1024 bytes, the default, and almost never what you want at a prompt. In a script it is: the numbers compare directly, with no unit to strip off the end first."
+        output: |2
+          Filesystem     1K-blocks  Used Available Use% Mounted on
+          tmpfs             102400 40960     61440  40% /srv/backups
+        level: basic
+      - title: "Ask about the directory you are in"
+        code: cd /srv/backups; df -h .
+        description: "The shortest useful form. Before unpacking an archive or starting a build, this is the check that takes a second."
+        output: |2
+          Filesystem      Size  Used Avail Use% Mounted on
+          tmpfs           100M   40M   60M  40% /srv/backups
+        level: basic
+      - title: "Ask about several at once"
+        code: df -h /srv/backups /srv/small
+        description: "One row per path, in the order given. Two paths on the same filesystem produce one row rather than two, because `df` reports filesystems and not paths."
+        output: |2
+          Filesystem      Size  Used Avail Use% Mounted on
+          tmpfs           100M   40M   60M  40% /srv/backups
+          tmpfs            10M     0   10M   0% /srv/small
+        level: basic
+      - title: "Point it at a file rather than a directory"
+        code: df -h /srv/backups/site-backup.tar
+        description: "The answer is about the filesystem holding the file, not the file. `df` never reports on a file's own size, and reaching for it to do so is the usual reason somebody ends up wanting [`du`](/commands/du/) instead."
+        output: |2
+          Filesystem      Size  Used Avail Use% Mounted on
+          tmpfs           100M   40M   60M  40% /srv/backups
+        level: basic
+      - title: "Show what kind of filesystem it is"
+        code: df -T /srv/backups
+        description: "`-T` inserts a `Type` column. Useful when you are trying to work out whether the thing you are looking at is a real disk or one of the pseudo-filesystems the kernel mounts for itself."
+        output: |2
+          Filesystem     Type  1K-blocks  Used Available Use% Mounted on
+          tmpfs          tmpfs    102400 40960     61440  40% /srv/backups
+        level: basic
+      - title: "Add up several filesystems"
+        code: df -h --total /srv/backups /srv/small
+        description: "`--total` appends a summary row. The `Mounted on` column is a dash there, because a total is not mounted anywhere."
+        output: |2
+          Filesystem      Size  Used Avail Use% Mounted on
+          tmpfs           100M   40M   60M  40% /srv/backups
+          tmpfs            10M     0   10M   0% /srv/small
+          total           110M   40M   70M  37% -
+        level: intermediate
+      - title: "Find which mount point holds a file"
+        code: df --output=target /srv/backups/site-backup.tar
+        description: "One column and one answer. Handy when a path runs through several symlinks and you want to know where it really lands."
+        output: |2
+          Mounted on
+          /srv/backups
+        level: intermediate
+
+  - title: "Choosing the columns and the units"
+    examples:
+      - title: "Pick the columns you want"
+        code: df --output=source,fstype,size,pcent,target -h /srv/backups
+        description: "`--output` replaces the default set with the fields you name, in the order you name them. The field names are not the column headings: `source` is the device, `target` is the mount point, and `pcent` is `Use%`."
+        output: |2
+          Filesystem     Type   Size Use% Mounted on
+          tmpfs          tmpfs  100M  40% /srv/backups
+        level: intermediate
+      - title: "Cut it down to the two figures you care about"
+        code: df --output=target,avail -h /srv/backups /srv/small
+        description: "Where it is and how much is left. Narrow output like this is easier to read at a glance and easier to feed to something else than the full six columns."
+        output: |2
+          Mounted on   Avail
+          /srv/backups   60M
+          /srv/small     10M
+        level: intermediate
+      - title: "Report in megabytes"
+        code: df -B M /srv/backups
+        description: "`-B` sets the block size, so the numbers are all in one unit rather than each in whichever unit fits. That makes a column of them comparable, where `-h` gives you `900M` next to `1.1G` and leaves the arithmetic to you."
+        output: |2
+          Filesystem     1M-blocks  Used Available Use% Mounted on
+          tmpfs               100M   40M       60M  40% /srv/backups
+        level: intermediate
+      - title: "Ask for kilobytes explicitly"
+        code: df -k /srv/backups
+        description: "`-k` is `-B K` and matches the default on Debian. Worth writing out in a script, because the default is a setting and `POSIXLY_CORRECT` changes it to 512-byte blocks."
+        output: |2
+          Filesystem     1K-blocks  Used Available Use% Mounted on
+          tmpfs             102400 40960     61440  40% /srv/backups
+        level: advanced
+      - title: "Use the portable output format"
+        code: df -P /srv/backups
+        description: "`-P` is the POSIX output format, and its guarantee is one line per filesystem however long the device name is. POSIX specifies 512-byte blocks for it; GNU `df` keeps 1024 unless `POSIXLY_CORRECT` is set, so the heading names the size rather than leaving you to assume one."
+        output: |2
+          Filesystem     1024-blocks  Used Available Capacity Mounted on
+          tmpfs               102400 40960     61440      40% /srv/backups
+        level: advanced
+      - title: "Report in powers of 1000"
+        code: df --si /srv/backups
+        description: "`--si` divides by 1000 where `-h` divides by 1024, so the same filesystem reads 105M rather than 100M. Disk manufacturers use the first convention and the kernel uses the second, and this flag is where that argument shows up on your own machine."
+        output: |2
+          Filesystem      Size  Used Avail Use% Mounted on
+          tmpfs           105M   42M   63M  40% /srv/backups
+        level: intermediate
+      - title: "Show only the size columns"
+        code: df -h --output=size,used,avail /srv/backups
+        description: "No device and no mount point. Worth knowing that `--output` drops the columns you leave out rather than hiding them, so the widths change with the fields you ask for."
+        output: |2
+           Size  Used Avail
+           100M   40M   60M
+        level: intermediate
+      - title: "Ask the same question about inodes"
+        code: df --output=itotal,iused,iavail,ipcent /srv/small
+        description: "The inode fields have their own names, all beginning with `i`. Mixing them with the block fields in one `--output` works and gives you a wide row that answers both questions at once."
+        output: |2
+          Inodes IUsed IFree IUse%
+              32     1    31    4%
+        level: advanced
+      - title: "Test whether two paths are on one filesystem"
+        code: df --output=source /srv/backups /srv/backups/site-backup.tar | sort -u
+        description: "Two lines out of `sort -u`, the heading and one device, so both paths are on the same filesystem. Two devices would mean a `mv` between them is a copy and a delete rather than a rename, so one is instant and the other takes as long as the file is big."
+        output: |2
+          Filesystem
+          tmpfs
+        level: advanced
+      - title: "Get a bare number for a script"
+        code: "df --output=avail -B M /srv/backups | tail -1 | tr -d ' M'"
+        description: "`--output` with one field, `tail -1` to drop the heading, and `tr` to strip the unit and the padding. Fix the unit with `-B` or the comparison is against text: `-h` gives you `60M` one day and `1.2G` the next."
+        output: |2
+          60
+        level: advanced
+      - title: "Get the percentage the same way"
+        code: "df --output=pcent /srv/backups | tail -1 | tr -d ' %'"
+        description: "The form a monitoring script wants, and it needs no `-B`, since a percentage carries no unit to vary. Compare it as a number and alert above whatever threshold you can actually act on."
+        output: |2
+          40
+        level: advanced
+
+  - title: "Space free, and still no space left"
+    intro: "A filesystem has two things it can run out of. Every figure below comes from `/srv/small`, which has 10M of space and room for 32 files."
+    examples:
+      - title: "Count the inodes instead of the bytes"
+        code: df -i /srv/small
+        description: "`-i` reports the inode table rather than the blocks. One entry is already used, for the mount point's own directory."
+        output: |2
+          Filesystem     Inodes IUsed IFree IUse% Mounted on
+          tmpfs              32     1    31    4% /srv/small
+        level: basic
+      - title: "Fill the table up"
+        code: |-
+          cd /srv/small
+          for i in $(seq 1 40); do touch "file$i" 2>/dev/null; done
+          ls | wc -l
+        description: "Forty attempts and thirty-one files, because the directory itself holds the thirty-second inode. The failures were silent here only because the loop discards them."
+        output: |2
+          31
+        level: intermediate
+      - title: "Watch a write fail on a filesystem with space free"
+        code: |-
+          cd /srv/small
+          for i in $(seq 1 40); do touch "file$i" 2>/dev/null; done
+          touch one-more.txt
+        description: "`No space left on device`, on a filesystem that has used none of its 10M. The message is the same one you get for a genuinely full disk, and it is the reason this failure wastes so much time: everything you check first says there is room."
+        output: |2
+          touch: cannot touch 'one-more.txt': No space left on device
+        level: intermediate
+      - title: "Ask both questions and see them disagree"
+        code: |-
+          cd /srv/small
+          for i in $(seq 1 40); do touch "file$i" 2>/dev/null; done
+          df -h . | tail -1
+          df -i . | tail -1
+        description: "Nought per cent of the space and a hundred per cent of the inodes. Run `df -i` before anything else when a write fails and `df -h` looks healthy: it is one command and it either explains the problem or rules it out."
+        output: |2
+          tmpfs            10M     0   10M   0% /srv/small
+          tmpfs              32    32     0  100% /srv/small
+        level: intermediate
+      - title: "See df and du disagree about the same filesystem"
+        code: |-
+          dd if=/dev/zero of=/srv/small/tmpfile bs=1M count=5 status=none
+          exec 3< /srv/small/tmpfile
+          rm /srv/small/tmpfile
+          du -sh /srv/small
+          df -h /srv/small | tail -1
+        description: "A deleted file that a process still has open. [`du`](/commands/du/) walks the directory and finds nothing, because the name is gone; `df` asks the kernel, which cannot release the blocks until the last descriptor closes. On a real machine this is usually a log file somebody deleted without restarting the service that writes it."
+        output: |2
+          0	/srv/small
+          tmpfs            10M  5.0M  5.0M  50% /srv/small
+        level: advanced

@@ -9,6 +9,8 @@ related: [du, find, tar, sort, head]
 ---
 
 **Problem:** Disk space is running low and you need to find out what's using it.
+[`df -h`](/commands/df/) is what told you, and it reports per filesystem; everything below
+narrows that down to a directory and then to a file.
 
 **Solution:**
 

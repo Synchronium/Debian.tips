@@ -50,9 +50,9 @@ Counted 2026-08-31 by `verificationStats` in `src/content/verificationStats.ts`,
 same routine the about page renders from, so these figures are the ones the site itself publishes
 rather than a second tally that can drift from them.
 
-**84 pages. 1,677 documented outputs re-run on every push**, across 40 command pages and 43 of
+**85 pages. 1,701 documented outputs re-run on every push**, across 41 command pages and 43 of
 the written articles, with 33 more documented and exempted, each naming how it was verified
-instead. 1,660 examples across the command pages, 118 blocks of sample data, and 81 outputs
+instead. 1,685 examples across the command pages, 119 blocks of sample data, and 81 outputs
 declared `volatile:`.
 
 Twenty-five pages in five days, against the six days for nineteen that §12 measured in August. The
@@ -63,7 +63,7 @@ is no page left whose outputs nothing re-runs. That closes the largest item in �
 
 | Category | Pages | State |
 |---|---|---|
-| `commands` | apt, apt-cache, apt-file, awk, cat, chmod, chown, cowsay, cp, crontab, curl, cut, diff, dpkg, du, find, grep, head, job-control, journalctl, jq, kill, less, ls, mv, ps, rm, sed, sort, ssh, sudo, systemctl, tail, tar, tee, tr, uniq, wc, wget, xargs | 40 pages. Text processing and the file basics are both complete enough to stop being the priority. Debian package tooling is done to the §4.1 P1 line. **The process group is done to its P1 line as of 2026-08-30**, with `ps`, `kill` and job control between them covering what a reader can do to a running program. `du` still opens the disk group alone, and there is **no network-diagnostic coverage and no user-management page beyond `chown`**. |
+| `commands` | apt, apt-cache, apt-file, awk, cat, chmod, chown, cowsay, cp, crontab, curl, cut, df, diff, dpkg, du, find, grep, head, job-control, journalctl, jq, kill, less, ls, mv, ps, rm, sed, sort, ssh, sudo, systemctl, tail, tar, tee, tr, uniq, wc, wget, xargs | 41 pages. Text processing and the file basics are both complete enough to stop being the priority. Debian package tooling is done to the §4.1 P1 line. **The process group is done to its P1 line as of 2026-08-30**, with `ps`, `kill` and job control between them covering what a reader can do to a running program. `du` still opens the disk group alone, and there is **no network-diagnostic coverage and no user-management page beyond `chown`**. |
 | `concepts` | environment-variables-and-path, exit-codes-and-error-handling, file-permissions-explained, pipes-and-redirection, processes-and-signals, terminal-shell-and-tty | 6 pages. §3.1 rates this layer above any command page, and the three highest-demand ones are written, so the next concept is a §5 P2 rather than a P1. |
 | `scripting` | your-first-script, variables-and-quoting, conditionals-and-test, loops, script-arguments, functions, arrays, parameter-expansion, where-a-script-lives, arithmetic, here-docs, traps-and-cleanup, debugging-and-robustness, a-real-script | **Complete, 2026-08-29.** 14 lessons ending in a capstone that uses all thirteen before it. The two candidate additions in §7 are the only open items, and neither is a gap a reader would notice. |
 | `recipes` | add-a-directory-to-path, bulk-rename-files, copy-files-between-machines, find-and-replace-across-files, find-permission-denied, find-the-largest-files, keep-a-program-running-after-logout, kill-whatever-is-using-a-port, monitor-a-log-in-real-time | 9 pages. **All four P1 recipes shipped 2026-08-29**, after six weeks in which the category gained nothing. What is left is the §9 P2 list. |
@@ -263,9 +263,14 @@ The everyday commands. Low glamour, high traffic.
 - **SHIPPED 2026-08-24 `du`** (standard), on `mk_projects` in `_common.sh` plus a sparse file and
   a hard-linked pair. It needed no loop device, which is why it and `df` were pulled out of
   Wave 8.
-- **P1 `df`** (light): `-h`, and `-i` inode exhaustion, which is the failure nobody expects.
-  Same argument as `du`: no loop device required for the ordinary output. `du --inodes` is
-  already on the `du` page, so this one inherits a reader who has met the idea.
+- **SHIPPED 2026-08-31 `df`** (light). 24 checked outputs, and it needed more harness than this
+  entry predicted. A container's root filesystem is `overlay` on the host's disk, so the ordinary
+  output is a size that differs between a devcontainer and a runner under a name no reader has.
+  The page measures two `tmpfs` filesystems the setup script mounts instead, with `size=` and
+  `nr_inodes=` both pinned, so every figure printed is one the fixture chose. Mounting needs
+  CAP_SYS_ADMIN, so it asks for `--systemd`, the only flavour that runs `--privileged`.
+  `nr_inodes=32` is what makes the inode-exhaustion block real rather than described: 31 files,
+  then `No space left on device` on a filesystem reporting 0% used.
 - **P2 `mount` / `umount` / `lsblk` / `blkid`** (standard, combined): reading `/etc/fstab`,
   what a bind mount is (+620).
 - **P2 `rsync`** (flagship): already referenced by `copy-files-between-machines` with no page.
@@ -1062,3 +1067,24 @@ What went out, and what writing it taught that the next batch would otherwise le
   that is `/home/user/verify-sudo` under the replay. A reader has no such path. The fixture makes
   `/srv/app` and the examples `cd` there first, the same answer `where-a-script-lives` reached for
   `$PWD`.
+- **2026-08-31**: `df`. 24 checked outputs, and the first page whose fixture mounts a filesystem.
+
+  The obvious approach does not work. `df` with no arguments is what everyone types, and inside a
+  container it reports `overlay` on the host's disk: 224G here, something else on a runner, under
+  a filesystem name a reader will never see on their own machine. Declaring that `volatile` would
+  have shipped a page whose one memorable fact was wrong.
+
+  So the setup script mounts two `tmpfs` filesystems and the page measures those. Both `size=` and
+  `nr_inodes=` are pinned, the second because a tmpfs left alone sizes its inode table from how
+  much memory the machine has. Every figure the page prints is one the fixture chose, and `tmpfs`
+  is a filesystem type a reader has several of, so nothing about the output is peculiar to a
+  container. The bare `df -h` stays on the page as an example with no output block, since it is
+  what people type and the page can say honestly that the answer is theirs rather than ours.
+
+  `nr_inodes=32` is what turns the page's best section from an assertion into a demonstration:
+  thirty-one files, then `No space left on device` from a filesystem that reports 0% used. The
+  same fixture shows `du` and `df` disagreeing over a deleted file a process still holds open.
+
+  Mounting needs CAP_SYS_ADMIN, so the page asks for `--systemd`. That flag is the only one
+  granting `--privileged`, and a page wanting privilege has to ask for systemd it does not need.
+  Worth splitting if a second page wants the same thing.
