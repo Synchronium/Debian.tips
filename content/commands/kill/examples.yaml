@@ -105,17 +105,31 @@ sections:
           S
         level: intermediate
       - title: "Stop a process, then TERM it"
-        code: 'pid=$(pgrep -x -n tips-worker); kill -STOP "$pid"; kill -TERM "$pid"; sleep 0.5; pgrep -x -c tips-worker'
-        description: "One worker of the two is gone, stopped or not. `tips-worker` installs no handler for `TERM`, so the kernel applies the default action, and a default action needs nothing from the process."
+        code: 'pid=$(pgrep -x -n tips-worker); kill -STOP "$pid"; sleep 0.3; kill -TERM "$pid"; sleep 0.5; ps -o stat= -p "$pid"; pgrep -x -c tips-worker'
+        description: "Still `T`, and both workers still counted. A stopped process is off the run queue and executes nothing, so the `TERM` joins its pending set and stays there. A cleanup script that suspends processes first and terminates them second leaves the whole set stopped."
+        output: |2
+          T
+          2
+        level: advanced
+      - title: "Continue it, and the waiting signal lands"
+        code: 'pid=$(pgrep -x -n tips-worker); kill -STOP "$pid"; sleep 0.3; kill -TERM "$pid"; sleep 0.5; kill -CONT "$pid"; sleep 0.5; pgrep -x -c tips-worker'
+        description: "`CONT` puts it back on the run queue, where the first thing it does is act on the signal it was holding. The `TERM` never needed sending twice."
         output: |2
           1
         level: advanced
-      - title: "Do the same to a process that handles TERM"
-        code: 'pid=$(pgrep -x tips-graceful); kill -STOP "$pid"; kill -TERM "$pid"; sleep 0.5; ps -o state= -p "$pid"; kill -CONT "$pid"; sleep 0.5; pgrep -x -c tips-graceful'
-        description: "`tips-graceful` traps `TERM` and exits from the handler. A handler is code, and a stopped process runs none, so half a second later it is still there and still `T`. The `CONT` delivers the signal that was waiting and the process finally goes. A cleanup script that suspends things before ending them can wait forever on this."
+      - title: "Try the same on a process that handles TERM"
+        code: 'pid=$(pgrep -x tips-graceful); kill -STOP "$pid"; sleep 0.3; kill -TERM "$pid"; sleep 0.5; ps -o state= -p "$pid"; kill -CONT "$pid"; sleep 0.5; pgrep -x -c tips-graceful'
+        description: "`tips-graceful` traps `TERM` and exits from the handler. It behaves exactly as the worker did: `T` while stopped, gone once continued. Whether the signal would reach a handler or the kernel's own default action changes nothing, because either way the process has to be scheduled to get there."
         output: |2
           T
           0
+        level: advanced
+      - title: "End a stopped process without continuing it first"
+        code: 'pid=$(pgrep -x -n tips-worker); kill -STOP "$pid"; sleep 0.3; kill -KILL "$pid"; sleep 0.5; pgrep -x -c tips-worker'
+        description: "`KILL` is applied by the kernel rather than by the process, so a stopped target is torn down where it lies. Continuing it first and sending `TERM` after is the politer route, at two more steps."
+        danger: true
+        output: |2
+          1
         level: advanced
 
   - title: "Selecting by name"

@@ -154,7 +154,7 @@
     "unpaired": 0
   },
   "commands/kill": {
-    "checked": 51,
+    "checked": 53,
     "byShape": 8,
     "exempt": 0,
     "fixtures": 1,

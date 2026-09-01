@@ -98,6 +98,13 @@ cheap to honour while writing and expensive to find later.
   `md5sum` output, which reads on the page as though the fixture were broken.
 - **Don't let an example depend on the whole working directory.** `ls *.txt | wc -l` changes
   answer whenever a fixture is added. Target a stable subset.
+- **Two things sent to another process back to back is a race, whatever one run prints.** The
+  target may or may not be scheduled in the gap, and the two outcomes can both look correct.
+  `kill -STOP "$pid"; kill -TERM "$pid"` leaves both signals pending and the process takes the
+  lower-numbered one first, so it dies; let the `STOP` land first and the `TERM` waits for a
+  `CONT` instead. The page documented the racing answer and explained it with a mechanism that
+  does not exist. Put a `sleep` between the two so the example asserts the state it means, and
+  where the delay is what makes it true, say so in the description.
 - **Never print a raw bitmap or id out of `/proc`.** It carries bits the page is not making a
   claim about, and those are free to differ between machines: `SigIgn` for a background job reads
   `...0006` on an arm64 devcontainer and `...200000006` on an amd64 runner, because the C library

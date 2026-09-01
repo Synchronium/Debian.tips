@@ -14,7 +14,8 @@
 # SIGKILL rather than SIGTERM, for two reasons this page creates itself. tips-stubborn ignores
 # TERM, which is the point of it. And any of the three may have been left stopped by the example
 # before: a stopped process holds a pending TERM until something continues it, so a TERM-based
-# cleanup leaves it running and the next example counts one worker too many.
+# cleanup leaves it stopped and still on the process table, and the next example counts one worker
+# too many.
 for name in tips-worker tips-supervisor tips-stubborn tips-graceful; do
   pkill -9 -x "$name" 2>/dev/null || true
 done
@@ -61,10 +62,10 @@ read -r -u 3
 EOF
 chmod 755 /usr/local/bin/tips-stubborn
 
-# Handles TERM rather than ignoring it, which is what separates the two halves of the stopped
-# process example. A default action needs nothing from the process and the kernel applies it to a
-# stopped one immediately; a handler is code the process has to run, so it waits for CONT. One of
-# these two dies while stopped and the other does not.
+# Handles TERM rather than ignoring it, so the page can show that handling it makes no difference
+# to a process that is stopped. Nothing runs until CONT, so a queued TERM waits whether it would
+# reach this handler or the kernel's default action. Only KILL gets through, being applied without
+# the process running at all.
 cat > /usr/local/bin/tips-graceful <<'EOF'
 #!/bin/bash
 trap 'exit 0' TERM
