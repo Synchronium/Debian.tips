@@ -93,7 +93,16 @@ jobs:
           node-version: 24
           cache: npm
       # Only the yaml parser is needed, but `npm ci` is what the lockfile guarantees.
+      #
+      # Nothing in this job opens a browser, and three packages here run a postinstall that
+      # downloads one: puppeteer, plus the copies pa11y and pa11y-ci carry. Every one of those is
+      # a chance for a truncated zip to fail a shard over a browser it was never going to launch,
+      # and a lockfile change hands all eight shards a cold cache at the same time. The `check`
+      # job drives a real browser for pa11y and the search and layout gates, so it must not set
+      # this.
       - run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "true"
       # Fetched here rather than inside the first `sandbox.sh start` so the log shows this and
       # the replay separately, so if this job ever gets slow, that says which half to fix.
       #
