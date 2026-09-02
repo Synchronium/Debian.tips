@@ -71,9 +71,7 @@ stale entry after you've confirmed the change is legitimate.
 
 `-L local:host:remote` opens a port on your machine that tunnels to a port reachable from the
 *server's* side, useful for reaching a database that only listens on a remote machine's loopback
-interface. [`ss -ltn`](/commands/ss/) on the server shows such a service bound to `127.0.0.1`
-rather than to `0.0.0.0`. `-R` runs the same idea backwards, exposing a port on your machine to
-the server. `-D`
+interface. `-R` runs the same idea backwards, exposing a port on your machine to the server. `-D`
 turns `ssh` into a SOCKS proxy, routing arbitrary traffic through the connection without picking a
 single destination port up front. All three need the connection to stay open, so they're normally
 combined with `-N` (no remote command) or `-f` (background after connecting).
