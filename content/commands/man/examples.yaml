@@ -1,0 +1,411 @@
+command: man
+sections:
+  - title: "Reading a page"
+    intro: "`man` sends its output to a pager when it has a terminal and prints plain text when it does not, so every example here pipes it somewhere. At a prompt you would leave the pipe off and let [`less`](/commands/less/) hold the page."
+    examples:
+      - title: "Open the manual for a command"
+        code: man ls | head -8
+        description: "Every page opens the same way: a header naming the page and its section, then `NAME` with a one-line summary, then `SYNOPSIS` with the calling convention. The `head` is only here because a page is long."
+        output: |2
+          LS(1)                            User Commands                            LS(1)
+
+          NAME
+                 ls - list directory contents
+
+          SYNOPSIS
+                 ls [OPTION]... [FILE]...
+
+        level: basic
+      - title: "Read just the synopsis"
+        code: 'man ls | sed -n "/^SYNOPSIS/,/^DESCRIPTION/p" | head -5'
+        description: "Section headings sit in the first column and everything else is indented, so `sed` can cut between two of them. Square brackets mean optional and `...` means repeatable, so this line says `ls` needs neither an option nor a filename."
+        output: |2
+          SYNOPSIS
+                 ls [OPTION]... [FILE]...
+
+          DESCRIPTION
+        level: intermediate
+      - title: "See who wrote the page and when"
+        code: man ls | tail -3
+        volatile: "the version and the date belong to the package installed on your machine"
+        compare: shape
+        description: "The footer names the project and the version the page was written for. Worth a glance when a documented flag does not work: the page in front of you belongs to a particular release."
+        output: |2
+                 There is NO WARRANTY, to the extent permitted by law.
+
+          GNU coreutils 9.7                  June 2025                              LS(1)
+        level: intermediate
+      - title: "Choose the pager yourself"
+        code: man -P cat ls | head -4
+        description: "`-P` names the program the page is handed to. `cat` prints it and exits, so a page can go into a file or a pipe even where `$PAGER` has been set to something interactive."
+        output: |2
+          LS(1)                            User Commands                            LS(1)
+
+          NAME
+                 ls - list directory contents
+        level: intermediate
+      - title: "Read the manual for man itself"
+        code: man man | head -5
+        description: "Worth ten minutes at some point. `man` has more options than anyone expects, and the page describes the search path and the section order it uses to resolve a name."
+        output: |2
+          MAN(1)                         Manual pager utils                        MAN(1)
+
+          NAME
+                 man - an interface to the system reference manuals
+
+        level: basic
+      - title: "Get the option summary without the page"
+        code: man --help | head -6
+        description: "`--help` is a different thing from the manual page, and usually a shorter one. For a command you half-remember it is the faster of the two."
+        output: |2
+          Usage: man [OPTION...] [SECTION] PAGE...
+
+            -C, --config-file=FILE     use this user configuration file
+            -d, --debug                emit debugging messages
+            -D, --default              reset all options to their default values
+                --warnings[=WARNINGS]  enable warnings from groff
+        level: basic
+      - title: "Format a page file directly"
+        code: man --local-file /usr/share/man/man1/ls.1.gz | head -4
+        description: "Takes a path rather than a name, so it works on a page that is not on the search path: one you have just downloaded, or one inside a package you have unpacked but not installed."
+        output: |2
+          LS(1)                            User Commands                            LS(1)
+
+          NAME
+                 ls - list directory contents
+        level: advanced
+      - title: "Set the width the page is formatted to"
+        code: MANWIDTH=60 man ls | head -3
+        description: "`man` wraps to the terminal width, or to 80 columns when it has no terminal to ask. `MANWIDTH` overrides both, so output headed for a file somebody else will read gets a width you picked."
+        output: |2
+          LS(1)                  User Commands                  LS(1)
+
+          NAME
+        level: advanced
+      - title: "Read a page from section 6"
+        code: man 6 cowsay | head -4
+        description: "Section 6 is games, and on most machines it holds almost nothing. [`cowsay`](/commands/cowsay/) is one of the few things that puts a page there."
+        output: |2
+          COWSAY(6)                         Games Manual                        COWSAY(6)
+
+          NAME
+                 cowsay/cowthink - configurable speaking/thinking cow (and a bit more)
+        level: intermediate
+      - title: "Check which man is installed"
+        code: man --version
+        volatile: "the version is whichever man-db your release ships"
+        compare: shape
+        description: "Debian's `man` comes from `man-db`. Another implementation, `mandoc`, is common on the BSDs and takes different options, so a script that runs `man` on more than one system is worth checking."
+        output: |2
+          man 2.13.1
+        level: intermediate
+
+  - title: "Sections, and why the number matters"
+    intro: "The number in `ls(1)` selects which manual a name is looked up in. Give `man` a number before the name and it looks only there; give it none and it takes the lowest-numbered section that has a page."
+    examples:
+      - title: "See every section a name appears in"
+        code: whatis passwd
+        description: "Three answers for one word: the command that changes a password, an OpenSSL subcommand, and the file the first one writes to. `man passwd` gives you only the first."
+        output: |2
+          passwd (1)           - change user password
+          passwd (1ssl)        - OpenSSL application commands
+          passwd (5)           - the password file
+        level: basic
+      - title: "Read the command"
+        code: man 1 passwd | head -6
+        description: "Section 1 is commands you run. The header repeats the section as `PASSWD(1)` and names the manual beside it, so a glance confirms you landed where you meant to."
+        output: |2
+          PASSWD(1)                        User Commands                        PASSWD(1)
+
+          NAME
+                 passwd - change user password
+
+          SYNOPSIS
+        level: basic
+      - title: "Read the file format of the same name"
+        code: man 5 passwd | head -6
+        description: "Section 5 is file formats, so this is `/etc/passwd` rather than the command. Every configuration file worth editing has a page here, and it is the section people do not know to ask for."
+        output: |2
+          PASSWD(5)                File Formats and Configuration               PASSWD(5)
+
+          NAME
+                 passwd - the password file
+
+          DESCRIPTION
+        level: basic
+      - title: "Read an administration command"
+        code: man 8 cron | head -5
+        description: "Section 8 holds the commands that administer the system, the ones that usually want root. `cron` the daemon lives here while `crontab` the command lives in section 1."
+        output: |2
+          CRON(8)                         cron User Manual                        CRON(8)
+
+          NAME
+                 cron - daemon to execute scheduled commands (Vixie Cron)
+
+        level: intermediate
+      - title: "List the sections a name has, with descriptions"
+        code: whatis crontab
+        description: "The command and the file format, distinguished by their descriptions rather than by their names. [`crontab`](/commands/crontab/) is the page for the first; the second is what to read before editing what it produces."
+        output: |2
+          crontab (1)          - maintain crontab files for individual users (Vixie Cron)
+          crontab (5)          - tables for driving cron
+        level: basic
+      - title: "Ask for one section of a name that has several"
+        code: whatis -s 1 crontab
+        description: "`-s` narrows the lookup to a section. Useful when a name is in four manuals and you want the summary of one of them."
+        output: |2
+          crontab (1)          - maintain crontab files for individual users (Vixie Cron)
+        level: intermediate
+      - title: "Watch a section that is not installed"
+        code: man 3 printf
+        description: "Section 3 is the C library, and Debian ships it in `manpages-dev` rather than with the tools. `printf` the shell command is section 1 and present; `printf(3)`, the C function, arrives with that package."
+        output: |2
+          No manual entry for printf in section 3
+        level: intermediate
+      - title: "Find where each section of a name lives"
+        code: man -aw crontab
+        description: "`-a` means all matches rather than the first, and `-w` prints paths instead of pages. Together they answer \"how many manuals mention this name, and where are they\" in one line each."
+        output: |2
+          /usr/share/man/man1/crontab.1.gz
+          /usr/share/man/man5/crontab.5.gz
+        level: advanced
+      - title: "Ask for the path of one section"
+        code: man -w 5 passwd
+        description: "The section argument works the same way with `-w` as without it. This is the form to use in a script, since it fails loudly when the page is not installed."
+        output: |2
+          /usr/share/man/man5/passwd.5.gz
+        level: advanced
+      - title: "Read the shell command rather than the C function"
+        code: man 1 printf | head -5
+        description: "`printf` is a shell command and a C library function, documented in sections 1 and 3. Naming the section is how a C programmer avoids the shell page and how everyone else avoids the other one."
+        output: |2
+          PRINTF(1)                        User Commands                        PRINTF(1)
+
+          NAME
+                 printf - format and print data
+
+        level: intermediate
+      - title: "Summarise one section of a name"
+        code: whatis -s 5 passwd
+        description: "One line, from the section you asked for. The quickest way to confirm that a file format page exists before opening it."
+        output: |2
+          passwd (5)           - the password file
+        level: intermediate
+      - title: "Get the path for a named section"
+        code: man -w 1 crontab
+        description: "The section goes before the name, the same as when reading the page. Compare it against `man -w crontab` on a name whose lowest section is not the one you meant."
+        output: |2
+          /usr/share/man/man1/crontab.1.gz
+        level: intermediate
+      - title: "Count how many manuals document a name"
+        code: man -a crontab 2>/dev/null | grep -c "^CRONTAB"
+        description: "`-a` concatenates every matching page instead of stopping at the first, so counting the headers counts the manuals. At a prompt `-a` shows them one after another and asks before each."
+        output: |2
+          2
+        level: advanced
+      - title: "Read a page that complains while it formats"
+        code: man 5 crontab 2>/dev/null | head -4
+        description: "This page uses characters the installed fonts do not have, and `groff` says so on stderr every time it is opened. The warnings are not an error and the page is fine, so discarding stderr is the reasonable response."
+        output: |2
+          CRONTAB(5)                    crontab User Manual                    CRONTAB(5)
+
+          NAME
+                 crontab - tables for driving cron
+        level: advanced
+
+  - title: "Finding the page when you know what you want, not what it is called"
+    intro: "`apropos` searches the one-line descriptions rather than the pages. It is the same index `whatis` reads, searched by substring instead of by exact name, and `man -k` is another spelling of it."
+    examples:
+      - title: "Search the descriptions for a phrase"
+        code: 'apropos -s 1 "directory contents"'
+        description: "Three commands describe themselves that way, and two of them are worth knowing about. `-s 1` keeps the answer to commands rather than including library functions with similar summaries."
+        output: |2
+          dir (1)              - list directory contents
+          ls (1)               - list directory contents
+          vdir (1)             - list directory contents
+        level: basic
+      - title: "Use the spelling built into man"
+        code: 'man -k "^crontab$"'
+        description: "`man -k` and `apropos` are the same search. The pattern is a regular expression, so anchoring it with `^` and `$` turns a substring search into an exact one."
+        output: |2
+          crontab (1)          - maintain crontab files for individual users (Vixie Cron)
+          crontab (5)          - tables for driving cron
+        level: basic
+      - title: "Look up one name exactly"
+        code: whatis ls
+        description: "The narrowest question: what is this thing, in one line. Faster than opening the page when all you want is to confirm what a command in someone else's script does."
+        output: |2
+          ls (1)               - list directory contents
+        level: basic
+      - title: "Spell the exact lookup as a man option"
+        code: man -f crontab
+        description: "`man -f` is `whatis`, the same way `man -k` is `apropos`. Both spellings appear in scripts, and knowing they are pairs saves looking up two more commands."
+        output: |2
+          crontab (1)          - maintain crontab files for individual users (Vixie Cron)
+          crontab (5)          - tables for driving cron
+        level: intermediate
+      - title: "Search for whole words only"
+        code: apropos -e ls
+        description: "`-e` matches the search term as a whole word, so `ls` no longer matches every description containing those two letters. Without it this search returns most of the manual."
+        output: |2
+          dircolors (1)        - color setup for ls
+          ls (1)               - list directory contents
+        level: intermediate
+      - title: "Anchor an apropos search to a whole name"
+        code: 'apropos -s 1 "^ls$"'
+        description: "The regular expression is matched against the name as well as the description, so anchoring both ends finds the page named `ls` and nothing that merely mentions it."
+        output: |2
+          ls (1)               - list directory contents
+        level: advanced
+      - title: "Restrict a search to configuration files"
+        code: man -k -s 5 cron
+        description: "Section 5 and a keyword together is the combination worth remembering. When you know a program is configured by a file somewhere and not what the file is called, this is what finds it."
+        output: |2
+          crontab (5)          - tables for driving cron
+        level: advanced
+      - title: "Search one section for a keyword"
+        code: apropos -s 5 crontab
+        description: "The same question asked with the other command name. `apropos` takes every option `man -k` does, since they run the same code."
+        output: |2
+          crontab (5)          - tables for driving cron
+        level: intermediate
+      - title: "Count the pages this machine has"
+        code: man -k . | wc -l
+        volatile: "the total depends on which packages are installed"
+        compare: shape
+        description: "`.` matches every description, so this counts the index. A container has a fraction of what a desktop has, and installing a package usually adds to it."
+        output: |2
+          1453
+        level: advanced
+      - title: "Search without anchoring the pattern"
+        code: apropos crontab
+        description: "An unanchored search matches the name and the description alike. Here it happens to return the same two pages, because nothing else on the machine mentions crontabs in its summary."
+        output: |2
+          crontab (1)          - maintain crontab files for individual users (Vixie Cron)
+          crontab (5)          - tables for driving cron
+        level: basic
+      - title: "See how wide an unanchored search casts"
+        code: man -k passwd | head -4
+        description: "None of the first four is the `passwd` command: they are pages whose descriptions mention passwords. Sort the answer by section, or anchor the pattern, before assuming the first hit is the one."
+        output: |2
+          chgpasswd (8)        - update group passwords in batch mode
+          chpasswd (8)         - update passwords in batch mode
+          gpasswd (1)          - administer /etc/group and /etc/gshadow
+          openssl-passwd (1ssl) - compute password hashes
+        level: intermediate
+      - title: "Look up a name that is also a C function"
+        code: man -f printf
+        description: "One answer here, because section 3 is not installed. On a machine with `manpages-dev` the same command returns two, and the difference is a good check of what a build environment has."
+        output: |2
+          printf (1)           - format and print data
+        level: intermediate
+
+  - title: "Where a page came from"
+    intro: "A manual page is a file shipped by a package, and Debian's tools can go from one to the other in either direction. That makes `man` a way into the packaging rather than a dead end."
+    examples:
+      - title: "Print the path instead of the page"
+        code: man -w ls
+        description: "`-w` answers \"which file would you open\". The `.gz` is not a complication: pages are stored compressed and `man` decompresses them on the way to the pager."
+        output: |2
+          /usr/share/man/man1/ls.1.gz
+        level: intermediate
+      - title: "Find the package that shipped a page"
+        code: dpkg -S $(man -w ls)
+        description: "`man -w` gives the path and [`dpkg -S`](/commands/dpkg/) says which package owns it. The answer names what to reinstall when a page is missing or to read further in."
+        output: |2
+          coreutils: /usr/share/man/man1/ls.1.gz
+        level: advanced
+      - title: "Do the same for a file format page"
+        code: dpkg -S $(man -w 5 passwd)
+        description: "The section 5 page for `/etc/passwd` comes from `passwd`, the same package as the command. Pages for a format and for the tool that writes it often travel together, and when they do not this is how you find out."
+        output: |2
+          passwd: /usr/share/man/man5/passwd.5.gz
+        level: advanced
+      - title: "See where man looks"
+        code: man --path
+        description: "Three directories, searched in order. `/usr/local/share/man` is where a program you compiled yourself should install its pages, which is why it is ahead of the packaged ones."
+        output: |2
+          /usr/local/man:/usr/local/share/man:/usr/share/man
+        level: intermediate
+      - title: "Override the search path for one command"
+        code: MANPATH=/usr/share/man man -w ls
+        description: "Setting `MANPATH` for a single command restricts the search to what you name. Set it in a shell and you replace the path rather than adding to it, which is the usual way to lose access to half the manual."
+        output: |2
+          /usr/share/man/man1/ls.1.gz
+        level: advanced
+      - title: "Find the page for man itself"
+        code: man -w man
+        description: "Nothing special about the name. `man` is a command like any other and its page sits in section 1 beside the rest."
+        output: |2
+          /usr/share/man/man1/man.1.gz
+        level: intermediate
+      - title: "Count the pages in each section"
+        code: 'man -k . | awk "{print \$2}" | sort | uniq -c | sort -rn | head -5'
+        volatile: "the counts depend on which packages are installed"
+        compare: shape
+        description: "Section 8 leads on a server, which says something about what a machine is for. `1ssl` and `7ssl` are OpenSSL's own sections, and a package is free to invent one."
+        output: |2
+              463 (8)
+              456 (1)
+              241 (7ssl)
+              125 (5)
+              112 (1ssl)
+        level: advanced
+
+  - title: "Searching inside a page"
+    intro: "At a prompt you would press `/` and let the pager search. In a pipe the page is text like any other, so the usual tools apply."
+    examples:
+      - title: "Pull out what one option does"
+        code: 'man ls | grep -A3 "^       -a, --all"'
+        description: "Options are indented seven spaces and their descriptions more, so anchoring on the indentation finds the entry rather than every mention of `-a` in the page."
+        output: |2
+                 -a, --all
+                        do not ignore entries starting with .
+
+                 -A, --almost-all
+        level: intermediate
+      - title: "Print an option and its description only"
+        code: 'man ls | sed -n "/^       -R, --recursive/,+1p"'
+        description: "`sed` with `+1` takes the matched line and the one after it, which for a short entry is the whole thing. Quicker than paging to the right place when you only need reminding."
+        output: |2
+                 -R, --recursive
+                        list subdirectories recursively
+        level: advanced
+      - title: "Read a section of a file-format page"
+        code: 'man 5 passwd | sed -n "/^   /,+3p" | head -5'
+        description: "Subsection headings are indented three spaces where section headings are not indented at all, so the two can be told apart by a pattern. Handy on a long format page where `DESCRIPTION` runs for pages."
+        output: |2
+                 passwd - the password file
+
+          DESCRIPTION
+                 /etc/passwd contains one line for each user account, with seven fields
+                 delimited by colons (":"). These fields are:
+        level: advanced
+
+  - title: "When there is no page"
+    intro: "Two different failures, with two different fixes, and `man` words them differently enough to tell apart."
+    examples:
+      - title: "Ask for a command that does not exist"
+        code: man nosuchcommand
+        description: "No section named, so `man` looked in all of them and found nothing. Either the name is wrong or nothing on this machine provides it."
+        output: |2
+          No manual entry for nosuchcommand
+        level: basic
+      - title: "Ask for a page in the wrong section"
+        code: man 7 man-pages
+        description: "The wording changes once a section is named: the page may well exist elsewhere. Dropping the number is the first thing to try."
+        output: |2
+          No manual entry for man-pages in section 7
+        level: intermediate
+      - title: "Check for a page without printing it"
+        code: man -w intro
+        description: "`-w` exits non-zero and says the same thing when nothing matches, which makes it the form to test with in a script. Debian ships `intro(1)` in `manpages`, absent here."
+        output: |2
+          No manual entry for intro
+        level: advanced
+      - title: "Ask for a section that has no such page"
+        code: man 7 units
+        description: "Section 7 exists and has hundreds of pages here, so the failure is about this name rather than about the section. `apropos` is the command to reach for next."
+        output: |2
+          No manual entry for units in section 7
+        level: intermediate

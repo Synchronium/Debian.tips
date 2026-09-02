@@ -43,7 +43,8 @@ dpkg -S ls | wc -l
 
 Locale files, manual pages and any path with those two letters in it. Passing the absolute path
 narrows it to the one line you wanted, and `command -v` is how to get the absolute path of
-something already on your `PATH`. A relative path never matches at all, because the lists hold
+something already on your `PATH`. For a manual page, [`man -w`](/commands/man/) prints the path
+to feed in. A relative path never matches at all, because the lists hold
 absolute ones.
 
 ## apt-file: the file is still in the archive

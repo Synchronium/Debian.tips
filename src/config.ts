@@ -210,6 +210,7 @@ export const COMMAND_GROUPS: { title: string; commands: string[] }[] = [
     commands: ["ls", "find", "cp", "mv", "rm", "make-and-link", "inspect-files", "touch", "du", "df", "tree"],
   },
   { title: "Searching", commands: ["locate"] },
+  { title: "Getting help", commands: ["man"] },
   { title: "Archives & compression", commands: ["tar", "compression-tools", "zip"] },
   {
     title: "Processes & system",

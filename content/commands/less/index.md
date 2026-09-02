@@ -10,7 +10,8 @@ related: [cat, head, tail, journalctl]
 ---
 
 `less` shows a file a screen at a time and lets you move around inside it. It is Debian's default
-pager, so `man`, [systemctl](/commands/systemctl/) and [journalctl](/commands/journalctl/) all
+pager, so [`man`](/commands/man/), [systemctl](/commands/systemctl/) and
+[journalctl](/commands/journalctl/) all
 hand their output to it. The shared inheritance is why they all quit on `q`, and why several of
 them grew a `--no-pager` flag.
 
