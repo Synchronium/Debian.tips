@@ -29,8 +29,15 @@
 # Masking the template covers every instance and stops systemd respawning one mid-example, which
 # stopping alone does not. The page says in prose that a machine with consoles shows one `agetty`
 # per console, so the lesson survives without the output depending on it.
-systemctl mask getty@.service console-getty.service serial-getty@.service >/dev/null 2>&1
-systemctl stop 'getty@*.service' console-getty.service 'serial-getty@*.service' >/dev/null 2>&1
+#
+# Once per container rather than once per example. This script runs again before every example,
+# and each call below is a D-Bus round trip into systemd, but a masked unit cannot come back:
+# nothing is able to start one, so a later run has nothing to restore. The guard keeps this page's
+# replay time in its examples rather than in its setup.
+if [ ! -L /etc/systemd/system/getty@.service ]; then
+  systemctl mask getty@.service console-getty.service serial-getty@.service >/dev/null 2>&1
+  systemctl stop 'getty@*.service' console-getty.service 'serial-getty@*.service' >/dev/null 2>&1
+fi
 
 # Kill by exact process name, never `pkill -f tips-`. `-f` matches the whole command line, so
 # it matches the shell running this script and kills the setup along with the strays.
