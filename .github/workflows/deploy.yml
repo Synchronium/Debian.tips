@@ -28,7 +28,12 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha || github.ref }}
       - uses: actions/setup-node@v7
         with: { node-version: 24, cache: npm }
+      # The build renders no page in a browser, yet three packages here download one in a
+      # postinstall: puppeteer, plus the copies pa11y and pa11y-ci carry. Without this a
+      # truncated download holds back the site over a browser nothing in this job opens.
       - run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "true"
       - run: npm run build
         env: { NODE_ENV: production }
       - uses: actions/upload-pages-artifact@v5

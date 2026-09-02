@@ -45,7 +45,12 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      # This job merges JSON and opens no browser, but three packages here download one in a
+      # postinstall: puppeteer, plus the copies pa11y and pa11y-ci carry. A truncated download
+      # would lose the measurements a green replay has already taken.
       - run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "true"
       # `run-id` and a token are what read another workflow run's artifacts. Without them this
       # looks in *this* run, which uploaded nothing, and the merge below reports the whole site
       # missing.
