@@ -17,15 +17,21 @@
 # Note the file it writes is under /tmp rather than the working directory: the harness wipes
 # the workdir between examples, and this has to survive being set up once.
 
-# A settled starting point: `crontab -l` is the first thing this page prints, and the blocks
-# below it edit the crontab, so the one written here has to replace whatever they left rather
-# than be appended to it.
+# A settled starting point: `crontab -l` is the first thing this page prints, so the crontab has
+# to hold exactly this line whatever the container was doing beforehand. Installing from stdin
+# replaces the whole crontab rather than adding to it, and clearing it first means a failed
+# install leaves no stale entry to be read as a fresh one.
 crontab -r 2>/dev/null
 
 crontab - <<'CRON'
 30 3 * * 1 /usr/local/bin/weekly-report
 CRON
 
+# Once per container. This script runs again before every example, and `daemon-reload` is the
+# most expensive call in it by an order of magnitude, but nothing on this page writes a unit
+# file: the examples read them, start the service and list the timers. Rewriting identical
+# bytes only to tell systemd they changed is the whole cost of the restore.
+if [ ! -f /etc/systemd/system/report.timer ]; then
 cat > /etc/systemd/system/report.service <<'UNIT'
 [Unit]
 Description=Weekly report
@@ -48,4 +54,8 @@ WantedBy=timers.target
 UNIT
 
 systemctl daemon-reload
+fi
+
+# Outside the guard: an example could leave the timer stopped, and this is a cheap no-op when it
+# is already running.
 systemctl start report.timer >/dev/null 2>&1
