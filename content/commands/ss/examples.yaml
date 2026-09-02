@@ -1,0 +1,469 @@
+command: ss
+fixtures:
+  - name: "four listening sockets and one connection"
+    note: "a container listens on nothing at all until something is started, so the setup script starts four small Python services and every socket on this page is one of them. `tips-api` listens on `0.0.0.0:8080` with a backlog of 128, `tips-db` on `127.0.0.1:5432` with a backlog of 5, `tips-logs` on UDP `0.0.0.0:5140`, and `tips-cache` on the Unix socket `/run/tips-cache.sock`. A fifth process, `tips-client`, holds one connection open to `tips-api` so the page has an established socket to show. The two TCP rows are printed in the order the kernel walked its own tables, so yours may arrive the other way round."
+    from: "ss -ltun"
+    unordered: true
+    content: |2
+      Netid State  Recv-Q Send-Q Local Address:Port Peer Address:Port
+      udp   UNCONN 0      0            0.0.0.0:5140      0.0.0.0:*
+      tcp   LISTEN 0      128          0.0.0.0:8080      0.0.0.0:*
+      tcp   LISTEN 0      5          127.0.0.1:5432      0.0.0.0:*
+sections:
+  - title: "What is listening"
+    intro: "`-l` selects listening sockets, `-t` and `-u` pick TCP and UDP, and `-n` leaves port numbers as numbers. Without `-l` you get connections instead, so a service you went looking for is simply absent from the output."
+    examples:
+      - title: "List the TCP ports something is listening on"
+        code: ss -ltn
+        volatile: "the kernel lists sockets in the order it walked its own tables, so the two rows may come back the other way round"
+        unordered: true
+        description: "The command to type when you want to know what this machine is offering. Two services here: one reachable from anywhere, one only from the machine itself."
+        output: |2
+          State  Recv-Q Send-Q Local Address:Port Peer Address:Port
+          LISTEN 0      128          0.0.0.0:8080      0.0.0.0:*
+          LISTEN 0      5          127.0.0.1:5432      0.0.0.0:*
+        level: basic
+      - title: "List TCP and UDP together"
+        code: ss -ltun
+        volatile: "the kernel lists sockets in the order it walked its own tables, so the TCP rows may come back the other way round"
+        unordered: true
+        description: "Adding `-u` puts UDP alongside TCP and introduces a `Netid` column to tell them apart. UDP sockets are never `LISTEN`, because there is no connection to wait for."
+        output: |2
+          Netid State  Recv-Q Send-Q Local Address:Port Peer Address:Port
+          udp   UNCONN 0      0            0.0.0.0:5140      0.0.0.0:*
+          tcp   LISTEN 0      128          0.0.0.0:8080      0.0.0.0:*
+          tcp   LISTEN 0      5          127.0.0.1:5432      0.0.0.0:*
+        level: basic
+      - title: "List only the UDP sockets"
+        code: ss -lun
+        description: "`-u` on its own. A bound UDP socket reports `UNCONN` and a `Send-Q` of 0, since neither a connection state nor an accept backlog applies to it."
+        output: |2
+          State  Recv-Q Send-Q Local Address:Port Peer Address:Port
+          UNCONN 0      0            0.0.0.0:5140      0.0.0.0:*
+        level: basic
+      - title: "See the service names instead of the numbers"
+        code: ss -lt
+        volatile: "the kernel lists sockets in the order it walked its own tables, so the two rows may come back the other way round"
+        unordered: true
+        description: "Drop `-n` and `ss` looks each port up in `/etc/services`. `8080` becomes `http-alt` and `5432` becomes `postgresql`, which are the names registered for those numbers rather than anything the running programs claimed."
+        output: |2
+          State  Recv-Q Send-Q Local Address:Port       Peer Address:Port
+          LISTEN 0      128          0.0.0.0:http-alt        0.0.0.0:*
+          LISTEN 0      5          127.0.0.1:postgresql      0.0.0.0:*
+        level: basic
+      - title: "Resolve the addresses but keep the numbers"
+        code: ss -ltnr
+        volatile: "the kernel lists sockets in the order it walked its own tables, so the two rows may come back the other way round"
+        unordered: true
+        description: "`-r` asks for hostname lookups on addresses while `-n` keeps ports numeric. `127.0.0.1` comes back as `localhost` from `/etc/hosts`. On a machine with real peers this is the flag that makes `ss` wait on DNS."
+        output: |2
+          State  Recv-Q Send-Q Local Address:Port Peer Address:Port
+          LISTEN 0      128          0.0.0.0:8080      0.0.0.0:*
+          LISTEN 0      5          localhost:5432      0.0.0.0:*
+        level: intermediate
+      - title: "Drop the header row"
+        code: ss -ltnH
+        volatile: "the kernel lists sockets in the order it walked its own tables, so the two rows may come back the other way round"
+        unordered: true
+        description: "`-H` prints the rows and nothing else, ready for `awk` or `wc`. The column padding goes with the header, so the fields arrive separated by single spaces."
+        output: |2
+          LISTEN 0      128      0.0.0.0:8080 0.0.0.0:*
+          LISTEN 0      5      127.0.0.1:5432 0.0.0.0:*
+        level: intermediate
+      - title: "Count what is listening"
+        code: ss -ltnH | wc -l
+        description: "Without `-H` the header would be counted as a socket, and every answer this returned would be one too many."
+        output: |2
+          2
+        level: intermediate
+      - title: "Restrict the output to IPv4"
+        code: ss -ltn4
+        volatile: "the kernel lists sockets in the order it walked its own tables, so the two rows may come back the other way round"
+        unordered: true
+        description: "`-4` and `-6` select the address family. Worth knowing when a service appears twice in a listing, once per family, and you only care about one of them."
+        output: |2
+          State  Recv-Q Send-Q Local Address:Port Peer Address:Port
+          LISTEN 0      128          0.0.0.0:8080      0.0.0.0:*
+          LISTEN 0      5          127.0.0.1:5432      0.0.0.0:*
+        level: intermediate
+      - title: "Ask what is listening on IPv6"
+        code: ss -ltn6
+        description: "Nothing here binds an IPv6 address, so the header arrives with no rows under it. A service you expected to find is either not running or bound to the other family, and this is how you separate those two."
+        output: |2
+          State Recv-Q Send-Q Local Address:Port Peer Address:Port
+        level: intermediate
+      - title: "Look at one port in a mixed listing"
+        code: ss -lntu | grep 8080
+        description: "Fine at a prompt. In a script prefer a filter expression, because `grep 8080` also matches a peer on port 18080 and an address that happens to contain the digits."
+        output: |2
+          tcp   LISTEN 0      128          0.0.0.0:8080      0.0.0.0:*
+        level: basic
+      - title: "Get a summary of every socket on the machine"
+        code: ss -s
+        volatile: "the totals and the closed count depend on what the machine has been doing"
+        compare: shape
+        description: "Counts by transport rather than a row per socket. Useful as a first look at a machine you have just been handed, particularly when the number of sockets is itself the problem."
+        output: |2
+          Total: 10
+          TCP:   50 (estab 2, closed 46, orphaned 0, timewait 0)
+
+          Transport Total     IP        IPv6
+          RAW	  0         0         0
+          UDP	  1         1         0
+          TCP	  4         4         0
+          INET	  5         5         0
+          FRAG	  0         0         0
+        level: intermediate
+
+  - title: "Which process holds the port"
+    intro: "`-p` adds the program, its PID and the file descriptor number. It needs root to report processes it does not own, and it silently prints nothing in that column rather than warning you."
+    examples:
+      - title: "Show the process behind each listening socket"
+        code: ss -ltnp
+        volatile: "the PID is whatever the kernel handed the service on this boot, and the kernel lists sockets in the order it walked its own tables"
+        unordered: true
+        compare: shape
+        description: "`users:((\"tips-api\",pid=35,fd=3))` names the program, the process holding the socket, and which of its descriptors it is. The PID changes every boot; the name and the descriptor are what you act on."
+        output: |2
+          State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess
+          LISTEN 0      128          0.0.0.0:8080      0.0.0.0:*    users:(("tips-api",pid=35,fd=3))
+          LISTEN 0      5          127.0.0.1:5432      0.0.0.0:*    users:(("tips-db",pid=36,fd=3))
+        level: basic
+      - title: "Type the incantation everyone types"
+        code: ss -tulpn
+        volatile: "the PID is whatever the kernel handed the service on this boot, and the kernel lists sockets in the order it walked its own tables"
+        unordered: true
+        compare: shape
+        description: "TCP and UDP, listening only, numeric, with processes. The letters are the same five whatever order you write them in, and this order is the one that stuck."
+        output: |2
+          Netid State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess
+          udp   UNCONN 0      0            0.0.0.0:5140      0.0.0.0:*    users:(("tips-logs",pid=37,fd=3))
+          tcp   LISTEN 0      128          0.0.0.0:8080      0.0.0.0:*    users:(("tips-api",pid=35,fd=3))
+          tcp   LISTEN 0      5          127.0.0.1:5432      0.0.0.0:*    users:(("tips-db",pid=36,fd=3))
+        level: basic
+      - title: "Find what is holding one port"
+        code: ss -tlnp sport = :8080
+        volatile: "the PID is whatever the kernel handed the service on this boot"
+        compare: shape
+        description: "The question behind every \"address already in use\". Filtering beats grepping the whole table, because a filter is applied by the kernel and matches the port rather than the digits."
+        output: |2
+          State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess
+          LISTEN 0      128          0.0.0.0:8080      0.0.0.0:*    users:(("tips-api",pid=35,fd=3))
+        level: basic
+      - title: "Pull out just the PID"
+        code: ss -ltnpH sport = :8080 | grep -oP 'pid=\K[0-9]+'
+        volatile: "the PID is whatever the kernel handed the service on this boot"
+        compare: shape
+        description: "One number, ready to pass to [`kill`](/commands/kill/). `grep -oP` with `\\K` drops everything up to the match, so nothing but the digits survives. [Kill whatever is using a port](/recipes/kill-whatever-is-using-a-port/) has the whole procedure."
+        output: |2
+          35
+        level: advanced
+      - title: "Ask about the loopback-only service"
+        code: "ss -ltnp '( sport = :5432 )'"
+        volatile: "the PID is whatever the kernel handed the service on this boot"
+        compare: shape
+        description: "Parentheses let a filter be built up from several terms. A single term does not need them, and writing them anyway means you can add an `or` later without rearranging anything."
+        output: |2
+          State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess
+          LISTEN 0      5          127.0.0.1:5432      0.0.0.0:*    users:(("tips-db",pid=36,fd=3))
+        level: intermediate
+      - title: "Drop the State column when the state is implied"
+        code: "ss -lptn state listening '( sport = :5432 )'"
+        volatile: "the PID is whatever the kernel handed the service on this boot"
+        compare: shape
+        description: "Naming a state explicitly removes the `State` column, since every row would carry the same value. Convenient for a fixed-width parse, and a surprise the first time a column you were counting on disappears."
+        output: |2
+          Recv-Q Send-Q Local Address:Port Peer Address:PortProcess
+          0      5          127.0.0.1:5432      0.0.0.0:*    users:(("tips-db",pid=36,fd=3))
+        level: advanced
+      - title: "Count the sockets your own services hold"
+        code: ss -lntup | grep -c tips-
+        description: "Three: the two TCP listeners and the UDP one. A quick way to confirm a deployment brought up everything it should have."
+        output: |2
+          3
+        level: intermediate
+      - title: "Sort a listing by address"
+        code: ss -ltnpH | sort -k4
+        volatile: "the PID is whatever the kernel handed the service on this boot"
+        compare: shape
+        description: "The kernel returns sockets in the order it walked its own tables, which is not an order you can rely on. Sorting on the local address column gives two runs something comparable."
+        output: |2
+          LISTEN 0      128      0.0.0.0:8080 0.0.0.0:* users:(("tips-api",pid=35,fd=3))
+          LISTEN 0      5      127.0.0.1:5432 0.0.0.0:* users:(("tips-db",pid=36,fd=3))
+        level: advanced
+
+  - title: "Connections, not just listeners"
+    intro: "Drop `-l` and `ss` reports connections rather than listeners. Each connection appears twice on a machine talking to itself, once from each end."
+    examples:
+      - title: "List established connections"
+        code: ss -tn
+        volatile: "the client's port is taken from the ephemeral range, so it differs on every connection, and the two ends of one connection may be listed either way round"
+        unordered: true
+        compare: shape
+        description: "Two rows for one connection, because both ends are on this machine. The client's port was picked by the kernel from the ephemeral range and means nothing beyond this connection."
+        output: |2
+          State Recv-Q Send-Q Local Address:Port  Peer Address:Port
+          ESTAB 0      0          127.0.0.1:33156    127.0.0.1:8080
+          ESTAB 0      0          127.0.0.1:8080     127.0.0.1:33156
+        level: basic
+      - title: "Show listeners and connections at once"
+        code: ss -tan
+        volatile: "the client's port is taken from the ephemeral range, so it differs on every connection, and the two ends of one connection may be listed either way round"
+        unordered: true
+        compare: shape
+        description: "`-a` means all, which is `-l` and its opposite together. The listening socket on 8080 and the connection it accepted are separate sockets, and this is the view where that stops being an abstraction."
+        output: |2
+          State  Recv-Q Send-Q Local Address:Port  Peer Address:Port
+          LISTEN 0      128          0.0.0.0:8080       0.0.0.0:*
+          LISTEN 0      5          127.0.0.1:5432       0.0.0.0:*
+          ESTAB  0      0          127.0.0.1:8080     127.0.0.1:33156
+          ESTAB  0      0          127.0.0.1:33156    127.0.0.1:8080
+        level: basic
+      - title: "Select connections by state"
+        code: ss -tn state established
+        volatile: "the client's port is taken from the ephemeral range, so it differs on every connection, and the two ends of one connection may be listed either way round"
+        unordered: true
+        compare: shape
+        description: "`state` takes any TCP state name: `established`, `time-wait`, `close-wait`, `syn-sent` and the rest. A pile of `close-wait` sockets means a program is not closing what it finished with."
+        output: |2
+          Recv-Q Send-Q Local Address:Port  Peer Address:Port
+          0      0          127.0.0.1:8080     127.0.0.1:33156
+          0      0          127.0.0.1:33156    127.0.0.1:8080
+        level: intermediate
+      - title: "Count established connections"
+        code: ss -tH state established | wc -l
+        description: "The number to graph when you want to know whether a service is busy. Take it per port with a `sport` filter, or the listening socket's own accepted connections get lost among everything else the machine is doing."
+        output: |2
+          2
+        level: intermediate
+      - title: "Look at connections to one port"
+        code: "ss -tn '( dport = :8080 )'"
+        volatile: "the client's port is taken from the ephemeral range, so it differs on every connection"
+        compare: shape
+        description: "`dport` is the far end's port, so this finds the client side of the connection rather than the server's. One row, where the unfiltered listing showed two."
+        output: |2
+          State Recv-Q Send-Q Local Address:Port  Peer Address:Port
+          ESTAB 0      0          127.0.0.1:33156    127.0.0.1:8080
+        level: intermediate
+      - title: "Find who is connected to a given host"
+        code: ss -tn dst 127.0.0.1
+        volatile: "the client's port is taken from the ephemeral range, so it differs on every connection, and the two ends of one connection may be listed either way round"
+        unordered: true
+        compare: shape
+        description: "`dst` matches the peer address and takes a network as readily as a host, so `dst 10.0.0.0/8` answers \"what is this machine talking to on the internal network\"."
+        output: |2
+          State Recv-Q Send-Q Local Address:Port  Peer Address:Port
+          ESTAB 0      0          127.0.0.1:8080     127.0.0.1:33156
+          ESTAB 0      0          127.0.0.1:33156    127.0.0.1:8080
+        level: intermediate
+      - title: "Count every TCP socket, listeners included"
+        code: ss -tanH | wc -l
+        description: "Four: two listening sockets and the two ends of the one connection. Compare it against the established count to see how much of a machine's socket table is doing nothing."
+        output: |2
+          4
+        level: intermediate
+
+  - title: "Filtering by port and address"
+    intro: "A filter expression goes after the options. `sport` and `dport` are the local and remote ports, `src` and `dst` the addresses, and they combine with `and`, `or` and `not`. Keep the expression in single quotes so the shell leaves the parentheses alone."
+    examples:
+      - title: "Match one port exactly"
+        code: ss -ltn sport = :8080
+        description: "The colon is part of the syntax rather than a typo: `:8080` is a port, where `8080` on its own would be read as an address."
+        output: |2
+          State  Recv-Q Send-Q Local Address:Port Peer Address:Port
+          LISTEN 0      128          0.0.0.0:8080      0.0.0.0:*
+        level: basic
+      - title: "Match either of two ports"
+        code: "ss -ltn '( sport = :8080 or sport = :5432 )'"
+        volatile: "the kernel lists sockets in the order it walked its own tables, so the two rows may come back the other way round"
+        unordered: true
+        description: "The quotes matter. Without them the shell treats the parentheses as its own syntax and the command fails before `ss` sees any of it."
+        output: |2
+          State  Recv-Q Send-Q Local Address:Port Peer Address:Port
+          LISTEN 0      128          0.0.0.0:8080      0.0.0.0:*
+          LISTEN 0      5          127.0.0.1:5432      0.0.0.0:*
+        level: intermediate
+      - title: "Match a port above a number"
+        code: ss -ltn sport gt :5000
+        volatile: "the kernel lists sockets in the order it walked its own tables, so the two rows may come back the other way round"
+        unordered: true
+        description: "`gt`, `lt`, `ge` and `le` compare ports numerically. Both services here are above 5000, so both come back."
+        output: |2
+          State  Recv-Q Send-Q Local Address:Port Peer Address:Port
+          LISTEN 0      128          0.0.0.0:8080      0.0.0.0:*
+          LISTEN 0      5          127.0.0.1:5432      0.0.0.0:*
+        level: intermediate
+      - title: "Match a range of ports"
+        code: "ss -ltn '( sport >= :5000 and sport <= :6000 )'"
+        description: "The symbols work as well as the words. This is how you check whether anything has appeared in the range you reserved for one application."
+        output: |2
+          State  Recv-Q Send-Q Local Address:Port Peer Address:Port
+          LISTEN 0      5          127.0.0.1:5432      0.0.0.0:*
+        level: intermediate
+      - title: "Find services bound to loopback only"
+        code: ss -ltn src 127.0.0.1
+        description: "`src` matches the local address, so this asks which services are reachable from this machine and nowhere else. The one on `0.0.0.0` does not match, because it is bound to every address rather than to this one."
+        output: |2
+          State  Recv-Q Send-Q Local Address:Port Peer Address:Port
+          LISTEN 0      5          127.0.0.1:5432      0.0.0.0:*
+        level: advanced
+      - title: "Select by state without naming a port"
+        code: ss -ltn state listening
+        volatile: "the kernel lists sockets in the order it walked its own tables, so the two rows may come back the other way round"
+        unordered: true
+        description: "`state listening` alongside `-l` is redundant, and it is worth seeing on its own because it removes the `State` column exactly as it did with a port filter."
+        output: |2
+          Recv-Q Send-Q Local Address:Port Peer Address:Port
+          0      128          0.0.0.0:8080      0.0.0.0:*
+          0      5          127.0.0.1:5432      0.0.0.0:*
+        level: intermediate
+      - title: "Ask about a port nothing is using"
+        code: ss -ltn sport = :9999
+        description: "A header and no rows. `ss` exits 0 either way, so a script has to look at whether anything was printed rather than at the exit status."
+        output: |2
+          State Recv-Q Send-Q Local Address:Port Peer Address:Port
+        level: intermediate
+      - title: "Get a clean empty answer"
+        code: ss -ltnH sport = :9999 | wc -l
+        description: "Zero rows, with `-H` keeping the header out of the count. Build a check on this form."
+        output: |2
+          0
+        level: intermediate
+      - title: "Exclude a port instead of selecting it"
+        code: ss -ltn not sport = :8080
+        description: "`not` negates the term after it. Handy for reviewing what is listening once you have accounted for the service you already know about."
+        output: |2
+          State  Recv-Q Send-Q Local Address:Port Peer Address:Port
+          LISTEN 0      5          127.0.0.1:5432      0.0.0.0:*
+        level: intermediate
+      - title: "Write the same exclusion with !="
+        code: "ss -ltn '( sport != :8080 )'"
+        description: "`!=` reads better inside a longer expression, where a leading `not` has to be tracked across several terms to see what it governs."
+        output: |2
+          State  Recv-Q Send-Q Local Address:Port Peer Address:Port
+          LISTEN 0      5          127.0.0.1:5432      0.0.0.0:*
+        level: intermediate
+      - title: "Watch the protocol flags narrow a filter"
+        code: "ss -tln '( sport = :8080 or sport = :5140 )'"
+        description: "The filter names both ports and only one row comes back, because `-t` had already excluded UDP before the filter was applied. A term that matches nothing is not an error, which makes this an easy half hour to lose."
+        output: |2
+          State  Recv-Q Send-Q Local Address:Port Peer Address:Port
+          LISTEN 0      128          0.0.0.0:8080      0.0.0.0:*
+        level: advanced
+      - title: "Filter UDP by port"
+        code: ss -uln sport = :5140
+        description: "The same filter syntax applies to UDP. `sport` is still the local port, even though nothing here is connected to anything."
+        output: |2
+          State  Recv-Q Send-Q Local Address:Port Peer Address:Port
+          UNCONN 0      0            0.0.0.0:5140      0.0.0.0:*
+        level: intermediate
+      - title: "Find the services bound to every interface"
+        code: ss -ltnH src 0.0.0.0
+        description: "The counterpart to filtering on `127.0.0.1`. These are the sockets exposed beyond the machine, and on a host you have just been given they are the list worth reading first."
+        output: |2
+          LISTEN 0      128    0.0.0.0:8080 0.0.0.0:*
+        level: advanced
+
+  - title: "Unix sockets and other families"
+    intro: "Most of what a Debian machine listens on has no port at all. Unix domain sockets are files, and services from the system logger to the package manager's own helpers use them in preference to a loopback port."
+    examples:
+      - title: "List listening Unix sockets"
+        code: ss -lx
+        volatile: "the number beside the path is the socket's inode, which is different on every machine"
+        compare: shape
+        description: "`-x` selects the Unix family. The path takes the place of an address, and the number beside it is the socket's inode rather than a port."
+        output: |2
+          Netid State  Recv-Q Send-Q        Local Address:Port     Peer Address:Port
+          u_str LISTEN 0      5      /run/tips-cache.sock 20858118            * 0
+        level: intermediate
+      - title: "Spell the family out"
+        code: ss -f unix -l
+        volatile: "the number beside the path is the socket's inode, which is different on every machine"
+        compare: shape
+        description: "`-f` takes a family name, so `-f unix` is `-x` written so a reader does not have to remember which letter that was. `inet`, `inet6` and `link` are the others worth knowing."
+        output: |2
+          Netid State  Recv-Q Send-Q        Local Address:Port     Peer Address:Port
+          u_str LISTEN 0      5      /run/tips-cache.sock 20858118            * 0
+        level: intermediate
+      - title: "Strip a Unix socket listing for a script"
+        code: ss -lxH
+        volatile: "the number beside the path is the socket's inode, which is different on every machine"
+        compare: shape
+        description: "Without the header the columns collapse to single spaces, so `awk '{print $5}'` gets the path. `u_str` is a stream socket, and `u_dgr` would be a datagram one."
+        output: |2
+          u_str LISTEN 0      5      /run/tips-cache.sock 20858118 * 0
+        level: advanced
+      - title: "Ask for connected Unix sockets rather than listening ones"
+        code: ss -x
+        description: "Without `-l` the Unix family behaves like any other: this asks for connections and nothing here has one. The listener from the previous examples is still there, and `-l` or `-a` is what includes it."
+        output: |2
+          Netid State Recv-Q Send-Q Local Address:Port Peer Address:Port
+        level: intermediate
+      - title: "Count every Unix socket at once"
+        code: ss -aH -f unix | wc -l
+        description: "`-a` covers listening and connected together. On a desktop this number runs into the hundreds, since the display server, the session bus and the audio daemon each hold several."
+        output: |2
+          1
+        level: intermediate
+      - title: "Look at raw sockets"
+        code: ss -w
+        description: "`-w` selects raw sockets, the ones a program opens to speak a protocol the kernel does not handle for it. `ping` holds one while it runs, and on most machines the list is empty."
+        output: |2
+          Recv-Q Send-Q Local Address:Port Peer Address:Port
+        level: advanced
+
+  - title: "In a script"
+    intro: "Two rules make `ss` safe to build on: `-n` so a name lookup cannot change the output, and `-H` so the header is not mistaken for data. The exit status is 0 whether or not anything matched, so test the output."
+    examples:
+      - title: "Test whether a port is taken"
+        code: ss -ltnH sport = :8080 | grep -q . && echo listening || echo free
+        description: "`grep -q .` succeeds when at least one line arrived. The pattern to use before starting a service on a fixed port, rather than starting it and reading the error."
+        output: |2
+          listening
+        level: advanced
+      - title: "See the same test come back clear"
+        code: ss -ltnH sport = :9999 | grep -q . && echo listening || echo free
+        description: "The other half of the previous example, on a port nothing has bound. Both branches are worth checking when you write this, since a test that can only say one thing is not a test."
+        output: |2
+          free
+        level: advanced
+      - title: "Print the state and the address"
+        code: ss -ltnH sport = :8080 | awk '{print $1, $4}'
+        description: "With `-H` the fields are stable: state, `Recv-Q`, `Send-Q`, local address, peer address. Adding `-p` appends a sixth, so a script that indexes fields should pick its flags once and keep them."
+        output: |2
+          LISTEN 0.0.0.0:8080
+        level: advanced
+      - title: "List every address being listened on"
+        code: ss -ltpnH | awk '{print $4}' | sort
+        description: "Sorted so the answer does not depend on the order the kernel walked its tables. Useful as a record to compare against after a change."
+        output: |2
+          0.0.0.0:8080
+          127.0.0.1:5432
+        level: advanced
+      - title: "Read one socket's accept backlog"
+        code: ss -ltnH '( sport = :5432 )' | awk '{print $3}'
+        description: "The third field of a listening row is the backlog the program asked for. Compare it against the connection rate a service is expected to take, and against `Recv-Q` when connections are being refused."
+        output: |2
+          5
+        level: advanced
+      - title: "Count connections to one port"
+        code: ss -tnH state established '( sport = :8080 )' | wc -l
+        description: "Narrowed by `sport`, so the count belongs to one service and not to everything the machine happens to be doing."
+        output: |2
+          1
+        level: advanced
+      - title: "Read the address a service is bound to"
+        code: "ss -ltnH sport = :5432 | awk '{print $4}' | cut -d: -f1"
+        description: "Splitting on the colon leaves the address without the port. Comparing it against `0.0.0.0` is how a check tells a service that is exposed from one that is not."
+        output: |2
+          127.0.0.1
+        level: advanced
+      - title: "Print both queue columns"
+        code: ss -ltnH | awk '{print $2, $3}'
+        volatile: "the kernel lists sockets in the order it walked its own tables, so the two rows may come back the other way round"
+        unordered: true
+        description: "For a listening socket these are the waiting connections and the backlog. A monitoring check that reports the first as a fraction of the second says more than either number alone."
+        output: |2
+          0 128
+          0 5
+        level: advanced

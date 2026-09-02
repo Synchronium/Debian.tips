@@ -166,6 +166,20 @@ export function normalise(text: string): string {
   return versions(rates(timestamps(stripArtifacts(text))));
 }
 
+/** Orders the lines of an already-compared output, for an example or fixture declared
+ *  `unordered:`, one whose command has no defined order for the lines it prints.
+ *
+ *  Applied *after* `normalise` or `shapeOf`, never instead of one. Both sides are sorted, so each
+ *  line still has to appear as many times as the page says, and a vanished line, a duplicate or a
+ *  changed one fails as it did before.
+ *
+ *  A header sorts in with the rows, so an output that grew a second header, or printed one in the
+ *  middle, still matches. Pinning the first line instead would be a guess about which outputs have
+ *  a header, and `ss -ltnH` is one that does not. */
+export function lineOrderIgnored(text: string): string {
+  return text.split("\n").sort().join("\n");
+}
+
 /** Reduces output to its structure, for an example declared `volatile:`, one whose output
  *  is real but contains a value from the clock, the machine or the network.
  *

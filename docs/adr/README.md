@@ -93,6 +93,7 @@ command shown. These records keep that claim honest.
 | [0023](0023-ci-records-the-replay-timings.md) | CI records the replay timings and commits them, from the run it already does |
 | [0024](0024-the-sandbox-image-is-published.md) | The sandbox image is published and identified by its contents, not rebuilt everywhere |
 | [0025](0025-the-sandbox-has-graded-privilege.md) | The sandbox has graded privilege, and a page asks for the weakest flavour it can |
+| [0026](0026-a-comparison-that-ignores-line-order.md) | An example may declare that the order of the lines it prints is not part of its claim |
 
 ## Adding one
 

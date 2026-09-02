@@ -225,4 +225,55 @@ describe("examplesFileSchema", () => {
     const result = examplesFileSchema.safeParse(withFixture({ name: "app.log", content: "" }));
     expect(result.success).toBe(false);
   });
+
+  it("rejects a fixture compared in any order with nothing telling the reader so", () => {
+    const result = examplesFileSchema.safeParse(
+      withFixture({ name: "sockets", content: "tcp LISTEN\n", from: "ss -ltun", unordered: true }),
+    );
+    expect(result.success).toBe(false);
+  });
+
+  /* Both relaxations are opt-in per example and both require `volatile:`, so a page cannot
+   * loosen how it is checked without saying so above the output. Nothing else enforces that, and
+   * the rule is easy to leave out when a third axis is added. */
+  const withExample = (example: Record<string, unknown>) => ({
+    command: "ss",
+    sections: [
+      {
+        title: "Basics",
+        examples: [
+          { title: "List", code: "ss -ltn", description: "Lists sockets.", level: "basic", ...example },
+        ],
+      },
+    ],
+  });
+
+  it("rejects `unordered` with no `volatile` saying what will differ", () => {
+    const result = examplesFileSchema.safeParse(withExample({ output: "LISTEN\n", unordered: true }));
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts `unordered` once the reader is told", () => {
+    const result = examplesFileSchema.safeParse(
+      withExample({ output: "LISTEN\n", unordered: true, volatile: "the kernel picks the order" }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts `unordered` alongside `compare: shape`, which is a separate axis", () => {
+    const result = examplesFileSchema.safeParse(
+      withExample({
+        output: "LISTEN\n",
+        unordered: true,
+        compare: "shape",
+        volatile: "the PID and the order both move",
+      }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects `compare: shape` with no `volatile` saying what will differ", () => {
+    const result = examplesFileSchema.safeParse(withExample({ output: "LISTEN\n", compare: "shape" }));
+    expect(result.success).toBe(false);
+  });
 });

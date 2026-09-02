@@ -54,6 +54,14 @@ export interface PageChecks {
    *  for it is anchored to the line that carries it, and an anchored mask is stricter. Counting
    *  `volatile` here would overstate how loosely the page is checked. */
   byShape: number;
+  /** Of `checked`, the ones whose every line is compared but whose order is not: `unordered:` on
+   *  an example, for a command that picks the order itself.
+   *
+   *  An output compared by shape *and* unordered is counted in `byShape`, so the three figures
+   *  partition `checked` and the sentence a page states about itself adds up. The overlap goes to
+   *  the looser of the two deliberately: rounding the other way would let a page claim a
+   *  strictness it is not held to. */
+  unordered: number;
   /** Documented outputs a batch run cannot reproduce. A command page names each in its `.skip`
    *  file; a prose page carries the reason inline, above the block.
    *
@@ -71,6 +79,8 @@ export function commandChecks(doc: ExamplesFile, slug: string, fixtureDir?: stri
   return {
     checked: checked.length,
     byShape: checked.filter((example) => example.compare === COMPARISON.shape).length,
+    unordered: checked.filter((example) => example.unordered === true && example.compare !== COMPARISON.shape)
+      .length,
     exempt: exempt.length,
     fixtures: doc.fixtures?.length ?? 0,
   };
@@ -82,6 +92,9 @@ export function proseChecks(source: string): PageChecks {
   return {
     checked: checked.length,
     byShape: checked.filter((pair) => pair.comparison === COMPARISON.shape).length,
+    // Always zero: a prose page has no way to spell `unordered:`, because no prose page has
+    // needed one. ADR-0026 says what adding it would take.
+    unordered: 0,
     exempt: pairs.filter((pair) => pair.comparison === COMPARISON.skip).length + unpaired.length,
     fixtures: 0,
   };

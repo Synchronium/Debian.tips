@@ -19,12 +19,38 @@
 //
 // Exit status: 0 when everything reproduces, 1 on any mismatch, 2 on a usage or setup error.
 import { partitionExamples } from "../src/content/pageChecks.js";
-import { COMPARISON } from "../src/content/schema.js";
+import { COMPARISON, type Comparison } from "../src/content/schema.js";
 import { readExamplesFile } from "./lib/examplesFile.js";
-import { MASK_TOKENS, normalise, shapeOf } from "./lib/normalise.js";
+import { MASK_TOKENS, lineOrderIgnored, normalise, shapeOf } from "./lib/normalise.js";
 import { ReplayError, loadSkipTitles, readSetupDirectives } from "./lib/replayMetadata.js";
 import { firstDifference, scoreLine } from "./lib/replayReport.js";
 import { SANDBOX_TOOL, captureAll, openSandbox, shellQuote } from "./lib/sandbox.js";
+
+/** How one example or fixture block is reduced before its two sides are compared, and what to
+ *  call that in a mismatch report.
+ *
+ *  `compare:` decides how a line is read and `unordered:` whether the sequence of those lines
+ *  counts, so the reduction runs per line and then over the order.
+ *
+ *  A mismatch has to name whichever was applied. What gets printed after either is not quite what
+ *  ran: a masked side shows `0` where a number was, and a sorted one shows the lines in an order
+ *  the command never printed. Without the label, someone reading the diff goes looking for a
+ *  defect in the ordering.
+ *
+ *  A fixture block has no `compare:` of its own, so it takes the default and only `unordered:`
+ *  reaches this. Typed structurally rather than as `Example | Fixture` for that reason. */
+function comparerFor(block: { compare?: Comparison | undefined; unordered?: boolean | undefined }): {
+  reduce: (text: string) => string;
+  relaxation: string;
+} {
+  const perLine = block.compare === COMPARISON.shape ? shapeOf : normalise;
+  const reduce = block.unordered ? (text: string) => lineOrderIgnored(perLine(text)) : perLine;
+  const named = [
+    block.compare === COMPARISON.shape ? "by shape" : "",
+    block.unordered ? "in any line order" : "",
+  ].filter((name) => name !== "");
+  return { reduce, relaxation: named.length === 0 ? "" : ` (compared ${named.join(", ")})` };
+}
 
 export interface ReplayOptions {
   /** Container name from `scripts/sandbox.sh start`. */
@@ -111,23 +137,26 @@ export function replayCommandPage(options: ReplayOptions): ReplayResult {
   const fixtureCommands = fixtures.map((fixture) => fixture.from ?? `cat ${shellQuote(fixture.name)}`);
   const captured = captureAll(sandbox, [...checked.map((example) => example.code), ...fixtureCommands]);
 
-  // `compare: shape` relaxes the comparison for output carrying values no anchored mask
-  // covers. Everything else, including most output declared `volatile:`, is compared
-  // exactly, after the anchored masks in normalise.
+  // `compare: shape` relaxes the comparison for output carrying values no anchored mask covers,
+  // and `unordered:` for output whose line order the command does not fix. Everything else,
+  // including most output declared `volatile:`, is compared exactly after the anchored masks in
+  // normalise.
   const mismatches: Mismatch[] = [];
   let exampleMatches = 0;
   let shapeMatches = 0;
+  let unorderedMatches = 0;
   checked.forEach((example, index) => {
-    const compare = example.compare === COMPARISON.shape ? shapeOf : normalise;
-    const want = compare(example.output ?? "");
-    const got = compare(captured.get(index) ?? "");
+    const { reduce, relaxation } = comparerFor(example);
+    const want = reduce(example.output ?? "");
+    const got = reduce(captured.get(index) ?? "");
     if (want === got) {
       exampleMatches++;
       if (example.compare === COMPARISON.shape) shapeMatches++;
+      else if (example.unordered === true) unorderedMatches++;
     } else {
       mismatches.push({
         index,
-        title: example.compare === COMPARISON.shape ? `${example.title} (compared by shape)` : example.title,
+        title: `${example.title}${relaxation}`,
         command: example.code.split("\n")[0] ?? "",
         want,
         got,
@@ -139,13 +168,14 @@ export function replayCommandPage(options: ReplayOptions): ReplayResult {
   let fixtureMatches = 0;
   fixtures.forEach((fixture, n) => {
     const index = checked.length + n;
-    const want = normalise(fixture.content);
-    const got = normalise(captured.get(index) ?? "");
+    const { reduce, relaxation } = comparerFor(fixture);
+    const want = reduce(fixture.content);
+    const got = reduce(captured.get(index) ?? "");
     if (want === got) fixtureMatches++;
     else {
       fixtureMismatches.push({
         index,
-        title: `fixture "${fixture.name}" does not match what the setup script creates`,
+        title: `fixture "${fixture.name}" does not match what the setup script creates${relaxation}`,
         command: fixtureCommands[n] ?? "",
         want,
         got,
@@ -160,6 +190,7 @@ export function replayCommandPage(options: ReplayOptions): ReplayResult {
       matched: exampleMatches,
       total: checked.length,
       shapeMatches,
+      unorderedMatches,
       notes: [
         fixtures.length ? `, ${fixtureMatches}/${fixtures.length} fixtures` : "",
         exempt.length ? ` (${exempt.length} not replayable in batch, see .skip file)` : "",

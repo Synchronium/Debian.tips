@@ -32,6 +32,9 @@ export interface Score {
   total: number;
   /** How many of the matches were compared by shape rather than exactly. */
   shapeMatches: number;
+  /** How many were held to their lines but not to the order of them, and were not also compared
+   *  by shape. Counted apart from `shapeMatches` so the clauses sum to `matched`. */
+  unorderedMatches: number;
   /** Trailing clauses particular to one kind of page: fixture blocks, skipped examples. */
   notes: string[];
 }
@@ -40,11 +43,18 @@ export interface Score {
  *
  *  The mode is part of the result: the same page scores 42/42 as `user` and 9/42 as root, so a
  *  score quoted without it means nothing. "Reproduces exactly" is a stronger claim than "has the
- *  same shape", so the two are counted in one total but never described as the same thing. */
+ *  same shape" or "has the same lines", so they are counted in one total and never described as
+ *  the same thing. Leaving either relaxation out of this line would report a page as stricter
+ *  than it is, to the reader most likely to quote the number. */
 export function scoreLine(score: Score): string {
-  const how = score.shapeMatches
-    ? ` (${score.matched - score.shapeMatches} exactly, ${score.shapeMatches} by shape)`
-    : " exactly";
+  const relaxed = [
+    score.shapeMatches ? `${score.shapeMatches} by shape` : "",
+    score.unorderedMatches ? `${score.unorderedMatches} in any order` : "",
+  ].filter((clause) => clause !== "");
+  const how =
+    relaxed.length === 0
+      ? " exactly"
+      : ` (${[`${score.matched - score.shapeMatches - score.unorderedMatches} exactly`, ...relaxed].join(", ")})`;
   const notes = score.notes.filter((note) => note !== "").join("");
   return `\n${score.page} (as ${score.asUser ? "user" : "root"}): ${score.matched}/${score.total} documented outputs reproduce${how}${notes}\n`;
 }

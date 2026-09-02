@@ -53,11 +53,15 @@ export type Tier = (typeof TIERS)[number];
 export const LEVELS = ["basic", "intermediate", "advanced"] as const;
 export type Level = (typeof LEVELS)[number];
 
-/** How the replay compares one documented output against a fresh run.
+/** How the replay compares one *line* of a documented output against a fresh run.
  *
  *  Here rather than beside either parser because both spellings are *authored*: a prose page
  *  writes `<!-- verify: shape … -->` above a block, a command page writes `compare: shape` on an
- *  example. Two field names, one vocabulary. */
+ *  example. Two field names, one vocabulary.
+ *
+ *  Whether the *order* of those lines is part of the claim is a separate axis, `unordered:` on an
+ *  example. It is not a fourth mode here because the two compose, and a mode cannot be two things
+ *  at once. ADR-0026. */
 export const COMPARISON = {
   /** Byte for byte, after the anchored masks in `scripts/lib/normalise.ts`. The default. */
   exact: "exact",
@@ -181,11 +185,33 @@ export const exampleSchema = z.object({
    * than implied by `volatile`, and it requires `volatile` to be set: a reader looking at
    * output nobody promises to reproduce should be told. */
   compare: z.literal(COMPARISON.shape).optional(),
+  /** Set when the command has no defined order for the lines it prints, so the page shows one
+   *  order and the reader sees another. Each line must still appear as many times as the page
+   *  shows it, and a vanished line, an extra one or a changed one still fails.
+   *
+   *  A separate axis from `compare` rather than a fourth mode of it, because the two compose:
+   *  `ss -ltnp` prints a PID no mask covers, and prints its rows in an order settled per network
+   *  namespace, so it needs both. Lines are compared first, then their order is discarded.
+   *
+   *  Only for an order outside the command's control. Where a `sort` would do, write the `sort`:
+   *  it holds the page to more, and on a page about `find` or `grep -r` the reader wants it
+   *  anyway. `ss` has no flag that sorts, and a listing of two sockets is most of what its page
+   *  has to show.
+   *
+   *  Requires `volatile:` for the reason `compare: shape` does: the reader is looking at an order
+   *  nobody promises to reproduce, and should be told rather than left to trust it. */
+  unordered: z.boolean().optional(),
 }).superRefine((example, ctx) => {
   if (example.compare === COMPARISON.shape && !example.volatile) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: `compare: "${COMPARISON.shape}" needs \`volatile:\` too: say what will differ for the reader`,
+    });
+  }
+  if (example.unordered && !example.volatile) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "`unordered: true` needs `volatile:` too: say what will differ for the reader",
     });
   }
 });
@@ -216,6 +242,17 @@ export const fixtureSchema = z.object({
    * its setup script fails the replay instead of quietly misleading a reader. Never
    * rendered: it exists only to keep the rendered block honest. */
   from: z.string().optional(),
+  /** As `unordered` on an example: the `from:` command has no defined order for the lines it
+   *  prints, so the block is compared as a multiset of lines. Requires `note:`, which is where a
+   *  fixture tells the reader what they are looking at, since a block carries no `volatile:`. */
+  unordered: z.boolean().optional(),
+}).superRefine((fixture, ctx) => {
+  if (fixture.unordered && !fixture.note) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "`unordered: true` on a fixture needs `note:` too: say what will differ for the reader",
+    });
+  }
 });
 export type Fixture = z.infer<typeof fixtureSchema>;
 

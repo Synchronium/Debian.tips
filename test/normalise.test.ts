@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { MASK_TOKENS, normalise, shapeOf, stripArtifacts } from "../scripts/lib/normalise.js";
+import {
+  MASK_TOKENS,
+  lineOrderIgnored,
+  normalise,
+  shapeOf,
+  stripArtifacts,
+} from "../scripts/lib/normalise.js";
 
 /* This module decides what every command page is allowed to claim a command printed:
  * `scripts/adopt-real-output.ts` writes `stripArtifacts` output straight onto a page, and
@@ -311,5 +317,35 @@ describe("shapeOf", () => {
 
   it("does not collapse a difference in words", () => {
     expect(shapeOf("Loaded: loaded (enabled)")).not.toBe(shapeOf("Loaded: loaded (disabled)"));
+  });
+});
+
+describe("lineOrderIgnored", () => {
+  it("makes two orderings of the same lines equal", () => {
+    // The case it exists for: ss walks the kernel's own tables, and which of two listening
+    // sockets comes first is settled per network namespace.
+    const api = "LISTEN 0 128 0.0.0.0:8080 0.0.0.0:*";
+    const db = "LISTEN 0 5 127.0.0.1:5432 0.0.0.0:*";
+    expect(lineOrderIgnored(`${api}\n${db}`)).toBe(lineOrderIgnored(`${db}\n${api}`));
+  });
+
+  it("still fails a line that changed", () => {
+    expect(lineOrderIgnored("a\nb")).not.toBe(lineOrderIgnored("a\nB"));
+  });
+
+  it("still fails a line that vanished", () => {
+    expect(lineOrderIgnored("a\nb\nc")).not.toBe(lineOrderIgnored("a\nc"));
+  });
+
+  it("counts a repeated line, so a duplicate cannot pass as one", () => {
+    // A multiset rather than a set. Two sockets in the same state print identical rows, and a
+    // comparison that deduplicated would stop noticing one of them going away.
+    expect(lineOrderIgnored("a\na\nb")).not.toBe(lineOrderIgnored("a\nb"));
+  });
+
+  it("sorts a header in with the rows rather than pinning it", () => {
+    // Nothing guesses which line is a header, because `ss -ltnH` prints none at all. The cost is
+    // that a header printed in the middle of the rows would still match.
+    expect(lineOrderIgnored("State Recv-Q\nLISTEN 0")).toBe(lineOrderIgnored("LISTEN 0\nState Recv-Q"));
   });
 });

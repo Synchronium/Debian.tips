@@ -137,6 +137,8 @@ export function replayProsePage(options: ProseReplayOptions): ReplayResult {
       matched: matches,
       total: runnable.length,
       shapeMatches,
+      // A prose page has no way to spell `unordered:`; ADR-0026 says what adding one would take.
+      unorderedMatches: 0,
       notes: [
         // Kept apart in the tool's own output, though the page states them as one figure. They
         // are the same claim to a reader and different work to an author: a skipped pair has a

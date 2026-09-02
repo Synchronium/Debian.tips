@@ -178,12 +178,12 @@ sections:
               752 tips-backup
         level: basic
       - title: "Select several command names at once"
-        code: ps -o comm= -C tips-backup,tips-supervisor | sort
-        description: "`-C` takes a comma-separated list. `sort` makes the order predictable, since `ps` returns them in PID order."
+        code: ps -o comm= -C tips-backup,tips-supervisor
+        description: "`-C` takes a comma-separated list. The rows arrive in PID order rather than in the order you named them, so the supervisor leads here because it started first."
         output: |
-          tips-backup
-          tips-backup
           tips-supervisor
+          tips-backup
+          tips-backup
         level: intermediate
       - title: "Select several PIDs at once"
         code: ps -o comm= -p 1,$(pgrep -x tips-supervisor)
@@ -389,14 +389,14 @@ sections:
           exit 1
         level: intermediate
       - title: "Select a user's processes by name"
-        code: pgrep -u user -l . | sort -k2
-        description: "`-u` narrows the search to one user and `.` is a pattern matching any name. `sort -k2` orders by the second column, which is the process name."
+        code: pgrep -u user -l .
+        description: "`-u` narrows the search to one user and `.` is a pattern matching any name. `-l` adds the name beside each PID, and the list arrives oldest first, since `pgrep` walks `/proc` in PID order."
         volatile: "the PIDs are specific to your machine"
         compare: shape
         output: |
+          747 tips-supervisor
           751 tips-backup
           752 tips-backup
-          747 tips-supervisor
         level: intermediate
       - title: "Produce PIDs on one line for another command"
         code: pgrep -x -d, tips-backup

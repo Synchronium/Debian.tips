@@ -75,6 +75,18 @@ differ"**, naming which parts are specific to the machine that produced it. Ther
 {{volatile}} of them. They are still checked on every run: the numbers are allowed to
 move, but a renamed field, a missing line or a changed status still fails the build.
 
+## Output with no fixed order
+
+`ss` lists the sockets a machine is listening on in the order the kernel walked its own tables.
+That order holds inside one container and differs between containers, so two runs against the same
+services put the rows the other way round about half the time, and `ss` has no flag that sorts.
+
+A script that depends on the order should pipe through `sort`, and the pages here that do are
+checked in the sorted order like anything else. The `ss` page has no such option, since showing
+the plain listing is most of its job. Its listings are marked instead, and the comparison ignores
+the sequence: a vanished socket, an extra one, a changed address or a renamed column all still
+fail.
+
 ## Why the sample files are checked too
 
 An output is only evidence if you can see what produced it. `wc -l report.txt` printing

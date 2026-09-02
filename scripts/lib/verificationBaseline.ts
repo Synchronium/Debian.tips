@@ -58,9 +58,10 @@ export const pageKey = (page: Page): string => `${page.category}/${page.slug}`;
 export const DIRECTION = { mustNotFall: "mustNotFall", mustNotRise: "mustNotRise" } as const;
 export type Direction = (typeof DIRECTION)[keyof typeof DIRECTION];
 
-/** What the comparison asserts about. `byShape` is deliberately not one of them: it is a subset
- *  of `checked`, so a page adding two shape-compared examples raises both while weakening
- *  nothing. What must not fall is the number compared *exactly*, which `exact` derives. */
+/** What the comparison asserts about. `byShape` and `unordered` are deliberately not among them:
+ *  each is a subset of `checked`, so a page adding two relaxed examples raises both while
+ *  weakening nothing. What must not fall is the number compared *exactly*, which `exact` derives
+ *  by subtracting both. */
 export const FIGURE = {
   checked: "checked",
   exact: "exact",
@@ -91,9 +92,15 @@ export const FIGURES: Record<FigureName, Figure> = {
   },
 };
 
-/** Outputs compared byte for byte rather than by shape. Derived, so the committed file records
- *  only the figures a page states about itself plus the unpaired count. */
-export const exactComparisons = (figures: PageVerification): number => figures.checked - figures.byShape;
+/** Outputs held to every byte in every line, in the order the page prints them: neither relaxation
+ *  applied. Derived, so the committed file records only the figures a page states about itself
+ *  plus the unpaired count.
+ *
+ *  `unordered` is subtracted for the same reason `byShape` is: it is the looser claim, so moving
+ *  an example from exact to unordered weakens the page, and counting it here would let that
+ *  weakening register as no change at all. */
+export const exactComparisons = (figures: PageVerification): number =>
+  figures.checked - figures.byShape - figures.unordered;
 
 export function figureValue(figures: PageVerification, name: FigureName): number {
   switch (name) {

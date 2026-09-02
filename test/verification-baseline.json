@@ -2,6 +2,7 @@
   "commands/apt": {
     "checked": 18,
     "byShape": 5,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -9,6 +10,7 @@
   "commands/apt-cache": {
     "checked": 51,
     "byShape": 5,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 2,
     "unpaired": 0
@@ -16,6 +18,7 @@
   "commands/apt-file": {
     "checked": 25,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 1,
     "unpaired": 0
@@ -23,6 +26,7 @@
   "commands/awk": {
     "checked": 79,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 6,
     "unpaired": 0
@@ -30,6 +34,7 @@
   "commands/cat": {
     "checked": 38,
     "byShape": 1,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 4,
     "unpaired": 0
@@ -37,6 +42,7 @@
   "commands/chmod": {
     "checked": 43,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 2,
     "unpaired": 0
@@ -44,6 +50,7 @@
   "commands/chown": {
     "checked": 22,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 3,
     "unpaired": 0
@@ -51,6 +58,7 @@
   "commands/cowsay": {
     "checked": 51,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 4,
     "unpaired": 0
@@ -58,6 +66,7 @@
   "commands/cp": {
     "checked": 26,
     "byShape": 1,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 2,
     "unpaired": 0
@@ -65,6 +74,7 @@
   "commands/crontab": {
     "checked": 9,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 4,
     "fixtures": 2,
     "unpaired": 0
@@ -72,6 +82,7 @@
   "commands/curl": {
     "checked": 28,
     "byShape": 1,
+    "unordered": 0,
     "exempt": 1,
     "fixtures": 1,
     "unpaired": 0
@@ -79,6 +90,7 @@
   "commands/cut": {
     "checked": 20,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 3,
     "unpaired": 0
@@ -86,6 +98,7 @@
   "commands/df": {
     "checked": 24,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 1,
     "unpaired": 0
@@ -93,6 +106,7 @@
   "commands/diff": {
     "checked": 17,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 8,
     "unpaired": 0
@@ -100,6 +114,7 @@
   "commands/dpkg": {
     "checked": 17,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -107,6 +122,7 @@
   "commands/du": {
     "checked": 54,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 3,
     "unpaired": 0
@@ -114,6 +130,7 @@
   "commands/find": {
     "checked": 27,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 1,
     "unpaired": 0
@@ -121,6 +138,7 @@
   "commands/grep": {
     "checked": 48,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 6,
     "unpaired": 0
@@ -128,6 +146,7 @@
   "commands/head": {
     "checked": 31,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 4,
     "unpaired": 0
@@ -135,6 +154,7 @@
   "commands/job-control": {
     "checked": 36,
     "byShape": 3,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -142,6 +162,7 @@
   "commands/journalctl": {
     "checked": 30,
     "byShape": 5,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 1,
     "unpaired": 0
@@ -149,6 +170,7 @@
   "commands/jq": {
     "checked": 60,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 5,
     "unpaired": 0
@@ -156,6 +178,7 @@
   "commands/kill": {
     "checked": 53,
     "byShape": 8,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 1,
     "unpaired": 0
@@ -163,6 +186,7 @@
   "commands/less": {
     "checked": 15,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 2,
     "unpaired": 0
@@ -170,6 +194,7 @@
   "commands/ls": {
     "checked": 52,
     "byShape": 1,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 2,
     "unpaired": 0
@@ -177,6 +202,7 @@
   "commands/man": {
     "checked": 50,
     "byShape": 4,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -184,6 +210,7 @@
   "commands/mv": {
     "checked": 25,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 2,
     "unpaired": 0
@@ -191,6 +218,7 @@
   "commands/ps": {
     "checked": 53,
     "byShape": 25,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 1,
     "unpaired": 0
@@ -198,6 +226,7 @@
   "commands/rm": {
     "checked": 23,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 2,
     "unpaired": 0
@@ -205,6 +234,7 @@
   "commands/sed": {
     "checked": 26,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 3,
     "unpaired": 0
@@ -212,13 +242,23 @@
   "commands/sort": {
     "checked": 41,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 9,
+    "unpaired": 0
+  },
+  "commands/ss": {
+    "checked": 53,
+    "byShape": 16,
+    "unordered": 10,
+    "exempt": 0,
+    "fixtures": 1,
     "unpaired": 0
   },
   "commands/ssh": {
     "checked": 11,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 8,
     "fixtures": 2,
     "unpaired": 0
@@ -226,6 +266,7 @@
   "commands/sudo": {
     "checked": 31,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 1,
     "unpaired": 0
@@ -233,6 +274,7 @@
   "commands/systemctl": {
     "checked": 53,
     "byShape": 1,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 2,
     "unpaired": 0
@@ -240,6 +282,7 @@
   "commands/tail": {
     "checked": 46,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 4,
     "fixtures": 5,
     "unpaired": 0
@@ -247,6 +290,7 @@
   "commands/tar": {
     "checked": 42,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 2,
     "unpaired": 0
@@ -254,6 +298,7 @@
   "commands/tee": {
     "checked": 26,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 2,
     "unpaired": 0
@@ -261,6 +306,7 @@
   "commands/tr": {
     "checked": 33,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 2,
     "unpaired": 0
@@ -268,6 +314,7 @@
   "commands/uniq": {
     "checked": 23,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 4,
     "unpaired": 0
@@ -275,6 +322,7 @@
   "commands/wc": {
     "checked": 25,
     "byShape": 1,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 6,
     "unpaired": 0
@@ -282,6 +330,7 @@
   "commands/wget": {
     "checked": 50,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 3,
     "unpaired": 0
@@ -289,6 +338,7 @@
   "commands/xargs": {
     "checked": 62,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 9,
     "unpaired": 0
@@ -296,6 +346,7 @@
   "compare/apt-vs-apt-get": {
     "checked": 4,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -303,6 +354,7 @@
   "compare/cron-vs-systemd-timers": {
     "checked": 5,
     "byShape": 2,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -310,6 +362,7 @@
   "compare/remove-vs-purge-vs-autoremove": {
     "checked": 9,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -317,6 +370,7 @@
   "compare/sh-vs-bash-vs-dash": {
     "checked": 7,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -324,6 +378,7 @@
   "concepts/environment-variables-and-path": {
     "checked": 13,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -331,6 +386,7 @@
   "concepts/exit-codes-and-error-handling": {
     "checked": 7,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 2,
     "fixtures": 0,
     "unpaired": 0
@@ -338,6 +394,7 @@
   "concepts/file-permissions-explained": {
     "checked": 3,
     "byShape": 1,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -345,6 +402,7 @@
   "concepts/pipes-and-redirection": {
     "checked": 4,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -352,6 +410,7 @@
   "concepts/processes-and-signals": {
     "checked": 10,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -359,6 +418,7 @@
   "concepts/terminal-shell-and-tty": {
     "checked": 9,
     "byShape": 1,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -366,6 +426,7 @@
   "debian/apt-essentials": {
     "checked": 4,
     "byShape": 2,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -373,6 +434,7 @@
   "debian/install-a-deb-file": {
     "checked": 11,
     "byShape": 4,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -380,6 +442,7 @@
   "debian/list-installed-packages": {
     "checked": 12,
     "byShape": 5,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -387,6 +450,7 @@
   "debian/release-channels": {
     "checked": 4,
     "byShape": 2,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -394,6 +458,7 @@
   "debian/systemd-services": {
     "checked": 5,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 1,
     "fixtures": 0,
     "unpaired": 0
@@ -401,6 +466,7 @@
   "debian/third-party-repositories": {
     "checked": 4,
     "byShape": 1,
+    "unordered": 0,
     "exempt": 2,
     "fixtures": 0,
     "unpaired": 0
@@ -408,6 +474,7 @@
   "debian/which-package-provides-a-file": {
     "checked": 12,
     "byShape": 1,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -415,6 +482,7 @@
   "recipes/add-a-directory-to-path": {
     "checked": 5,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -422,6 +490,7 @@
   "recipes/bulk-rename-files": {
     "checked": 1,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -429,6 +498,7 @@
   "recipes/copy-files-between-machines": {
     "checked": 2,
     "byShape": 1,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -436,6 +506,7 @@
   "recipes/find-and-replace-across-files": {
     "checked": 5,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -443,6 +514,7 @@
   "recipes/find-permission-denied": {
     "checked": 4,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -450,6 +522,7 @@
   "recipes/find-the-largest-files": {
     "checked": 1,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -457,6 +530,7 @@
   "recipes/keep-a-program-running-after-logout": {
     "checked": 2,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -464,6 +538,7 @@
   "recipes/kill-whatever-is-using-a-port": {
     "checked": 2,
     "byShape": 2,
+    "unordered": 0,
     "exempt": 1,
     "fixtures": 0,
     "unpaired": 0
@@ -471,6 +546,7 @@
   "recipes/monitor-a-log-in-real-time": {
     "checked": 0,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 2,
     "fixtures": 0,
     "unpaired": 0
@@ -478,6 +554,7 @@
   "scripting/a-real-script": {
     "checked": 4,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 1,
     "fixtures": 0,
     "unpaired": 1
@@ -485,6 +562,7 @@
   "scripting/arithmetic": {
     "checked": 8,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -492,6 +570,7 @@
   "scripting/arrays": {
     "checked": 14,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -499,6 +578,7 @@
   "scripting/conditionals-and-test": {
     "checked": 6,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -506,6 +586,7 @@
   "scripting/debugging-and-robustness": {
     "checked": 6,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -513,6 +594,7 @@
   "scripting/functions": {
     "checked": 6,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -520,6 +602,7 @@
   "scripting/here-docs": {
     "checked": 6,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -527,6 +610,7 @@
   "scripting/loops": {
     "checked": 8,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -534,6 +618,7 @@
   "scripting/parameter-expansion": {
     "checked": 11,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -541,6 +626,7 @@
   "scripting/script-arguments": {
     "checked": 6,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -548,6 +634,7 @@
   "scripting/traps-and-cleanup": {
     "checked": 5,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -555,6 +642,7 @@
   "scripting/variables-and-quoting": {
     "checked": 4,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -562,6 +650,7 @@
   "scripting/where-a-script-lives": {
     "checked": 7,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -569,6 +658,7 @@
   "scripting/your-first-script": {
     "checked": 4,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
@@ -576,6 +666,7 @@
   "troubleshooting/could-not-get-lock-dpkg-frontend": {
     "checked": 2,
     "byShape": 1,
+    "unordered": 0,
     "exempt": 1,
     "fixtures": 0,
     "unpaired": 1
@@ -583,6 +674,7 @@
   "troubleshooting/packages-kept-back": {
     "checked": 5,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 1,
     "fixtures": 0,
     "unpaired": 1
@@ -590,6 +682,7 @@
   "troubleshooting/repository-is-not-signed": {
     "checked": 4,
     "byShape": 2,
+    "unordered": 0,
     "exempt": 3,
     "fixtures": 0,
     "unpaired": 3
@@ -597,6 +690,7 @@
   "troubleshooting/sudo-command-not-found": {
     "checked": 8,
     "byShape": 0,
+    "unordered": 0,
     "exempt": 2,
     "fixtures": 0,
     "unpaired": 2

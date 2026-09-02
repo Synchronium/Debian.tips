@@ -156,3 +156,43 @@ describe("where the block says an exemption is explained", () => {
     }
   });
 });
+
+/* The sentence a page states about how strictly it is checked. The three figures partition the
+ * checked total, so a reader adding up "25 exactly" and what follows it must arrive at the total
+ * beside them. Rendered rather than called directly, since `checksSentence` is not exported and
+ * the punctuation between the clauses is part of what is asserted. */
+describe("what the block says is compared how", () => {
+  const say = (checks: Partial<Parameters<typeof sourceLinks>[2]>) =>
+    sourceLinks("grep", pageSources("commands", "grep", FIXTURE_DIR), {
+      checked: 0,
+      byShape: 0,
+      unordered: 0,
+      exempt: 0,
+      fixtures: 0,
+      ...checks,
+    });
+
+  it("says so plainly when nothing is relaxed", () => {
+    expect(say({ checked: 12 })).toContain("Checks 12 outputs, all compared exactly.");
+  });
+
+  it("splits off the shape-compared ones", () => {
+    expect(say({ checked: 12, byShape: 4 })).toContain("Checks 12 outputs: 8 exactly and 4");
+  });
+
+  it("splits off the ones whose order is not a claim", () => {
+    expect(say({ checked: 12, unordered: 3 })).toContain("Checks 12 outputs: 9 exactly and 3");
+  });
+
+  it("lists all three with a comma and one and", () => {
+    const html = say({ checked: 12, byShape: 4, unordered: 3 });
+    expect(html).toContain("Checks 12 outputs: 5 exactly, 4");
+    expect(html).toContain("by shape</a> and 3");
+  });
+
+  it("links each relaxation to the part of /about/ that explains it", () => {
+    const html = say({ checked: 12, byShape: 4, unordered: 3 });
+    expect(html).toContain("/about/#output-that-cannot-be-identical");
+    expect(html).toContain("/about/#output-with-no-fixed-order");
+  });
+});

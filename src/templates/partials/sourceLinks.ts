@@ -61,11 +61,24 @@ command reports exactly that.
 </p>`;
   }
 
-  const split =
+  // The three figures partition `checked`, so the clauses read as one sentence that adds up.
+  // Either relaxation can be absent, and on most pages both are.
+  const clauses = [
+    html`${checks.checked - checks.byShape - checks.unordered} exactly`,
     checks.byShape === 0
+      ? ""
+      : html`${checks.byShape} <a href="/about/#output-that-cannot-be-identical">by shape</a>`,
+    checks.unordered === 0
+      ? ""
+      : html`${checks.unordered} <a href="/about/#output-with-no-fixed-order">in any order</a>`,
+  ].filter((clause) => clause !== "");
+
+  // "a exactly, b by shape and c in any order": commas between all but the last pair, which
+  // takes the "and". With one relaxation that is just "a exactly and b by shape".
+  const split =
+    clauses.length === 1
       ? html`, all compared exactly`
-      : html`: ${checks.checked - checks.byShape} exactly and ${checks.byShape}
-<a href="/about/#output-that-cannot-be-identical">by shape</a>`;
+      : `: ${clauses.slice(0, -1).join(", ")} and ${clauses[clauses.length - 1]}`;
 
   return html`<p class="page-checks">
 Checks ${checks.checked} ${checks.checked === 1 ? "output" : "outputs"}${raw(split)}.${raw(exemptClause)}
