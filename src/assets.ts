@@ -7,8 +7,8 @@ import { CLIENT_DIR, FONT_FILE, FONT_SOURCE, PUBLIC_DIR, STYLES_DIR } from "./pa
 /** Minified with a source map alongside, for both the stylesheet and the static scripts.
  *
  *  Most of the saving is comments: this project's CSS explains its own cascade at
- *  length, which belongs in `styles/site.css` and not on the wire. 27.4K to 16.5K raw, 6.5K to
- *  3.6K gzipped, on every first visit.
+ *  length, which belongs in `styles/site.css` and not on the wire. It is roughly a third off the
+ *  raw bytes and a little less off the gzipped ones, on every first visit.
  *
  *  The map is a separate file, so it costs a visitor nothing: a browser fetches it only when
  *  devtools are open. It keeps the served file debuggable in the browser despite being

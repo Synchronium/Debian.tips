@@ -35,22 +35,23 @@ the sandbox and diffs the real result against what the page claims:
 
 ```sh
 npm run replay              # every page, each in a sandbox of its own (ADR-0020)
-npm run replay -- --shard=2/7        # one part of a seven-way split; CI runs a shard per runner
+npm run replay -- --shard=2/4        # the second of four parts; the split CI runs is in ci.yml
 npm run replay -- --record-timings   # full run, and rewrite what balances those shards by hand
 npm run replay -- wget curl # just these
 
 # or drive one page directly, which is what the above does per page:
 name=$(scripts/sandbox.sh start)
-npx tsx scripts/replay-command-page.ts "$name" wc scripts/fixtures/wc.sh   # -> "wc (as root): 25/25 ..."
+npx tsx scripts/replay-command-page.ts "$name" wc scripts/fixtures/wc.sh   # -> "wc (as root): ..."
 ```
 
 `npm run replay` runs in CI separately from the `check` job (`.github/workflows/ci.yml`), as
 sharded jobs in parallel with it, because "the generator is broken" and "a page is lying" want
 different people looking at them. It stays out of `npm run check` so that command needs nothing but
 Node: the replay needs Docker, and a check you can't run without a daemon isn't one to fold into
-the everyday gate. Serially the whole site replays in roughly four and a half minutes, and the
-slowest CI shard in about a minute; a run with no image yet adds fetching one, which the workflow
-does as its own step so the log says which half any slowness is in.
+the everyday gate. It takes minutes serially and is what a shard exists to divide; `npm run shards`
+prints what the recorded times say a serial run and each split costs, which is the only place those
+figures are current. A run with no image yet adds fetching one, which the workflow does as its own
+step so the log says which half any slowness is in.
 
 That step is usually a pull. `.github/workflows/publish-sandbox.yml` publishes the image whenever
 anything under `scripts/sandbox/` changes, tagged with a hash of that directory's contents, and
@@ -111,9 +112,10 @@ starts only the flavours the selected pages ask for, and `openSandbox` refuses t
 in a sandbox weaker than it asked for rather than producing a page of identical errors: a
 `--systemd` page is checked against PID 1, a `--privileged` one against CAP_SYS_ADMIN in
 `/proc/self/status`. The two were one flag until 2026-08-31, and splitting them stopped `df`
-having to boot an init system to answer a question about free space. Replayed as root, `chmod` scores 9/42 and `tar` 32/42 on pages that
-are entirely correct, which reads exactly like a page that has drifted; the mode is part of the
-score, so it's printed alongside it.
+having to boot an init system to answer a question about free space. Replayed as root, a page that
+documents file ownership scores a small fraction of its examples while being entirely correct,
+which reads exactly like a page that has drifted; the mode is part of the score, so it's printed
+alongside it.
 
 Each page's sample data lives twice, deliberately: as a `fixtures:` block in `examples.yaml`
 (rendered on the page, collapsed) and as `scripts/fixtures/<command>.sh` (recreates those files in
@@ -124,16 +126,15 @@ The replay checks the `fixtures:` blocks themselves too, not just the `output:` 
 is re-read from the sandbox and diffed, so a block that has drifted from its setup script fails
 rather than quietly misleading a reader. By default that read is `cat <name>`. A block that isn't
 one file's literal contents sets `from:` to the command that reproduces it: a directory shown as
-`ls -lAR projects`, a 40-line file deliberately abridged to `head -3; echo …; tail -1`, control
+`ls -lAR projects`, a long file deliberately abridged to `head -3; echo …; tail -1`, control
 bytes made visible with `sed "s/\r/␍/"`, or several files shown together with `tail -n +1 a b`.
 The rule is that every rendered block is something a reader could actually produce; `from:` is
 never rendered, it only keeps the block honest.
 
-Every page with a setup script replays at 100%; how many that is, and how many outputs it
-covers, is counted onto the about page at build time rather than written down anywhere. If you
-touch a covered page, re-run its replay; if you add examples to an uncovered one, consider adding
-a setup script. An uncovered command page is also counted, as the number of pages nothing
-re-runs.
+How many pages have a setup script, and how many outputs those cover, is counted onto the about
+page at build time rather than written down anywhere. If you touch a covered page, re-run its
+replay; if you add examples to an uncovered one, consider adding a setup script. An uncovered
+command page is also counted, as the number of pages nothing re-runs.
 
 An example whose output is real but can't reproduce byte for byte, because it carries a PID, an
 uptime or a memory figure, declares `volatile:` with a note saying what differs. The note renders above the
@@ -143,8 +144,8 @@ units, weekday and month names, long hex identifiers, digits and column padding 
 sides, so the numbers may move while a renamed field, a vanished line or a changed state still
 fails. `volatile:` is for output that varies, not for output a reader could never produce: a
 harness artifact has to be removed, not declared. The score names the two kinds separately
-(`53/53 documented outputs reproduce (52 exactly, 1 by shape)`), because they are different
-claims.
+(`N/N documented outputs reproduce (all but one exactly, one by shape)`), because they are
+different claims.
 
 Examples a batch can't replay at all (needing a concurrent writer or a network peer) are listed by
 title in `scripts/fixtures/<command>.skip` with a note on how they were verified instead, so

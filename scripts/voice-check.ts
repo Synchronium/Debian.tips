@@ -108,8 +108,8 @@ const RULES: readonly Rule[] = [
 
 // `, and` joining a consequence is in the guide and is deliberately not a rule here. Whether the
 // second clause follows from the first is a question about meaning, and the nearest pattern
-// matches 185 lines across the corpus of which almost none are the fault. A check that is wrong
-// that often teaches its reader to skip it, which costs more than the rule was worth.
+// matches hundreds of lines across the corpus of which almost none are the fault. A check that is
+// wrong that often teaches its reader to skip it, which costs more than the rule was worth.
 
 /** Everything the guide exempts, plus the guide itself: voice.md quotes every phrase it bans, so
  *  checking it would report the rules as violations of themselves. */
@@ -130,6 +130,21 @@ interface Finding {
   readonly text: string;
 }
 
+/** Every heredoc a shell line opens, in the order the shell will read them.
+ *
+ *  `<<EOF`, `<<-EOF` and either quoting of the delimiter all count. One line may open more than
+ *  one (`cmd <<A <<B`), and the bodies then arrive in that order, which is why this returns a list
+ *  rather than the first match.
+ *
+ *  `<<<` is a here-string, one line of code rather than a block, and it takes a guard on each side
+ *  of the `<<`: the lookahead rejects it read from the first angle bracket, and the lookbehind from
+ *  the second, where `<< "$var"` would otherwise parse as a heredoc named `$var` and swallow the
+ *  rest of the file. */
+function heredocDelimiters(line: string): string[] {
+  const opener = /(?<!<)<<-?[ \t]*(?!<)(?:'([^']+)'|"([^"]+)"|([A-Za-z_][A-Za-z0-9_]*))/g;
+  return [...line.matchAll(opener)].flatMap((match) => match[1] ?? match[2] ?? match[3] ?? []);
+}
+
 /** Comment lines in a TypeScript or shell source file, with the code between them dropped.
  *
  *  voice.md applies to code comments, which ADR-0017 puts one click away from every page they
@@ -139,18 +154,41 @@ interface Finding {
  *
  *  Only whole-line comments. A trailing `// like this` sits on a line whose code half would come
  *  with it, and the cases worth catching are the block comments above a declaration, which is
- *  where this repository does its explaining. */
-function commentLines(source: string): { line: number; text: string }[] {
+ *  where this repository does its explaining.
+ *
+ *  **A heredoc body is not a comment, whatever its lines begin with.** In a shell file a `#` at
+ *  the start of a line means a comment everywhere except inside one, and `scripts/fixtures/` is
+ *  almost nothing but heredocs: they write the sample files a page displays and the replay diffs
+ *  byte for byte. A `# app configuration` inside one is a line of `config.conf`, so holding it to
+ *  the guide would ask an author to edit something a comparison is pinned to, and the guide has
+ *  nothing to say about a sample file in the first place.
+ *
+ *  A comment cannot open a heredoc, so openers are read from code lines only. Without that, a
+ *  comment mentioning `<<EOF` would swallow every line beneath it. */
+function commentLines(source: string, isShell: boolean): { line: number; text: string }[] {
   const out: { line: number; text: string }[] = [];
   let inBlock = false;
+  /** Delimiters still owed a terminator, oldest first. */
+  let pending: string[] = [];
+
   source.split("\n").forEach((text, index) => {
     const trimmed = text.trimStart();
+
+    if (pending.length) {
+      // Matched against the trimmed line rather than column zero, because `<<-` strips leading
+      // tabs from the terminator and a missed one would swallow the rest of the file.
+      if (text.trim() === pending[0]) pending = pending.slice(1);
+      return;
+    }
+
     const isLineComment = trimmed.startsWith("//") || trimmed.startsWith("#");
     if (inBlock || isLineComment || trimmed.startsWith("/*")) {
       out.push({ line: index + 1, text });
+      if (trimmed.startsWith("/*") && !trimmed.includes("*/")) inBlock = true;
+      if (inBlock && trimmed.includes("*/")) inBlock = false;
+      return;
     }
-    if (trimmed.startsWith("/*") && !trimmed.includes("*/")) inBlock = true;
-    if (inBlock && trimmed.includes("*/")) inBlock = false;
+    if (isShell) pending = heredocDelimiters(text);
   });
   return out;
 }
@@ -166,7 +204,7 @@ export function proseLines(path: string, source: string): { line: number; text: 
   let inFence = false;
   let blockIndent: number | null = null;
 
-  if (isCode(path)) return commentLines(source);
+  if (isCode(path)) return commentLines(source, path.endsWith(SHELL_EXTENSION));
 
   if (!isExamples) {
     source.split("\n").forEach((text, index) => {
@@ -246,8 +284,12 @@ const VOICE_DIRS: readonly string[] = [
 ];
 const VOICE_FILES: readonly string[] = [join(ROOT, "README.md"), join(ROOT, "CLAUDE.md")];
 
-/** Source files, checked for their comments and not for their code. */
-const CODE_EXTENSIONS = [".ts", ".sh"];
+/** Source files, checked for their comments and not for their code.
+ *
+ *  Shell is named on its own as well as listed, because it is the one of the two whose comment
+ *  syntax has an exception: `commentLines` has to know not to read a heredoc body as prose. */
+const SHELL_EXTENSION = ".sh";
+const CODE_EXTENSIONS = [".ts", SHELL_EXTENSION];
 const isCode = (path: string): boolean => CODE_EXTENSIONS.some((ext) => path.endsWith(ext));
 
 const isProse = (path: string): boolean =>

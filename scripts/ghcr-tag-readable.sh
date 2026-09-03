@@ -23,10 +23,14 @@ path="${repository#ghcr.io/}"
 token=$(curl -fsSL "https://ghcr.io/token?service=ghcr.io&scope=repository:${path}:pull" |
   jq -r '.token // empty' || true)
 
-# Both manifest-list media types, because which one is returned depends on how the image was
-# built, and asking for only one gets a 404 for an image that is perfectly reachable.
+# Every media type an image here could be published under, because a registry answers 404 for a
+# manifest whose type the request did not accept, and a reachable image would then report as
+# missing. Both list types, since which one is returned depends on how the image was built, and
+# both single-manifest types, since a single-platform build produces a manifest rather than a list.
 curl -fsS -o /dev/null \
   -H "Authorization: Bearer ${token}" \
   -H 'Accept: application/vnd.oci.image.index.v1+json' \
   -H 'Accept: application/vnd.docker.distribution.manifest.list.v2+json' \
+  -H 'Accept: application/vnd.oci.image.manifest.v1+json' \
+  -H 'Accept: application/vnd.docker.distribution.manifest.v2+json' \
   "https://ghcr.io/v2/${path}/manifests/${tag}"

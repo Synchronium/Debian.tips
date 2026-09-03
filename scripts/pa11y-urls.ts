@@ -72,13 +72,21 @@ export function pa11yUrls(sitemapXml: string, origin: string = LOCAL_ORIGIN): st
     // a template with its own markup, and one nobody looks at until it is already being seen.
     .concat(`${origin}${NOT_FOUND_PATH}`);
 
-  const missing = NAV_ORDER.map((category) => CATEGORY_META[category].path).filter(
-    (path) => !urls.includes(`${origin}${path}`),
-  );
+  // Both halves of "one page per template" are asserted, because they fail apart. A listing goes
+  // missing when the sitemap is short; a sample goes missing when `isContentPage` stops matching,
+  // which a change to the route shape would do, and the listings would still all be there to make
+  // the list look complete.
+  const missing = NAV_ORDER.flatMap((category) => {
+    const listing = CATEGORY_META[category].path;
+    return [
+      urls.includes(`${origin}${listing}`) ? [] : [`${listing} (the category listing)`],
+      samples.has(category) ? [] : [`${listing} (a page from inside it)`],
+    ].flat();
+  });
   if (missing.length) {
     throw new Pa11yUrlsError(
-      `${missing.length} category listing(s) missing from the URL list:\n` +
-        missing.map((path) => `  ${path}`).join("\n") +
+      `${missing.length} page(s) missing from the URL list:\n` +
+        missing.map((what) => `  ${what}`).join("\n") +
         `\n\nRead ${paths.length} location(s) from the sitemap. Either the build did not emit them ` +
         `or the parse is broken.\nNot writing a config: pa11y-ci passes an empty list, so a short ` +
         `one is worse than no run at all.`,

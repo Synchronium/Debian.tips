@@ -11,7 +11,7 @@ inside `npm run check`, and that shipping ends at the push.
 
 ## 1. Run the right gates
 
-`npm run check` always. Format, three typechecks, tests, build, pagefind, linkcheck, link audit.
+`npm run check` always. Format, every typecheck, tests, build, pagefind, linkcheck, link audit.
 It needs only Node, sets `NODE_ENV=production` itself, and is exactly what CI's `check` job runs.
 
 `npm run replay` **as well**, whenever the change touches any of:
@@ -39,7 +39,7 @@ worse than a slow one, and it is the one result here nobody can afford to start 
 A green `check` says the generator works. Only the replay says the pages are true.
 
 If the change touches templates, styles or `src/client/`, the two browser gates are worth running
-too, against a served build; `CLAUDE.md` has the three lines that start one.
+too, against a served build; `CLAUDE.md` has the lines that start one.
 
 ## 2. Write the commit message this repo writes
 

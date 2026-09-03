@@ -71,9 +71,9 @@ ensure_image() {
   else
     reason="there is no $IMAGE for this build context"
   fi
-  # A published image for this exact context, if there is one. Pulling 500MB beats installing
-  # thirty packages: measured on a CI runner the build is 41 seconds, and it was being paid by
-  # every shard of every run because a runner is always cold.
+  # A published image for this exact context, if there is one. Pulling one beats installing the
+  # whole package list, which every shard of every run was paying because a runner is always cold.
+  # ADR-0024 has the measurements either side, and dates them.
   #
   # **Falling back to a build is what makes this safe rather than a dependency.** A registry
   # outage, a tag nobody published, no network at all: each of them costs the build that used to

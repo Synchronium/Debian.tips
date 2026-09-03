@@ -190,6 +190,23 @@ describe("what the block says is compared how", () => {
     expect(html).toContain("by shape</a> and 3");
   });
 
+  it("never opens with a count of zero", () => {
+    // A page can have every output relaxed: `recipes/kill-whatever-is-using-a-port` shows two
+    // `lsof` listings whose PIDs and column padding belong to the machine. "0 exactly" reads as an
+    // admission on the one sentence that exists to describe what was checked.
+    const shaped = say({ checked: 2, byShape: 2 });
+    expect(shaped).not.toContain("0 exactly");
+    expect(shaped).toContain("Checks 2 outputs, all compared <a");
+    expect(shaped).toContain(">by shape</a>.");
+  });
+
+  it("names the comparison, not `exactly`, when the single survivor is a relaxed one", () => {
+    // The one-clause branch used to assume the survivor was the exact count, so a wholly
+    // unordered page would have claimed the strictest comparison it is not held to.
+    expect(say({ checked: 5, unordered: 5 })).toContain("all compared <a");
+    expect(say({ checked: 5, unordered: 5 })).toContain(">in any order</a>.");
+  });
+
   it("links each relaxation to the part of /about/ that explains it", () => {
     const html = say({ checked: 12, byShape: 4, unordered: 3 });
     expect(html).toContain("/about/#output-that-cannot-be-identical");

@@ -186,8 +186,9 @@ comments: the rule rather than the history, no count or measurement that will mo
 describe what a thing is now. What follows is the way a comment goes wrong that a page does not.
 
 - **A figure typed into a comment is a claim nothing checks.** A measurement belongs in an ADR,
-  which dates it. `scripts/replay-all.ts` advertised a replay as "about half a minute" while
-  ADR-0002 measured 215 seconds, and neither reader would have known to look at the other.
+  which dates it, or in the command that prints it. `scripts/replay-all.ts` advertised a replay as
+  "about half a minute" while ADR-0002 had timed the same run at several times that, and neither
+  reader would have known to look at the other.
 - **A contrast needs the thing it contrasts with.** "What *is* cheap is not paying for a TypeScript
   startup per page" answers a question the comment never asks. It is the aphoristic closer's
   cousin: a shape that sounds like an argument being concluded.
@@ -216,9 +217,9 @@ rather than prose.
 
 **A green run says nothing about §4.** The tells that are shapes rather than spellings, a closer,
 a manufactured misconception, a section that comments on itself, are invisible to it, and the one
-rule that was tried both ways proves the boundary: `, and` joining a consequence matched 185 lines
-across the corpus with almost no true positives, because whether a clause follows from the one
-before it is a question about meaning. Those still need the page read.
+rule that was tried both ways proves the boundary: `, and` joining a consequence matched hundreds
+of lines across the corpus with almost no true positives, because whether a clause follows from the
+one before it is a question about meaning. Those still need the page read.
 
 ## 10. Before editing a page
 
