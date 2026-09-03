@@ -166,7 +166,7 @@ const WASTED_WAIT = 0.05;
  *  The heaviest page sets the floor, so it decides the count, and its replay time varies from one
  *  run to the next. Set this narrower than that variation and every recording asks for the matrix
  *  to be changed back to what the recording before it asked for. */
-const SPARE_RUNNERS = 2;
+const SPARE_RUNNERS = 4;
 
 export const SHARD_COUNT = { ok: "ok", tooFew: "too-few", tooMany: "too-many" } as const;
 export type ShardCountVerdict = (typeof SHARD_COUNT)[keyof typeof SHARD_COUNT];
