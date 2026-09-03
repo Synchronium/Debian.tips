@@ -89,6 +89,18 @@ chmod 644 /etc/apt/keyrings/signing-demo.asc
 # published key URL.
 cp "$REPO/good-key.asc" "$REPO/published-key.asc"
 
+# Warm the archive's indices before this repository is configured, so the page's own
+# `apt-get update` has nothing left to fetch but this repository's InRelease. Cold, that update
+# pulls the whole of trixie's package index first, and the example documenting the failure has to
+# reach apt's summary line within the seconds an example is allowed. It does not always get there,
+# and an example killed by `timeout` reports as empty output, which reads as apt having raised no
+# error at all.
+#
+# This has to run before the source below exists. Only the archive is warmed, so the repository the
+# page is about is still one the machine has never successfully fetched, which the documented error
+# depends on.
+apt_update_once
+
 cat > /etc/apt/sources.list.d/signing-demo.sources <<'EOF'
 Types: deb
 URIs: http://127.0.0.1:8083
@@ -106,7 +118,3 @@ sed -i '/^# http:\/\/snapshot\.debian\.org/d' /etc/apt/sources.list.d/debian.sou
 # be used", because there is now a previous index to fall back on. The page documents the
 # first, which is what a reader adding a repository actually sees.
 rm -rf /var/lib/apt/lists/127.0.0.1:8083* 2>/dev/null
-
-# No `apt-get update` here: running it is what the page's first example does, and its failure
-# is the output being documented.
-: > "$APT_UPDATED_MARKER"
