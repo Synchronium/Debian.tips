@@ -50,6 +50,13 @@ because a page reads better with it.
 - **Commands**: `index.md` prose intro (flagship 600–1200 words / standard 150–400 / light
   50–150) + `examples.yaml` (flagship/standard 50–100 examples, light 25–50), sections ordered
   basic → advanced, `command:` field matching the directory name.
+
+  **The example count is a guide and not a floor, and nothing enforces it.** A page reaching the
+  bottom of its range by pointing the same command at a second name has padded rather than
+  covered: the `man` page carried five `whatis` examples teaching two things, and four whose
+  output was byte-identical because they all ran against `crontab`. Two examples that print the
+  same lines teach the reader nothing the first did not, whatever their titles say. Cut to what
+  earns a row and let the count land where it lands.
 - **Concepts**: 800–2000 words: hook → mental model → worked examples → common misconceptions →
   "go deeper" links.
 - **Scripting**: one concept, runnable script(s), a pitfalls callout, exercises with `<details>`

@@ -200,8 +200,8 @@
     "unpaired": 0
   },
   "commands/man": {
-    "checked": 50,
-    "byShape": 4,
+    "checked": 43,
+    "byShape": 6,
     "unordered": 0,
     "exempt": 0,
     "fixtures": 0,

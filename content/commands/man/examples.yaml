@@ -36,13 +36,13 @@ sections:
           GNU coreutils 9.7                  June 2025                              LS(1)
         level: intermediate
       - title: "Choose the pager yourself"
-        code: man -P cat ls | head -4
+        code: man -P cat crontab | head -4
         description: "`-P` names the program the page is handed to. `cat` prints it and exits, so a page can go into a file or a pipe even where `$PAGER` has been set to something interactive."
         output: |2
-          LS(1)                            User Commands                            LS(1)
+          CRONTAB(1)                    crontab User Manual                    CRONTAB(1)
 
           NAME
-                 ls - list directory contents
+                 crontab - maintain crontab files for individual users (Vixie Cron)
         level: intermediate
       - title: "Read the manual for man itself"
         code: man man | head -5
@@ -143,19 +143,21 @@ sections:
                  cron - daemon to execute scheduled commands (Vixie Cron)
 
         level: intermediate
-      - title: "List the sections a name has, with descriptions"
-        code: whatis crontab
-        description: "The command and the file format, distinguished by their descriptions rather than by their names. [`crontab`](/commands/crontab/) is the page for the first; the second is what to read before editing what it produces."
-        output: |2
-          crontab (1)          - maintain crontab files for individual users (Vixie Cron)
-          crontab (5)          - tables for driving cron
-        level: basic
       - title: "Ask for one section of a name that has several"
         code: whatis -s 1 crontab
         description: "`-s` narrows the lookup to a section. Useful when a name is in four manuals and you want the summary of one of them."
         output: |2
           crontab (1)          - maintain crontab files for individual users (Vixie Cron)
         level: intermediate
+      - title: "Change which section wins"
+        code: |-
+          MANSECT=5:1 man -w passwd
+          man -w passwd
+        description: "`MANSECT` is the order the sections are searched in, and the first hit wins. Putting 5 in front of 1 makes the unqualified lookup answer with the file rather than the command, which is the rule from the top of this page written down where you can change it."
+        output: |2
+          /usr/share/man/man5/passwd.5.gz
+          /usr/share/man/man1/passwd.1.gz
+        level: advanced
       - title: "Watch a section that is not installed"
         code: man 3 printf
         description: "Section 3 is the C library, and Debian ships it in `manpages-dev` rather than with the tools. `printf` the shell command is section 1 and present; `printf(3)`, the C function, arrives with that package."
@@ -185,18 +187,6 @@ sections:
                  printf - format and print data
 
         level: intermediate
-      - title: "Summarise one section of a name"
-        code: whatis -s 5 passwd
-        description: "Narrowed to one section, the summary confirms a file format page exists without opening it."
-        output: |2
-          passwd (5)           - the password file
-        level: intermediate
-      - title: "Get the path for a named section"
-        code: man -w 1 crontab
-        description: "The section goes before the name, the same as when reading the page. Compare it against `man -w crontab` on a name whose lowest section is not the one you meant."
-        output: |2
-          /usr/share/man/man1/crontab.1.gz
-        level: intermediate
       - title: "Count how many manuals document a name"
         code: man -a crontab 2>/dev/null | grep -c "^CRONTAB"
         description: "`-a` concatenates every matching page instead of stopping at the first, so counting the headers counts the manuals. At a prompt `-a` shows them one after another and asks before each."
@@ -224,19 +214,6 @@ sections:
           ls (1)               - list directory contents
           vdir (1)             - list directory contents
         level: basic
-      - title: "Use the spelling built into man"
-        code: 'man -k "^crontab$"'
-        description: "`man -k` and `apropos` are the same search. The pattern is a regular expression, so anchoring it with `^` and `$` turns a substring search into an exact one."
-        output: |2
-          crontab (1)          - maintain crontab files for individual users (Vixie Cron)
-          crontab (5)          - tables for driving cron
-        level: basic
-      - title: "Look up one name exactly"
-        code: whatis ls
-        description: "The narrowest question: what is this thing, in one line. Faster than opening the page when all you want is to confirm what a command in someone else's script does."
-        output: |2
-          ls (1)               - list directory contents
-        level: basic
       - title: "Spell the exact lookup as a man option"
         code: man -f crontab
         description: "`man -f` is `whatis`, the same way `man -k` is `apropos`. Both spellings appear in scripts, and knowing they are pairs saves looking up two more commands."
@@ -263,12 +240,17 @@ sections:
         output: |2
           crontab (5)          - tables for driving cron
         level: advanced
-      - title: "Search one section for a keyword"
-        code: apropos -s 5 crontab
-        description: "The same question asked with the other command name. `apropos` takes every option `man -k` does, since they run the same code."
+      - title: "Search the pages themselves, not their descriptions"
+        code: |-
+          apropos -s 1 gzip | wc -l
+          man -K -w -s 1 gzip | wc -l
+        volatile: "both counts depend on which packages are installed"
+        compare: shape
+        description: "`-K` greps the body of every page rather than the one-line summaries, so it finds the commands that merely mention gzip as well as the ones that are about it. It is slower and much less precise, and it is what to try when `apropos` comes back empty."
         output: |2
-          crontab (5)          - tables for driving cron
-        level: intermediate
+          2
+          27
+        level: advanced
       - title: "Count the pages this machine has"
         code: man -k . | wc -l
         volatile: "the total depends on which packages are installed"
@@ -277,13 +259,6 @@ sections:
         output: |2
           1453
         level: advanced
-      - title: "Search without anchoring the pattern"
-        code: apropos crontab
-        description: "An unanchored search matches the name and the description alike. Here it happens to return the same two pages, because nothing else on the machine mentions crontabs in its summary."
-        output: |2
-          crontab (1)          - maintain crontab files for individual users (Vixie Cron)
-          crontab (5)          - tables for driving cron
-        level: basic
       - title: "See how wide an unanchored search casts"
         code: man -k passwd | head -4
         description: "The `passwd` command is in none of the first four: these are pages whose descriptions merely mention passwords. Sort the answer by section, or anchor the pattern, before assuming the first hit is the one."
@@ -315,11 +290,17 @@ sections:
         output: |2
           coreutils: /usr/share/man/man1/ls.1.gz
         level: advanced
-      - title: "Do the same for a file format page"
-        code: dpkg -S $(man -w 5 passwd)
-        description: "The section 5 page for `/etc/passwd` comes from `passwd`, the same package as the command. Pages for a format and for the tool that writes it often travel together, and when they do not this is how you find out."
+      - title: "Look at the source of a page"
+        code: zcat /usr/share/man/man1/ls.1.gz | head -5
+        volatile: "the version and the date belong to the package installed on your machine"
+        compare: shape
+        description: "A manual page is a text file in a markup language called roff. `.TH` carries the name, the section, the date and the version, which is where the header and the footer of the formatted page come from, and `.SH` opens each section."
         output: |2
-          passwd: /usr/share/man/man5/passwd.5.gz
+          .\" DO NOT MODIFY THIS FILE!  It was generated by help2man 1.50.1.
+          .TH LS "1" "June 2025" "GNU coreutils 9.7" "User Commands"
+          .SH NAME
+          ls \- list directory contents
+          .SH SYNOPSIS
         level: advanced
       - title: "See where man looks"
         code: man --path
@@ -328,17 +309,11 @@ sections:
           /usr/local/man:/usr/local/share/man:/usr/share/man
         level: intermediate
       - title: "Override the search path for one command"
-        code: MANPATH=/usr/share/man man -w ls
+        code: MANPATH=/usr/share/man man -w cron
         description: "Setting `MANPATH` for a single command restricts the search to what you name. Set it in a shell and you replace the path rather than adding to it, which is the usual way to lose access to half the manual."
         output: |2
-          /usr/share/man/man1/ls.1.gz
+          /usr/share/man/man8/cron.8.gz
         level: advanced
-      - title: "Find the page for man itself"
-        code: man -w man
-        description: "Nothing special about the name. `man` is a command like any other and its page sits in section 1 beside the rest."
-        output: |2
-          /usr/share/man/man1/man.1.gz
-        level: intermediate
       - title: "Count the pages in each section"
         code: 'man -k . | awk "{print \$2}" | sort | uniq -c | sort -rn | head -5'
         volatile: "the counts depend on which packages are installed"
@@ -403,9 +378,3 @@ sections:
         output: |2
           No manual entry for intro
         level: advanced
-      - title: "Ask for a section that has no such page"
-        code: man 7 units
-        description: "Section 7 exists and has hundreds of pages here, so the failure is about this name rather than about the section. Search the descriptions with `apropos` instead."
-        output: |2
-          No manual entry for units in section 7
-        level: intermediate
