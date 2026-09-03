@@ -97,6 +97,21 @@ const RULES: readonly Rule[] = [
     message: "voice.md §5: fine a few times, a verbal tic in bulk.",
   },
   {
+    id: "numeral-led-opener",
+    severity: SEVERITY.report,
+    // Anchored to the start of a caption, which is the only place the shape is a tell: a count
+    // in the middle of a sentence is usually the fact the sentence is about. A prose page's
+    // paragraph openers are out of reach here, since a wrapped line beginning with a numeral
+    // looks identical to one that opens a paragraph.
+    //
+    // `note:` is deliberately not matched. A fixture note is a label for sample data and the
+    // schema gives "40 numbered lines" as its shape, so opening on a count is what it is for.
+    pattern:
+      /^\s*-?\s*(?:description|intro):\s*["']?(?:One|Two|Three|Four|Five|Six|Seven|Eight|Nine|Ten|None|Both|Neither)\b/gim,
+    budget: 6,
+    message: "voice.md §4: a caption that opens by counting what follows. Fine a few times.",
+  },
+  {
     id: "adverb-of-obviousness",
     severity: SEVERITY.report,
     pattern: /\b(?:plainly|clearly|obviously|of course)\b/gi,

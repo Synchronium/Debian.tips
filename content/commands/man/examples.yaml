@@ -105,7 +105,7 @@ sections:
     examples:
       - title: "See every section a name appears in"
         code: whatis passwd
-        description: "Three answers for one word: the command that changes a password, an OpenSSL subcommand, and the file the first one writes to. `man passwd` gives you only the first."
+        description: "The word names three different things: the command that changes a password, an OpenSSL subcommand, and the file the first one writes to. `man passwd` gives you only the first."
         output: |2
           passwd (1)           - change user password
           passwd (1ssl)        - OpenSSL application commands
@@ -187,7 +187,7 @@ sections:
         level: intermediate
       - title: "Summarise one section of a name"
         code: whatis -s 5 passwd
-        description: "One line, from the section you asked for. The quickest way to confirm that a file format page exists before opening it."
+        description: "Narrowed to one section, the summary confirms a file format page exists without opening it."
         output: |2
           passwd (5)           - the password file
         level: intermediate
@@ -218,7 +218,7 @@ sections:
     examples:
       - title: "Search the descriptions for a phrase"
         code: 'apropos -s 1 "directory contents"'
-        description: "Three commands describe themselves that way: `dir` and `vdir` are `ls` with different defaults. `-s 1` keeps the answer to commands rather than including library functions with similar summaries."
+        description: "`dir` and `vdir` are `ls` with different defaults, so all three describe themselves the same way. `-s 1` keeps the answer to commands rather than including library functions with similar summaries."
         output: |2
           dir (1)              - list directory contents
           ls (1)               - list directory contents
@@ -286,7 +286,7 @@ sections:
         level: basic
       - title: "See how wide an unanchored search casts"
         code: man -k passwd | head -4
-        description: "None of the first four is the `passwd` command: they are pages whose descriptions mention passwords. Sort the answer by section, or anchor the pattern, before assuming the first hit is the one."
+        description: "The `passwd` command is in none of the first four: these are pages whose descriptions merely mention passwords. Sort the answer by section, or anchor the pattern, before assuming the first hit is the one."
         output: |2
           chgpasswd (8)        - update group passwords in batch mode
           chpasswd (8)         - update passwords in batch mode
@@ -295,7 +295,7 @@ sections:
         level: intermediate
       - title: "Look up a name that is also a C function"
         code: man -f printf
-        description: "One answer here, because section 3 is not installed. On a machine with `manpages-dev` the same command returns two, and the difference is a good check of what a build environment has."
+        description: "Section 3 is not installed, so only the shell command comes back. On a machine with `manpages-dev` the same command returns two, and the difference is a good check of what a build environment has."
         output: |2
           printf (1)           - format and print data
         level: intermediate
@@ -323,7 +323,7 @@ sections:
         level: advanced
       - title: "See where man looks"
         code: man --path
-        description: "Three directories, searched in order. `/usr/local/share/man` is where a program you compiled yourself should install its pages, which is why it is ahead of the packaged ones."
+        description: "The directories are searched in the order printed. `/usr/local/share/man` is where a program you compiled yourself should install its pages, which is why it is ahead of the packaged ones."
         output: |2
           /usr/local/man:/usr/local/share/man:/usr/share/man
         level: intermediate

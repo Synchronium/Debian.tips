@@ -108,6 +108,13 @@ manage the reader's emotional state. Delete it and start with what happened.
 **The templated opener.** One page may open on a given skeleton. Four may not. Before writing one,
 check what the page's category siblings already do.
 
+**The numeral-led opener.** A caption that begins by counting what follows: "Three answers for one
+word", "One line, from the section you asked for", "Three directories, searched in order", "None of
+the first four is the `passwd` command". The count is seldom what the reader needs first, and six of
+them on a page is a house style rather than six observations. Say what the thing is, and put the
+number where it does some work or leave it out. `npm run voice` counts these against a budget,
+being one of the few tells in this section with a spelling.
+
 **Also:** em dashes, `X, not Y` antithesis and symmetry generally, parenthetical asides that answer
 a question mid-sentence, and "actually".
 
