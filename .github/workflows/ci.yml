@@ -13,7 +13,43 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      # Three copies of puppeteer live in this tree, and each one's postinstall fetches a browser
+      # archive from Google's CDN before anything is built. A truncated fetch fails `npm ci` with
+      # "end of central directory record signature not found", so the run goes red over the
+      # network rather than over the change, having checked nothing. Fetching the browsers in a
+      # step of their own keeps that failure out of the install, and lets it be retried without
+      # reinstalling the tree.
       - run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "true"
+      # Which build each copy of puppeteer wants is fixed by the lockfile, so keying on it means a
+      # download happens once per dependency change and the step below finds the browsers already
+      # there on every run in between.
+      - name: Cache the pinned browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/puppeteer
+          key: puppeteer-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      # `npm rebuild puppeteer` runs the postinstall of every copy in the tree, and each one
+      # returns without fetching anything for a build the step above restored.
+      - name: Fetch the browsers the gates below drive
+        run: |
+          for attempt in 1 2 3; do
+            npm rebuild puppeteer && exit 0
+            echo "::warning::browser download failed (attempt $attempt of 3)"
+            # An install that fails partway leaves the directory it was filling behind, and the
+            # next attempt refuses to touch a directory that exists rather than replacing it.
+            # Without this the retries fail on the wreckage of the first one instead of retrying.
+            rm -rf ~/.cache/puppeteer
+            sleep $((attempt * 15))
+          done
+          exit 1
+        env:
+          # Nothing here asks for `headless: "shell"`: pa11y and scripts/browser-check.ts both take
+          # puppeteer's default, which is the full Chrome binary. Skipping the shell halves what a
+          # cold run fetches, so a gate that does ask for it has to drop this line or fail here
+          # alone, having passed locally.
+          PUPPETEER_SKIP_CHROME_HEADLESS_SHELL_DOWNLOAD: "true"
       # `npm run check` sets NODE_ENV=production itself, so this is the same gate that runs
       # locally. It used to be set here only, which meant drafts were included locally and
       # excluded in CI, and the link audit, the linkcheck and the about page's figures could

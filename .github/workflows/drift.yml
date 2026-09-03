@@ -45,7 +45,12 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      # Nothing here opens a browser, and three copies of puppeteer would each fetch one during
+      # the install. A truncated fetch would fail this run before the replay it exists to run,
+      # and an install failure opens no drift issue, so the week would pass silently unchecked.
       - run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "true"
       # Its own step, so the log says whether a slow run was the image or the replay. Pulls a
       # published image when there is one for this Dockerfile, and builds when there is not.
       - name: Fetch or build the sandbox image
