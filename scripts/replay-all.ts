@@ -64,6 +64,13 @@ const recordTimings = args.includes("--record-timings");
 // --record-timings this makes no claim to be complete, so it carries no restriction: whoever
 // merges the parts is the one that can see whether the whole site is covered.
 const timingsOut = args.find((arg) => arg.startsWith("--timings-out="))?.slice("--timings-out=".length);
+// Refused rather than ignored. An empty value is falsy, so the run would replay every page, write
+// nothing, say nothing, and leave the workflow that asked for the file to report the whole site as
+// a hole several steps later.
+if (timingsOut === "") {
+  console.error("replay: --timings-out= needs a filename to write the measurements to");
+  process.exit(2);
+}
 
 let shard: Shard = { index: 1, total: 1 };
 try {

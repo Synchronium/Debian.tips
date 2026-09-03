@@ -50,8 +50,9 @@ export const FONT_FILE = "source-serif-4-latin-600.woff2";
 export const FONT_HREF = `/assets/${FONT_FILE}`;
 
 /** The share card every page points social media at, copied out of `public/` by the asset step
- *  like any other static file. Named here because two things address it: the `og:image` and
- *  `twitter:image` tags in the layout, and `scripts/og-image.ts`, which draws it. */
+ *  like any other static file. Named here because two things address it: the `og:image` tag in
+ *  the layout, which `twitter:card` falls back to rather than naming a card of its own, and
+ *  `scripts/og-image.ts`, which draws it. */
 export const OG_IMAGE_FILE = "og-default.png";
 export const OG_IMAGE_HREF = `/${OG_IMAGE_FILE}`;
 
@@ -101,9 +102,14 @@ export const REPLAY_TIMINGS_FILE = join(ROOT, "scripts", "replay-timings.json");
 
 /** The CI workflow, which is also where the number of replay shards is declared.
  *
- *  Read by `test/replayShard.test.ts`, which checks that count against the recorded timings. That
- *  test is the reason the workflow can state the number without also stating the measurements
- *  that justify it, which is what used to go stale beside it. */
+ *  Read by `scripts/check-shard-count.ts`, which compares that count against the recorded timings.
+ *  **Nothing fails when the two come apart.** That script is not in `npm run check` and is not a
+ *  gate anywhere: a count that no longer suits the figures costs wall clock and never coverage, so
+ *  it is reported to a human by `.github/workflows/record-timings.yml` after each recording, and
+ *  the matrix is edited by hand. Its own header carries the reasoning.
+ *
+ *  That report is why the workflow can state the number without also stating the measurements that
+ *  justify it, which is what used to go stale beside it. */
 export const CI_WORKFLOW_FILE = join(ROOT, ".github", "workflows", "ci.yml");
 
 /** A page's setup script: creates its sample files, and is what opts it into the replay.

@@ -11,10 +11,10 @@ import { UNTIMED_SECONDS } from "./replayShard.js";
 
 /** The bar a page's time has to clear before rewriting the file earns its commit.
  *
- *  Three regimes, because the pages here differ in cost by a factor of fifty and no single measure
- *  suits them all. A multiple of the page while the page is small. A flat tolerance through the
- *  middle, where most of the site sits. A fraction again at the top, among the few pages heavy
- *  enough to decide the shard count.
+ *  Three regimes, because the pages here differ in cost by more than an order of magnitude and no
+ *  single measure suits them all. A multiple of the page while the page is small. A flat tolerance
+ *  through the middle, where most of the site sits. A fraction again at the top, among the few
+ *  pages heavy enough to decide the shard count.
  *
  *  **`MOVED_SECONDS` is the flat middle**, and it is `UNTIMED_SECONDS`: the cost the balancer
  *  charges a page it knows nothing about. Drift smaller than that sits inside an error the

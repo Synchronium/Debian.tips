@@ -98,6 +98,49 @@ describe("voice-check scoping", () => {
     expect(lines).toEqual([1, 2, 3, 6]);
   });
 
+  it("never reads a heredoc body as a shell comment", () => {
+    // A setup script is almost nothing but heredocs: they write the sample files a page displays
+    // and the replay diffs byte for byte. A `#` line inside one belongs to that file, so holding
+    // it to the guide would ask an author to edit what a comparison is pinned to.
+    const source = [
+      "# A real comment, load-bearing.",
+      "cat > config.conf <<'EOF'",
+      "# app configuration, load-bearing",
+      "workers 4",
+      "EOF",
+      "# Another real comment.",
+    ].join("\n");
+    const lines = proseLines(`scripts/fixtures/${"page"}.sh`, source).map((entry) => entry.line);
+    expect(lines).toEqual([1, 6]);
+  });
+
+  it("reads every heredoc a line opens, and the indented terminator of a dash form", () => {
+    // Two on one line arrive as two bodies in the order they were opened, and `<<-` lets the
+    // terminator be indented. Missing either swallows the comments below it silently.
+    const source = [
+      "cat file <<A <<-B",
+      "# first body",
+      "A",
+      "# second body",
+      "\tB",
+      "# The comment this has to still reach.",
+    ].join("\n");
+    const lines = proseLines(`scripts/fixtures/${"page"}.sh`, source).map((entry) => entry.line);
+    expect(lines).toEqual([6]);
+  });
+
+  it("treats a here-string and a comment mentioning one as code and prose, not a heredoc", () => {
+    // `<<<` is one line rather than a block, and a comment cannot open a heredoc at all. Reading
+    // either as an opener swallows the rest of the file.
+    const source = [
+      "# Written with <<'EOF' when the input is long, load-bearing.",
+      'grep x <<< "$var"',
+      "# Still prose.",
+    ].join("\n");
+    const lines = proseLines(`scripts/fixtures/${"page"}.sh`, source).map((entry) => entry.line);
+    expect(lines).toEqual([1, 3]);
+  });
+
   it("exempts the synthetic content tree the build tests assert against", () => {
     // A fixture is a stand-in, not prose. Holding one to the guide invites improving a sentence
     // that a build test compares character for character.

@@ -97,7 +97,7 @@ jobs:
       # Nothing in this job opens a browser, and three packages here run a postinstall that
       # downloads one: puppeteer, plus the copies pa11y and pa11y-ci carry. Every one of those is
       # a chance for a truncated zip to fail a shard over a browser it was never going to launch,
-      # and a lockfile change hands all eight shards a cold cache at the same time. The `check`
+      # and a lockfile change hands every shard a cold cache at the same time. The `check`
       # job drives a real browser for pa11y and the search and layout gates, so it must not set
       # this.
       - run: npm ci
@@ -107,10 +107,10 @@ jobs:
       # the replay separately, so if this job ever gets slow, that says which half to fix.
       #
       # Usually a pull now. `publish-sandbox.yml` puts the image in a registry whenever the build
-      # context changes, and a runner is always cold, so this step used to install thirty packages
-      # on every shard of every push, in anything from 18 seconds to 52. It still builds when
-      # there is nothing to pull, which is what keeps a registry from being something CI depends
-      # on.
+      # context changes, and a runner is always cold, so this step used to install the whole
+      # package list on every shard of every push; ADR-0024 has what that cost. It still builds
+      # when there is nothing to pull, which is what keeps a registry from being something CI
+      # depends on.
       - name: Fetch or build the sandbox image
         run: scripts/sandbox.sh build
       # A pull request replays the pages its diff touches, and everything if it touched the

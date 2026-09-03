@@ -59,6 +59,16 @@ describe("the accessibility URL list", () => {
     expect(() => pa11yUrls(short, ORIGIN)).toThrow(dropped);
   });
 
+  it("refuses a list with every listing present and no page under one of them", () => {
+    // The half that fails on its own. A content page is recognised by the shape of its path, so a
+    // change to the route shape empties the samples while leaving every listing in place, and the
+    // list then covers the listing template and none of the page templates.
+    const category = CATEGORY_META[NAV_ORDER[0]!].path;
+    const short = completeSitemap().replace(loc(`${category}a-page/`), "");
+    expect(() => pa11yUrls(short, ORIGIN)).toThrow(Pa11yUrlsError);
+    expect(() => pa11yUrls(short, ORIGIN)).toThrow("a page from inside it");
+  });
+
   it("refuses a sitemap it read nothing out of", () => {
     // The case that produced a green tick over zero pages, reached by pointing pa11y-ci at a
     // settings file with no `urls` in it.

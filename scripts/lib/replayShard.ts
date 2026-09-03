@@ -7,13 +7,17 @@
 // tolerate. `test/replayShard.test.ts` asserts the partition over many page counts and shard
 // counts rather than trusting the arithmetic here to be obviously right.
 //
-// **The split is balanced, because a handful of pages decide the answer.** Replay time is
-// concentrated: measured 2026-08-26, the four heaviest pages are half of a 427-second run and the
-// median page is 1.4 seconds. So the wall clock of a sharded run is the slowest shard, the
-// slowest shard can never be quicker than the slowest page, and the only thing worth optimising
-// is keeping those few pages apart. Splitting the sorted list round-robin instead does that only
-// by accident, and on the same timings it came out 47% slower across seven shards. The gap widens
-// as shards are added, because there are fewer pages left to absorb a badly placed heavy one.
+// **The split is balanced, because a handful of pages decide the answer.** Replay time here is
+// concentrated: a few apt-driven pages cost most of a run and the median page costs a second or
+// two. So the wall clock of a sharded run is the slowest shard, the slowest shard can never be
+// quicker than the slowest page, and the only thing worth optimising is keeping those few pages
+// apart. Splitting the sorted list round-robin instead does that only by accident, and was
+// measurably worse on the recorded timings; the gap widens as shards are added, because there are
+// fewer pages left to absorb a badly placed heavy one.
+//
+// `npm run shards` prints the curve those timings currently give, which is where to look for the
+// figures. Written out here they would describe the site as it was on the day they were taken, and
+// the next page is enough to move every one of them.
 import { readFileSync } from "node:fs";
 import { parse } from "yaml";
 import { readTimings } from "../../src/content/replayTimings.js";

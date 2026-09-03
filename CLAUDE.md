@@ -22,20 +22,24 @@ npm run dev      # dev server at http://localhost:4321, full rebuild on any file
 npm run build    # one-off production build to dist/
 npm test         # vitest run (unit + fixture-based build tests)
 npm run check    # format, tsc --noEmit, vitest, build, pagefind, linkcheck, link-audit: the full gate
-npm run replay   # replay every page's examples, one container each (needs Docker, ~7 min warm)
+npm run replay   # replay every page's examples, one container each (needs Docker, and minutes)
 npm run replay -- --changed        # only the pages your diff touches, which is what CI runs on a PR
 npm run replay -- ls du            # named pages; identical to how the full run replays them
-npm run replay -- --shard=2/7      # one part of a seven-way split; CI gives each part a runner
+npm run replay -- --shard=2/4      # the second of four parts; the split CI runs is in ci.yml
+npm run shards   # whether the shard count in ci.yml still suits the recorded times, and the curve
 npm run audit:links -- --verbose   # the link graph on its own, advisory findings included
 npm run voice    # prose against .claude/reference/voice.md; a hook runs it per file as you write
 npm run browser  # search and narrow-screen layout, in a real browser against a served build
 npm run og       # redraws public/og-default.png, the share card, from styles/site.css
 ```
 
-`--shard` exists for CI, which gives each shard a machine of its own. One shard at a time is a
-fine way to reproduce what a red shard ran, but starting several here at once is the contention
-that makes true pages report as lying (`.claude/skills/ship/SKILL.md` §1): locally, the plain
-`npm run replay` is both faster and honest.
+`--shard` exists for CI, which gives each shard a machine of its own. How many it runs is in the
+matrix in `.github/workflows/ci.yml`, and `npm run shards` is what says whether that number still
+suits the recorded times: it prints the whole curve, so nothing here or in the workflow has to
+carry a measurement that the next page moves. One shard at a time is a fine way to reproduce what
+a red shard ran, but starting several here at once is the contention that makes true pages report
+as lying (`.claude/skills/ship/SKILL.md` §1): locally, the plain `npm run replay` is both faster
+and honest.
 
 Run `npm run check` before treating any change as done. It's also what CI runs
 (`.github/workflows/ci.yml`), followed by `pa11y-ci` as a separate accessibility gate whose URL

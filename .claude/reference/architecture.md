@@ -87,7 +87,7 @@ stay that way: frontmatter `description` also feeds `<meta name="description">` 
 
 `src/server.ts` is a plain `node:http` server over `dist/`, not a bundler dev server. It does a
 full `build()` on startup and on every change under `content/`, `src/`, `styles/`, `public/` or
-`scripts/fixtures/` (via `chokidar`, 150ms debounced), then serves the freshly-written static
+`scripts/fixtures/` (via `chokidar`, briefly debounced), then serves the freshly-written static
 files. No HMR. `scripts/fixtures/` is watched because the about page's figures are counted from
 it: adding or removing a setup script changes what the built site claims about itself.
 

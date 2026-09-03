@@ -20,6 +20,7 @@ import { CI_WORKFLOW_FILE, ROOT } from "../src/paths.js";
 import { replayableSlugs } from "./lib/replayPages.js";
 import {
   SHARD_COUNT,
+  UNTIMED_SECONDS,
   configuredShardCount,
   shardCosts,
   shardCountVerdict,
@@ -37,7 +38,10 @@ const { kind, wants } = shardCountVerdict(slugs, costs, configured);
 function curve(): string {
   const counts = Array.from({ length: Math.max(configured, wants) + 2 }, (_, i) => i + 1);
   const slowest = (n: number): number => Math.round(slowestShardSeconds(slugs, costs, n));
-  const floor = Math.round(Math.max(...slugs.map((slug) => costs[slug] ?? 0)));
+  // An untimed page is charged what the balancer charges it. Charging it zero here instead would
+  // print the slowest *recorded* page as the floor, understated, in exactly the state the fallback
+  // exists for.
+  const floor = Math.round(Math.max(...slugs.map((slug) => costs[slug] ?? UNTIMED_SECONDS)));
   return [
     "  shards  " + counts.map((n) => String(n).padStart(5)).join(""),
     "  slowest " + counts.map((n) => String(slowest(n)).padStart(5)).join(""),

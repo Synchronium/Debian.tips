@@ -18,8 +18,8 @@ function exemptionsAreIn(sources: PageSources): string {
  *  act on.
  *
  *  Read from `scripts/replay-timings.json` rather than written here, because the repository knows
- *  the answer and the pages differ by a factor of forty: the median is under two seconds and `apt`
- *  is a minute. "About a minute" was on every one of them.
+ *  the answer and the pages differ by more than an order of magnitude: most cost a second or two,
+ *  and the apt-driven ones cost most of a minute. "About a minute" was on every one of them.
  *
  *  Says nothing at all when there is no recorded time, which is a page added since the last
  *  recording. An estimate is worth having and worth omitting; it is never worth guessing, on the
@@ -61,24 +61,33 @@ command reports exactly that.
 </p>`;
   }
 
-  // The three figures partition `checked`, so the clauses read as one sentence that adds up.
-  // Either relaxation can be absent, and on most pages both are.
-  const clauses = [
-    html`${checks.checked - checks.byShape - checks.unordered} exactly`,
-    checks.byShape === 0
-      ? ""
-      : html`${checks.byShape} <a href="/about/#output-that-cannot-be-identical">by shape</a>`,
-    checks.unordered === 0
-      ? ""
-      : html`${checks.unordered} <a href="/about/#output-with-no-fixed-order">in any order</a>`,
-  ].filter((clause) => clause !== "");
+  // The three figures partition `checked`, so the clauses read as one sentence that adds up. A way
+  // of comparing that nothing was compared under is left out, `exactly` included: a page whose
+  // every output is relaxed would otherwise open with "0 exactly", which reads as an admission
+  // rather than a description on the sentence whose whole job is to say what this page checks.
+  //
+  // `checked` is non-zero by the branch above and the three partition it, so at least one survives.
+  const compared = [
+    { count: checks.checked - checks.byShape - checks.unordered, how: raw("exactly") },
+    {
+      count: checks.byShape,
+      how: raw(html`<a href="/about/#output-that-cannot-be-identical">by shape</a>`),
+    },
+    {
+      count: checks.unordered,
+      how: raw(html`<a href="/about/#output-with-no-fixed-order">in any order</a>`),
+    },
+  ].filter((clause) => clause.count > 0);
 
   // "a exactly, b by shape and c in any order": commas between all but the last pair, which
-  // takes the "and". With one relaxation that is just "a exactly and b by shape".
+  // takes the "and". One survivor means every output was compared the same way, and "Checks N
+  // outputs" has already given the number, so that case names the comparison instead of repeating
+  // the figure back.
+  const listed = compared.map(({ count, how }) => html`${count} ${how}`);
   const split =
-    clauses.length === 1
-      ? html`, all compared exactly`
-      : `: ${clauses.slice(0, -1).join(", ")} and ${clauses[clauses.length - 1]}`;
+    listed.length === 1
+      ? html`, all compared ${compared[0]!.how}`
+      : `: ${listed.slice(0, -1).join(", ")} and ${listed[listed.length - 1]}`;
 
   return html`<p class="page-checks">
 Checks ${checks.checked} ${checks.checked === 1 ? "output" : "outputs"}${raw(split)}.${raw(exemptClause)}
