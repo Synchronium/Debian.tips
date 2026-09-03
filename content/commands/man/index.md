@@ -10,12 +10,12 @@ tier: standard
 ---
 
 `man` displays the manual page for a command, a file format, a system call or a configuration
-file. `apropos` searches the one-line descriptions of every page installed, which is the half
-people skip and then spend an afternoon searching the web for something already on the machine.
+file. `apropos` searches the one-line descriptions of every page installed. People skip that
+half, then spend an afternoon searching the web for something already on the machine.
 
-The two read the same index. `whatis` and `man -f` are exact-match lookups against it, `apropos`
-and `man -k` are substring searches, and all four answer "nothing appropriate" when the index has
-not been built rather than when the page is absent.
+Those descriptions live in an index rather than in the pages themselves. `whatis` and `man -f` are
+exact-match lookups against it, `apropos` and `man -k` are substring searches, and all four answer
+"nothing appropriate" when the index has not been built rather than when the page is absent.
 
 ## The number in brackets is a section
 

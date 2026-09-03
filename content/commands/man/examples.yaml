@@ -46,7 +46,7 @@ sections:
         level: intermediate
       - title: "Read the manual for man itself"
         code: man man | head -5
-        description: "Worth ten minutes at some point. `man` has more options than anyone expects, and the page describes the search path and the section order it uses to resolve a name."
+        description: "`man` has more options than anyone expects, and the page describes the search path and the section order it uses to resolve a name."
         output: |2
           MAN(1)                         Manual pager utils                        MAN(1)
 
@@ -95,7 +95,7 @@ sections:
         code: man --version
         volatile: "the version is whichever man-db your release ships"
         compare: shape
-        description: "Debian's `man` comes from `man-db`. Another implementation, `mandoc`, is common on the BSDs and takes different options, so a script that runs `man` on more than one system is worth checking."
+        description: "Debian's `man` comes from `man-db`. Another implementation, `mandoc`, is common on the BSDs and takes different options, so a script that runs `man` on more than one system cannot assume Debian's."
         output: |2
           man 2.13.1
         level: intermediate
@@ -124,7 +124,7 @@ sections:
         level: basic
       - title: "Read the file format of the same name"
         code: man 5 passwd | head -6
-        description: "Section 5 is file formats, so this is `/etc/passwd` rather than the command. Every configuration file worth editing has a page here, and it is the section people do not know to ask for."
+        description: "Section 5 is file formats, so this is `/etc/passwd` rather than the command. Every configuration file worth editing has a page here."
         output: |2
           PASSWD(5)                File Formats and Configuration               PASSWD(5)
 
@@ -171,7 +171,7 @@ sections:
         level: advanced
       - title: "Ask for the path of one section"
         code: man -w 5 passwd
-        description: "The section argument works the same way with `-w` as without it. This is the form to use in a script, since it fails loudly when the page is not installed."
+        description: "The section argument works the same way with `-w` as without it. Use this form in a script: it fails loudly when the page is not installed."
         output: |2
           /usr/share/man/man5/passwd.5.gz
         level: advanced
@@ -205,7 +205,7 @@ sections:
         level: advanced
       - title: "Read a page that complains while it formats"
         code: man 5 crontab 2>/dev/null | head -4
-        description: "This page uses characters the installed fonts do not have, and `groff` says so on stderr every time it is opened. The warnings are not an error and the page is fine, so discarding stderr is the reasonable response."
+        description: "This page uses characters the installed fonts do not have, and `groff` says so on stderr every time it is opened. The warnings are not an error and the page is fine, so discarding stderr loses nothing."
         output: |2
           CRONTAB(5)                    crontab User Manual                    CRONTAB(5)
 
@@ -218,7 +218,7 @@ sections:
     examples:
       - title: "Search the descriptions for a phrase"
         code: 'apropos -s 1 "directory contents"'
-        description: "Three commands describe themselves that way, and two of them are worth knowing about. `-s 1` keeps the answer to commands rather than including library functions with similar summaries."
+        description: "Three commands describe themselves that way: `dir` and `vdir` are `ls` with different defaults. `-s 1` keeps the answer to commands rather than including library functions with similar summaries."
         output: |2
           dir (1)              - list directory contents
           ls (1)               - list directory contents
@@ -259,7 +259,7 @@ sections:
         level: advanced
       - title: "Restrict a search to configuration files"
         code: man -k -s 5 cron
-        description: "Section 5 and a keyword together is the combination worth remembering. When you know a program is configured by a file somewhere and not what the file is called, this is what finds it."
+        description: "Section 5 and a keyword together narrow a search to configuration files. When you know a program is configured by a file somewhere and not what the file is called, this finds it."
         output: |2
           crontab (5)          - tables for driving cron
         level: advanced
@@ -393,19 +393,19 @@ sections:
         level: basic
       - title: "Ask for a page in the wrong section"
         code: man 7 man-pages
-        description: "The wording changes once a section is named: the page may well exist elsewhere. Dropping the number is the first thing to try."
+        description: "The wording changes once a section is named: the page may well exist elsewhere. Try it again without the number."
         output: |2
           No manual entry for man-pages in section 7
         level: intermediate
       - title: "Check for a page without printing it"
         code: man -w intro
-        description: "`-w` exits non-zero and says the same thing when nothing matches, which makes it the form to test with in a script. Debian ships `intro(1)` in `manpages`, absent here."
+        description: "`-w` exits non-zero and says the same thing when nothing matches, so a script can test it without printing a page. Debian ships `intro(1)` in `manpages`, absent here."
         output: |2
           No manual entry for intro
         level: advanced
       - title: "Ask for a section that has no such page"
         code: man 7 units
-        description: "Section 7 exists and has hundreds of pages here, so the failure is about this name rather than about the section. `apropos` is the command to reach for next."
+        description: "Section 7 exists and has hundreds of pages here, so the failure is about this name rather than about the section. Search the descriptions with `apropos` instead."
         output: |2
           No manual entry for units in section 7
         level: intermediate
