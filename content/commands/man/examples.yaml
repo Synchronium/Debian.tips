@@ -36,13 +36,13 @@ sections:
           GNU coreutils 9.7                  June 2025                              LS(1)
         level: intermediate
       - title: "Choose the pager yourself"
-        code: man -P cat crontab | head -4
+        code: man -P cat ls | head -4
         description: "`-P` names the program the page is handed to. `cat` prints it and exits, so a page can go into a file or a pipe even where `$PAGER` has been set to something interactive."
         output: |2
-          CRONTAB(1)                    crontab User Manual                    CRONTAB(1)
+          LS(1)                            User Commands                            LS(1)
 
           NAME
-                 crontab - maintain crontab files for individual users (Vixie Cron)
+                 ls - list directory contents
         level: intermediate
       - title: "Read the manual for man itself"
         code: man man | head -5
@@ -309,10 +309,10 @@ sections:
           /usr/local/man:/usr/local/share/man:/usr/share/man
         level: intermediate
       - title: "Override the search path for one command"
-        code: MANPATH=/usr/share/man man -w cron
+        code: MANPATH=/usr/share/man man -w ls
         description: "Setting `MANPATH` for a single command restricts the search to what you name. Set it in a shell and you replace the path rather than adding to it, which is the usual way to lose access to half the manual."
         output: |2
-          /usr/share/man/man8/cron.8.gz
+          /usr/share/man/man1/ls.1.gz
         level: advanced
       - title: "Count the pages in each section"
         code: 'man -k . | awk "{print \$2}" | sort | uniq -c | sort -rn | head -5'

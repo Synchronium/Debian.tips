@@ -53,10 +53,16 @@ because a page reads better with it.
 
   **The example count is a guide and not a floor, and nothing enforces it.** A page reaching the
   bottom of its range by pointing the same command at a second name has padded rather than
-  covered: the `man` page carried five `whatis` examples teaching two things, and four whose
-  output was byte-identical because they all ran against `crontab`. Two examples that print the
-  same lines teach the reader nothing the first did not, whatever their titles say. Cut to what
-  earns a row and let the count land where it lands.
+  covered: the `man` page carried five `whatis` examples teaching two things.
+
+  **The test is whether the commands differ materially, never whether the outputs do.**
+  `man -f crontab` and `man -k "^crontab$"` print the same two lines and still earn a row each,
+  one being an exact lookup and the other a regular expression. `whatis passwd` and
+  `whatis crontab` print different lines and are one example, because only the name changed. Two
+  commands that legitimately show the same page are not a fault, and cutting on that basis
+  removes material the reader wanted. Where identical output is a problem, it is because the
+  example fails to demonstrate its own effect, which is a different complaint and is about the
+  one example rather than the pair.
 - **Concepts**: 800–2000 words: hook → mental model → worked examples → common misconceptions →
   "go deeper" links.
 - **Scripting**: one concept, runnable script(s), a pitfalls callout, exercises with `<details>`
