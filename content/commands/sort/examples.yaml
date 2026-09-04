@@ -225,7 +225,7 @@ sections:
         tags: [beginner]
       - title: "Sort by one field, then break ties with another"
         code: (head -1 users.csv; tail -n +2 users.csv | sort -t, -k3,3 -k2,2n)
-        description: "Two `-k` options apply in order: group by department (field 3) first, then sort each group by age (field 2) numerically. `-k3,3` means 'field 3 to field 3' - without the end bound, `-k3` alone would sort by field 3 through the end of the line."
+        description: "The `-k` options apply in order: group by department (field 3) first, then sort each group by age (field 2) numerically. `-k3,3` means 'field 3 to field 3' - without the end bound, `-k3` alone would sort by field 3 through the end of the line."
         output: |
           name,age,department
           Frank,31,Engineering
@@ -450,7 +450,7 @@ sections:
         tags: [monitoring, beginner]
       - title: "Sort IPv4 addresses in actual numeric order"
         code: sort -t. -k1,1n -k2,2n -k3,3n -k4,4n access.log
-        description: "Four chained `-k` options, one per octet, each numeric. Plain sort on IPs compares them as text and gets 10.x ahead of 9.x - this is the fix."
+        description: "Chaining a numeric `-k` per octet is the fix for plain `sort`, which compares addresses as text and puts 10.x ahead of 9.x."
         level: advanced
         tags: [networking]
 

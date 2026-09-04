@@ -126,7 +126,7 @@ sections:
         tags: [beginner]
       - title: "Use month or weekday names instead of numbers"
         code: 0 6 * jan,jul * /usr/local/bin/biannual-check.sh
-        description: "Three-letter English names (jan–dec, sun–sat) work anywhere a numeric range or list does and read more clearly in a diff."
+        description: "The three-letter English names (jan–dec, sun–sat) work anywhere a numeric range or list does and read more clearly in a diff."
         level: intermediate
       - title: "Run a command directly, no wrapper script"
         code: 0 4 * * * find /var/log -name "*.log" -mtime +30 -delete
@@ -195,7 +195,7 @@ sections:
         code: |-
           crontab mycron.txt
           sudo stat -c '%A %U:%G %n' /var/spool/cron/crontabs/*
-        description: "One file per user who has a crontab, named after the username, owned root:crontab, mode 600. Never edit these directly - always go through crontab so cron notices the change."
+        description: "Every user who has a crontab gets a file named after them, owned root:crontab, mode 600. Never edit these directly - always go through crontab so cron notices the change."
         output: |2
           -rw------- root:crontab /var/spool/cron/crontabs/root
         level: advanced
@@ -259,7 +259,7 @@ sections:
         level: advanced
 
   - title: "Logging output and avoiding overlapping runs"
-    intro: "Two problems that only show up once a job has been running unattended for a while."
+    intro: "These are the problems that only show up once a job has been running unattended for a while."
     examples:
       - title: "Append output to a dedicated log file"
         code: 0 5 * * * /usr/local/bin/report.sh >> /var/log/report.log 2>&1

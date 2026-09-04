@@ -205,7 +205,7 @@ sections:
           printf 'user ALL=(ALL) NOPASWD:ALL\n' > bad.conf
           sudo visudo -c -f bad.conf
           echo "exit=$?"
-        description: "One missing `S`. A file like this dropped straight into `/etc/sudoers.d` can lock every account out of `sudo` at once. That is why the editing tool is the one that checks, and why editing over ssh with no second session open is a bad afternoon waiting to happen."
+        description: "`NOPASWD` is missing its `S`. A file like this dropped straight into `/etc/sudoers.d` can lock every account out of `sudo` at once. That is why the editing tool is the one that checks, and why editing over ssh with no second session open is a bad afternoon waiting to happen."
         danger: true
         output: |2
           bad.conf:1:27: syntax error
@@ -233,7 +233,7 @@ sections:
         level: intermediate
       - title: "Confirm where a login shell puts you"
         code: "sudo su - deploy -c 'whoami; printenv HOME'"
-        description: "Both the identity and the home directory, and a service account usually needs both before it will run anything: a program that writes to `~` and finds root's home has been started the wrong way."
+        description: "The identity and the home directory both moved, and a service account usually needs both before it will run anything: a program that writes to `~` and finds root's home has been started the wrong way."
         output: |2
           deploy
           /home/deploy
@@ -244,7 +244,7 @@ sections:
         level: basic
       - title: "See which packages the two come from"
         code: dpkg -S $(command -v su) $(command -v sudo)
-        description: "Two different packages, and only one of them is part of every Debian system."
+        description: "They come from different packages, and only one of the two is part of every Debian system."
         output: |2
           util-linux: /usr/bin/su
           sudo: /usr/bin/sudo

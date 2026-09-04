@@ -260,7 +260,7 @@ sections:
           carol | 35 | manager
         level: basic
   - title: "Multiple commands in one script"
-    intro: "Three equivalent ways to chain commands."
+    intro: "Commands can be chained in several equivalent ways."
     examples:
       - title: "Chain commands with a semicolon"
         code: sed "s/localhost/127.0.0.1/;s/8080/9090/" config.conf

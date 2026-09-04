@@ -165,7 +165,7 @@ sections:
         tags: [disk]
       - title: "Find files within a size range"
         code: find projects -size +1M -size -10M
-        description: "Two `-size` tests combine with the implicit AND, giving you a range."
+        description: "The `-size` tests combine with the implicit AND, giving you a range."
         output: |2
           projects/logs/big.log
         level: intermediate

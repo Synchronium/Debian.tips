@@ -116,7 +116,7 @@ sections:
     examples:
       - title: "A file that is not there"
         code: less missing.txt
-        description: "One line on standard error, and no pager is started. `less` names the file without the `less:` prefix most commands put in front of an error."
+        description: "The complaint goes to standard error and no pager is started. `less` names the file without the `less:` prefix most commands put in front of an error."
         output: |
           missing.txt: No such file or directory
         level: basic

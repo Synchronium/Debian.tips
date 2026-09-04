@@ -184,7 +184,7 @@ sections:
           Installed-Size: 92
       - title: "Notice that show prints every version it knows"
         code: apt-cache show bash-completion | grep '^Version:'
-        description: One stanza per version, not one per package, so piping `apt-cache show` into `grep` can return more lines than you expected on a machine with several repositories configured.
+        description: A stanza is printed per version rather than per package, so piping `apt-cache show` into `grep` can return more lines than you expected on a machine with several repositories configured.
         level: intermediate
         output: |2
           Version: 1:99.0-1
@@ -267,7 +267,7 @@ sections:
           cowsay-off - configurable talking cow (offensive cows)
       - title: "Narrow a search with several terms"
         code: apt-cache search talking cow
-        description: Two patterns means both must match, in any order and anywhere in the record. Adding a term is usually faster than writing a cleverer regex.
+        description: Every pattern given has to match, in any order and anywhere in the record. Adding a term is usually faster than writing a cleverer regex.
         level: basic
         output: |2
           cowsay - configurable talking cow
@@ -334,7 +334,7 @@ sections:
     examples:
       - title: "See what a package depends on"
         code: apt-cache depends cowsay
-        description: One line per relationship, with the kind named on the left. `Suggests` and `Recommends` appear here alongside `Depends`, so this is a longer list than what installing the package would actually pull in.
+        description: Each relationship gets a line, with the kind named on the left. `Suggests` and `Recommends` appear here alongside `Depends`, so this is a longer list than what installing the package would actually pull in.
         level: basic
         output: |2
           cowsay

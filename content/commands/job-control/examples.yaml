@@ -19,7 +19,7 @@ sections:
         level: basic
       - title: "Start a pipeline in the background"
         code: sleep 300 2>&1 | cat >/dev/null 2>&1 & jobs
-        description: "One entry, for a command that is two programs. The shell counts a whole pipeline as a single job, so suspending or killing one takes every stage with it instead of leaving the second half reading from a pipe nothing writes to."
+        description: "The two programs share a single entry. A whole pipeline counts as one job, so suspending or killing it takes every stage with it instead of leaving the second half reading from a pipe nothing writes to."
         output: |2
           [1]+  Running                 sleep 300 2>&1 | cat > /dev/null 2>&1 &
         level: intermediate
@@ -43,7 +43,7 @@ sections:
         level: basic
       - title: "Print only the PIDs"
         code: sleep 300 >/dev/null 2>&1 & sleep 200 >/dev/null 2>&1 & jobs -p
-        description: "One PID per line and nothing else, ready to pipe into [`kill`](/commands/kill/) or [`xargs`](/commands/xargs/)."
+        description: "`-p` drops everything but the PIDs, a line each, ready to pipe into [`kill`](/commands/kill/) or [`xargs`](/commands/xargs/)."
         volatile: "the PIDs will differ"
         compare: shape
         output: |2

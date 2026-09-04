@@ -136,7 +136,7 @@ sections:
                           ||     ||
       - title: Read a file
         code: cowsay < notes.txt
-        description: Three lines in, one line out. `cowsay` treats the whole input as a single paragraph and re-breaks it at 40 columns, which is rarely what you want for a file.
+        description: Input from a file is re-broken at 40 columns like anything else, so the three lines become one paragraph. That is rarely what you want for a file.
         level: basic
         output: |2
            ___________________________________
@@ -464,7 +464,7 @@ sections:
               \___)=(___/
       - title: Use the cow the package manager gets
         code: cowsay -f apt 'Reading package lists...'
-        description: One of the shipped cowfiles is Debian's own apt logo. It is the smallest of them, which makes it a good default when the output has to sit inside something else.
+        description: Debian ships its own apt logo as a cowfile. It is the smallest of them, which makes it a good default when the output has to sit inside something else.
         level: basic
         output: |2
            __________________________
@@ -571,7 +571,7 @@ sections:
     examples:
       - title: Read the shipped default first
         code: cat /usr/share/cowsay/cows/default.cow
-        description: Eight lines, and every convention the format has. Note that the backslashes in the art are doubled - the heredoc interpolates, so a single one would be consumed before the art ever reached the screen.
+        description: The shipped default is eight lines and uses every convention the format has. Note that the backslashes in the art are doubled - the heredoc interpolates, so a single one would be consumed before the art ever reached the screen.
         level: intermediate
         output: |2
           $the_cow = <<"EOC";
@@ -616,7 +616,7 @@ sections:
         level: intermediate
       - title: Make COWPATH permanent
         code: echo 'export COWPATH=$HOME/.cows:/usr/share/cowsay/cows' >> ~/.bashrc
-        description: Both directories, in that order, so your own cowfiles win a name clash and every shipped one still resolves. Single quotes so `$HOME` is written literally and expanded when the shell reads the file.
+        description: Your own directory comes first, so your cowfiles win a name clash and every shipped one still resolves. Single quotes so `$HOME` is written literally and expanded when the shell reads the file.
         level: intermediate
 
   - title: Controlling the wrapping
@@ -669,7 +669,7 @@ sections:
                           ||     ||
       - title: Watch line breaks disappear
         code: printf 'one\ntwo\nthree\n' | cowsay
-        description: Three input lines become one. This is the behaviour behind almost every "why does my output look wrong" question about `cowsay`, and it applies to anything piped in.
+        description: The input's line breaks are gone, which is behind almost every "why does my output look wrong" question about `cowsay`, and it applies to anything piped in.
         level: basic
         output: |2
            _______________

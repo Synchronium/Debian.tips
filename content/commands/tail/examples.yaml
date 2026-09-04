@@ -211,7 +211,7 @@ sections:
         level: advanced
       - title: "Count the records after a header"
         code: tail -n +2 users.csv | wc -l
-        description: "Six records rather than the seven lines the file contains, which is the count almost every CSV question actually wants."
+        description: "Skipping the header counts records rather than lines, which is what almost every CSV question actually wants: six here, from a file of seven lines."
         output: |2
           6
         level: intermediate
@@ -483,7 +483,7 @@ sections:
         level: advanced
       - title: "Take the last of a filtered set"
         code: tail -n +2 users.csv | grep Engineering | tail -1
-        description: "Two `tail` calls doing different jobs in one pipeline: the first drops the header, the last takes one record from what survived the filter."
+        description: "The same command does two different jobs in one pipeline: the first `tail` drops the header, the last takes one record from what survived the filter."
         output: |2
           Frank,31,Engineering
         level: intermediate

@@ -218,7 +218,7 @@ sections:
         level: intermediate
       - title: "Numbering carries on across files"
         code: cat -n access.log.1 access.log | tail -3
-        description: "One continuous count over both files, because `cat` produced one stream. [head](/commands/head/) and [tail](/commands/tail/) restart per file and print a header naming each; `cat` does neither."
+        description: "The count runs unbroken across both files, because `cat` produced one stream. [head](/commands/head/) and [tail](/commands/tail/) restart per file and print a header naming each; `cat` does neither."
         output: |2
               12	198.51.100.7 - - [13/Aug/2026:09:18:51] "GET /index.html HTTP/1.1" 200 512
               13	203.0.113.5 - - [13/Aug/2026:09:19:10] "GET /api/status HTTP/1.1" 500 89
@@ -242,7 +242,7 @@ sections:
     examples:
       - title: "A shell script that will not run"
         code: sh deploy.sh
-        description: "Five lines of ordinary shell, and `set -e` is rejected. Nothing looks wrong with the file in any editor that opens it."
+        description: "The script is ordinary shell, and `set -e` is rejected anyway. Nothing looks wrong with the file in any editor that opens it."
         output: |
           deploy.sh: 2: set: Illegal option -
         level: basic
@@ -370,7 +370,7 @@ sections:
           198.51.100.7 - - [13/Aug/2026:09:14:25] "GET /missing.html HTTP/1.1" 404 162
         level: basic
         tags: [beginner]
-      - title: "Two files and one filter is a job for cat"
+      - title: "Joining two files is a job for cat"
         code: cat access.log access.log.1 | grep -c "GET /index.html"
         description: "`grep -c` given two filenames prints a count for each file separately. Joining them first gives one stream and one number."
         output: |

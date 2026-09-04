@@ -227,7 +227,7 @@ sections:
         level: advanced
       - title: "Combine two conditions with &&"
         code: awk -F, '$2=="engineering" && $3 > 90000 { print $1 }' employees.csv
-        description: "Both conditions must hold. String comparison with `==` and numeric comparison with `>` combine freely."
+        description: "`&&` requires that both conditions hold. String comparison with `==` and numeric comparison with `>` combine freely."
         output: |
           alice
           carol
@@ -345,7 +345,7 @@ sections:
         level: basic
       - title: "Compute an average in END"
         code: awk -F, 'NR>1{sum+=$3; n++} END{printf "%.2f\n", sum/n}' employees.csv
-        description: "Two accumulators, a sum and a count, combined once at the end. `printf` controls the decimal places; `print sum/n` would show far more digits."
+        description: "A sum and a count accumulate separately and are combined once at the end. `printf` controls the decimal places; `print sum/n` would show far more digits."
         output: |
           85666.67
         level: intermediate
@@ -492,7 +492,7 @@ sections:
         code: |-
           echo "Hello World" | awk '{print toupper($0)}'
           echo "Hello World" | awk '{print tolower($0)}'
-        description: "Both take a string and return a new one; neither modifies its argument in place."
+        description: "Each takes a string and returns a new one, leaving its argument untouched."
         output: |
           HELLO WORLD
           hello world

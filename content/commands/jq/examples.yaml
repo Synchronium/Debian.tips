@@ -261,7 +261,7 @@ sections:
         tags: [beginner]
       - title: "Filter, then take one field"
         code: jq -r '.users[] | select(.active) | .name' api-response.json
-        description: "Three stages: unpack, filter, project. A bare `.active` is enough as a condition when the value is already a boolean."
+        description: "The pipeline unpacks, filters and then projects. A bare `.active` is enough as a condition when the value is already a boolean."
         output: |
           Alice
           Carol

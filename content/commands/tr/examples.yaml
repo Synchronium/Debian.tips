@@ -42,7 +42,7 @@ sections:
         tags: [beginner]
       - title: "Swap case in a single pass"
         code: echo 'Hello World' | tr 'a-zA-Z' 'A-Za-z'
-        description: "Two ranges concatenated in each SET: lowercase maps to uppercase and uppercase maps to lowercase, simultaneously, in one command."
+        description: "Each SET is a pair of concatenated ranges, so lowercase maps to uppercase and uppercase to lowercase simultaneously, in one command."
         output: |
           hELLO wORLD
         level: intermediate

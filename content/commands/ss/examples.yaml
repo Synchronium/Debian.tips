@@ -154,7 +154,7 @@ sections:
         code: ss -ltnpH sport = :8080 | grep -oP 'pid=\K[0-9]+'
         volatile: "the PID is whatever the kernel handed the service on this boot"
         compare: shape
-        description: "One number, ready to pass to [`kill`](/commands/kill/). `grep -oP` with `\\K` drops everything up to the match, so nothing but the digits survives. [Kill whatever is using a port](/recipes/kill-whatever-is-using-a-port/) has the whole procedure."
+        description: "`grep -oP` with `\\K` drops everything up to the match, so nothing but the digits survives and the result can be passed straight to [`kill`](/commands/kill/). [Kill whatever is using a port](/recipes/kill-whatever-is-using-a-port/) has the whole procedure."
         output: |2
           35
         level: advanced
@@ -178,7 +178,7 @@ sections:
         level: advanced
       - title: "Count the sockets your own services hold"
         code: ss -lntup | grep -c tips-
-        description: "Three: the two TCP listeners and the UDP one. A quick way to confirm a deployment brought up everything it should have."
+        description: "The count covers the two TCP listeners and the UDP one. A quick way to confirm a deployment brought up everything it should have."
         output: |2
           3
         level: intermediate
@@ -200,7 +200,7 @@ sections:
         volatile: "the client's port is taken from the ephemeral range, so it differs on every connection, and the two ends of one connection may be listed either way round"
         unordered: true
         compare: shape
-        description: "Two rows for one connection, because both ends are on this machine. The client's port was picked by the kernel from the ephemeral range and means nothing beyond this connection."
+        description: "A single connection fills two rows here, because both of its ends are on this machine. The client's port was picked by the kernel from the ephemeral range and means nothing beyond this connection."
         output: |2
           State Recv-Q Send-Q Local Address:Port  Peer Address:Port
           ESTAB 0      0          127.0.0.1:33156    127.0.0.1:8080
@@ -258,7 +258,7 @@ sections:
         level: intermediate
       - title: "Count every TCP socket, listeners included"
         code: ss -tanH | wc -l
-        description: "Four: two listening sockets and the two ends of the one connection. Compare it against the established count to see how much of a machine's socket table is doing nothing."
+        description: "The total is the two listening sockets plus the two ends of the one connection. Compare it against the established count to see how much of a machine's socket table is doing nothing."
         output: |2
           4
         level: intermediate
@@ -413,7 +413,7 @@ sections:
         level: advanced
 
   - title: "In a script"
-    intro: "Two rules make `ss` safe to build on: `-n` so a name lookup cannot change the output, and `-H` so the header is not mistaken for data. The exit status is 0 whether or not anything matched, so test the output."
+    intro: "`ss` is safe to build on once `-n` stops a name lookup changing the output and `-H` stops the header being mistaken for data. The exit status is 0 whether or not anything matched, so test the output."
     examples:
       - title: "Test whether a port is taken"
         code: ss -ltnH sport = :8080 | grep -q . && echo listening || echo free

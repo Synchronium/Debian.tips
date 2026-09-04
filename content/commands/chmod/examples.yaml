@@ -200,7 +200,7 @@ sections:
         tags: [scripting]
 
   - title: "Changing several files at once"
-    intro: "One command, several targets."
+    intro: "A single command can carry as many targets as you give it."
     examples:
       - title: "Set the same mode on a list of files"
         code: "chmod 600 a.txt b.txt c.txt && ls -l a.txt b.txt c.txt"
@@ -292,7 +292,7 @@ sections:
         danger: true
 
   - title: "Special permission bits: setuid, setgid, sticky"
-    intro: "Three extra bits, above the normal nine, with their own numeric digit (4000/2000/1000)."
+    intro: "Above the normal nine bits sit three more, with a numeric digit of their own (4000/2000/1000)."
     examples:
       - title: "Make new files in a directory inherit its group"
         code: "chmod g+s shared/ && ls -ld shared"

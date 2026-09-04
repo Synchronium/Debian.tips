@@ -38,7 +38,7 @@ sections:
         level: basic
       - title: "Ask about several at once"
         code: df -h /srv/backups /srv/small
-        description: "One row per path, in the order given. Two paths on the same filesystem produce one row rather than two, because `df` reports filesystems and not paths."
+        description: "The paths are reported in the order given, a row each. Put two paths on the same filesystem and you get a single row, because `df` reports filesystems and not paths."
         output: |2
           Filesystem      Size  Used Avail Use% Mounted on
           tmpfs           100M   40M   60M  40% /srv/backups
@@ -69,7 +69,7 @@ sections:
         level: intermediate
       - title: "Find which mount point holds a file"
         code: df --output=target /srv/backups/site-backup.tar
-        description: "One column and one answer. Handy when a path runs through several symlinks and you want to know where it really lands."
+        description: "`--output=target` narrows the report to the mount point alone. Handy when a path runs through several symlinks and you want to know where it really lands."
         output: |2
           Mounted on
           /srv/backups
@@ -136,7 +136,7 @@ sections:
         level: advanced
       - title: "Test whether two paths are on one filesystem"
         code: df --output=source /srv/backups /srv/backups/site-backup.tar | sort -u
-        description: "Two lines out of `sort -u`, the heading and one device, so both paths are on the same filesystem. Two devices would mean a `mv` between them is a copy and a delete rather than a rename, so one is instant and the other takes as long as the file is big."
+        description: "`sort -u` leaves the heading and a single device, so both paths are on the same filesystem. A second device would mean a `mv` between them is a copy and a delete rather than a rename, so one is instant and the other takes as long as the file is big."
         output: |2
           Filesystem
           tmpfs

@@ -28,7 +28,7 @@ sections:
     examples:
       - title: "Rename a file"
         code: mv notes.txt README.txt && ls *.txt
-        description: "One file afterwards, under the new name. Unlike [cp](/commands/cp/), nothing is left behind."
+        description: "The file is left under its new name and nowhere else. Unlike [cp](/commands/cp/), nothing is left behind."
         output: |
           README.txt
         level: basic

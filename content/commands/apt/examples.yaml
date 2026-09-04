@@ -174,7 +174,7 @@ sections:
         level: basic
       - title: Install several packages in one transaction
         code: sudo apt install -y cowsay-off bash-completion
-        description: One transaction rather than several, so dependencies are resolved across the whole set and it either all succeeds or all fails.
+        description: Naming them together makes it a single transaction, so dependencies are resolved across the whole set and it either all succeeds or all fails.
         level: basic
       - title: Install a specific version
         code: sudo apt install cowsay-off=3.03+dfsg2-8

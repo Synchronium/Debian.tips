@@ -103,7 +103,7 @@ sections:
         level: basic
       - title: "Pass filenames to a command that counts them"
         code: echo "logs/app.log logs/error.log" | xargs wc -l
-        description: "Both filenames reach [`wc`](/commands/wc/) in one invocation, so it prints a total as well as a line for each file."
+        description: "[`wc`](/commands/wc/) is invoked once with both filenames, so it prints a total as well as a line for each file."
         output: |2
            2 logs/app.log
            3 logs/error.log
@@ -147,7 +147,7 @@ sections:
         level: basic
       - title: "Batch a numbered list three at a time"
         code: seq 1 10 | xargs -n3
-        description: "Ten items in batches of three gives four runs, the last one short."
+        description: "`-n3` fills a run with three items and starts another, so ten items take four runs and the last is short."
         output: |2
           1 2 3
           4 5 6
@@ -156,7 +156,7 @@ sections:
         level: basic
       - title: "Count how many invocations a batch size produces"
         code: seq 1 10 | xargs -n3 | wc -l
-        description: "One output line per invocation, so counting lines counts the runs. Worth checking before pointing a slow command at a long list."
+        description: "Each invocation prints a line, so counting lines counts the runs. Worth checking before pointing a slow command at a long list."
         output: |2
           4
         level: intermediate
@@ -323,7 +323,7 @@ sections:
     examples:
       - title: "See a filename split into two items"
         code: find logs -name "*.log" | sort | xargs -n1 echo
-        description: "Six lines out for five files in: `last week.log` became `logs/last` and `week.log`, neither of which exists."
+        description: "`last week.log` arrived as two items, `logs/last` and `week.log`, neither of which exists, which is why five files produce six lines."
         output: |2
           logs/api.log
           logs/app.log
@@ -434,7 +434,7 @@ sections:
         level: advanced
       - title: "Combine batching with parallelism"
         code: 'seq 1 6 | xargs -n2 -P3 sh -c ''echo pair: $@'' _ | sort'
-        description: "Three concurrent runs of two items each. `-n` and `-P` compose, where `-I` and `-n` do not."
+        description: "`-n` and `-P` compose, giving three concurrent runs of two items each, where `-I` and `-n` do not."
         output: |2
           pair: 1 2
           pair: 3 4
@@ -511,7 +511,7 @@ sections:
         level: intermediate
       - title: "Confirm 123 does not depend on the command's own status"
         code: 'printf "a\nb\n" | xargs -n1 sh -c "exit 1"; echo "exit: $?"'
-        description: "Both runs exited 1 and the batch still reports 123. A script testing `$?` against the command's own codes will not see them."
+        description: "The command exited 1 on both runs and the batch still reports 123. A script testing `$?` against the command's own codes will not see them."
         output: |2
           exit: 123
         level: advanced

@@ -64,7 +64,7 @@ sections:
         tags: [beginner]
       - title: "Prove the tap and the pipeline agree"
         code: sort -u wordlist.txt | tee unique.txt | wc -l && wc -l unique.txt
-        description: "Six lines counted downstream, six lines in the file. `tee` copies bytes and changes nothing, which is what makes it safe to drop into a pipeline you are debugging."
+        description: "The count downstream and the count in the file agree. `tee` copies bytes and changes nothing, which is what makes it safe to drop into a pipeline you are debugging."
         output: |
           6
           6 unique.txt
@@ -198,7 +198,7 @@ sections:
     examples:
       - title: "Count matches and keep them"
         code: grep ' 200 ' access.log | tee matched.log | wc -l
-        description: "Seven successful requests, and `matched.log` holds the lines themselves so you can look at them without re-running [grep](/commands/grep/)."
+        description: "The count comes back on screen while `matched.log` holds the lines themselves, so you can look at them without re-running [grep](/commands/grep/)."
         output: |
           7
         level: basic

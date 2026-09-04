@@ -358,7 +358,7 @@ sections:
         level: advanced
 
   - title: "When there is no page"
-    intro: "Two different failures, with two different fixes, and `man` words them differently enough to tell apart."
+    intro: "A missing page and a mis-addressed one are different failures with different fixes, and `man` words them differently enough to tell apart."
     examples:
       - title: "Ask for a command that does not exist"
         code: man nosuchcommand

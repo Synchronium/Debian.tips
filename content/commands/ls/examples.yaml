@@ -159,7 +159,7 @@ sections:
     examples:
       - title: "Show the long format"
         code: ls -l projects
-        description: "Five columns before the name, and a `total` line for the blocks the entries occupy. Every entry here is a directory, hence the leading `d` and the 4096 size."
+        description: "The name is preceded by five columns, and a `total` line reports the blocks the entries occupy. Every entry here is a directory, hence the leading `d` and the 4096 size."
         output: |2
           total 16
           drwxr-xr-x 2 user user 4096 Jun 26 10:00 backups
@@ -375,7 +375,7 @@ sections:
     examples:
       - title: "See how the date format changes with age"
         code: ls -l projects/backups
-        description: "Both files are the same size and mode. The 2025 one is older than six months, so `ls` prints its year in place of the time; the recent one keeps its `15:30`."
+        description: "The 2025 file is older than six months, so `ls` prints its year in place of the time; the recent one keeps its `15:30`."
         output: |2
           total 16
           -rw------- 1 user user 5120 May 31  2025 site-2026-01-01.tar.gz

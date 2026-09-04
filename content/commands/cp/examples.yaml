@@ -28,7 +28,7 @@ sections:
     examples:
       - title: "Copy a file to a new name"
         code: cp notes.txt notes.bak && ls notes.*
-        description: "Two files afterwards, with the same contents. [mv](/commands/mv/) does the same job without leaving the original behind."
+        description: "The original stays where it was and the copy holds the same contents. [mv](/commands/mv/) does the same job without leaving the original behind."
         output: |
           notes.bak
           notes.txt

@@ -152,7 +152,7 @@ sections:
         level: intermediate
       - title: "Show the arguments a process was given"
         code: ps -o args= -C tips-backup | sort -u
-        description: "Both copies were started the same way, so `sort -u` collapses them to one line. The arguments are read from the process's own memory, so a process that rewrites its argument vector can hide them."
+        description: "The copies were started the same way, so `sort -u` collapses them to one line. The arguments are read from the process's own memory, so a process that rewrites its argument vector can hide them."
         output: |
           /usr/local/bin/tips-backup 3600
         level: intermediate
@@ -320,7 +320,7 @@ sections:
         level: basic
       - title: "Find a process's parent"
         code: ps -o comm=,ppid= -C tips-backup | sort -u
-        description: "Both copies have the same parent, so `sort -u` reduces the answer to one line. Following `ppid` upwards is how you find out what actually started something."
+        description: "The copies share a parent, so `sort -u` reduces the answer to one line. Following `ppid` upwards is how you find out what actually started something."
         volatile: "the parent PID is specific to your machine"
         compare: shape
         output: |

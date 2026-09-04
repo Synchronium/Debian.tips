@@ -68,7 +68,7 @@ sections:
     examples:
       - title: "See why a plain pattern matches too much"
         code: apt-file search /usr/bin/dig
-        description: "Eight paths across seven packages, because `/usr/bin/dig` is a substring of `/usr/bin/digikam` and of six others. The command you wanted is the first line."
+        description: "`/usr/bin/dig` is a substring of `/usr/bin/digikam` and of six other paths, so seven packages answer and the command you wanted is the first line."
         level: basic
         output: |
           bind9-dnsutils: /usr/bin/dig
@@ -87,7 +87,7 @@ sections:
           bind9-dnsutils: /usr/bin/dig
       - title: "Search for several commands at once"
         code: apt-file search -x 'bin/(ifconfig|route)$'
-        description: "One pass over the index rather than two, and a pass reads tens of megabytes."
+        description: "The alternation reads the index once where two searches would read it twice, and a pass is tens of megabytes."
         level: intermediate
         output: |
           net-tools: /usr/sbin/ifconfig

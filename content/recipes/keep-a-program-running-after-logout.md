@@ -1,7 +1,7 @@
 ---
 title: "Keep a program running after you log out"
 tagline: "nohup, setsid, tmux, and which one you actually want"
-description: "Four ways to stop a long job dying when an ssh session ends, what each one really does about SIGHUP, and an honest recommendation between them."
+description: "How to stop a long job dying when an ssh session ends, what each approach really does about SIGHUP, and an honest recommendation between them."
 category: recipes
 tags: [processes, ssh, sysadmin]
 updated: 2026-08-29
