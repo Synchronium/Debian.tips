@@ -277,4 +277,4 @@ A script that runs under bash on your machine and `sh` on a server fails there a
 Between these forms and [Arrays](/scripting/arrays/), most of the string handling a shell script
 needs no longer requires `sed`, `cut` or a subshell to do it.
 [Where a script lives](/scripting/where-a-script-lives/) is next, and it uses two of the trims for
-the job they are reached for most: taking a path apart.
+their commonest job: taking a path apart.

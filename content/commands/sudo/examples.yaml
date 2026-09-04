@@ -86,7 +86,7 @@ sections:
         level: intermediate
       - title: "Pass the environment through anyway"
         code: FOO=bar sudo -E printenv FOO
-        description: "`-E` keeps what you had, and the policy can forbid it. Reach for it when a build or a proxy setting has to survive, and not as a habit: the reset exists so that a variable you did not think about, such as `LD_PRELOAD`, cannot follow a command into root."
+        description: "`-E` keeps what you had, and the policy can forbid it. Use it when a build or a proxy setting has to survive, and not as a habit: the reset exists so that a variable you did not think about, such as `LD_PRELOAD`, cannot follow a command into root."
         output: |2
           bar
         level: intermediate
@@ -251,7 +251,7 @@ sections:
         level: intermediate
       - title: "Check which one Debian always installs"
         code: dpkg-query -W -f='${Package} ${Priority}\n' util-linux sudo
-        description: "`required` means the system will not work without it. `optional` means a standard install has it and a minimal one may not, so a script that has to run on any Debian machine should reach for `su` or for neither."
+        description: "`required` means the system will not work without it. `optional` means a standard install has it and a minimal one may not, so a script that has to run on any Debian machine should stick to `su`, or to neither."
         output: |2
           sudo optional
           util-linux required

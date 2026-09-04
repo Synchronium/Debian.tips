@@ -10,7 +10,7 @@ related: [dpkg, apt, apt-cache, apt-essentials]
 
 Several commands answer "what is installed", and they disagree, because they are answering
 slightly different questions. One of them counts packages that were removed months ago. One of
-them is a table that truncates itself to your terminal width. The command to reach for depends on
+them is a table that truncates itself to your terminal width. Which one you want depends on
 whether a person or a script is going to read the answer.
 
 ## The reliable listing
@@ -81,7 +81,7 @@ rc  bash-completion
 [remove vs purge vs autoremove](/compare/remove-vs-purge-vs-autoremove/) covers how packages end
 up there and how to finish the job.
 
-## The two commands people reach for first
+## The two commands people try first
 
 `dpkg -l` and `apt list --installed` both work and neither is meant for a pipe.
 

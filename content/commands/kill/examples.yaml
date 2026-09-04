@@ -235,7 +235,7 @@ sections:
         level: intermediate
       - title: "Signal every process owned by a user"
         code: pkill -u user; sleep 0.5; pgrep -c -u user
-        description: "With no pattern at all, the selection is whatever the other options say. This ends every process belonging to `user`, including their login shell, and is the command to reach for before deleting an account rather than during an ordinary day."
+        description: "With no pattern at all, the selection is whatever the other options say. This ends every process belonging to `user`, including their login shell, and belongs to deleting an account rather than to an ordinary day."
         danger: true
         output: |2
           0

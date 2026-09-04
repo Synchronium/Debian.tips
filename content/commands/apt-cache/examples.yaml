@@ -18,7 +18,7 @@ fixtures:
 sections:
   - title: "Which version would I get"
     intro: >-
-      `apt-cache policy` is the command to reach for whenever a package is not the version you
+      `apt-cache policy` answers that whenever a package is not the version you
       expected. `Installed` is what is on the machine now and `Candidate` is what `apt install`
       would fetch, and the two lines together answer most of the question on their own.
     examples:
@@ -257,7 +257,7 @@ sections:
           xcowsay - Graphical configurable talking cow
       - title: "Search names only, ignoring descriptions"
         code: apt-cache search --names-only '^cow' | sort
-        description: "`--names-only` (short form `-n`) is the first thing to reach for when a search returns pages of results. Results come back in cache order rather than alphabetically, so pipe through [`sort`](/commands/sort/) if the order matters."
+        description: "`--names-only` (short form `-n`) is what narrows a search that has come back as pages of results. Results arrive in cache order rather than alphabetically, so pipe through [`sort`](/commands/sort/) if the order matters."
         level: basic
         output: |2
           cowbuilder - pbuilder running on cowdancer

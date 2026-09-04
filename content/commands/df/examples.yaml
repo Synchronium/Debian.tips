@@ -46,7 +46,7 @@ sections:
         level: basic
       - title: "Point it at a file rather than a directory"
         code: df -h /srv/backups/site-backup.tar
-        description: "The answer is about the filesystem holding the file, not the file. `df` never reports on a file's own size, and reaching for it to do so is the usual reason somebody ends up wanting [`du`](/commands/du/) instead."
+        description: "The answer is about the filesystem holding the file, not the file. `df` never reports on a file's own size, and asking it to is the usual reason somebody ends up wanting [`du`](/commands/du/) instead."
         output: |2
           Filesystem      Size  Used Avail Use% Mounted on
           tmpfs           100M   40M   60M  40% /srv/backups
