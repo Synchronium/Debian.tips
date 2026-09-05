@@ -72,7 +72,7 @@ is no page left whose outputs nothing re-runs. That closes the largest item in �
 | `recipes` | add-a-directory-to-path, bulk-rename-files, copy-files-between-machines, find-and-replace-across-files, find-permission-denied, find-the-largest-files, keep-a-program-running-after-logout, kill-whatever-is-using-a-port, monitor-a-log-in-real-time | 9 pages. **All four P1 recipes shipped 2026-08-29**, after six weeks in which the category gained nothing. What is left is the §9 P2 list. |
 | `debian` | apt-essentials, install-a-deb-file, list-installed-packages, release-channels, systemd-services, third-party-repositories, which-package-provides-a-file | 7 pages, bounded by §10.0.1 to the explainer shape. Errors go to `troubleshooting` instead. |
 | `troubleshooting` | could-not-get-lock-dpkg-frontend, packages-kept-back, repository-is-not-signed, sudo-command-not-found | 4 pages, all of §6.1's P1 list. The §6.1 P2 list is what remains. |
-| `compare` | apt-upgrade-vs-full-upgrade, apt-vs-apt-get, cron-vs-systemd-timers, hard-vs-symbolic-links, remove-vs-purge-vs-autoremove, sh-vs-bash-vs-dash, ss-vs-netstat, su-vs-sudo-i-vs-sudo-s, which-vs-type-vs-command | 9 pages, and **the category is closer to finished than the backlog looked**: of the twenty candidates §10.1 identified, seven are now retired as content their own command pages absorbed, and four wait on a page that does not exist. |
+| `compare` | apt-upgrade-vs-full-upgrade, apt-vs-apt-get, cron-vs-systemd-timers, hard-vs-symbolic-links, remove-vs-purge-vs-autoremove, sh-vs-bash-vs-dash, ss-vs-netstat, su-vs-sudo-i-vs-sudo-s, which-vs-type-vs-command | 9 pages. Of the twenty candidates §10.1 identified, seven are parked because a command page already contains the material and four wait on a page that does not exist. **Whether parking them was right is §10.1.1, and it is open**: the reader who searches "X vs Y" arrives at no page about choosing, which is the shape ADR-0006 files this category by. |
 
 ## §3. What the evidence says
 
@@ -729,24 +729,33 @@ the difference (`remove` vs `purge` on a leftover conffile, `sed -i` severing a 
 so far have a setup script and replay. Without it a comparison page is an unverifiable opinion
 piece, which is the failure mode to watch for.
 
-**Nine written of twenty identified. Seven of the rest are retired**, and the reason they are is
-the more useful half of this entry.
+**Nine written of twenty identified.** Seven more were parked on 2026-09-05 because a command page
+or a lesson already contained the material, and **that decision is unresolved rather than taken**.
+The argument on each side is below, and §10.1.1 says what would settle it.
 
-**A comparison does not survive the command pages beneath it being written.** The original list was
-drawn up when most of those pages did not exist, on the assumption that writing them would unblock
-the comparison. The opposite happened: a command page with room for sixty examples answers the
-comparison on the way past, and what is left is the same content under a second URL. Four of the
-nine written pages survived that test and seven candidates failed it, so the test is worth applying
-before a comparison is chosen rather than after it is drafted.
+**Why they were parked.** The original list was drawn up when most of the command pages beneath it
+did not exist, on the assumption that writing them would unblock the comparison. The opposite
+happened: a command page with room for sixty examples answers the comparison on the way past, and
+what is left reads as the same content under a second URL. Four of the nine written pages span
+subjects no single page owns, and each of the seven below sits inside one page's territory.
 
-**What makes the difference is whether one existing page owns the question.** The four that
-survived all span pages that do not reference each other: hard against symbolic links reaches
-`ln`, `cp`, `du` and backups; `ss` against `netstat` names a command with no page at all;
-`su` against `sudo -i` spans four spellings across two packages; `apt upgrade` against
-`full-upgrade` spans `apt` and `apt-get`. Each of the seven retired below sits inside the
-territory of a single page that already answers it.
+**Why that is probably the wrong test.** [ADR-0006](../adr/0006-taxonomy-has-two-axes.md) files a
+page by **how its reader arrives**, and `compare`'s test is "X or Y, and nobody told me how to
+choose". A reader typing that into a search box arrives with two options and no page whose title,
+URL or first paragraph is about choosing between them. §3.2 measured that question shape as the
+most repeated one on unix.SE, and the top of this section calls it high-intent and
+low-competition, which is a claim about search rather than about the link graph. Folding it into a
+command page does not serve that reader; it hides the answer inside a page about something else and
+gives the query nothing to match.
 
-**Retired, each with what covers it:**
+The two positions do not disagree about the content. They disagree about **which page owns the
+question**, and the site has already answered that once in the other direction: `which` was written
+as a command page, spent eighteen of its twenty-four examples on commands other than `which`, and
+was split so the comparison could own the limit and the alternatives. Both halves got better. The
+seven below are the same situation reached from the other end, and they were handled the opposite
+way in the same week.
+
+**Parked, each with what currently covers it:**
 
 | Candidate | Covered by |
 | --- | --- |
@@ -758,9 +767,10 @@ territory of a single page that already answers it.
 | login vs non-login vs interactive shells | `concepts/environment-variables-and-path` |
 | `useradd` vs `adduser` | `commands/managing-users`, which is built on the distinction |
 
-The last of those is the pattern arriving in the same week it was named. `useradd` vs `adduser` was
-on the waiting list until §4.5 was written, and the page that unblocked it opens with the contrast
-and spends a section of six examples on it.
+`useradd` vs `adduser` is the sharpest of the seven. It sat on the waiting list until §4.5 was
+written, and the page that unblocked it opens with the contrast and spends a section of six
+examples on it, all within a week of the entry predicting that writing the command page would make
+the comparison possible.
 
 **Still waiting on a page beneath them (4):** `/opt` vs `/usr/local` vs `/usr/bin`, which wants the
 §5 filesystem-hierarchy page; `rsync` vs `scp` vs `sftp`; `ip` vs `ifconfig`; `printf` vs `echo`,
@@ -768,17 +778,39 @@ which §4.4 argues belongs in a lesson instead. `apt` vs `apt-get` vs `aptitude`
 half-written as `apt-vs-apt-get` and the remainder waits on `aptitude`, a §4.1 P3 whose own entry
 says the honest verdict is no.
 
-**Read that list against the rule above before writing any of them.** Three of the four are waiting
-on a command page that, once written, is likely to absorb them, which makes the comparison the
-thing to write *instead of* or *before* the command page rather than after it. `ip` vs `ifconfig`
-is the exception and the clearest survivor of the four, because `ifconfig` will never have a page
-here for the same reason `netstat` does not.
+Three of those four are waiting on a command page that, on the evidence above, is likely to absorb
+them. If the comparison is the page that should own the question, the order is the wrong way round
+and the comparison should be written first, with the command page deferring to it. `ip` vs
+`ifconfig` is the exception, because `ifconfig` will never have a page here for the same reason
+`netstat` does not.
 
-The `which` page is the demonstration of how the two shapes divide. Written as one page, it spent
-eighteen of its twenty-four examples on commands other than `which`; split, the comparison owns the
-limit and the alternatives and the command page keeps `PATH` order. That is the split working in
-the direction this section wants, and it happened because the command page was written first and
-noticed.
+### §10.1.1. The open question: who owns a comparison a command page could answer
+
+**Nothing is decided here, and eleven pages depend on the answer**: the seven parked above and the
+four waiting. Both a decision and its opposite are defensible from what this document already says,
+which is why it is written down rather than settled in passing.
+
+**A strategy that would resolve it, if the search evidence supports the comparison.** The
+comparison page owns the *decision* and is the only page that stages it; the command page owns
+*its own command* and links out at the sentence that raises the choice. Where a command page has
+already absorbed the comparison, the fix is to thin that page and link, not to skip the comparison.
+That is what the `which` split did, and both pages came out better for it.
+
+The cost is honest and should be counted before committing: seven existing pages would need
+thinning, some of them recently written, and `commands/managing-users` is built on a contrast it
+would be handing away.
+
+**What would settle it is query data, and it is about to exist.** `robots.txt` has advertised
+`/sitemap.xml` since the site went up, and the sitemap is rebuilt on every build from the content
+model. Once Search Console has a few weeks of queries, the question is answerable rather than
+arguable: whether "X vs Y" queries reach the site at all, whether they land on the comparison pages
+or on the command pages, and whether the four written this week outperform the sections they would
+otherwise have been folded into. `su-vs-sudo-i-vs-sudo-s` against the `sudo` page's own `-i`
+section is the cleanest natural experiment available, because both exist and cover the same ground.
+
+**Reassess when that data exists.** If comparisons draw the traffic, unpark the seven and adopt the
+strategy above. If they do not, retire them properly and record the reasoning in an ADR, since by
+then it would be a decision rather than a guess.
 
 ### §10.2. `troubleshooting`, pages named after the error: **BUILT**
 
@@ -956,7 +988,7 @@ queue. That is not a complaint about the choices; it is how to read what follows
 | 3. Concepts | **done** 2026-08-27 | Nothing |
 | 4. Perl track | **blocked** | The §10.4 `order:` change first, then 9 pages |
 | 5. Processes and everyday files | **done** 2026-09-05 | Nothing; the combined `stat`/`file`/`basename` entry is all that is left of §4.3 |
-| 6. Comparisons | **9 of 20, and effectively closed** | Four wait on a page that does not exist; seven are retired. §10.1 says why |
+| 6. Comparisons | **9 of 20, and paused rather than closed** | Four wait on a page that does not exist, seven are parked, and §10.1.1 is the open question deciding both |
 | 7. Recipes | **4 P1 done** 2026-08-29 | The §9 P2 list |
 | 8. Networking and disk | **3 pages** | `du`, `df` and `ss` are written; everything else waits on a resolver fixture and a loop device |
 
@@ -981,17 +1013,17 @@ against the `mk_site_tree` that `cp`, `mv` and `rm` already share, which is what
 batch cost about what one page's fixture usually does. What remains of §4.3 is the combined
 `stat`/`file`/`basename`/`dirname` entry, which `COMMAND_GROUPS` reserves `inspect-files` for.
 
-**Wave 6: comparisons (§10.1). Opened and effectively closed on 2026-09-05.** Nine pages of the
-twenty candidates, and the wave ends not because the list ran out but because most of it turned
-out to be already written somewhere else. Four candidates were taken in a batch; the next four were
-checked against the corpus before drafting and every one of them was covered by a command page or a
-lesson, so they are retired rather than queued. §10.1 has the rule that predicts this and the four
-that remain.
+**Wave 6: comparisons (§10.1). Opened 2026-09-05 and paused, not closed.** Nine pages of the
+twenty candidates. Four were taken in a batch; the next four were checked against the corpus before
+drafting and every one was already covered by a command page or a lesson, which stopped the wave
+rather than finishing it.
 
-**A wave whose backlog dissolves under inspection is a good outcome and an easy one to miss.**
-Nothing failed here: the pages were written, the readers are served, and the queue was describing
-work that no longer existed. The check that found it costs a `grep` per candidate and should run
-before a comparison is chosen, not after it is drafted.
+**Whether that check was measuring the right thing is §10.1.1, and it is unresolved.** The
+duplication is there on the page, and so is the reader who searches "nohup vs disown" and finds no
+page about choosing between them. Both cannot be served by the same arrangement, the site has already answered
+it in both directions in one week, and query data will settle it in a way that argument will not.
+Until then this wave is paused rather than done, and the eleven pages it covers are parked rather
+than dropped.
 
 **Wave 7: recipes (§9), interleaved.** All four P1 recipes shipped 2026-08-29. Interleaving is
 still the right approach: each one was cheap, and three of the four were written against fixtures
@@ -1016,11 +1048,12 @@ The backlog above is roughly 47 command pages, 14 concepts, 20 Debian articles, 
 98 that exist.** At this site's verification standard that is a very large amount of sandbox work,
 and the plan should not pretend otherwise.
 
-**Eleven of those came off the list on 2026-09-05 without a page being written**, seven from §10.1
-and four absorbed into `managing-users` and the file batch. That is worth expecting again: a
-backlog assembled before the pages beneath it existed counts some work twice, and the correction
-arrives when somebody checks a candidate against the corpus rather than against the list. The
-remaining figures have not had that check.
+**Eleven of those were parked on 2026-09-05 without a page being written**, and the comparison
+figure above counts only the four still queued. A backlog assembled before the pages beneath it
+existed does count some work twice, and checking a candidate against the corpus is how that
+surfaces. It is also how a page a reader would have searched for gets quietly dropped, which is
+§10.1.1 and is unresolved, so treat the reduced figure as provisional. The remaining category
+totals have had neither check.
 
 The measured rate is 19 pages in six days (2026-08-18 to 08-24), 21 in five (08-24 to 08-29), and
 13 in the five after that. The last is the useful one, because that week also carried two decisions
@@ -1290,9 +1323,12 @@ What went out, and what writing it taught that the next batch would otherwise le
   A comparison page invites exactly this, because the pattern of its sentences is symmetry and a
   plausible second half is easy to write and hard to notice.
 
-  The batch's largest finding was about the backlog rather than the pages. Four more candidates
-  were checked against the corpus before drafting and all four were already answered by a command
-  page or a lesson; §10.1 now records seven retirements and the rule that predicts them.
+  The batch's largest finding was about the backlog rather than the pages, and it did not survive
+  the day. Four more candidates were checked against the corpus before drafting, all four were
+  already answered by a command page or a lesson, and seven were parked on that basis. The test
+  used was content overlap; the test ADR-0006 gives for this category is how the reader arrives,
+  and a reader searching "X vs Y" arrives at nothing. §10.1.1 holds both arguments and what would
+  settle them, and the pages are parked rather than dropped until it does.
 - **2026-09-05**: `managing-users`, closing §4.5 and with it the last subject §2 could call a hole.
   53 checked outputs, and the page is built on `adduser` applying Debian's policy where `useradd`
   applies none.
