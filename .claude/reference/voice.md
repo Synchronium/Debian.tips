@@ -115,6 +115,15 @@ them on a page is a house style rather than six observations. Say what the thing
 number where it does some work or leave it out. `npm run voice` counts these against a budget,
 being one of the few tells in this section with a spelling.
 
+**The positional half.** Setting something up as two parts and then pointing at one of them by
+position: "`CONT` is the other half", "The other half of the question", "This half of `-p`". The
+reader has to carry the mapping to use the sentence, and where the antecedent is in a different
+example there is nothing on screen to map it to. Name the part instead, which is usually shorter:
+"`CONT` is what undoes `STOP`". Saying first, second or both is a fair substitute and nothing
+counts those, so the budget is only for the positional form. What the rule leaves alone is the word
+used honestly: `half-finished` and its family, the quantity sense, and a thing that really is two,
+like a key pair's public and private halves or the master and slave of a pty.
+
 **Also:** em dashes, `X, not Y` antithesis and symmetry generally, parenthetical asides that answer
 a question mid-sentence, and "actually".
 
@@ -136,7 +145,7 @@ is the important one, its placement and the space given to it say so.
 | **turns on** (as in *it turns on one word*) | Writing about the document |
 | *this is where people go wrong*, *what most guides miss* | The same |
 
-**A verbal tic is the other half of this.** Nothing is wrong with "reach for", and the site would
+**A verbal tic does the same damage.** Nothing is wrong with "reach for", and the site would
 be fine with three of them; forty across fifty pages reads as one author with one gear, which is
 exactly the impression being fixed. No rhetorical frame should repeat more than twice site-wide,
 and that applies to phrasing as much as to headings, with the exception §7 sets out.

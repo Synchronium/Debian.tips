@@ -191,7 +191,7 @@ nothing to link to, from `kill-whatever-is-using-a-port`.
   `/proc/$!/status`. Not the raw field, which is the CI failure this page cost: the high bits
   carry real-time signals the C library reserves, and they differ between an arm64 devcontainer
   and an amd64 runner. Masked to signals 1 to 31 it is stable by construction, and the page shows
-  that half as hex before translating it with `kill -l`, so a reader meets the bitmap first and
+  the masked bitmap as hex before translating it with `kill -l`, so a reader meets the bitmap first and
   the decoding second.
 - **P2 `top`** (standard): reading load average, sort keys, renice in place; `htop` in a callout.
 - **P2 `lsof`** (standard): open files, `-i` for sockets, deleted-but-held files eating a disk.

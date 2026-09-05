@@ -112,6 +112,21 @@ const RULES: readonly Rule[] = [
     message: "voice.md §4: a caption that opens by counting what follows. Fine a few times.",
   },
   {
+    id: "positional-half",
+    severity: SEVERITY.report,
+    // Only the forms where a position stands in for a name. `public half`, `group half` and
+    // `two halves` name the part they mean, and a pty and a `.deb` really do come in two, so
+    // matching bare `half` would flag the sentences that are working.
+    //
+    // The compound adjectives (`half-finished`, `half-written`) and the quantity sense ("half
+    // your list") are ordinary English and share nothing with this but the word. `dpkg` prints
+    // `halF-conf/Half-inst` in captured output, which no rule may ask anyone to edit.
+    pattern: /\bthe other half\b|\bthe (?:first|second) half\b|\b(?:this|that) half\b/gi,
+    budget: 2,
+    message:
+      "voice.md §4: names something as two parts, then points at a part instead of naming it. Say which one you mean.",
+  },
+  {
     id: "adverb-of-obviousness",
     severity: SEVERITY.report,
     pattern: /\b(?:plainly|clearly|obviously|of course)\b/gi,
@@ -291,8 +306,8 @@ const VOICE_DIRS: readonly string[] = [
   // The code, for its comments. voice.md's opening says it applies to "every sentence this
   // repository publishes", and names code comments explicitly, because ADR-0017 puts every one of
   // them one click away from a page they helped produce. Leaving these out meant the guide's claim
-  // that the corpus sits at zero was true only of the half the checker happened to walk, and it
-  // was not true of the other half.
+  // that the corpus sits at zero was true only of the files the checker happened to walk, and not
+  // of the code beside them.
   join(ROOT, "src"),
   join(ROOT, "scripts"),
   join(ROOT, "test"),

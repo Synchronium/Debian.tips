@@ -78,7 +78,7 @@ anyone writing pages is that adding one no longer accrues a debt: `--record-timi
 there for recording by hand, but nothing needs it. It refuses to run under `--shard`, `--changed`
 or named pages, because a partial recording would drop every page it did not run.
 
-`npm run shards` is the other half. The figures decide how many shards are worth running, and that
+`npm run shards` answers the question the recorder cannot. The figures decide how many shards are worth running, and that
 count lives in `ci.yml`, which no workflow can write. So the recorder runs this last, after it has
 pushed, and red means somebody should change the matrix. It is not in `npm run check` on purpose:
 a count that no longer suits the figures costs wall clock and never coverage, and gating on it

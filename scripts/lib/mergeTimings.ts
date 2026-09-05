@@ -128,7 +128,7 @@ export function combineParts(files: string[]): { merged: Record<string, number>;
  *
  *  Only about the figures. Whether the shard count still suits them is `check-shard-count.ts`,
  *  asked after the write rather than before it: the two are one decision, but this writer can
- *  change only the figures, and refusing to record until a human changed the other half left
+ *  change only the figures, and refusing to record until a human changed the count left
  *  neither able to move. */
 export function mergeTimings(input: MergeInput): MergeResult {
   const { expected, merged, current } = input;

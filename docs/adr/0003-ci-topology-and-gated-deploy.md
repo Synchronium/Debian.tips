@@ -84,5 +84,5 @@ when a shard is added. The workflow builds the image as its own step precisely s
 which half any slowness is in. Caching the image is the next lever, and it is closer to worth its
 failure modes than it was.
 
-ADR-0020's "Revisit when" covers the other half, which is what to do about the replay's total run
+ADR-0020's "Revisit when" covers the replay's total run
 time, and records how the shard count has moved with it.
