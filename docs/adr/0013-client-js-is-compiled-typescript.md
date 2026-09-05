@@ -35,10 +35,10 @@ DOM types live in a separate `tsconfig.client.json`. The root config excludes `s
 deliberately: sharing one config would let `document` typecheck inside the build and the harness,
 where referring to it is always a mistake.
 
-That exclusion is the rule rather than the special case, and `scripts/browser-check.ts` was the
+That exclusion is the rule rather than the special case, and `scripts/gates/browser-check.ts` was the
 second file to need it (ADR-0022): it is Node code holding browser code, since the callbacks it
 passes to `page.evaluate()` run inside a page. It gets `tsconfig.browser-check.json` for the same
-reason, rather than the root `lib` being widened to reach it. `scripts/og-image.ts` joined it for
+reason, rather than the root `lib` being widened to reach it. `scripts/maintain/og-image.ts` joined it for
 the same reason, which is what the shared config is for: a third case would have been an argument
 for widening the root, and a config that already holds two is not.
 

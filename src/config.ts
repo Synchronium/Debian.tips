@@ -173,11 +173,10 @@ export const HOME_TOPICS: HomeTopic[] = [
   { label: "Security", description: "Secure a system and manage access", tag: "security", icon: "lock" },
 ];
 
-/** Display grouping for /commands/: a lookup table, not per-page frontmatter,
- * so pages can be regrouped without touching content. A command page whose slug
- * isn't listed here still builds, but falls into COMMAND_GROUP_FALLBACK rather
- * than its logical section. Slugs with no page yet are ignored, so this doubles
- * as a rough roadmap of intended coverage. */
+/** Display grouping for /commands/: a lookup table, not per-page frontmatter, so pages can be
+ *  regrouped without touching content. A command page whose slug isn't listed here still builds,
+ *  but falls into COMMAND_GROUP_FALLBACK rather than its logical section. Slugs with no page yet
+ *  are ignored, so this doubles as a rough roadmap of intended coverage. */
 export const COMMAND_GROUPS: { title: string; commands: string[] }[] = [
   {
     title: "Debian packages",

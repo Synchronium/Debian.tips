@@ -2,7 +2,7 @@
   "permissions": {
     "allow": [
       "Bash(npm run check*)",
-      "Bash(scripts/sandbox.sh *)",
+      "Bash(scripts/replay/sandbox.sh *)",
       "Edit(content/**)",
       "Write(content/**)"
     ]
@@ -14,7 +14,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx tsx scripts/voice-check.ts --hook"
+            "command": "npx tsx scripts/gates/voice-check.ts --hook"
           }
         ]
       }

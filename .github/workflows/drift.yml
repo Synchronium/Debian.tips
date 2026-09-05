@@ -3,7 +3,7 @@ name: Drift
 # stale without anyone touching it.
 #
 # Nothing here can drift on its own except the one thing that matters most: Debian's archive.
-# `scripts/sandbox/Dockerfile` builds from a moving tag, so a rebuild picks up whatever the
+# `scripts/replay/sandbox/Dockerfile` builds from a moving tag, so a rebuild picks up whatever the
 # archive holds that day, and a security update to a package a page documents is enough to make a
 # true page false. That has happened: OpenSSL 3.5.6 to 3.5.7 failed the ssh page, and an
 # autoremove counter moved because the archive had drifted past the pinned image.
@@ -54,7 +54,7 @@ jobs:
       # Its own step, so the log says whether a slow run was the image or the replay. Pulls a
       # published image when there is one for this Dockerfile, and builds when there is not.
       - name: Fetch or build the sandbox image
-        run: scripts/sandbox.sh build
+        run: scripts/replay/sandbox.sh build
       - name: Replay every page
         id: replay
         run: npm run replay

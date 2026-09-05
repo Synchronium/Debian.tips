@@ -44,7 +44,7 @@ above it claims.
 
 Beside the command, the page states what that command will check: how many outputs, how many of
 those are compared by shape rather than byte for byte, and how many are exempt. The figures come
-from `src/content/pageChecks.ts`, which is also what `scripts/replay-command-page.ts` partitions on
+from `src/content/pageChecks.ts`, which is also what `scripts/replay/command-page.ts` partitions on
 and what `/about/` sums: one definition, so a page cannot advertise a number the command
 contradicts. Counting them in the template instead would have made a fourth copy of "what does this
 page check", which is the same mistake `src/content/replaySkips.ts` was extracted to undo.
@@ -60,7 +60,7 @@ sanctioned way to turn a path into a link. The footer used to spell the URL out;
 ## Consequences
 
 **A third class of link, and neither existing gate can reach it.** ADR-0015 records two checks:
-`src/linkcheck.ts` resolves internal links against `dist/`, and `scripts/link-audit.ts` reasons
+`src/linkcheck.ts` resolves internal links against `dist/`, and `scripts/gates/link-audit.ts` reasons
 about the page graph. Neither fetches anything, and neither should: a build that depends on
 github.com being up fails for reasons unrelated to the change. So a renamed setup script, or a
 page moved between categories, would put a dead link on every page carrying it, and nothing

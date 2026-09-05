@@ -228,22 +228,27 @@ export async function renderInline(source: string, context: string): Promise<str
   return String(inlineProcessor.stringify(hast));
 }
 
+/** The page pipeline, frozen once like `inlineProcessor` above. Every page on the site goes through
+ *  it, and the dev server rebuilds on every save, so assembling the plugins is worth doing once.
+ *
+ *  Freezing it requires the table of contents to be read off the finished tree rather than
+ *  collected by a plugin closing over a per-call array, which is why `renderMarkdown` below runs
+ *  the pipeline in halves instead of calling `process`. Keep `collectHeadings` a pure function of
+ *  the tree and this stays hoistable. */
+const pageProcessor = unified()
+  .use(remarkParse)
+  .use(remarkGfm)
+  .use(remarkShiki)
+  .use(remarkRehype, { allowDangerousHtml: true })
+  .use(rehypeSlug)
+  .use(rehypeAutolinkHeadings, { behavior: "wrap", properties: { className: ["heading-link"] } })
+  .use(calloutsPlugin)
+  .use(rehypeStringify, { allowDangerousHtml: true })
+  .freeze();
+
 export async function renderMarkdown(source: string): Promise<RenderedMarkdown> {
-  const toc: TocEntry[] = [];
-
-  const file = await unified()
-    .use(remarkParse)
-    .use(remarkGfm)
-    .use(remarkShiki)
-    .use(remarkRehype, { allowDangerousHtml: true })
-    .use(rehypeSlug)
-    .use(rehypeAutolinkHeadings, { behavior: "wrap", properties: { className: ["heading-link"] } })
-    .use(calloutsPlugin)
-    .use(() => (tree: any) => {
-      toc.push(...collectHeadings(tree));
-    })
-    .use(rehypeStringify, { allowDangerousHtml: true })
-    .process(source);
-
-  return { html: String(file), toc };
+  // `run` applies every transform, which is where the headings gain the ids `rehypeSlug` gives
+  // them, so the tree is only worth reading for a table of contents after this and not before.
+  const tree = (await pageProcessor.run(pageProcessor.parse(source) as any)) as any;
+  return { html: String(pageProcessor.stringify(tree)), toc: collectHeadings(tree) };
 }

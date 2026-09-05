@@ -10,7 +10,7 @@ import { CONTENT_DIR, FIXTURE_DIR, ROOT } from "../src/paths.js";
 
 /* Every page now links into the repository at the files that produced it, and neither gate
  * can see those links: `src/linkcheck.ts` walks `dist/` and resolves internal paths, and
- * `scripts/link-audit.ts` builds a graph of pages. Nothing fetches github.com, and nothing
+ * `scripts/gates/link-audit.ts` builds a graph of pages. Nothing fetches github.com, and nothing
  * should, so a renamed setup script or a page moved between categories would put a dead link
  * on every page it appears on, silently, on a site whose whole argument is that the claims are
  * checked. This is the gate that stands in for the one a link checker cannot run. */
@@ -131,7 +131,7 @@ describe("a page with no setup script", () => {
 describe("where the block says an exemption is explained", () => {
   const rendered = model.pages
     .filter((page) => page.checks.exempt > 0)
-    .map((page) => ({ page, html: sourceLinks(page.slug, page.sources, page.checks) }));
+    .map((page) => ({ page, html: sourceLinks(page.slug, page.sources, page.checks).value }));
 
   it("has pages of both kinds to check", () => {
     expect(rendered.some(({ page }) => page.sources.hasSkipFile)).toBe(true);
@@ -170,7 +170,7 @@ describe("what the block says is compared how", () => {
       exempt: 0,
       fixtures: 0,
       ...checks,
-    });
+    }).value;
 
   it("says so plainly when nothing is relaxed", () => {
     expect(say({ checked: 12 })).toContain("Checks 12 outputs, all compared exactly.");

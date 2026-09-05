@@ -202,7 +202,7 @@ comments: the rule rather than the history, no count or measurement that will mo
 describe what a thing is now. What follows is the way a comment goes wrong that a page does not.
 
 - **A figure typed into a comment is a claim nothing checks.** A measurement belongs in an ADR,
-  which dates it, or in the command that prints it. `scripts/replay-all.ts` advertised a replay as
+  which dates it, or in the command that prints it. `scripts/replay/all.ts` advertised a replay as
   "about half a minute" while ADR-0002 had timed the same run at several times that, and neither
   reader would have known to look at the other.
 - **A contrast needs the thing it contrasts with.** "What *is* cheap is not paying for a TypeScript
@@ -227,7 +227,7 @@ banned construction comes back in the same turn it was typed.
 **Over the whole of what this document claims**, which means `content/`, `docs/`, `.claude/`,
 `README.md`, `CLAUDE.md`, and the comments in `src/`, `scripts/` and `test/`. In a source file it
 reads whole-line comments and nothing else: a banned phrase inside a string literal or a regular
-expression is data, and `scripts/voice-check.ts` quotes every phrase it bans. `test/fixtures/` is
+expression is data, and `scripts/gates/voice-check.ts` quotes every phrase it bans. `test/fixtures/` is
 exempt, because those bytes are what the build tests compare against and a fixture is a stand-in
 rather than prose.
 

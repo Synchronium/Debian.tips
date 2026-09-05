@@ -30,9 +30,9 @@
 //
 // Exit status: 0 when there are no orphans and no thin pages, 1 otherwise, 2 on a bad
 // argument or a content error.
-import { loadContent, type Page, isCommandPage } from "../src/content/loader.js";
-import { STANDALONE_PAGES } from "../src/config.js";
-import { EDGE_KIND, adjacency, affinity, collectEdges } from "./lib/linkGraph.js";
+import { loadContent, type Page, isCommandPage } from "../../src/content/loader.js";
+import { STANDALONE_PAGES } from "../../src/config.js";
+import { EDGE_KIND, adjacency, affinity, collectEdges } from "../lib/linkGraph.js";
 
 /** The style guide's floor: every page links at least this many others. */
 const MIN_OUTBOUND = 2;

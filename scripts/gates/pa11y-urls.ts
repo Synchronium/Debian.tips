@@ -1,7 +1,7 @@
 // Writes the URL list pa11y-ci checks, from the sitemap the build just produced.
 //
 //   npm run a11y                                  # generate the list, then check it
-//   npx tsx scripts/pa11y-urls.ts [origin]        # just this step; default is LOCAL_ORIGIN
+//   npx tsx scripts/gates/pa11y-urls.ts [origin]        # just this step; default is LOCAL_ORIGIN
 //
 // Generated rather than hand-written: a typed list silently stops covering the site as
 // categories are added, and the symptom is a gate that passes because it is checking less.
@@ -17,12 +17,12 @@
 // one page when this was split.
 //
 // The list-building is exported as a function and the file handling is confined to `main`, the
-// arrangement `replay-command-page.ts` uses, so `test/pa11yUrls.test.ts` can put a sitemap in and
-// read a list out without a build, a subprocess or a temporary directory.
+// arrangement `scripts/replay/command-page.ts` uses, so `test/pa11yUrls.test.ts` can put a sitemap
+// in and read a list out without a build, a subprocess or a temporary directory.
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
-import { CATEGORY_META, LOCAL_ORIGIN, NAV_ORDER, NOT_FOUND_PATH, TAGS_PATH } from "../src/config.js";
-import { DIST_DIR, PA11Y_CONFIG, PA11Y_GENERATED_CONFIG, ROOT, SITEMAP_FILE } from "../src/paths.js";
+import { CATEGORY_META, LOCAL_ORIGIN, NAV_ORDER, NOT_FOUND_PATH, TAGS_PATH } from "../../src/config.js";
+import { DIST_DIR, PA11Y_CONFIG, PA11Y_GENERATED_CONFIG, ROOT, SITEMAP_FILE } from "../../src/paths.js";
 
 /** The URL list came out short, so nothing is written. Its own class because the caller has to
  *  tell it from a missing sitemap or an unreadable settings file, which are different repairs. */

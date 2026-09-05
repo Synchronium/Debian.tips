@@ -1,22 +1,22 @@
 // Replays the documented output on one prose page (a concept, scripting lesson, recipe or
 // Debian article) inside a sandbox, and diffs it against what the page claims.
 //
-//   npx tsx scripts/replay-prose-page.ts <sandbox> <slug> [scripts/fixtures/<slug>.sh]
+//   npx tsx scripts/replay/prose-page.ts <sandbox> <slug> [scripts/fixtures/<slug>.sh]
 //
-// The counterpart to replay-command-page.ts. A command page carries its examples as YAML; a
+// The counterpart to command-page.ts beside it. A command page carries its examples as YAML; a
 // prose page states the same claim as a ```bash fence followed by the output it produced, which
 // src/content/proseBlocks.ts pairs up.
 //
 // Exit status: 0 when every pair reproduces, 1 on a mismatch, 2 on a bad argument.
 import { existsSync } from "node:fs";
-import { SANDBOX_TOOL, captureAll, openSandbox } from "./lib/sandbox.js";
-import { COMPARISON, PROSE_CATEGORIES } from "../src/content/schema.js";
-import { fixtureScript, proseSource } from "../src/paths.js";
-import { MASK_TOKENS, normalise, shapeOf } from "./lib/normalise.js";
-import { parseProseFile, type ProsePair } from "../src/content/proseBlocks.js";
-import { ReplayError, readSetupDirectives } from "./lib/replayMetadata.js";
-import { firstDifference, scoreLine } from "./lib/replayReport.js";
-import type { ReplayResult } from "./replay-command-page.js";
+import { SANDBOX_TOOL, captureAll, openSandbox } from "../lib/sandbox.js";
+import { COMPARISON, PROSE_CATEGORIES, type ProseCategory } from "../../src/content/schema.js";
+import { fixtureScript, proseSource } from "../../src/paths.js";
+import { normalise, refuseMaskTokens, shapeOf } from "../lib/normalise.js";
+import { parseProseFile, type ProsePair } from "../../src/content/proseBlocks.js";
+import { ReplayError, readSetupDirectives } from "../lib/replayMetadata.js";
+import { categoriesOf } from "../lib/replayPages.js";
+import { type ReplayResult, firstDifference, runAsCommand, scoreLine } from "../lib/replayReport.js";
 
 interface Mismatch {
   pair: ProsePair;
@@ -45,7 +45,9 @@ function locate(reference: string): { category: string; slug: string; path: stri
     return { category, slug, path };
   }
 
-  const matches = PROSE_CATEGORIES.filter((name) => existsSync(proseSource(name, reference)));
+  const matches = categoriesOf(reference).filter((name): name is ProseCategory =>
+    (PROSE_CATEGORIES as readonly string[]).includes(name),
+  );
   const [only] = matches;
   if (!only) {
     throw new ReplayError(
@@ -70,18 +72,13 @@ export function replayProsePage(options: ProseReplayOptions): ReplayResult {
   const runnable = pairs.filter((pair) => pair.comparison !== COMPARISON.skip);
   const skipped = pairs.filter((pair) => pair.comparison === COMPARISON.skip);
 
-  // A mask token in a documented output would match any real output for ever, because the
-  // masks are idempotent. Same rule the command pages are held to. Unpaired blocks are held to it
-  // as well: nothing compares them, so a mask there cannot weaken a comparison, but it would
-  // render to the reader as a literal `<TIMESTAMP>` in something presented as real output.
-  for (const block of [...pairs, ...unpaired]) {
-    const token = MASK_TOKENS.find((mask) => block.output.includes(mask));
-    if (token) {
-      throw new ReplayError(
-        `${pagePath}:${block.line} documents the mask token ${token}, which would match anything.`,
-      );
-    }
-  }
+  // Unpaired blocks are held to the same rule as pairs: nothing compares them, so a mask there
+  // cannot weaken a comparison, but it would render to the reader as a literal `<TIMESTAMP>` in
+  // something presented as real output.
+  refuseMaskTokens(
+    pagePath,
+    [...pairs, ...unpaired].map((block) => ({ where: `${pagePath}:${block.line}`, text: block.output })),
+  );
   // Both ways of leaving an output block unreproduced have to say why, and for the same reason:
   // the page's footer tells a reader how many blocks are exempt and points them at the page
   // source for the reasons, so a block with no reason there makes the footer promise something
@@ -161,18 +158,10 @@ export function replayProsePage(options: ProseReplayOptions): ReplayResult {
 function main(): void {
   const [sandbox, slug, setupPath] = process.argv.slice(2);
   if (!sandbox || !slug) {
-    console.error("usage: replay-prose-page.ts <sandbox> <slug> [setup.sh]");
+    console.error("usage: prose-page.ts <sandbox> <slug> [setup.sh]");
     process.exit(2);
   }
-
-  try {
-    const result = replayProsePage({ sandbox, slug, setupPath });
-    process.exit(result.mismatches === 0 ? 0 : 1);
-  } catch (error) {
-    if (!(error instanceof ReplayError)) throw error;
-    console.error(error.message);
-    process.exit(2);
-  }
+  runAsCommand(() => replayProsePage({ sandbox, slug, setupPath }));
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) main();

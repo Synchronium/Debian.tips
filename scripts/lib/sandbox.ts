@@ -90,7 +90,7 @@ export const SANDBOX_TOOL = {
 export type SandboxTool = (typeof SANDBOX_TOOL)[keyof typeof SANDBOX_TOOL];
 
 export interface OpenOptions {
-  /** Container name from `scripts/sandbox.sh start`. */
+  /** Container name from `scripts/replay/sandbox.sh start`. */
   name: string;
   /** Page slug, e.g. "wget". */
   command: string;

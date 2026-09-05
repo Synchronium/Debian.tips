@@ -1,10 +1,10 @@
-import { html, raw } from "../html.js";
+import { html, type Raw } from "../html.js";
 import { layout } from "./layout.js";
 import { rowList } from "./partials/row.js";
 import { type PageSlice, paginationNav } from "./partials/pager.js";
 import { CATEGORY_META, COMMAND_GROUPS, COMMAND_GROUP_FALLBACK } from "../config.js";
 import type { Page } from "../content/loader.js";
-import type { Category } from "../content/schema.js";
+import { COMMANDS_CATEGORY, type Category } from "../content/schema.js";
 
 /** Filters the rows already on the page, by title and description.
  *
@@ -15,7 +15,7 @@ import type { Category } from "../content/schema.js";
  *
  *  Scripted, so `styles/site.css` hides it when JS is not running. The listing below it is
  *  complete either way, so nothing is lost with it. */
-function listingFilter(label: string): string {
+function listingFilter(label: string): Raw {
   return html`<div class="listing-filter" data-pagefind-ignore>
 <label class="visually-hidden" for="listing-filter-input">Filter ${label.toLowerCase()}</label>
 <span aria-hidden="true" class="search-trigger-icon">⌕</span>
@@ -25,7 +25,7 @@ function listingFilter(label: string): string {
 }
 
 /** The `/commands/` index, grouped by topic. Never paginated; see partials/pager.ts. */
-function groupedCommands(pages: Page[]): string {
+function groupedCommands(pages: Page[]): Raw {
   const bySlug = new Map(pages.map((p) => [p.slug, p]));
   const used = new Set<string>();
   const groups = COMMAND_GROUPS.map((g) => {
@@ -37,14 +37,15 @@ function groupedCommands(pages: Page[]): string {
   const leftover = pages.filter((p) => !used.has(p.slug));
   if (leftover.length > 0) groups.push({ title: COMMAND_GROUP_FALLBACK, pages: leftover });
 
-  return groups
-    .map((g) => html`<section class="listing-group"><h2>${g.title}</h2>${raw(rowList(g.pages))}</section>`)
-    .join("");
+  return html`${groups.map(
+    (g) => html`<section class="listing-group"><h2>${g.title}</h2>${rowList(g.pages)}</section>`,
+  )}`;
 }
 
-export function listingPage(category: Category, slice: PageSlice<Page>, cssHref: string): string {
+export function listingPage(category: Category, slice: PageSlice<Page>, cssHref: string): Raw {
   const meta = CATEGORY_META[category];
-  const contentHtml = category === "commands" ? groupedCommands(slice.items) : rowList(slice.items, "h2");
+  const contentHtml =
+    category === COMMANDS_CATEGORY ? groupedCommands(slice.items) : rowList(slice.items, "h2");
 
   const body = html`
 <nav class="breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li aria-current="page">${meta.label}</li></ol></nav>
@@ -52,10 +53,10 @@ export function listingPage(category: Category, slice: PageSlice<Page>, cssHref:
 <h1>${meta.label}</h1>
 <p class="lede">${meta.description}</p>
 </header>
-${raw(listingFilter(meta.label))}
-${raw(contentHtml)}
+${listingFilter(meta.label)}
+${contentHtml}
 <p class="listing-empty" hidden>Nothing on this page matches that. Try the site search for everything else.</p>
-${raw(paginationNav(slice))}
+${paginationNav(slice)}
 `;
 
   return layout({
@@ -65,7 +66,7 @@ ${raw(paginationNav(slice))}
     description: meta.description,
     path: slice.path,
     activeCategory: category,
-    bodyHtml: raw(body),
+    bodyHtml: body,
     cssHref,
     ...(slice.prevPath ? { prevPath: slice.prevPath } : {}),
     ...(slice.nextPath ? { nextPath: slice.nextPath } : {}),

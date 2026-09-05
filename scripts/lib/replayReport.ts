@@ -3,6 +3,33 @@
 // The command-page and prose-page replays are the same program with two front ends: one reads
 // YAML, the other reads Markdown fences. Shared so the two cannot drift into describing the same
 // result differently.
+import { ReplayError } from "./replayMetadata.js";
+
+/** What one page's replay came to. Both replays return this, and `scripts/replay/all.ts` treats
+ *  them as interchangeable, so the shape belongs beside the reporting they share rather than
+ *  inside whichever of the two happened to declare it first. */
+export interface ReplayResult {
+  page: string;
+  matched: number;
+  total: number;
+  mismatches: number;
+}
+
+/** Runs one page's replay as a command, and exits.
+ *
+ *  Shared so the two front ends cannot come to disagree about what an exit code means: 0 when the
+ *  page reproduces, 1 when something on it does not, 2 when the page could not be replayed as
+ *  asked. `scripts/replay/all.ts` depends on that distinction, and so does CI. */
+export function runAsCommand(replay: () => ReplayResult): never {
+  try {
+    const result = replay();
+    process.exit(result.mismatches === 0 ? 0 : 1);
+  } catch (error) {
+    if (!(error instanceof ReplayError)) throw error;
+    console.error(error.message);
+    process.exit(2);
+  }
+}
 
 /** The first line that differs, quoted so leading and trailing spaces are visible.
  *  A mismatch is usually one line deep in an otherwise-correct block. */

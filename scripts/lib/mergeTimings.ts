@@ -1,4 +1,4 @@
-// What `scripts/merge-timings.ts` decides, with the filesystem and the exit codes left to it.
+// What `scripts/maintain/merge-timings.ts` decides, with the filesystem and the exit codes left to it.
 //
 // Separated because that script runs in one place only: a workflow, on main, holding a token that
 // can write to the repository. Exercising it meant pushing. Everything here is a pure function of

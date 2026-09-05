@@ -65,7 +65,7 @@ jobs:
       # also writes nothing when the change is too small to be worth a commit. Both decisions
       # therefore show up as whether the file moved, and the step below has no output to parse.
       - name: Merge the shards' measurements
-        run: npx tsx scripts/merge-timings.ts shard-timings
+        run: npx tsx scripts/maintain/merge-timings.ts shard-timings
       - name: Commit them
         run: |
           set -euo pipefail

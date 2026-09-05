@@ -8,8 +8,8 @@ import {
 } from "../scripts/lib/normalise.js";
 
 /* This module decides what every command page is allowed to claim a command printed:
- * `scripts/adopt-real-output.ts` writes `stripArtifacts` output straight onto a page, and
- * `scripts/replay-command-page.ts` compares `normalise` of the page against `normalise` of a fresh
+ * `scripts/authoring/adopt-real-output.ts` writes `stripArtifacts` output straight onto a page, and
+ * `scripts/replay/command-page.ts` compares `normalise` of the page against `normalise` of a fresh
  * run. Because both sides go through the same function, a bug here is invisible to the
  * replay: it corrupts the page and then certifies the corruption. Every case below is a
  * regression that actually shipped, or an invariant that keeps one from shipping. */

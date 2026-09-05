@@ -73,15 +73,15 @@ because a page reads better with it.
 
 ## 4. Test every example for real, and don't fabricate output
 
-Run every example inside the disposable sandbox (`scripts/sandbox.sh`), not directly on the
+Run every example inside the disposable sandbox (`scripts/replay/sandbox.sh`), not directly on the
 devcontainer. It's a throwaway `debian:trixie` container (same "current Debian stable" target),
 so installing packages, using `sudo`, or standing up a service (e.g. `sshd`) for a test leaves
 nothing behind on the host:
 
-- Start one sandbox per page: `scripts/sandbox.sh start` (prints a container name). Reuse that
+- Start one sandbox per page: `scripts/replay/sandbox.sh start` (prints a container name). Reuse that
   name for every `exec` call for this page so scratch fixtures and installed packages persist
-  across steps, then `scripts/sandbox.sh stop <name>` once done.
-- Run each command with `scripts/sandbox.sh exec <name> "<command>"` (add `-u user` for a
+  across steps, then `scripts/replay/sandbox.sh stop <name>` once done.
+- Run each command with `scripts/replay/sandbox.sh exec <name> "<command>"` (add `-u user` for a
   non-root prompt) before writing its `output:` block. Copy real output, then sanitize
   hostnames/users to `deb1`/`user`.
 - If a command genuinely can't be run even in the sandbox (touches real hardware, needs
@@ -159,7 +159,7 @@ input. Pages whose output echoes the input (`cut`, `head`) often need none.
   writing it out: it encodes modes, sizes and mtimes at once, and all three must be set explicitly
   in the setup script. Don't rely on the umask for a mode you assert on: the umask a `docker exec`
   inherits belongs to the host, not to the image (0000 on this project's devcontainer, 0022 on a
-  GitHub runner) and while the replay pins it to 0022, a plain `scripts/sandbox.sh exec` does
+  GitHub runner) and while the replay pins it to 0022, a plain `scripts/replay/sandbox.sh exec` does
   not. The same command gives different modes depending on where and how you ran it.
 - Then prove the two agree:
 
@@ -210,20 +210,20 @@ no longer grants.
 
 If a page's output depends on who ran the command (file ownership in `ls -l` or `tar -tvf`, a
 path under `~`, a permission denial root would never see) put `# verify: --user` in its setup
-script. Both `replay-command-page.ts` and `adopt-real-output.ts` read it, so the command above stays
+script. Both `scripts/replay/command-page.ts` and `scripts/authoring/adopt-real-output.ts` read it, so the command above stays
 right for every page. Without it, replaying `chmod` as root reports 9/42 on a page that is
 perfectly correct, and that looks exactly like a page that has drifted.
 
-Two helpers exist for repairs: `scripts/fix-output-whitespace.ts` (rewrites blocks whose only
+Two helpers exist for repairs: `scripts/authoring/fix-output-whitespace.ts` (rewrites blocks whose only
 problem is lost padding, and it refuses anything differing in substance) and
-`scripts/adopt-real-output.ts` (replaces named examples' output with the real capture; use when
+`scripts/authoring/adopt-real-output.ts` (replaces named examples' output with the real capture; use when
 output was silently abridged).
 
 ### 4d. Prose pages: the same rules, in Markdown
 
 A concept, lesson, recipe or Debian article states its claims as a ```` ```bash ```` fence
 followed by a bare fence holding the output. Those pairs are replayed by
-`scripts/replay-prose-page.ts` when the page has a `scripts/fixtures/<slug>.sh`, so write them to the
+`scripts/replay/prose-page.ts` when the page has a `scripts/fixtures/<slug>.sh`, so write them to the
 same standard as an `output:` block:
 
 - **The output fence must open on the line immediately after the command fence closes.** Prose in
@@ -278,7 +278,7 @@ Two gates, and a command page needs both:
    missing tag, dead `related` link, or broken cross-link it surfaces, and don't hand back a page
    that fails this.
 2. `npm run replay -- <command>` for any page with fixtures, and report the score (it starts and
-   stops its own sandbox; `npx tsx scripts/replay-command-page.ts <sandbox> <command>
+   stops its own sandbox; `npx tsx scripts/replay/command-page.ts <sandbox> <command>
    scripts/fixtures/<command>.sh` is the same check against a sandbox you're already holding).
    `npm run check` validates *shape*; only the replay checks whether the outputs are true, which
    is the site's actual promise.

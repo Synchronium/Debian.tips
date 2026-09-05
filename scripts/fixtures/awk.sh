@@ -1,4 +1,4 @@
-# Reconstructed from the documented outputs, then proven by scripts/replay-command-page.ts.
+# Reconstructed from the documented outputs, then proven by scripts/replay/command-page.ts.
 # The per-IP byte totals and the avg_bytes=1120 example between them pin the individual
 # byte values: they must sum to 5376 / 2560 / 1024 per IP, and 8960 overall.
 cat > app.log <<'EOF'

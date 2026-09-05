@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Whether a tag in a GHCR repository can be fetched with no credentials.
 #
-#   scripts/ghcr-tag-readable.sh ghcr.io/owner/name <tag>
+#   scripts/replay/ghcr-tag-readable.sh ghcr.io/owner/name <tag>
 #
 # Exit 0 if it can, 1 if it cannot. Prints nothing; the caller says what the answer means to it.
 #

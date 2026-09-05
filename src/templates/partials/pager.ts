@@ -1,4 +1,4 @@
-import { html, raw } from "../../html.js";
+import { EMPTY_HTML, html, raw, type Raw } from "../../html.js";
 
 /** How many cards a listing or tag page shows before it splits.
  *
@@ -43,11 +43,11 @@ export function paginate<T>(items: T[], basePath: string, size: number = PAGE_SI
 
 /** The prev/next control under a split listing. Nothing is rendered for a listing that fits on
  *  one page: a lone "Page 1 of 1" is noise. */
-export function paginationNav(slice: PageSlice<unknown>): string {
-  if (slice.total < 2) return "";
+export function paginationNav(slice: PageSlice<unknown>): Raw {
+  if (slice.total < 2) return EMPTY_HTML;
   return html`<nav class="pager" aria-label="Pagination">
-${slice.prevPath ? raw(html`<a class="pager-prev" href="${slice.prevPath}">&larr; Previous</a>`) : raw("<span></span>")}
+${slice.prevPath ? html`<a class="pager-prev" href="${slice.prevPath}">&larr; Previous</a>` : raw("<span></span>")}
 <span class="pager-position">Page ${slice.number} of ${slice.total}</span>
-${slice.nextPath ? raw(html`<a class="pager-next" href="${slice.nextPath}">Next &rarr;</a>`) : raw("<span></span>")}
+${slice.nextPath ? html`<a class="pager-next" href="${slice.nextPath}">Next &rarr;</a>` : raw("<span></span>")}
 </nav>`;
 }

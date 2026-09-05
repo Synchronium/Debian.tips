@@ -1,8 +1,8 @@
-import { html } from "../../html.js";
+import { html, type Raw } from "../../html.js";
 import { CATEGORY_META } from "../../config.js";
 import type { Category } from "../../content/schema.js";
 
-export function breadcrumbs(category: Category, pageTitle: string): string {
+export function breadcrumbs(category: Category, pageTitle: string): Raw {
   return html`<nav class="breadcrumbs" aria-label="Breadcrumb"><ol>
 <li><a href="/">Home</a></li>
 <li><a href="${CATEGORY_META[category].path}">${CATEGORY_META[category].label}</a></li>

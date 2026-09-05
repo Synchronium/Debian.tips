@@ -10,7 +10,7 @@ name: Publish sandbox
 # than before it, so no push ever waits for a registry. The push that changes the Dockerfile
 # builds locally on every shard exactly as it does today; every push after it pulls instead. A
 # publish that fails, or that has not happened yet, costs the build that used to happen anyway,
-# because `scripts/sandbox.sh` falls back to building when there is nothing to pull.
+# because `scripts/replay/sandbox.sh` falls back to building when there is nothing to pull.
 #
 # Tagged with a hash of the build context rather than `latest`, so a tag names one exact
 # Dockerfile. That is what lets a consumer decide whether a published image is the one its own
@@ -18,7 +18,7 @@ name: Publish sandbox
 on:
   push:
     branches: [main]
-    paths: [scripts/sandbox/**, .github/workflows/publish-sandbox.yml]
+    paths: [scripts/replay/sandbox/**, .github/workflows/publish-sandbox.yml]
   # For re-publishing after the package has been deleted, or a tag has been removed, without
   # having to touch the Dockerfile to trigger it.
   workflow_dispatch:
@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      # Both asked of `scripts/sandbox.sh` rather than written out again here. The tag is what
+      # Both asked of `scripts/replay/sandbox.sh` rather than written out again here. The tag is what
       # every consumer looks for, and a second copy of either half agrees until one of them is
       # edited; the failure then is silent, because publishing under a name nothing pulls breaks
       # no build. Everything would just build, having found no tag it recognised, and the only
@@ -47,8 +47,8 @@ jobs:
         id: image
         run: |
           {
-            echo "repository=$(scripts/sandbox.sh registry)"
-            echo "hash=$(scripts/sandbox.sh context-hash)"
+            echo "repository=$(scripts/replay/sandbox.sh registry)"
+            echo "hash=$(scripts/replay/sandbox.sh context-hash)"
           } >> "$GITHUB_OUTPUT"
       # Nothing to do when this exact context is already published.
       #
@@ -62,7 +62,7 @@ jobs:
       - name: Is it already published?
         id: existing
         run: |
-          if scripts/ghcr-tag-readable.sh "$REPOSITORY" "$HASH"; then
+          if scripts/replay/ghcr-tag-readable.sh "$REPOSITORY" "$HASH"; then
             echo "published=true" >> "$GITHUB_OUTPUT"
             echo "$REPOSITORY:${HASH:0:12} is already published; nothing to build."
           else
@@ -117,7 +117,7 @@ jobs:
       - name: Check it can be pulled without a token
         if: steps.existing.outputs.published != 'true'
         run: |
-          if scripts/ghcr-tag-readable.sh "$REPOSITORY" "$HASH"; then
+          if scripts/replay/ghcr-tag-readable.sh "$REPOSITORY" "$HASH"; then
             echo "$REPOSITORY can be pulled without a token"
           else
             echo "::warning::$REPOSITORY is not readable without a token, so every consumer will" \

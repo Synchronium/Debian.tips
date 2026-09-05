@@ -3,8 +3,8 @@
 - **Status:** Accepted
 - **Recorded:** 2026-08-27
 - **Enforced by:** `.github/workflows/record-timings.yml`;
-  `scripts/merge-timings.ts`, which refuses to write a file that does not cover every page;
-  `scripts/check-shard-count.ts` (`npm run shards`), run by that workflow, which reports when the
+  `scripts/maintain/merge-timings.ts`, which refuses to write a file that does not cover every page;
+  `scripts/maintain/check-shard-count.ts` (`npm run shards`), run by that workflow, which reports when the
   shard count no longer suits the recorded timings
 
 ## Context
@@ -51,7 +51,7 @@ the recording had to stay manual to keep a human beside it.
   while the replay ran, and even when green it would add its own checkout and install to the time
   between a push and the site being live. Out here it runs beside the deploy rather than before
   it, and a failure is a red mark on a workflow that gates nothing.
-- `scripts/merge-timings.ts` refuses to write unless the parts cover every page that opts into the
+- `scripts/maintain/merge-timings.ts` refuses to write unless the parts cover every page that opts into the
   replay, which is the completeness rule `--record-timings` already enforced for a serial run.
 - It writes only on a material change: a page added or removed, or a page whose time moved by
   more than the balancer already tolerates not knowing, and by a fifth of itself if it is heavy

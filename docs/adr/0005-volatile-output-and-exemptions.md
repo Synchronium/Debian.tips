@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Recorded:** 2026-08-19
-- **Enforced by:** `scripts/lib/normalise.ts` and `test/normalise.test.ts`, `scripts/replay-command-page.ts`, `scripts/replay-prose-page.ts`
+- **Enforced by:** `scripts/lib/normalise.ts` and `test/normalise.test.ts`, `scripts/replay/command-page.ts`, `scripts/replay/prose-page.ts`
 
 ## Context
 

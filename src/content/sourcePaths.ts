@@ -24,7 +24,7 @@ import {
   skipFile,
 } from "../paths.js";
 import { replayTimings } from "./replayTimings.js";
-import type { Category } from "./schema.js";
+import { COMMANDS_CATEGORY, type Category } from "./schema.js";
 
 /** One file, with what it is for. The label is what a reader sees beside the link: a bare list
  *  of four paths answers "where" without answering "which of these is the one I want". */
@@ -66,7 +66,7 @@ export function pageSources(
   fixtureDir: string = FIXTURE_DIR,
 ): PageSources {
   const files: SourceFile[] =
-    category === "commands"
+    category === COMMANDS_CATEGORY
       ? [
           { path: repoPath(join(commandDir(slug, contentDir), INDEX_FILE)), label: "the prose" },
           {

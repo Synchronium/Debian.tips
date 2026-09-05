@@ -8,8 +8,8 @@
 # /commands/grep/, /commands/awk/ and the rest.
 #
 # Note for anyone extending this page: cowsay lives in /usr/games, which is on a login shell's
-# PATH and not on a `docker exec`'s. scripts/sandbox/Dockerfile adds it to the image's PATH for
-# that reason, so `cowsay` works here exactly as it does at a reader's prompt. Do not paper
+# PATH and not on a `docker exec`'s. scripts/replay/sandbox/Dockerfile adds it to the image's
+# PATH for that reason, so `cowsay` works here exactly as it does at a reader's prompt. Do not paper
 # over it per-example with an absolute path, and do not document `command -v cowsay` output as
 # anything other than /usr/games/cowsay.
 . /tmp/fixtures-common.sh

@@ -24,7 +24,7 @@ settings the codebase passes:
 
 Three configs, because build code and browser code need different lib sets: `tsconfig.json` has no
 DOM lib and excludes the two things that need one, `tsconfig.client.json` covers `src/client/**`
-(ADR-0013), and `tsconfig.browser-check.json` covers `scripts/browser-check.ts`, which is Node code
+(ADR-0013), and `tsconfig.browser-check.json` covers `scripts/gates/browser-check.ts`, which is Node code
 whose `page.evaluate()` callbacks run in a page (ADR-0022). All three run in the gate. Widening the
 root `lib` instead would collapse them into one and let `document` typecheck everywhere.
 

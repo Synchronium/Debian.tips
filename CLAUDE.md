@@ -43,7 +43,7 @@ and honest.
 
 Run `npm run check` before treating any change as done. It's also what CI runs
 (`.github/workflows/ci.yml`), followed by `pa11y-ci` as a separate accessibility gate whose URL
-list is generated from the built sitemap by `scripts/pa11y-urls.ts`. `check` sets
+list is generated from the built sitemap by `scripts/gates/pa11y-urls.ts`. `check` sets
 `NODE_ENV=production` itself, so the local gate and the CI one see the same site: drafts are
 excluded from both.
 
@@ -95,10 +95,11 @@ its own idea of what an `examples.yaml` contains.
 
 Some files are checked by a config of their own instead, and all of it is about keeping DOM globals
 out of Node code, where `document` is always a mistake (ADR-0013). `src/client/` is browser code
-and gets `tsconfig.client.json`. `scripts/browser-check.ts` and `scripts/og-image.ts` are Node code
-that *contains* browser code, since the callbacks they hand to `page.evaluate()` run inside the
-page, and both get `tsconfig.browser-check.json`. A file joining that list leaves `tsconfig.json`
-in the same commit, or it is checked twice and the second check is the one it was moved to escape. **Do not widen `lib` in `tsconfig.json` to satisfy either.** That
+and gets `tsconfig.client.json`. `scripts/gates/browser-check.ts` and `scripts/maintain/og-image.ts`
+are Node code that *contains* browser code, since the callbacks they hand to `page.evaluate()` run
+inside the page, and both get `tsconfig.browser-check.json`. A file joining that list leaves
+`tsconfig.json` in the same commit, or it is checked twice and the second check is the one it was
+moved to escape. **Do not widen `lib` in `tsconfig.json` to satisfy either.** That
 makes `document` typecheck across the whole build and harness, and the failure it lets through is
 one that only appears at runtime. All three configs run in `npm run check`.
 
@@ -207,6 +208,7 @@ This file is deliberately short. The detail lives next to the job that needs it:
 | Cross-linking after a new page | `.claude/skills/cross-link-pages/SKILL.md` |
 | Committing, pushing, a CI failure | `.claude/skills/ship/SKILL.md` |
 | Reviewing a Dependabot PR | `.claude/skills/review-dependency-prs/SKILL.md` |
+| Finding a tool: what is in `scripts/`, and when you run it | `scripts/README.md` |
 | Changing the replay harness, or a replay failing oddly | `.claude/reference/verification.md` |
 | Changing `src/`: pipeline, templates, markdown, dev server, link audit | `.claude/reference/architecture.md` |
 | Why something is the way it is, before changing it | `docs/adr/` |

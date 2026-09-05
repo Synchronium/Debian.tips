@@ -75,7 +75,7 @@ current. What to do when the test fails:
    `ls -t`, `cp -u` and `sort` on the timestamp all read the order, and `_common.sh` says in a
    comment which file is the reference. Leave the deliberately old one where it is.
 2. **Re-capture each affected command page** against a sandbox holding the new fixtures:
-   `npx tsx scripts/adopt-real-output.ts [--user] <sandbox> <command> scripts/fixtures/<command>.sh --all`.
+   `npx tsx scripts/authoring/adopt-real-output.ts [--user] <sandbox> <command> scripts/fixtures/<command>.sh --all`.
    The tool reads the page's own `# verify:` line, so the flag is needed only for a page whose
    script does not declare one; capturing as root against a page that replays as `user` bakes
    `root root` into every listing on it.

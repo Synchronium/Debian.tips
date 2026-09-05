@@ -26,8 +26,8 @@
   },
   "exclude": [
     "src/client/**",
-    "scripts/browser-check.ts",
-    "scripts/og-image.ts"
+    "scripts/gates/browser-check.ts",
+    "scripts/maintain/og-image.ts"
   ],
   "include": [
     "src/**/*.ts",

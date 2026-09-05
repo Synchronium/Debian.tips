@@ -1,8 +1,8 @@
 // Checks prose against the lexical half of .claude/reference/voice.md.
 //
-//   npx tsx scripts/voice-check.ts                  # the whole corpus
-//   npx tsx scripts/voice-check.ts <file>…         # named files
-//   npx tsx scripts/voice-check.ts --hook           # one file, from a PostToolUse hook on stdin
+//   npx tsx scripts/gates/voice-check.ts                  # the whole corpus
+//   npx tsx scripts/gates/voice-check.ts <file>…         # named files
+//   npx tsx scripts/gates/voice-check.ts --hook           # one file, from a PostToolUse hook on stdin
 //
 // It finds the tells that are spellings. It cannot find the ones that are shapes: an aphoristic
 // closer, a manufactured misconception, a section that comments on itself. Those need the page
@@ -18,7 +18,7 @@
 // watching the session.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
-import { CONTENT_DIR, EXAMPLES_FILE, ROOT } from "../src/paths.js";
+import { CONTENT_DIR, EXAMPLES_FILE, ROOT } from "../../src/paths.js";
 
 export const SEVERITY = {
   /** Banned outright by voice.md §5. The corpus is at zero and stays there. */

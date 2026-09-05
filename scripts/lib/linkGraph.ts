@@ -1,7 +1,7 @@
 // Builds the editorial link graph over the loaded content: who links to whom, by
 // `related:` frontmatter and by root-relative links in prose.
 //
-// Separate from scripts/link-audit.ts, which reports on it, because a false edge here is
+// Separate from scripts/gates/link-audit.ts, which reports on it, because a false edge here is
 // the one failure the report can't show you: a missed edge invents an orphan, which is
 // noisy but visible, while an invented edge hides a real one under a clean bill of health.
 // Covered by test/linkGraph.test.ts for that reason.

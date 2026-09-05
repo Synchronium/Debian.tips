@@ -1,4 +1,4 @@
-import { html, raw } from "../html.js";
+import { html, type Raw } from "../html.js";
 import { layout } from "./layout.js";
 import { rowList } from "./partials/row.js";
 import { iconSprite, icon } from "./partials/icons.js";
@@ -27,23 +27,24 @@ function homepageOrder(a: Page, b: Page): number {
  *  evidence the site is alive. All three are fixed-size, and browsing belongs on the listings. */
 const RECENT_COUNT = 8;
 
-export function homePage(pages: Page[], cssHref: string): string {
+export function homePage(pages: Page[], cssHref: string): Raw {
   const byUrl = new Map(pages.map((p) => [p.url, p]));
   const featured = FEATURED_PATHS.map((u) => byUrl.get(u)).filter((p): p is Page => Boolean(p));
   const recent = [...pages].sort(homepageOrder).slice(0, RECENT_COUNT);
 
-  const topics = HOME_TOPICS.map((t) =>
-    raw(html`<li class="topic"><a href="${tagPath(t.tag)}">
-<span class="topic-icon" aria-hidden="true">${raw(icon(t.icon))}</span>
+  const topics = HOME_TOPICS.map(
+    (t) =>
+      html`<li class="topic"><a href="${tagPath(t.tag)}">
+<span class="topic-icon" aria-hidden="true">${icon(t.icon)}</span>
 <span class="topic-text">
 <span class="topic-label">${t.label}</span>
 <span class="topic-desc">${t.description}</span>
 </span>
-</a></li>`),
+</a></li>`,
   );
 
   const body = html`
-${raw(iconSprite())}
+${iconSprite()}
 <section class="hero">
 <h1>${SITE.headline}</h1>
 <p class="hero-tagline">${SITE.description}</p>
@@ -61,16 +62,16 @@ ${raw(iconSprite())}
 
 ${
   featured.length > 0
-    ? raw(html`<section class="home-section" aria-labelledby="start-here">
+    ? html`<section class="home-section" aria-labelledby="start-here">
 <h2 id="start-here" class="eyebrow">Start here</h2>
-${raw(rowList(featured))}
-</section>`)
+${rowList(featured)}
+</section>`
     : ""
 }
 
 <section class="home-section" aria-labelledby="recently-updated">
 <h2 id="recently-updated" class="eyebrow">Recently updated</h2>
-${raw(rowList(recent))}
+${rowList(recent)}
 </section>
 
 <section class="tested">
@@ -79,7 +80,7 @@ ${raw(rowList(recent))}
 memory quietly stops being true. Every example on this site is run inside a throwaway Debian
 container, and what you see is what it printed. They are re-run on every change, and a page whose
 output no longer matches fails the build.</p>
-${STANDALONE_PAGES.map((s) => raw(html`<p class="tested-more"><a href="${s.path}">${s.navLabel} →</a></p>`))}
+${STANDALONE_PAGES.map((s) => html`<p class="tested-more"><a href="${s.path}">${s.navLabel} →</a></p>`)}
 </section>
 `;
 
@@ -87,7 +88,7 @@ ${STANDALONE_PAGES.map((s) => raw(html`<p class="tested-more"><a href="${s.path}
     title: SITE.title,
     description: SITE.description,
     path: "/",
-    bodyHtml: raw(body),
+    bodyHtml: body,
     cssHref,
   });
 }

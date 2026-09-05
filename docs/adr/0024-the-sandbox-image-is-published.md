@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Recorded:** 2026-08-27
-- **Enforced by:** `scripts/sandbox.sh`, which hashes the build context, checks that hash against
+- **Enforced by:** `scripts/replay/sandbox.sh`, which hashes the build context, checks that hash against
   a pulled image's label as well as its tag, checks that the image's architecture is one this
   daemon can run, and builds when any of those is missing or disagrees;
   `.github/workflows/publish-sandbox.yml`, which publishes both architectures with the tag and
@@ -41,7 +41,7 @@ consumers pull it when they can and build when they cannot.**
 - `sandbox.sh` hashes the build context: the contents, paths and modes of every file in it,
   sorted under a fixed collation. The same commit gives the same hash on any machine.
 - `.github/workflows/publish-sandbox.yml` builds and pushes
-  `ghcr.io/synchronium/debian-tips-sandbox:<hash>` when anything under `scripts/sandbox/` changes.
+  `ghcr.io/synchronium/debian-tips-sandbox:<hash>` when anything under `scripts/replay/sandbox/` changes.
   It gates nothing and runs beside CI, so no push ever waits on a registry.
 - `sandbox.sh build` pulls that tag if it exists, and builds if it does not.
 - A pulled image is accepted only when its **label** matches too, not just its tag. A tag is a
@@ -81,7 +81,7 @@ correct tag *and* label, every consumer would use it. Nothing but the publish wo
 that tag, and it builds from the same context it hashes, so this needs the workflow itself to be
 wrong rather than the registry.
 
-**`touch scripts/sandbox/Dockerfile` no longer costs a rebuild**, which the mtime label made
+**`touch scripts/replay/sandbox/Dockerfile` no longer costs a rebuild**, which the mtime label made
 certain. A real edit still does.
 
 **The first publish needs a hand.** A package is created private and no API can change that, so

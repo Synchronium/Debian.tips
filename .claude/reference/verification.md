@@ -9,6 +9,12 @@ fails for a reason the message doesn't explain, or when a page needs a kind of v
 nothing here already does. For *writing* a page, `.claude/skills/write-content-page/SKILL.md`
 is the checklist and it already carries the traps that belong to authoring.
 
+`scripts/README.md` is the map of which tool is where. The harness itself is `scripts/replay/`:
+`all.ts` is the batch, `command-page.ts` and `prose-page.ts` are the two front ends, and
+`sandbox.sh` starts the containers. What the batch decides before it starts is in `scripts/lib/`,
+split so each part can be tested without Docker: `replayArgs.ts` parses and refuses, and
+`changedPages.ts` maps a diff to the pages it selects.
+
 ## Testing content examples for real
 
 Every example on a command page is run for real, not written from memory; see
@@ -17,9 +23,9 @@ style, verification steps). Command execution for that verification happens insi
 Docker sandbox, not on the host:
 
 ```sh
-name=$(scripts/sandbox.sh start)
-scripts/sandbox.sh exec "$name" "<command to verify>"
-scripts/sandbox.sh stop "$name"
+name=$(scripts/replay/sandbox.sh start)
+scripts/replay/sandbox.sh exec "$name" "<command to verify>"
+scripts/replay/sandbox.sh stop "$name"
 ```
 
 Verifying an example sometimes means installing a package, using `sudo`, or standing up a real
@@ -30,7 +36,7 @@ devcontainer itself.
 ## Replaying examples to prove the outputs are real
 
 A page's `output:` blocks are the site's core promise, and `npm run check` can't check them: it
-validates shape, not truth. `scripts/replay-command-page.ts` replays every example on a page inside
+validates shape, not truth. `scripts/replay/command-page.ts` replays every example on a page inside
 the sandbox and diffs the real result against what the page claims:
 
 ```sh
@@ -40,8 +46,8 @@ npm run replay -- --record-timings   # full run, and rewrite what balances those
 npm run replay -- wget curl # just these
 
 # or drive one page directly, which is what the above does per page:
-name=$(scripts/sandbox.sh start)
-npx tsx scripts/replay-command-page.ts "$name" wc scripts/fixtures/wc.sh   # -> "wc (as root): ..."
+name=$(scripts/replay/sandbox.sh start)
+npx tsx scripts/replay/command-page.ts "$name" wc scripts/fixtures/wc.sh   # -> "wc (as root): ..."
 ```
 
 `npm run replay` runs in CI separately from the `check` job (`.github/workflows/ci.yml`), as
@@ -54,8 +60,8 @@ figures are current. A run with no image yet adds fetching one, which the workfl
 step so the log says which half any slowness is in.
 
 That step is usually a pull. `.github/workflows/publish-sandbox.yml` publishes the image whenever
-anything under `scripts/sandbox/` changes, tagged with a hash of that directory's contents, and
-`scripts/sandbox.sh` pulls the tag matching its own checkout before it considers building. It
+anything under `scripts/replay/sandbox/` changes, tagged with a hash of that directory's contents, and
+`scripts/replay/sandbox.sh` pulls the tag matching its own checkout before it considers building. It
 builds when there is nothing to pull, which is what keeps the registry a shortcut rather than
 something the replay depends on; ADR-0024 has the reasoning. `SANDBOX_REGISTRY=` empty forces a
 local build.
@@ -87,12 +93,12 @@ would stop a content change over a number a bot moved.
 That invocation is correct for every page. Some pages have to replay as the unprivileged
 `user`, meaning anything printing file ownership (`tar -tvf`, `ls -l`) or documenting a permission
 denial, since root simply doesn't get denied. Each of those says so itself, with a
-`# verify: --user` line in its setup script that both `replay-command-page.ts` and
-`adopt-real-output.ts` read.
+`# verify: --user` line in its setup script that both `scripts/replay/command-page.ts` and
+`scripts/authoring/adopt-real-output.ts` read.
 
 Two more directives name a stronger sandbox, and a page asks for the weaker of them where it can.
 
-`# verify: --privileged` (`scripts/sandbox.sh start --privileged`) grants the capabilities to
+`# verify: --privileged` (`scripts/replay/sandbox.sh start --privileged`) grants the capabilities to
 mount a filesystem or attach a loop device. The `df` page needs it: a container's own filesystems
 are the host's, reported as `overlay` at a size that differs between a laptop and a runner, so a
 page about free space mounts filesystems of its own with `size=` and `nr_inodes=` pinned and
@@ -170,7 +176,7 @@ silently strips that padding, so such outputs need `output: |2`.
 
 Concepts, scripting lessons, recipes and Debian articles state the same kind of claim as a
 command page, but as Markdown rather than YAML: a ```` ```bash ```` fence followed by the output
-it produced. `scripts/replay-prose-page.ts` replays those, `src/content/proseBlocks.ts` pairs them up,
+it produced. `scripts/replay/prose-page.ts` replays those, `src/content/proseBlocks.ts` pairs them up,
 and `npm run replay` runs both kinds. A prose page opts in by having `scripts/fixtures/<slug>.sh`;
 without one it is listed as not replayed rather than passed over silently.
 
@@ -232,7 +238,7 @@ wrong for months and nothing could have told us.
 The `curl` and `wget` pages point at `http://127.0.0.1:8080`, served by
 `scripts/fixtures/http-mock.py`: thirteen-odd endpoints that echo a request, return a chosen
 status, redirect, delay, set a cookie, demand basic auth, or serve a small linked site with
-`Range` and `If-Modified-Since` support. `replay-command-page.ts` installs any `.py` under
+`Range` and `If-Modified-Since` support. `scripts/replay/command-page.ts` installs any `.py` under
 `scripts/fixtures/` into `/opt/mock/` in the sandbox, and each page's setup script starts it.
 
 It binds `127.0.0.1` by default, because readers are told to run it on their own machines and it
@@ -269,7 +275,7 @@ page.
 one fails in exactly one of the two places. This has its own rule above and its own test.
 
 **umask.** A `docker exec` inherits the *host's* umask, which is 0000 in this devcontainer and 0022
-on a runner, so permission columns differ. The replay pins 0022; a bare `scripts/sandbox.sh exec`
+on a runner, so permission columns differ. The replay pins 0022; a bare `scripts/replay/sandbox.sh exec`
 does not, which is why a hand-run reproduction can disagree with the harness.
 
 **IPv6.** A runner often has it switched off, so anything bound to `::1` fails outright. Pages name

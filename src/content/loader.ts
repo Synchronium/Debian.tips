@@ -4,10 +4,13 @@ import matter from "gray-matter";
 import { parse as parseYaml } from "yaml";
 import {
   CATEGORIES,
+  COMMANDS_CATEGORY,
+  SCRIPTING_CATEGORY,
   type Category,
   type CommandFrontmatter,
   type ExamplesFile,
   type Frontmatter,
+  type ProseCategory,
   type ScriptingFrontmatter,
   type Tier,
   examplesFileSchema,
@@ -70,7 +73,7 @@ interface BasePage {
  *  here, since `loadCommands` refuses a command directory without them, which is what lets
  *  the template take them without a runtime check. */
 export interface CommandPage extends BasePage {
-  category: "commands";
+  category: typeof COMMANDS_CATEGORY;
   tagline: string;
   tier: Tier;
   examples: ExamplesFile;
@@ -78,7 +81,7 @@ export interface CommandPage extends BasePage {
 
 /** A lesson in the scripting course: ordered, and linked to its neighbours. */
 export interface ScriptingPage extends BasePage {
-  category: "scripting";
+  category: typeof SCRIPTING_CATEGORY;
   order: number;
   prev?: PageLink;
   next?: PageLink;
@@ -86,7 +89,7 @@ export interface ScriptingPage extends BasePage {
 
 /** Everything else: one Markdown file, no per-category extras. */
 export interface ArticlePage extends BasePage {
-  category: Exclude<Category, "commands" | "scripting">;
+  category: Exclude<Category, typeof COMMANDS_CATEGORY | typeof SCRIPTING_CATEGORY>;
 }
 
 /** A union rather than one interface with optional `tier`/`order`/`examples`: the optional-field
@@ -96,11 +99,11 @@ export interface ArticlePage extends BasePage {
 export type Page = CommandPage | ScriptingPage | ArticlePage;
 
 export function isCommandPage(page: Page): page is CommandPage {
-  return page.category === "commands";
+  return page.category === COMMANDS_CATEGORY;
 }
 
 export function isScriptingPage(page: Page): page is ScriptingPage {
-  return page.category === "scripting";
+  return page.category === SCRIPTING_CATEGORY;
 }
 
 export interface ContentModel {
@@ -118,18 +121,18 @@ interface BaseEntry {
  *  examples.yaml (`loadCommands`, which refuses one that doesn't) is also the only place
  *  that has to say so. */
 interface RawCommandEntry extends BaseEntry {
-  category: "commands";
+  category: typeof COMMANDS_CATEGORY;
   data: CommandFrontmatter;
   examples: ExamplesFile;
 }
 
 interface RawScriptingEntry extends BaseEntry {
-  category: "scripting";
+  category: typeof SCRIPTING_CATEGORY;
   data: ScriptingFrontmatter;
 }
 
 interface RawArticleEntry extends BaseEntry {
-  category: Exclude<Category, "commands" | "scripting">;
+  category: Exclude<Category, typeof COMMANDS_CATEGORY | typeof SCRIPTING_CATEGORY>;
   data: Frontmatter;
 }
 
@@ -176,7 +179,7 @@ function parseFrontmatterFile(filePath: string): { data: Frontmatter; body: stri
   return { data: parsed.data, body: content };
 }
 
-function loadFlatCategory(category: Exclude<Category, "commands">, contentDir: string): RawProseEntry[] {
+function loadFlatCategory(category: ProseCategory, contentDir: string): RawProseEntry[] {
   const dir = join(contentDir, category);
   if (!existsSync(dir)) return [];
   const out: RawProseEntry[] = [];
@@ -193,8 +196,8 @@ function loadFlatCategory(category: Exclude<Category, "commands">, contentDir: s
     // Switched on the frontmatter rather than on `category`: the two are checked against each
     // other above, but they are separate types, and only the frontmatter carries `order`.
     out.push(
-      data.category === "scripting"
-        ? { slug, category: "scripting", data, body, file }
+      data.category === SCRIPTING_CATEGORY
+        ? { slug, category: SCRIPTING_CATEGORY, data, body, file }
         : { slug, category: data.category, data, body, file },
     );
   }
@@ -216,9 +219,9 @@ function loadCommands(contentDir: string): RawEntry[] {
       throw new ContentError(`content/commands/${slug}/ is missing ${EXAMPLES_FILE}`);
 
     const { data, body } = parseFrontmatterFile(indexFile);
-    if (data.category !== "commands") {
+    if (data.category !== COMMANDS_CATEGORY) {
       throw new ContentError(
-        `${indexFile}: frontmatter category "${data.category}" does not match directory "commands"`,
+        `${indexFile}: frontmatter category "${data.category}" does not match directory "${COMMANDS_CATEGORY}"`,
       );
     }
 
@@ -235,7 +238,14 @@ function loadCommands(contentDir: string): RawEntry[] {
       );
     }
 
-    out.push({ slug, category: "commands", data, body, file: indexFile, examples: examplesParsed.data });
+    out.push({
+      slug,
+      category: COMMANDS_CATEGORY,
+      data,
+      body,
+      file: indexFile,
+      examples: examplesParsed.data,
+    });
   }
   return out;
 }
@@ -244,7 +254,7 @@ function loadCommands(contentDir: string): RawEntry[] {
  *  scripting lessons read in course order (`order`), everything else by slug. */
 function sortEntries(entries: RawEntry[]): RawEntry[] {
   return [...entries].sort((a, b) => {
-    if (a.data.category === "scripting" && b.data.category === "scripting") {
+    if (a.data.category === SCRIPTING_CATEGORY && b.data.category === SCRIPTING_CATEGORY) {
       return a.data.order - b.data.order;
     }
     return a.slug.localeCompare(b.slug);
@@ -286,7 +296,8 @@ export async function loadContent(
 
   const raw: RawEntry[] = [];
   for (const category of CATEGORIES) {
-    const entries = category === "commands" ? loadCommands(contentDir) : loadFlatCategory(category, contentDir);
+    const entries =
+      category === COMMANDS_CATEGORY ? loadCommands(contentDir) : loadFlatCategory(category, contentDir);
     raw.push(...sortEntries(entries));
   }
 
@@ -322,7 +333,7 @@ export async function loadContent(
         throw new ContentError(`${entry.file}: unknown tag "${tag}": add it to content/${TAGS_FILE} first`);
       }
     }
-    for (const section of entry.category === "commands" ? entry.examples.sections : []) {
+    for (const section of entry.category === COMMANDS_CATEGORY ? entry.examples.sections : []) {
       for (const example of section.examples) {
         for (const tag of example.tags ?? []) {
           if (!tagRegistry.has(tag)) {
@@ -337,7 +348,7 @@ export async function loadContent(
 
   const seenOrders = new Map<number, string>();
   for (const entry of raw) {
-    if (entry.data.category !== "scripting") continue;
+    if (entry.data.category !== SCRIPTING_CATEGORY) continue;
     const { order } = entry.data;
     const existing = seenOrders.get(order);
     if (existing)
@@ -390,23 +401,23 @@ export async function loadContent(
       // has no sandbox. They agree because both sides read the same partition: see
       // `src/content/pageChecks.ts`.
       checks:
-        entry.category === "commands"
+        entry.category === COMMANDS_CATEGORY
           ? commandChecks(entry.examples, entry.slug, fixtureDir)
           : proseChecks(entry.body),
     };
 
     const page = ((): Page => {
-      if (entry.category === "commands") {
+      if (entry.category === COMMANDS_CATEGORY) {
         return {
           ...base,
-          category: "commands",
+          category: COMMANDS_CATEGORY,
           tagline: entry.data.tagline,
           tier: entry.data.tier,
           examples: entry.examples,
         };
       }
-      if (entry.category === "scripting") {
-        return { ...base, category: "scripting", order: entry.data.order };
+      if (entry.category === SCRIPTING_CATEGORY) {
+        return { ...base, category: SCRIPTING_CATEGORY, order: entry.data.order };
       }
       return { ...base, category: entry.category };
     })();

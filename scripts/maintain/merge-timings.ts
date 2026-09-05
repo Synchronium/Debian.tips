@@ -1,6 +1,6 @@
 // Merges the per-shard timings a CI replay leaves behind into `scripts/replay-timings.json`.
 //
-//   npx tsx scripts/merge-timings.ts <directory of parts>
+//   npx tsx scripts/maintain/merge-timings.ts <directory of parts>
 //
 // Every shard measures the pages it ran and writes them with `--timings-out`. No shard may write
 // the shared file: each holds a fraction of the site, and a partial write would drop every page
@@ -19,10 +19,10 @@
 // nothing, so refusing costs a red mark and no build.
 import { existsSync, writeFileSync } from "node:fs";
 import { relative } from "node:path";
-import { REPLAY_TIMINGS_FILE, ROOT } from "../src/paths.js";
-import { readTimings } from "../src/content/replayTimings.js";
-import { MERGE, combineParts, mergeTimings, partFiles } from "./lib/mergeTimings.js";
-import { pageId, replayableSlugs } from "./lib/replayPages.js";
+import { REPLAY_TIMINGS_FILE, ROOT } from "../../src/paths.js";
+import { readTimings } from "../../src/content/replayTimings.js";
+import { MERGE, combineParts, mergeTimings, partFiles } from "../lib/mergeTimings.js";
+import { pageId, replayableSlugs } from "../lib/replayPages.js";
 
 const directory = process.argv[2];
 if (!directory || !existsSync(directory)) {

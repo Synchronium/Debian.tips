@@ -1,10 +1,10 @@
-import { html, raw } from "../html.js";
+import { html, type Raw } from "../html.js";
 import { layout } from "./layout.js";
 import { CATEGORY_META, NAV_ORDER, NOT_FOUND_PATH } from "../config.js";
 
-export function notFoundPage(cssHref: string): string {
-  const categoryLinks = NAV_ORDER.map((cat) =>
-    raw(html`<li><a href="${CATEGORY_META[cat].path}">${CATEGORY_META[cat].label}</a></li>`),
+export function notFoundPage(cssHref: string): Raw {
+  const categoryLinks = NAV_ORDER.map(
+    (cat) => html`<li><a href="${CATEGORY_META[cat].path}">${CATEGORY_META[cat].label}</a></li>`,
   );
 
   const body = html`
@@ -23,7 +23,7 @@ browse a category below.</p>
     title: "Page not found",
     description: "The page you're looking for doesn't exist or has moved.",
     path: NOT_FOUND_PATH,
-    bodyHtml: raw(body),
+    bodyHtml: body,
     cssHref,
   });
 }

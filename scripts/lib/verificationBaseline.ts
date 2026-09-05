@@ -8,7 +8,7 @@
 //
 // The figures are the ones a page states about itself (`src/content/pageChecks.ts`), plus the
 // unpaired count only the prose parser sees. `test/verificationBaseline.test.ts` compares them
-// against `test/verification-baseline.json`, which `scripts/update-verification-baseline.ts`
+// against `test/verification-baseline.json`, which `scripts/maintain/update-verification-baseline.ts`
 // rewrites.
 import { readFileSync } from "node:fs";
 import { loadContent, type Page } from "../../src/content/loader.js";

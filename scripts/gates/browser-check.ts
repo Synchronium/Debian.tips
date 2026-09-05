@@ -1,7 +1,7 @@
 // The checks that need a real browser against a built site, run after `npx serve dist`.
 //
 //   npm run browser                              # both checks
-//   npx tsx scripts/browser-check.ts [origin]    # default is LOCAL_ORIGIN
+//   npx tsx scripts/gates/browser-check.ts [origin]    # default is LOCAL_ORIGIN
 //
 // Two things about this site cannot be established by building it. The first is search, which runs
 // entirely in the browser against Pagefind's WASM bundle, so nothing in `npm run check` loads it
@@ -17,8 +17,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import puppeteer, { type Browser, type Page } from "puppeteer";
-import { LOCAL_ORIGIN } from "../src/config.js";
-import { DIST_DIR, SITEMAP_FILE } from "../src/paths.js";
+import { LOCAL_ORIGIN } from "../../src/config.js";
+import { DIST_DIR, SITEMAP_FILE } from "../../src/paths.js";
 import { pa11yUrls } from "./pa11y-urls.js";
 
 /** The narrowest screen worth supporting. Below this, a phone's own browser starts scaling the

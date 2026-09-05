@@ -1,4 +1,4 @@
-import { html, raw } from "../html.js";
+import { html, raw, type Raw } from "../html.js";
 import { layout } from "./layout.js";
 import { isoDay, techArticleJsonLd } from "./pageMeta.js";
 import { breadcrumbs } from "./partials/breadcrumbs.js";
@@ -8,27 +8,28 @@ import { related } from "./partials/related.js";
 import { toc } from "./partials/toc.js";
 import { sourceLinks } from "./partials/sourceLinks.js";
 import type { ArticlePage, ScriptingPage } from "../content/loader.js";
+import { SCRIPTING_CATEGORY } from "../content/schema.js";
 
-export function articlePage(page: ArticlePage | ScriptingPage, cssHref: string): string {
+export function articlePage(page: ArticlePage | ScriptingPage, cssHref: string): Raw {
   const dateStr = isoDay(page.updated);
-  const series = page.category === "scripting" ? prevNext(page.prev, page.next) : "";
+  const series = page.category === SCRIPTING_CATEGORY ? prevNext(page.prev, page.next) : "";
 
   const body = html`
-${raw(breadcrumbs(page.category, page.title))}
+${breadcrumbs(page.category, page.title)}
 <article class="article">
 <div class="content">
 <header class="page-head">
 <h1>${page.title}</h1>
-${page.tagline ? raw(html`<p class="tagline">${page.tagline}</p>`) : ""}
+${page.tagline ? html`<p class="tagline">${page.tagline}</p>` : ""}
 <p class="meta">Updated ${dateStr}</p>
-${raw(tagChips(page.tags))}
+${tagChips(page.tags)}
 </header>
 <div class="prose">${raw(page.html)}</div>
-${raw(related(page.relatedLinks))}
-${raw(series)}
-${raw(sourceLinks(page.slug, page.sources, page.checks))}
+${related(page.relatedLinks)}
+${series}
+${sourceLinks(page.slug, page.sources, page.checks)}
 </div>
-${raw(toc(page.toc))}
+${toc(page.toc)}
 </article>`;
 
   return layout({
@@ -36,7 +37,7 @@ ${raw(toc(page.toc))}
     description: page.description,
     path: page.url,
     activeCategory: page.category,
-    bodyHtml: raw(body),
+    bodyHtml: body,
     cssHref,
     draft: page.draft,
     indexable: true,

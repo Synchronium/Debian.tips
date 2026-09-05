@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { ROOT } from "../src/paths.js";
 
 /* The tools and the documentation print repository paths at people: "see
- * .claude/skills/cross-link-pages/SKILL.md", "re-capture with scripts/adopt-real-output.ts".
+ * .claude/skills/cross-link-pages/SKILL.md", "re-capture with scripts/authoring/adopt-real-output.ts".
  * Nothing else checks those, so a rename leaves a message confidently naming a file that no
  * longer exists, and the message is read precisely when someone is already stuck. */
 

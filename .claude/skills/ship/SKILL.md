@@ -100,4 +100,4 @@ changing what a later one sees. `.claude/reference/verification.md` has each one
 that identifies it.
 
 Fix the cause rather than re-running the job. If the real output is right and the page is wrong,
-`scripts/adopt-real-output.ts` re-captures it.
+`scripts/authoring/adopt-real-output.ts` re-captures it.

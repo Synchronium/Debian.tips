@@ -2,7 +2,16 @@ import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { transformSync } from "esbuild";
-import { CLIENT_DIR, FONT_FILE, FONT_SOURCE, PUBLIC_DIR, STYLES_DIR } from "./paths.js";
+import {
+  CLIENT_DIR,
+  FONT_FILE,
+  FONT_SOURCE,
+  PUBLIC_DIR,
+  SITE_CSS_FILE,
+  SITE_CSS_SOURCE,
+  assetHref,
+  distAssetsDir,
+} from "./paths.js";
 
 /** Minified with a source map alongside, for both the stylesheet and the static scripts.
  *
@@ -88,7 +97,7 @@ export function copyPublic(distDir: string): void {
   // public/ is copied verbatim, then the compiled client scripts are written alongside. Copying
   // first, rather than filtering the copy, keeps every static file (CNAME, the favicon,
   // .nojekyll) on the one path that has always handled them.
-  const assetsDir = join(distDir, "assets");
+  const assetsDir = distAssetsDir(distDir);
   mkdirSync(assetsDir, { recursive: true });
   for (const [source, served] of Object.entries(FETCHED_CLIENT_SCRIPTS)) {
     // `format: "esm"` because interaction.ts reaches this through a dynamic `import()`, so the
@@ -121,18 +130,18 @@ export function copyPublic(distDir: string): void {
  *  The hash is taken over the *minified* bytes, which are what gets served, since hashing the source
  *  instead would leave the URL unchanged when only the minifier's output moved. */
 export function writeHashedCss(distDir: string, extraCss = ""): string {
-  const base = readFileSync(join(STYLES_DIR, "site.css"), "utf-8");
+  const base = readFileSync(SITE_CSS_SOURCE, "utf-8");
   const source = extraCss
     ? `${base}\n/* Syntax highlighting, generated from the content. */\n${extraCss}\n`
     : base;
 
   // Named `site.css` in the map rather than the hashed output name, so devtools labels the
   // original something that means "the source" and not "the minified file".
-  const built = minify(source, "site.css", LOADER.css);
+  const built = minify(source, SITE_CSS_FILE, LOADER.css);
   const hash = createHash("sha256").update(built.code).digest("hex").slice(0, 8);
   const filename = `site.${hash}.css`;
-  const assetsDir = join(distDir, "assets");
+  const assetsDir = distAssetsDir(distDir);
   mkdirSync(assetsDir, { recursive: true });
   writeMinified(assetsDir, filename, built, "css");
-  return `/assets/${filename}`;
+  return assetHref(filename);
 }

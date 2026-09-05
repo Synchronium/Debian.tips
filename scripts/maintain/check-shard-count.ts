@@ -16,8 +16,8 @@
 //
 // Exit status: 0 when the count fits, 1 when it does not.
 import { relative } from "node:path";
-import { CI_WORKFLOW_FILE, ROOT } from "../src/paths.js";
-import { replayableSlugs } from "./lib/replayPages.js";
+import { CI_WORKFLOW_FILE, ROOT } from "../../src/paths.js";
+import { replayableSlugs } from "../lib/replayPages.js";
 import {
   SHARD_COUNT,
   UNTIMED_SECONDS,
@@ -25,7 +25,7 @@ import {
   shardCosts,
   shardCountVerdict,
   slowestShardSeconds,
-} from "./lib/replayShard.js";
+} from "../lib/replayShard.js";
 
 const slugs = replayableSlugs();
 const costs = shardCosts(slugs);

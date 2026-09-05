@@ -39,11 +39,17 @@ content/            Markdown + YAML content, one directory per category (see src
 src/                Generator: content pipeline, templates, dev server, build/linkcheck scripts
 src/templates/      Page templates and shared partials
 src/client/         Client TypeScript: inlined into every page, except the fetched search dialog
-scripts/            Sandbox, example replay (npm run replay), and content-fixture setup scripts
+scripts/            Tools, grouped by when you run them (scripts/README.md is the map)
+scripts/replay/     The verification harness: npm run replay, and the sandbox it runs pages in
+scripts/fixtures/   A setup script per page, creating the sample files its examples run against
 styles/site.css     Full design system (single stylesheet, hashed on build)
 public/             Static assets copied as-is into dist/ (favicon, robots.txt, CNAME)
 test/               Vitest unit + build-pipeline tests, with fixture content
 ```
+
+The two are not independent: `scripts/` imports the content contract from `src/content/`, so the
+generator and the harness cannot disagree about what a page claims. The dependency runs one way
+only, and `docs/adr/0028-src-content-is-the-shared-contract.md` is why.
 
 ## Writing content
 
@@ -59,9 +65,9 @@ Every example on this site is run for real, not written from memory or invention
 happens inside a disposable `debian:trixie` container rather than on your own machine:
 
 ```sh
-name=$(scripts/sandbox.sh start)          # boots a throwaway container, prints its name
-scripts/sandbox.sh exec "$name" "<command to verify>"
-scripts/sandbox.sh stop "$name"           # discards it; nothing persists
+name=$(scripts/replay/sandbox.sh start)          # boots a throwaway container, prints its name
+scripts/replay/sandbox.sh exec "$name" "<command to verify>"
+scripts/replay/sandbox.sh stop "$name"           # discards it; nothing persists
 ```
 
 "Test the example" sometimes means installing a package, using `sudo`, or standing up a real
@@ -83,9 +89,9 @@ npm run replay              # every page, each in a throwaway container of its o
 npm run replay -- wget curl # just these, in the same containers the full run gives them
 
 # the same thing one page at a time, if you want to keep the sandbox around
-name=$(scripts/sandbox.sh start)
-npx tsx scripts/replay-command-page.ts "$name" wc scripts/fixtures/wc.sh   # prints that page's score
-scripts/sandbox.sh stop "$name"
+name=$(scripts/replay/sandbox.sh start)
+npx tsx scripts/replay/command-page.ts "$name" wc scripts/fixtures/wc.sh   # prints that page's score
+scripts/replay/sandbox.sh stop "$name"
 ```
 
 The counts (how many outputs are re-run, across how many pages, and how many are exempt, and how

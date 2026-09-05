@@ -15,6 +15,7 @@
 // deterministic over adding a rule.
 //
 // Covered by test/normalise.test.ts. Add a case there alongside anything added here.
+import { ReplayError } from "./replayMetadata.js";
 
 /** The tokens a mask can introduce. The replay rejects a page containing one: they belong to a
  *  comparison, and on a page they would read as literal placeholders and match any future
@@ -26,6 +27,27 @@ export const MASK_TOKENS: readonly string[] = [
   "<ELAPSED>",
   "<VERSION>",
 ];
+
+/** Refuses a page whose documented output already contains a mask token.
+ *
+ *  A mask is idempotent under masking, so a page carrying one would match any real output for
+ *  ever: the block would read as verified, count towards the page's score, and never fail again.
+ *  Masks belong to the comparison, never to a page.
+ *
+ *  `where` names each block the way its own page identifies one, since a command page knows an
+ *  example by title and a prose page knows a block by line. Held to it identically either way. */
+export function refuseMaskTokens(page: string, blocks: readonly { where: string; text: string }[]): void {
+  const masked = blocks.flatMap((block) => {
+    const token = MASK_TOKENS.find((mask) => block.text.includes(mask));
+    return token === undefined ? [] : [`  ${block.where} contains ${token}`];
+  });
+  if (!masked.length) return;
+  throw new ReplayError(
+    `${page}: ${masked.length} documented output(s) contain a normalisation mask, so they can never fail:\n` +
+      masked.join("\n") +
+      `\nRe-capture them with scripts/authoring/adopt-real-output.ts.`,
+  );
+}
 
 /** Timestamps, each anchored to the column of the command that emits it.
  *

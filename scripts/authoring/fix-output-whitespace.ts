@@ -1,6 +1,6 @@
 // Repairs `output:` blocks whose leading whitespace was lost.
 //
-//   npx tsx scripts/fix-output-whitespace.ts [--user] <sandbox> <command> [setup.sh]
+//   npx tsx scripts/authoring/fix-output-whitespace.ts [--user] <sandbox> <command> [setup.sh]
 //
 // Commands that right-align columns (`wc`, `uniq -c`) emit leading spaces that a plain YAML
 // `|` block silently strips: the block takes its indentation from its first line, so any
@@ -13,11 +13,11 @@
 // is reported and left for a human. This is a formatting repair, not a way to make a wrong
 // example pass; use adopt-real-output.ts for that, deliberately.
 import { readFileSync, writeFileSync } from "node:fs";
-import type { Example } from "../src/content/schema.js";
-import { examplesPath, readExamplesFile } from "./lib/examplesFile.js";
-import { ReplayError, readSetupDirectives } from "./lib/replayMetadata.js";
-import { SANDBOX_TOOL, captureAll, openSandbox } from "./lib/sandbox.js";
-import { findOutputBlock, replaceOutputBlock } from "./lib/yamlBlock.js";
+import type { Example } from "../../src/content/schema.js";
+import { examplesPath, readExamplesFile } from "../lib/examplesFile.js";
+import { ReplayError, readSetupDirectives } from "../lib/replayMetadata.js";
+import { SANDBOX_TOOL, captureAll, openSandbox } from "../lib/sandbox.js";
+import { findOutputBlock, replaceOutputBlock } from "../lib/yamlBlock.js";
 
 function main(): void {
   const argv = process.argv.slice(2);

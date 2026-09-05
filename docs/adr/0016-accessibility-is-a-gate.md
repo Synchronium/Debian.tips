@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Recorded:** 2026-08-19
-- **Enforced by:** `npm run a11y` in `.github/workflows/ci.yml`, with its URL list generated and checked for completeness by `scripts/pa11y-urls.ts`, covered by `test/pa11yUrls.test.ts`
+- **Enforced by:** `npm run a11y` in `.github/workflows/ci.yml`, with its URL list generated and checked for completeness by `scripts/gates/pa11y-urls.ts`, covered by `test/pa11yUrls.test.ts`
 
 ## Context
 
@@ -19,7 +19,7 @@ of the site, and said nothing about it.
 `pa11y-ci` runs in CI against the built site, as a step in the `check` job after the build has
 happened and `dist/` is being served.
 
-**Its URL list is generated from the sitemap the build just wrote**, by `scripts/pa11y-urls.ts`.
+**Its URL list is generated from the sitemap the build just wrote**, by `scripts/gates/pa11y-urls.ts`.
 Nobody maintains it by hand.
 
 ## Consequences

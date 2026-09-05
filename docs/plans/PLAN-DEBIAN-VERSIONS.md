@@ -31,7 +31,7 @@ No build fails, and no page changes. The site simply stops being about the relea
 
 | What | Pinned? | Where |
 |---|---|---|
-| The sandbox base image | **yes**, `FROM debian:trixie` | `scripts/sandbox/Dockerfile`, `scripts/sandbox.sh`, `.devcontainer/devcontainer.json` |
+| The sandbox base image | **yes**, `FROM debian:trixie` | `scripts/replay/sandbox/Dockerfile`, `scripts/replay/sandbox.sh`, `.devcontainer/devcontainer.json` |
 | The archive metadata the image fetches at run time | **no** | `deb.debian.org`, rewritten by Debian |
 | The claim that this is current Debian stable | **not encoded anywhere** | the homepage, `about.md`, `release-channels` |
 

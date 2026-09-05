@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve, sep } from "node:path";
 import { copyPublic, writeHashedCss } from "./assets.js";
+import type { Raw } from "./html.js";
 import { CATEGORY_META, NAV_ORDER, STANDALONE_PAGES, TAGS_PATH, tagPath } from "./config.js";
 import {
   CONTENT_DIR,
@@ -12,6 +13,7 @@ import {
   OUTPUT_INDEX,
   SITEMAP_FILE,
 } from "./paths.js";
+import { COMMANDS_CATEGORY } from "./content/schema.js";
 import { loadContent } from "./content/loader.js";
 import { renderMarkdown } from "./content/markdown.js";
 import { fillStats, verificationStats } from "./content/verificationStats.js";
@@ -35,10 +37,10 @@ import { tagPage, tagsIndexPage } from "./templates/tags.js";
  *  rendered. Pages are rendered against this token and it is substituted as they are written. */
 const CSS_HREF_TOKEN = "\u0000css-href\u0000";
 
-function writePage(distDir: string, urlPath: string, htmlContent: string, cssHref: string): void {
+function writePage(distDir: string, urlPath: string, page: Raw, cssHref: string): void {
   const dir = urlPath === "/" ? distDir : join(distDir, urlPath.replace(/^\//, "").replace(/\/$/, ""));
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, OUTPUT_INDEX), htmlContent.replaceAll(CSS_HREF_TOKEN, cssHref), "utf-8");
+  writeFileSync(join(dir, OUTPUT_INDEX), page.value.replaceAll(CSS_HREF_TOKEN, cssHref), "utf-8");
 }
 
 export interface BuildResult {
@@ -83,9 +85,9 @@ export async function build(
 
   // Rendered first, written second: nothing can be written until the stylesheet's hash is known,
   // and that is not known until the last page has been rendered.
-  const rendered: { path: string; html: string }[] = [];
-  const emit = (urlPath: string, htmlContent: string): void => {
-    rendered.push({ path: urlPath, html: htmlContent });
+  const rendered: { path: string; html: Raw }[] = [];
+  const emit = (urlPath: string, page: Raw): void => {
+    rendered.push({ path: urlPath, html: page });
   };
 
   emit("/", homePage(pages, cssHref));
@@ -98,7 +100,7 @@ export async function build(
     const categoryPages = pages.filter((p) => p.category === category);
     // `/commands/` is deliberately one page however long it gets: its topic grouping is its
     // navigation, and splitting it makes a command harder to find. See partials/pager.ts.
-    const perPage = category === "commands" ? Infinity : PAGE_SIZE;
+    const perPage = category === COMMANDS_CATEGORY ? Infinity : PAGE_SIZE;
     for (const slice of paginate(categoryPages, CATEGORY_META[category].path, perPage)) {
       emit(slice.path, listingPage(category, slice, cssHref));
       listings.push({ path: slice.path, pages: slice.items });
@@ -108,7 +110,7 @@ export async function build(
   for (const page of pages) {
     emit(
       page.url,
-      page.category === "commands" ? await commandPage(page, cssHref) : articlePage(page, cssHref),
+      page.category === COMMANDS_CATEGORY ? await commandPage(page, cssHref) : articlePage(page, cssHref),
     );
   }
 
@@ -163,7 +165,7 @@ export async function build(
 
   writeFileSync(
     join(distDir, NOT_FOUND_FILE),
-    notFoundPage(cssHref).replaceAll(CSS_HREF_TOKEN, finalCssHref),
+    notFoundPage(cssHref).value.replaceAll(CSS_HREF_TOKEN, finalCssHref),
     "utf-8",
   );
   writeFileSync(join(distDir, SITEMAP_FILE), sitemapXml(pages, listings), "utf-8");

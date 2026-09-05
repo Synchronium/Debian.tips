@@ -1,7 +1,7 @@
 // Replaces the documented `output:` of named examples with their real captured output.
 //
-//   npx tsx scripts/adopt-real-output.ts [--user] <sandbox> <command> <setup.sh> "<title>"...
-//   npx tsx scripts/adopt-real-output.ts [--user] <sandbox> <command> <setup.sh> --all
+//   npx tsx scripts/authoring/adopt-real-output.ts [--user] <sandbox> <command> <setup.sh> "<title>"...
+//   npx tsx scripts/authoring/adopt-real-output.ts [--user] <sandbox> <command> <setup.sh> --all
 //
 // This changes what a page claims, so it only touches examples named on the command line,
 // or every example under `--all`. Use it when a page's output was written from memory or
@@ -14,11 +14,11 @@
 // A setup script is required, unlike in the replay: fixtures are restored before every
 // example, and capturing against an empty directory would record nothing worth adopting.
 import { readFileSync, writeFileSync } from "node:fs";
-import { examplesPath, readExamplesFile } from "./lib/examplesFile.js";
-import { stripArtifacts } from "./lib/normalise.js";
-import { ReplayError, loadSkipTitles, readSetupDirectives } from "./lib/replayMetadata.js";
-import { SANDBOX_TOOL, captureAll, openSandbox } from "./lib/sandbox.js";
-import { findOutputBlock, replaceOutputBlock } from "./lib/yamlBlock.js";
+import { examplesPath, readExamplesFile } from "../lib/examplesFile.js";
+import { stripArtifacts } from "../lib/normalise.js";
+import { ReplayError, loadSkipTitles, readSetupDirectives } from "../lib/replayMetadata.js";
+import { SANDBOX_TOOL, captureAll, openSandbox } from "../lib/sandbox.js";
+import { findOutputBlock, replaceOutputBlock } from "../lib/yamlBlock.js";
 
 function main(): void {
   const argv = process.argv.slice(2);

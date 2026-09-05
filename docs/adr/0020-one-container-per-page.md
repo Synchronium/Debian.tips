@@ -3,7 +3,7 @@
 - **Status:** Accepted, with a deferred follow-up
 - **Recorded:** 2026-08-24
 - **Supersedes:** [ADR-0002](0002-one-shared-sandbox-serial.md)
-- **Enforced by:** `scripts/replay-all.ts`, which starts and stops a sandbox around each page; `scripts/sandbox.sh`; the sharded `replay` job in `.github/workflows/ci.yml`; `test/replayShard.test.ts`, which holds the partition the sharding depends on
+- **Enforced by:** `scripts/replay/all.ts`, which starts and stops a sandbox around each page; `scripts/lib/replayContainers.ts`, which names each container after its run and sweeps the ones an interrupted run left, with `test/replayContainers.test.ts` on the ownership rule; `scripts/replay/sandbox.sh`; the sharded `replay` job in `.github/workflows/ci.yml`; `test/replayShard.test.ts`, which holds the partition the sharding depends on
 
 ## Context
 
@@ -83,7 +83,7 @@ two defects found while measuring it returned about as much:
 
 The first defect: `docker stop` was taking **10.2 seconds** every time, because it sends SIGTERM
 and waits out the full grace period, and neither init reacts to SIGTERM (`sleep infinity` has no
-handler, systemd wants SIGRTMIN+3). `scripts/sandbox.sh` now stops with `-t 0`: 0.09s.
+handler, systemd wants SIGRTMIN+3). `scripts/replay/sandbox.sh` now stops with `-t 0`: 0.09s.
 
 The second: the image staleness check compared the build context against the image's *creation*
 time, and a rebuild that hits the layer cache keeps the cached layer's creation time. So the image

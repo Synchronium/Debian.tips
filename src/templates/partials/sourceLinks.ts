@@ -1,4 +1,4 @@
-import { html, raw } from "../../html.js";
+import { EMPTY_HTML, html, joinHtml, raw, type Raw } from "../../html.js";
 import { blobUrl } from "../../config.js";
 import type { PageSources } from "../../content/sourcePaths.js";
 import type { PageChecks } from "../../content/pageChecks.js";
@@ -42,7 +42,7 @@ function howLong(seconds: number | undefined): string {
  *  The zero-checked case is real and is the interesting one: a page can opt into the replay, be
  *  run by it, and have every one of its blocks exempt. `/about/` deliberately leaves such a page
  *  out of both its counters, so this is the only place that says so. */
-function checksSentence(checks: PageChecks, sources: PageSources): string {
+function checksSentence(checks: PageChecks, sources: PageSources): Raw {
   const where = exemptionsAreIn(sources);
 
   const exemptClause =
@@ -52,7 +52,7 @@ function checksSentence(checks: PageChecks, sources: PageSources): string {
 ${checks.exempt === 1 ? "it was" : "each was"} checked instead.`;
 
   if (checks.checked === 0) {
-    if (checks.exempt === 0) return "";
+    if (checks.exempt === 0) return EMPTY_HTML;
     return html`<p class="page-checks">
 This page documents ${checks.exempt === 1 ? "one output" : `${checks.exempt} outputs`}, and the
 batch cannot run ${checks.exempt === 1 ? "it" : "any of them"}. How
@@ -71,11 +71,11 @@ command reports exactly that.
     { count: checks.checked - checks.byShape - checks.unordered, how: raw("exactly") },
     {
       count: checks.byShape,
-      how: raw(html`<a href="/about/#output-that-cannot-be-identical">by shape</a>`),
+      how: html`<a href="/about/#output-that-cannot-be-identical">by shape</a>`,
     },
     {
       count: checks.unordered,
-      how: raw(html`<a href="/about/#output-that-cannot-be-identical">in any order</a>`),
+      how: html`<a href="/about/#output-that-cannot-be-identical">in any order</a>`,
     },
   ].filter((clause) => clause.count > 0);
 
@@ -87,10 +87,10 @@ command reports exactly that.
   const split =
     listed.length === 1
       ? html`, all compared ${compared[0]!.how}`
-      : `: ${listed.slice(0, -1).join(", ")} and ${listed[listed.length - 1]}`;
+      : html`: ${joinHtml(listed.slice(0, -1), ", ")} and ${listed[listed.length - 1]}`;
 
   return html`<p class="page-checks">
-Checks ${checks.checked} ${checks.checked === 1 ? "output" : "outputs"}${raw(split)}.${raw(exemptClause)}
+Checks ${checks.checked} ${checks.checked === 1 ? "output" : "outputs"}${split}.${exemptClause}
 </p>`;
 }
 
@@ -103,9 +103,9 @@ Checks ${checks.checked} ${checks.checked === 1 ? "output" : "outputs"}${raw(spl
  *  A page with no setup script is a real state and gets a different sentence rather than a
  *  hidden block: `npm run replay -- <slug>` would report it as unverified, and printing a
  *  command that does not do what the surrounding text claims is worse than saying so. */
-export function sourceLinks(slug: string, sources: PageSources, checks: PageChecks): string {
-  const items = sources.files.map((file) =>
-    raw(html`<li><a href="${blobUrl(file.path)}"><code>${file.path}</code></a> - ${file.label}</li>`),
+export function sourceLinks(slug: string, sources: PageSources, checks: PageChecks): Raw {
+  const items = sources.files.map(
+    (file) => html`<li><a href="${blobUrl(file.path)}"><code>${file.path}</code></a> - ${file.label}</li>`,
   );
 
   const replayCommand = `npm run replay -- ${slug}`;
@@ -122,20 +122,20 @@ re-run on every change (<a href="/about/">how that works</a>). These are the fil
 <ul class="source-files">${items}</ul>
 ${
   sources.replayable
-    ? raw(html`<p>
+    ? html`<p>
 Clone the repository and re-run every example on this page in a throwaway container. It needs
-Docker${raw(howLong(sources.replaySeconds))}:
+Docker${howLong(sources.replaySeconds)}:
 </p>
 <div class="source-replay">
 <pre><code>${replayCommand}</code></pre>
 <button class="copy" type="button" aria-label="Copy command" data-copy="${replayCommand}">Copy</button>
 </div>
-${raw(checksSentence(checks, sources))}`)
-    : raw(html`<p>
+${checksSentence(checks, sources)}`
+    : html`<p>
 This page has no setup script yet, so nothing re-runs its examples: they were checked by hand
 when it was written and nothing has checked them since. Adding
 <code>scripts/fixtures/${slug}.sh</code> is what would put it in the batch.
-</p>`)
+</p>`
 }
 </aside>`;
 }

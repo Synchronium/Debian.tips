@@ -58,12 +58,12 @@ describe("paginate", () => {
 
 describe("paginationNav", () => {
   it("renders nothing for a listing that fits on one page", () => {
-    expect(paginationNav(paginate(items(3), "/tags/apt/", 24)[0]!)).toBe("");
+    expect(paginationNav(paginate(items(3), "/tags/apt/", 24)[0]!).value).toBe("");
   });
 
   it("names the position and links both ways in the middle of a run", () => {
     const middle = paginate(items(60), "/tags/apt/", 24)[1]!;
-    const html = paginationNav(middle);
+    const html = paginationNav(middle).value;
     expect(html).toContain("Page 2 of 3");
     expect(html).toContain('href="/tags/apt/"');
     expect(html).toContain('href="/tags/apt/page/3/"');

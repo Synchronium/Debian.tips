@@ -120,7 +120,7 @@ export function shardPages(names: string[], shard: Shard, timings: Record<string
  *  job is not done until the last one is.
  *
  *  Partitioned by the real `shardPages`, so this is the split CI will get rather than an idealised
- *  one. Here rather than in the test that reads it because `scripts/merge-timings.ts` asks the
+ *  one. Here rather than in the test that reads it because `scripts/maintain/merge-timings.ts` asks the
  *  same question of a candidate file before writing it, and two implementations of this curve
  *  would let CI be held to one answer and the recorder write figures that assume another. */
 export function slowestShardSeconds(names: string[], timings: Record<string, number>, total: number): number {

@@ -35,13 +35,25 @@ export const CATEGORIES = [
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 
+/** The two categories the code has to name, because each carries something the others do not.
+ *
+ *  `commands` is a directory per page rather than a file, so it is loaded, rendered, sourced and
+ *  listed differently. `scripting` is an ordered course, so it alone carries `order:` and gets
+ *  prev/next links.
+ *
+ *  Named as constants rather than written out at each comparison, for the reason `CLAUDE.md` gives
+ *  in full: a value validated in one place and re-spelled in another fails open. `Category` already
+ *  stops a *typo* compiling; what it cannot stop is a category being renamed in `CATEGORIES` while
+ *  a comparison against the old spelling keeps compiling and quietly takes the other branch. */
+export const COMMANDS_CATEGORY = "commands" as const satisfies Category;
+export const SCRIPTING_CATEGORY = "scripting" as const satisfies Category;
+
 /** Every category except `commands`: the ones whose pages are a single Markdown file, stating
  *  their examples as fenced blocks rather than in a structured `examples.yaml`. The prose replay
  *  and the build's statistics both need this set.
  *
  *  Derived rather than listed, because a new category left out of a listed copy fails silently:
  *  its pages would never be replayed, under a total that still looked right. */
-export const COMMANDS_CATEGORY = "commands" as const satisfies Category;
 export type ProseCategory = Exclude<Category, typeof COMMANDS_CATEGORY>;
 export const PROSE_CATEGORIES: readonly ProseCategory[] = CATEGORIES.filter(
   (category): category is ProseCategory => category !== COMMANDS_CATEGORY,
@@ -112,7 +124,7 @@ const baseFrontmatter = {
 
 export const commandFrontmatterSchema = z.object({
   ...baseFrontmatter,
-  category: z.literal("commands"),
+  category: z.literal(COMMANDS_CATEGORY),
   // Required here, overriding the optional one in `baseFrontmatter`: a command page's title is a
   // command name, so without a line saying what it does the page opens with `tr` and nothing else.
   tagline: taglineSchema,
@@ -121,7 +133,7 @@ export const commandFrontmatterSchema = z.object({
 
 export const scriptingFrontmatterSchema = z.object({
   ...baseFrontmatter,
-  category: z.literal("scripting"),
+  category: z.literal(SCRIPTING_CATEGORY),
   order: z.number().int().positive(),
 });
 
@@ -238,7 +250,7 @@ export const fixtureSchema = z.object({
   /** The command that reproduces `content` inside the sandbox, defaulting to
    * `cat <name>`. Set it when the block isn't one file's contents: a directory tree
    * shown as `ls -lAR projects`, or a placeholder standing in for a duplicate file.
-   * `scripts/replay-command-page.ts` runs it and diffs, so a fixture that has drifted from
+   * `scripts/replay/command-page.ts` runs it and diffs, so a fixture that has drifted from
    * its setup script fails the replay instead of quietly misleading a reader. Never
    * rendered: it exists only to keep the rendered block honest. */
   from: z.string().optional(),

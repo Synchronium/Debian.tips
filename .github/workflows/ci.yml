@@ -45,7 +45,7 @@ jobs:
           done
           exit 1
         env:
-          # Nothing here asks for `headless: "shell"`: pa11y and scripts/browser-check.ts both take
+          # Nothing here asks for `headless: "shell"`: pa11y and scripts/gates/browser-check.ts both take
           # puppeteer's default, which is the full Chrome binary. Skipping the shell halves what a
           # cold run fetches, so a gate that does ask for it has to drop this line or fail here
           # alone, having passed locally.
@@ -148,7 +148,7 @@ jobs:
       # when there is nothing to pull, which is what keeps a registry from being something CI
       # depends on.
       - name: Fetch or build the sandbox image
-        run: scripts/sandbox.sh build
+        run: scripts/replay/sandbox.sh build
       # A pull request replays the pages its diff touches, and everything if it touched the
       # harness, where one change can move any page's output. A push to main always replays the
       # whole site, so nothing is deployed on the strength of a partial run.

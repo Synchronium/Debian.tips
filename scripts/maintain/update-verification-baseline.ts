@@ -8,8 +8,8 @@
 // The diff is the review. One line per page, so what moved and by how much is readable.
 import { writeFileSync } from "node:fs";
 import { relative } from "node:path";
-import { ROOT, VERIFICATION_BASELINE_FILE } from "../src/paths.js";
-import { verificationBaseline } from "./lib/verificationBaseline.js";
+import { ROOT, VERIFICATION_BASELINE_FILE } from "../../src/paths.js";
+import { verificationBaseline } from "../lib/verificationBaseline.js";
 
 const baseline = await verificationBaseline();
 writeFileSync(VERIFICATION_BASELINE_FILE, `${JSON.stringify(baseline, null, 2)}\n`);

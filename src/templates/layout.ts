@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { transformSync } from "esbuild";
 import { join } from "node:path";
-import { html, raw, type Raw } from "../html.js";
+import { EMPTY_HTML, html, raw, type Raw } from "../html.js";
 import {
   CATEGORY_META,
   FEED_PATH,
@@ -39,8 +39,8 @@ export interface LayoutOptions {
 }
 
 /** Only fires in production builds so local dev doesn't pollute analytics. */
-function analyticsHtml(): string {
-  if (process.env["NODE_ENV"] !== "production") return "";
+function analyticsHtml(): Raw {
+  if (process.env["NODE_ENV"] !== "production") return EMPTY_HTML;
   const id = SITE.gaMeasurementId;
   return html`<script async src="https://www.googletagmanager.com/gtag/js?id=${id}"></script>
 <script>${raw(`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${id}');`)}</script>`;
@@ -111,7 +111,7 @@ function clientScript(filename: string): string {
  *  disclosure menu when it holds several. The menu is a nested `<details>` rather than scripted,
  *  so it opens by keyboard and without JS, and so the mobile menu it sits inside needs no second
  *  implementation of the same behaviour. */
-function navGroupHtml(group: NavGroup, activeCategory: Category | undefined): string {
+function navGroupHtml(group: NavGroup, activeCategory: Category | undefined): Raw {
   const active = activeCategory !== undefined && group.categories.includes(activeCategory);
 
   // A one-category group links straight to that listing, so on the listing itself the link is
@@ -121,10 +121,9 @@ function navGroupHtml(group: NavGroup, activeCategory: Category | undefined): st
     return html`<li><a href="${group.path}"${raw(active ? ' aria-current="page"' : "")}>${group.label}</a></li>`;
   }
 
-  const items = group.categories.map((cat) =>
-    raw(
+  const items = group.categories.map(
+    (cat) =>
       html`<li><a href="${CATEGORY_META[cat].path}"${raw(activeCategory === cat ? ' aria-current="page"' : "")}>${CATEGORY_META[cat].label}</a></li>`,
-    ),
   );
   return html`<li><details class="nav-menu">
 <summary${raw(active ? ' aria-current="true"' : "")}>${group.label}</summary>
@@ -132,10 +131,10 @@ function navGroupHtml(group: NavGroup, activeCategory: Category | undefined): st
 </details></li>`;
 }
 
-function headerHtml(activeCategory: Category | undefined): string {
-  const navItems = NAV_GROUPS.map((g) => raw(navGroupHtml(g, activeCategory)));
-  const standaloneItems = STANDALONE_PAGES.map((s) =>
-    raw(html`<li><a href="${s.path}">${s.headerLabel}</a></li>`),
+function headerHtml(activeCategory: Category | undefined): Raw {
+  const navItems = NAV_GROUPS.map((g) => navGroupHtml(g, activeCategory));
+  const standaloneItems = STANDALONE_PAGES.map(
+    (s) => html`<li><a href="${s.path}">${s.headerLabel}</a></li>`,
   );
   return html`<header class="site-header">
 <a class="skip-link" href="#main">Skip to content</a>
@@ -157,15 +156,15 @@ function headerHtml(activeCategory: Category | undefined): string {
 </header>`;
 }
 
-function footerHtml(): string {
-  const exploreItems = NAV_ORDER.map((cat) =>
-    raw(html`<li><a href="${CATEGORY_META[cat].path}">${CATEGORY_META[cat].label}</a></li>`),
+function footerHtml(): Raw {
+  const exploreItems = NAV_ORDER.map(
+    (cat) => html`<li><a href="${CATEGORY_META[cat].path}">${CATEGORY_META[cat].label}</a></li>`,
   );
   return html`<footer class="site-footer">
 <div class="footer-inner">
 <nav aria-label="Explore"><h2>Explore</h2><ul>${exploreItems}</ul></nav>
 <nav aria-label="Meta"><h2>Meta</h2><ul>
-${STANDALONE_PAGES.map((s) => raw(html`<li><a href="${s.path}">${s.navLabel}</a></li>`))}
+${STANDALONE_PAGES.map((s) => html`<li><a href="${s.path}">${s.navLabel}</a></li>`)}
 <li><a href="${FEED_PATH}">RSS</a></li>
 <li><a href="${SITE.repo}">GitHub</a></li>
 </ul></nav>
@@ -182,7 +181,7 @@ ${STANDALONE_PAGES.map((s) => raw(html`<li><a href="${s.path}">${s.navLabel}</a>
  * The result list itself is not a live region: replacing its contents on every keystroke made a
  * screen reader announce every result again, mid-typing. The status line beside it says how many
  * there are, which is the part worth hearing. */
-function searchDialogHtml(): string {
+function searchDialogHtml(): Raw {
   return html`<dialog id="search-dialog" aria-label="Search debian.tips">
 <div class="search-dialog-inner">
 <div class="search-input-row">
@@ -202,7 +201,7 @@ function safeJsonLd(data: Record<string, unknown>): string {
   return JSON.stringify(data).replace(/</g, "\\u003c");
 }
 
-export function layout(opts: LayoutOptions): string {
+export function layout(opts: LayoutOptions): Raw {
   const canonical = `${SITE.url}${opts.path}`;
   const pageTitle = opts.path === "/" ? `${SITE.title} - ${SITE.tagline}` : `${opts.title} - ${SITE.title}`;
   const websiteJsonLd = {
@@ -227,7 +226,7 @@ export function layout(opts: LayoutOptions): string {
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-${raw(analyticsHtml())}
+${analyticsHtml()}
 <title>${pageTitle}</title>
 <meta name="description" content="${opts.description}" />
 <link rel="canonical" href="${canonical}" />
@@ -240,23 +239,23 @@ ${raw(analyticsHtml())}
 <meta property="og:url" content="${canonical}" />
 <meta property="og:image" content="${SITE.url}${OG_IMAGE_HREF}" />
 <meta name="twitter:card" content="summary_large_image" />
-${opts.modified ? raw(html`<meta property="article:modified_time" content="${opts.modified}" />`) : ""}
-${opts.prevPath ? raw(html`<link rel="prev" href="${SITE.url}${opts.prevPath}" />`) : ""}
-${opts.nextPath ? raw(html`<link rel="next" href="${SITE.url}${opts.nextPath}" />`) : ""}
+${opts.modified ? html`<meta property="article:modified_time" content="${opts.modified}" />` : ""}
+${opts.prevPath ? html`<link rel="prev" href="${SITE.url}${opts.prevPath}" />` : ""}
+${opts.nextPath ? html`<link rel="next" href="${SITE.url}${opts.nextPath}" />` : ""}
 <script>${raw(clientScript("theme-init.ts"))}</script>
 <link rel="preload" href="${FONT_HREF}" as="font" type="font/woff2" crossorigin />
 <link rel="stylesheet" href="${opts.cssHref}" />
 <script type="application/ld+json">${raw(safeJsonLd(websiteJsonLd))}</script>
-${opts.jsonLd ? raw(html`<script type="application/ld+json">${raw(safeJsonLd(opts.jsonLd))}</script>`) : ""}
+${opts.jsonLd ? html`<script type="application/ld+json">${raw(safeJsonLd(opts.jsonLd))}</script>` : ""}
 </head>
 <body>
-${raw(headerHtml(opts.activeCategory))}
-${opts.draft ? raw(html`<div class="draft-banner" role="note">Draft: excluded from production builds</div>`) : ""}
+${headerHtml(opts.activeCategory)}
+${opts.draft ? html`<div class="draft-banner" role="note">Draft: excluded from production builds</div>` : ""}
 <main id="main"${opts.indexable ? raw(" data-pagefind-body") : ""}>
 ${opts.bodyHtml}
 </main>
-${raw(footerHtml())}
-${raw(searchDialogHtml())}
+${footerHtml()}
+${searchDialogHtml()}
 <div aria-live="polite" class="visually-hidden" id="live-region"></div>
 <script>${raw(clientScript("interaction.ts"))}</script>
 </body>

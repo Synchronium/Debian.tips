@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, posix } from "node:path";
-import { DIST_DIR as DIST, OUTPUT_INDEX } from "./paths.js";
+import { DIST_DIR as DIST, HTML_EXTENSION, OUTPUT_INDEX } from "./paths.js";
 
 const EXTERNAL = /^([a-z][a-z0-9+.-]*:|\/\/)/i; // has a scheme, or is protocol-relative
 
@@ -9,7 +9,7 @@ function findHtmlFiles(dir: string): string[] {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) out.push(...findHtmlFiles(full));
-    else if (entry.endsWith(".html")) out.push(full);
+    else if (entry.endsWith(HTML_EXTENSION)) out.push(full);
   }
   return out;
 }
@@ -17,7 +17,10 @@ function findHtmlFiles(dir: string): string[] {
 function toUrlPath(distFile: string): string {
   const rel = distFile.slice(DIST.length).replace(/\\/g, "/");
   const withoutIndex = rel.endsWith(OUTPUT_INDEX) ? rel.slice(0, -OUTPUT_INDEX.length) : rel;
-  return withoutIndex.replace(/\.html$/, "") || "/";
+  return (
+    (withoutIndex.endsWith(HTML_EXTENSION) ? withoutIndex.slice(0, -HTML_EXTENSION.length) : withoutIndex) ||
+    "/"
+  );
 }
 
 function extractLinks(htmlSource: string): string[] {
@@ -36,7 +39,7 @@ function resolveDistPath(urlPath: string): string | null {
   if (existsSync(asDir)) return asDir;
   const asFile = join(DIST, withoutTrailingSlash);
   if (existsSync(asFile) && statSync(asFile).isFile()) return asFile;
-  const asHtmlFile = join(DIST, `${withoutTrailingSlash}.html`);
+  const asHtmlFile = join(DIST, `${withoutTrailingSlash}${HTML_EXTENSION}`);
   if (existsSync(asHtmlFile) && statSync(asHtmlFile).isFile()) return asHtmlFile;
   return null;
 }
@@ -122,4 +125,6 @@ function main(): void {
   console.log(`linkcheck passed: ${pages.length} page(s), no broken links.`);
 }
 
-main();
+// Guarded like every other executable here (`src/build.ts`, the two replays), so importing this
+// module reads its functions rather than walking `dist/` and calling `process.exit`.
+if (import.meta.url === `file://${process.argv[1]}`) main();

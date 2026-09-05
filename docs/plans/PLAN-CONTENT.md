@@ -923,10 +923,10 @@ What went out, and what writing it taught that the next batch would otherwise le
   during the batch.
 - **2026-08-18**: Scripting lessons 4–6 (`loops`, `script-arguments`, `functions`), and the
   three existing lessons retrofitted with fixtures: 14/14 first time.
-- **2026-08-18**: Prose replay (`scripts/replay-prose-page.ts`), and `apt-essentials` fixed: it
+- **2026-08-18**: Prose replay (`scripts/replay/prose-page.ts`), and `apt-essentials` fixed: it
   had four broken output blocks out of four, two silently abridged and two drifted two point
   releases.
-- **2026-08-18**: The link audit (`scripts/link-audit.ts`), which is the second demand signal
+- **2026-08-18**: The link audit (`scripts/gates/link-audit.ts`), which is the second demand signal
   §3.1 now says to run before choosing a batch.
 - **2026-08-18**: All three concept pages verified. `pipes-and-redirection` had documented no
   output at all and now makes four checked claims, including both orderings of `2>&1`.
@@ -942,7 +942,7 @@ What went out, and what writing it taught that the next batch would otherwise le
   backlog in this document and was written for its own sake.
 - **2026-08-21 to 08-23**: The voice work, which produced no pages but changed how they are
   written: `.claude/reference/voice.md` as a standing reference covering pages, captions, code
-  comments, ADRs and commit messages, and `scripts/voice-check.ts` checking the lexical half of
+  comments, ADRs and commit messages, and `scripts/gates/voice-check.ts` checking the lexical half of
   it, wired to a PostToolUse hook.
 - **2026-08-23**: `xargs` (flagship) and the `environment-variables-and-path` concept page, the
   page §5 had rated the highest-value unwritten one on the site. The concept page's replay found

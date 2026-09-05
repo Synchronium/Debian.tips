@@ -9,7 +9,7 @@ import { ambiguousSlugs, pageId, replayableSlugs } from "../scripts/lib/replayPa
  * **Nothing here may fail over how old the file is**, and ADR-0023 carries why: a gate inside
  * `check` turns CI's conclusion red, and the recorder that would refresh the file runs only on a
  * green one. Completeness is enforced where acting on it is possible instead, by
- * `scripts/merge-timings.ts` refusing to write a file that does not cover every page the replay
+ * `scripts/maintain/merge-timings.ts` refusing to write a file that does not cover every page the replay
  * runs. So these assertions are about what the file says, never about when it was written. */
 
 describe("the recorded replay timings", () => {

@@ -3,14 +3,14 @@
 - **Status:** Accepted
 - **Recorded:** 2026-08-26
 - **Enforced by:** nothing mechanical, since a `__snapshots__` directory or a folder of baseline
-  images is unmissable in a diff; `scripts/browser-check.ts` holds the ground a visual regression
+  images is unmissable in a diff; `scripts/gates/browser-check.ts` holds the ground a visual regression
   suite would have been bought for
 
 ## Context
 
 This repository already compares stored output against fresh output, on every push, over every
 example on the site. The replay harness (ADR-0001) is a snapshot test in every mechanical sense:
-`examples.yaml` holds golden values, `scripts/adopt-real-output.ts` is the button that re-records
+`examples.yaml` holds golden values, `scripts/authoring/adopt-real-output.ts` is the button that re-records
 them, and a run is a diff.
 
 It works for one reason, and the reason is not the mechanism. **The golden value is produced by an
@@ -51,7 +51,7 @@ agreement. The workaround is to capture baselines in CI only, which means a fail
 reproduced locally and every deliberate style change ships as a red gate blessed from a diff image:
 the re-record reflex above, with a slower loop.
 
-**What replaces the visual suite is a property.** `scripts/browser-check.ts` loads the same URLs
+**What replaces the visual suite is a property.** `scripts/gates/browser-check.ts` loads the same URLs
 the accessibility gate checks, at a 320px viewport, and asserts that the document does not scroll
 horizontally. Horizontal overflow on a narrow screen is the layout regression that is both
 plausible here (wide `<pre>` blocks of command output, long unbroken paths, the tag pills) and
@@ -76,7 +76,7 @@ Adding a browser to the gates costs two things. `puppeteer` is a direct devDepen
 something inherited from `pa11y-ci`, so the Chromium download is declared where Dependabot can see
 it instead of arriving as a transitive surprise.
 
-The other is a third TypeScript project. `scripts/browser-check.ts` is Node code that contains
+The other is a third TypeScript project. `scripts/gates/browser-check.ts` is Node code that contains
 browser code, because the callbacks it passes to `page.evaluate()` run inside the page, so it needs
 `node:fs` and `document` in one file and neither existing config can say that.
 `tsconfig.browser-check.json` covers that one file. Adding `DOM` to the root `lib` instead was

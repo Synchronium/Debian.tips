@@ -1,5 +1,5 @@
 import GithubSlugger from "github-slugger";
-import { html, raw } from "../html.js";
+import { EMPTY_HTML, html, raw, type Raw } from "../html.js";
 import { layout } from "./layout.js";
 import { isoDay, techArticleJsonLd } from "./pageMeta.js";
 import { breadcrumbs } from "./partials/breadcrumbs.js";
@@ -28,16 +28,16 @@ const COLLAPSE_OUTPUTS_LABEL = "Collapse all output";
 
 /** Collapsed by default: useful when an output can't be interpreted without seeing its
  * input, but noise for a reader who already knows the data or is skimming for a flag. */
-async function fixturesHtml(examplesFile: ExamplesFile): Promise<string> {
+async function fixturesHtml(examplesFile: ExamplesFile): Promise<Raw> {
   const fixtures = examplesFile.fixtures ?? [];
-  if (fixtures.length === 0) return "";
+  if (fixtures.length === 0) return EMPTY_HTML;
 
   const blocks = await Promise.all(
     fixtures.map(async (fixture) => {
       const body = await highlightCode(fixture.content, "plaintext");
       const note = fixture.note ? await renderInline(fixture.note, `fixture "${fixture.name}" note`) : "";
       return html`<div class="fixture">
-<p class="fixture-name"><code>${fixture.name}</code>${note ? raw(html` <span class="fixture-note">${raw(note)}</span>`) : ""}</p>
+<p class="fixture-name"><code>${fixture.name}</code>${note ? html` <span class="fixture-note">${raw(note)}</span>` : ""}</p>
 ${raw(body)}
 </div>`;
     }),
@@ -46,11 +46,11 @@ ${raw(body)}
   return html`<details class="fixtures">
 <summary>Sample files used on this page</summary>
 <p class="fixtures-intro">Every example below was run against these files. Recreate them to follow along.</p>
-${blocks.map((b) => raw(b))}
+${blocks.map((b) => b)}
 </details>`;
 }
 
-export async function commandPage(page: CommandPage, cssHref: string): Promise<string> {
+export async function commandPage(page: CommandPage, cssHref: string): Promise<Raw> {
   const dateStr = isoDay(page.updated);
   const examplesFile = page.examples;
 
@@ -88,8 +88,8 @@ export async function commandPage(page: CommandPage, cssHref: string): Promise<s
         : "";
       return html`<section class="example-section">
 <h2 id="${sectionSlug}">${section.title}</h2>
-${intro ? raw(html`<p class="section-intro">${raw(intro)}</p>`) : ""}
-${cards.map((c) => raw(c))}
+${intro ? html`<p class="section-intro">${raw(intro)}</p>` : ""}
+${cards}
 </section>`;
     }),
   );
@@ -113,23 +113,23 @@ ${cards.map((c) => raw(c))}
 </div>`;
 
   const body = html`
-${raw(breadcrumbs(page.category, page.title))}
+${breadcrumbs(page.category, page.title)}
 <article class="command-page">
 <div class="content">
 <header class="page-head">
 <h1>${page.title}</h1>
 <p class="tagline">${page.tagline}</p>
 <p class="meta">Updated ${dateStr}</p>
-${raw(tagChips(page.tags))}
+${tagChips(page.tags)}
 </header>
 <div class="prose">${raw(page.html)}</div>
-${raw(await fixturesHtml(examplesFile))}
-${raw(outputToggle)}
-${sectionsHtml.map((s) => raw(s))}
-${raw(related(page.relatedLinks))}
-${raw(sourceLinks(page.slug, page.sources, page.checks))}
+${await fixturesHtml(examplesFile)}
+${outputToggle}
+${sectionsHtml}
+${related(page.relatedLinks)}
+${sourceLinks(page.slug, page.sources, page.checks)}
 </div>
-${raw(toc([...page.toc, ...sectionTocEntries]))}
+${toc([...page.toc, ...sectionTocEntries])}
 </article>`;
 
   return layout({
@@ -137,7 +137,7 @@ ${raw(toc([...page.toc, ...sectionTocEntries]))}
     description: page.description,
     path: page.url,
     activeCategory: page.category,
-    bodyHtml: raw(body),
+    bodyHtml: body,
     cssHref,
     draft: page.draft,
     indexable: true,

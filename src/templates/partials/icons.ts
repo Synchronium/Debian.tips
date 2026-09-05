@@ -1,4 +1,4 @@
-import { html, raw } from "../../html.js";
+import { html, raw, type Raw } from "../../html.js";
 
 /** The homepage topic icons, as one inline SVG sprite.
  *
@@ -25,11 +25,11 @@ export type IconName = keyof typeof ICON_PATHS;
 
 /** `IconName` is what makes a typo a type error at the point it is written, in `HOME_TOPICS`,
  *  rather than an empty box or a throw when the homepage renders. */
-export function icon(name: IconName): string {
+export function icon(name: IconName): Raw {
   return html`<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#i-${name}" /></svg>`;
 }
 
-export function iconSprite(): string {
+export function iconSprite(): Raw {
   const symbols = Object.entries(ICON_PATHS).map((entry) =>
     raw(`<symbol id="i-${entry[0]}" viewBox="0 0 24 24">${entry[1]}</symbol>`),
   );

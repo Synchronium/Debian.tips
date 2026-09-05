@@ -74,6 +74,7 @@ command shown. These records keep that claim honest.
 | [0012](0012-prettier-never-formats-content.md) | Prettier never formats `content/` |
 | [0013](0013-client-js-is-compiled-typescript.md) | Client JavaScript is compiled TypeScript, inlined into every page |
 | [0014](0014-minify-css-and-js-never-html.md) | CSS and JS are minified with source maps; HTML never is |
+| [0028](0028-src-content-is-the-shared-contract.md) | `src/content/` is the contract the generator and the harness share, and the dependency runs one way |
 
 ### The design
 

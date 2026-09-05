@@ -38,6 +38,23 @@ syntax-highlighting classes cut from the rendered pages (`src/content/shikiStyle
 content-hashed, so no page can be given its stylesheet link until the last page is rendered. Category listing pages, tag pages, the homepage, sitemap, and RSS feed are all generated
 from the same loaded content model, not authored separately.
 
+## `src/content/` is shared with the harness
+
+`src/content/` is not only the generator's. It is the contract the generator and the replay harness
+both read, and the dependency runs one way: `scripts/` imports from `src/`, and `src/` never imports
+from `scripts/` (ADR-0028, held by `test/moduleBoundary.test.ts`).
+
+That is why a directory named for the content holds files named for replaying it. `schema.ts` says
+what a page may contain, `pageChecks.ts` partitions its outputs into checked and exempt,
+`proseBlocks.ts` pairs a prose page's command fences to their output, `replaySkips.ts` reads the
+exemption list and `replayTimings.ts` reads the recorded seconds. Each has two readers with the
+same question, and one answer between them: the harness decides what to run, the build states the
+figures at the foot of the page and sums them onto `/about/`.
+
+A module only the harness needs stays in `scripts/lib/`, whichever half calls it more. The test is
+whether the *build* needs the same answer. `scripts/lib/normalise.ts` decides what counts as a match
+between two runs and the build has no opinion about that, so it stays in the harness.
+
 Two fields on each example, `level` and `tags`, are validated but intentionally **not rendered
 by any template yet** (reserved for a future difficulty badge / filter; see the comments on
 `exampleSchema`). They look like dead data and aren't: keep authoring them accurately rather than
@@ -55,11 +72,24 @@ currently has content, which is useful as a roadmap hint but not a guarantee tho
 
 ## HTML generation
 
-`src/html.ts` exports a tagged template `html` and a `raw()` wrapper: an interpolation like
-`` html`<p>${value}</p>` `` auto-escapes `value` unless it's wrapped in `raw(...)`, arrays are
-joined with no separator, and `null`/`undefined`/`false` render as empty string. Every template in
-`src/templates/` composes through this. Never string-concatenate content into HTML directly, or
-escaping breaks.
+`src/html.ts` exports a tagged template `html`, which returns a `Raw`: an interpolation like
+`` html`<p>${value}</p>` `` escapes `value` unless it is already `Raw`, arrays are joined with no
+separator, and `null`/`undefined`/`false` render as empty string. Every template in
+`src/templates/` composes through this and returns `Raw` itself, so a nested template needs no
+wrapper. `src/build.ts` takes `.value` at the point it writes a page, and that is the only place
+the markup becomes an ordinary string.
+
+Three helpers go with it, and each exists because the obvious alternative silently escapes markup:
+
+- `raw(string)` promotes text this module did not produce. Reserve it for exactly that: rendered
+  Markdown, Shiki's output, an attribute fragment. A `raw()` in a template is a claim that
+  something external is being trusted, so it should be rare enough to read as one.
+- `joinHtml(parts, separator)` joins fragments with punctuation between them. `Array.join` returns
+  a plain string, which the next interpolation escapes.
+- `EMPTY_HTML` is what a partial returns when it has nothing to render, keeping the return type
+  `Raw` rather than widening it to `Raw | string`.
+
+Never string-concatenate content into HTML directly, or escaping breaks.
 
 ## Markdown rendering
 
@@ -103,7 +133,7 @@ links resolve to a real `id` in the target page. Part of `npm run check`, not `n
 
 ## The link audit
 
-`scripts/link-audit.ts` asks the question linkcheck doesn't: not whether the links that exist
+`scripts/gates/link-audit.ts` asks the question linkcheck doesn't: not whether the links that exist
 resolve, but whether the ones that should exist do. It builds a graph from `related:` frontmatter
 plus every root-relative link in prose, example descriptions, section intros and fixture notes,
 then reports pages nothing links to (**orphaned**), pages linking to fewer than two others
@@ -147,7 +177,7 @@ off a CI conclusion, so a scheduled one would publish the site on a timer.
 `.github/workflows/record-timings.yml` re-records those timings after a green push to `main`, from
 the replay that just ran, and commits them. Also kept out of `ci.yml` on purpose, and for a second
 reason on top of drift's: Deploy waits for CI's last job, so a recorder in there would delay every
-deploy and could fail one over an artifact. ADR-0023, and `scripts/merge-timings.ts` is what
+deploy and could fail one over an artifact. ADR-0023, and `scripts/maintain/merge-timings.ts` is what
 decides whether the figures are worth a commit.
 
 `.github/workflows/deploy.yml` builds and publishes `dist/` to GitHub Pages on `workflow_run` of

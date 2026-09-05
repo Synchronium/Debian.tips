@@ -2,7 +2,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
-import { SEVERITY, checkFile, inScope, proseLines } from "../scripts/voice-check.js";
+import { SEVERITY, checkFile, inScope, proseLines } from "../scripts/gates/voice-check.js";
 import { ROOT } from "../src/paths.js";
 
 /* The property worth a test is what the checker refuses to look at. `output:` and `fixtures:`
@@ -182,7 +182,7 @@ describe("voice-check scope", () => {
     // away from a page it helped produce. The checker read only content/ and the documentation
     // until this, so the guide's "the corpus sits at zero" was true of half of what it claimed.
     expect(inScope(join(ROOT, "src/templates/layout.ts"))).toBe(true);
-    expect(inScope(join(ROOT, "scripts/voice-check.ts"))).toBe(true);
+    expect(inScope(join(ROOT, "scripts/gates/voice-check.ts"))).toBe(true);
     expect(inScope(join(ROOT, "scripts/fixtures/ls.sh"))).toBe(true);
     expect(inScope(join(ROOT, "test/build.test.ts"))).toBe(true);
   });

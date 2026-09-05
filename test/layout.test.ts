@@ -17,7 +17,7 @@ function render(overrides: Partial<Parameters<typeof layout>[0]> = {}): string {
     bodyHtml: raw("<p>body</p>"),
     cssHref: "/assets/site.abc123.css",
     ...overrides,
-  });
+  }).value;
 }
 
 function withNodeEnv(value: string | undefined, body: () => void): void {

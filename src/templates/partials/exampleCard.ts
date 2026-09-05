@@ -1,4 +1,4 @@
-import { html, raw } from "../../html.js";
+import { html, raw, type Raw } from "../../html.js";
 import { highlightCode, renderInline } from "../../content/markdown.js";
 import type { Example } from "../../content/schema.js";
 
@@ -13,7 +13,7 @@ function isPromptable(code: string): boolean {
   return !code.includes("\n") && !code.includes("|");
 }
 
-export async function exampleCard(sectionSlug: string, index: number, example: Example): Promise<string> {
+export async function exampleCard(sectionSlug: string, index: number, example: Example): Promise<Raw> {
   const id = `${sectionSlug}-${index}`;
 
   let codeHtml = injectAttr(await highlightCode(example.code, "bash"), 'aria-label="command"');
@@ -43,9 +43,9 @@ ${raw(codeHtml)}
 <p class="example-desc">${raw(descHtml)}</p>
 ${
   outputHtml
-    ? raw(html`<details class="example-output"><summary>Show output</summary>
-${volatileHtml ? raw(html`<p class="output-varies"><strong>Your output will differ:</strong> ${raw(volatileHtml)}</p>`) : ""}
-${raw(outputHtml)}</details>`)
+    ? html`<details class="example-output"><summary>Show output</summary>
+${volatileHtml ? html`<p class="output-varies"><strong>Your output will differ:</strong> ${raw(volatileHtml)}</p>` : ""}
+${raw(outputHtml)}</details>`
     : ""
 }
 </article>`;

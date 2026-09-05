@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Recorded:** 2026-08-19
-- **Enforced by:** `src/linkcheck.ts` and `scripts/link-audit.ts`, both in `npm run check`; `scripts/lib/linkGraph.ts` with `test/linkGraph.test.ts`
+- **Enforced by:** `src/linkcheck.ts` and `scripts/gates/link-audit.ts`, both in `npm run check`; `scripts/lib/linkGraph.ts` with `test/linkGraph.test.ts`
 
 ## Context
 
@@ -27,7 +27,7 @@ Two checks, both in the gate.
 verifies internal links resolve to real files and `#fragment` links resolve to a real `id` in the
 target page.
 
-`scripts/link-audit.ts` builds a graph from `related:` frontmatter plus every root-relative link in
+`scripts/gates/link-audit.ts` builds a graph from `related:` frontmatter plus every root-relative link in
 prose, example descriptions, section intros and fixture notes, then reports:
 
 - **orphaned**: nothing links here. Fails the build.

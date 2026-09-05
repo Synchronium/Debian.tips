@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Recorded:** 2026-08-26
-- **Enforced by:** `replayProsePage` in `scripts/replay-prose-page.ts`, `proseChecks` in
+- **Enforced by:** `replayProsePage` in `scripts/replay/prose-page.ts`, `proseChecks` in
   `src/content/pageChecks.ts`, `test/pageChecks.test.ts`, the `exempt` and `unpaired` figures in
   `test/verification-baseline.json`
 

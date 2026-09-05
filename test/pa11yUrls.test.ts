@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Pa11yUrlsError, pa11yUrls } from "../scripts/pa11y-urls.js";
+import { Pa11yUrlsError, pa11yUrls } from "../scripts/gates/pa11y-urls.js";
 import { CATEGORY_META, NAV_ORDER, NOT_FOUND_PATH, TAGS_PATH } from "../src/config.js";
 
 /* `pa11y-ci` cannot fail on a URL list that is too short. Given none at all it prints

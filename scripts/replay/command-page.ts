@@ -1,8 +1,8 @@
 // Replays every example on a command page and diffs the real output against what the page
 // documents.
 //
-//   scripts/sandbox.sh start                     # once
-//   npx tsx scripts/replay-command-page.ts [--user] <sandbox> <command> [setup.sh]
+//   scripts/replay/sandbox.sh start                     # once
+//   npx tsx scripts/replay/command-page.ts [--user] <sandbox> <command> [setup.sh]
 //
 // A page's `output:` blocks are its central claim: real captured output, not written from
 // memory. Replaying is the only thing that holds them to it, and it is what makes a
@@ -18,13 +18,13 @@
 // TypeScript startup each and dominates a batch of any size.
 //
 // Exit status: 0 when everything reproduces, 1 on any mismatch, 2 on a usage or setup error.
-import { partitionExamples } from "../src/content/pageChecks.js";
-import { COMPARISON, type Comparison } from "../src/content/schema.js";
-import { readExamplesFile } from "./lib/examplesFile.js";
-import { MASK_TOKENS, lineOrderIgnored, normalise, shapeOf } from "./lib/normalise.js";
-import { ReplayError, loadSkipTitles, readSetupDirectives } from "./lib/replayMetadata.js";
-import { firstDifference, scoreLine } from "./lib/replayReport.js";
-import { SANDBOX_TOOL, captureAll, openSandbox, shellQuote } from "./lib/sandbox.js";
+import { partitionExamples } from "../../src/content/pageChecks.js";
+import { COMPARISON, type Comparison } from "../../src/content/schema.js";
+import { readExamplesFile } from "../lib/examplesFile.js";
+import { lineOrderIgnored, normalise, refuseMaskTokens, shapeOf } from "../lib/normalise.js";
+import { loadSkipTitles, readSetupDirectives } from "../lib/replayMetadata.js";
+import { type ReplayResult, firstDifference, runAsCommand, scoreLine } from "../lib/replayReport.js";
+import { SANDBOX_TOOL, captureAll, openSandbox, shellQuote } from "../lib/sandbox.js";
 
 /** How one example or fixture block is reduced before its two sides are compared, and what to
  *  call that in a mismatch report.
@@ -53,7 +53,7 @@ function comparerFor(block: { compare?: Comparison | undefined; unordered?: bool
 }
 
 export interface ReplayOptions {
-  /** Container name from `scripts/sandbox.sh start`. */
+  /** Container name from `scripts/replay/sandbox.sh start`. */
   sandbox: string;
   /** Page slug, e.g. "wget". */
   command: string;
@@ -61,13 +61,6 @@ export interface ReplayOptions {
   setupPath?: string | undefined;
   /** Manual override for a page whose setup script doesn't declare `# verify: --user`. */
   asUser?: boolean;
-}
-
-export interface ReplayResult {
-  page: string;
-  matched: number;
-  total: number;
-  mismatches: number;
 }
 
 interface Mismatch {
@@ -105,21 +98,18 @@ export function replayCommandPage(options: ReplayOptions): ReplayResult {
     documentedOutputs.map((example) => example.title),
   );
 
-  // A mask token is idempotent under masking, so a page carrying one matches any real output
-  // for ever: the example would read as verified, count towards the score, and never fail
-  // again. Masks belong to the comparison, never to a page.
-  const documented = [
-    ...documentedOutputs.map((example) => ({ title: example.title, text: example.output ?? "" })),
-    ...fixtures.map((fixture) => ({ title: `fixture "${fixture.name}"`, text: fixture.content })),
-  ];
-  const masked = documented.filter((entry) => MASK_TOKENS.some((token) => entry.text.includes(token)));
-  if (masked.length) {
-    throw new ReplayError(
-      `${command}: ${masked.length} documented output(s) contain a normalisation mask, so they can never fail:\n` +
-        masked.map((entry) => `  ${JSON.stringify(entry.title)}`).join("\n") +
-        `\nRe-capture them with scripts/adopt-real-output.ts.`,
-    );
-  }
+  // The fixtures are held to this as well as the outputs: a fixture block is presented to the
+  // reader as the file's real contents, and a mask in one would render as a literal placeholder.
+  refuseMaskTokens(command, [
+    ...documentedOutputs.map((example) => ({
+      where: JSON.stringify(example.title),
+      text: example.output ?? "",
+    })),
+    ...fixtures.map((fixture) => ({
+      where: `fixture ${JSON.stringify(fixture.name)}`,
+      text: fixture.content,
+    })),
+  ]);
 
   const sandbox = openSandbox({
     name: sandboxName,
@@ -217,18 +207,10 @@ function main(): void {
   const asUser = argv[0] === "--user" ? (argv.shift(), true) : false;
   const [sandbox, command, setupPath] = argv;
   if (!sandbox || !command) {
-    console.error("usage: replay-command-page.ts [--user] <sandbox-name> <command> [setup.sh]");
+    console.error("usage: command-page.ts [--user] <sandbox-name> <command> [setup.sh]");
     process.exit(2);
   }
-
-  try {
-    const result = replayCommandPage({ sandbox, command, setupPath, asUser });
-    process.exit(result.mismatches === 0 ? 0 : 1);
-  } catch (error) {
-    if (!(error instanceof ReplayError)) throw error;
-    console.error(error.message);
-    process.exit(2);
-  }
+  runAsCommand(() => replayCommandPage({ sandbox, command, setupPath, asUser }));
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) main();

@@ -13,8 +13,8 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import puppeteer from "puppeteer";
-import { SITE } from "../src/config.js";
-import { FONT_HREF, FONT_SOURCE, OG_IMAGE_FILE, PUBLIC_DIR, STYLES_DIR } from "../src/paths.js";
+import { SITE } from "../../src/config.js";
+import { FONT_HREF, FONT_SOURCE, OG_IMAGE_FILE, PUBLIC_DIR, SITE_CSS_SOURCE } from "../../src/paths.js";
 
 /** What Facebook, LinkedIn, Slack and X all crop to. Twice this in device pixels, so the card
  *  stays sharp on the displays that ask for it, which is still the 1200x630 image every one of
@@ -25,7 +25,7 @@ const SCALE = 2;
 /** The stylesheet asks for the font by an absolute URL that only exists on the served site, so
  *  the file is read from where the build takes it and substituted in as data. */
 function styleSheet(): string {
-  const css = readFileSync(join(STYLES_DIR, "site.css"), "utf-8");
+  const css = readFileSync(SITE_CSS_SOURCE, "utf-8");
   const font = readFileSync(FONT_SOURCE).toString("base64");
   return css.replace(`url("${FONT_HREF}")`, `url("data:font/woff2;base64,${font}")`);
 }

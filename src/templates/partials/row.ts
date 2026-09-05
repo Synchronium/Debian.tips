@@ -1,4 +1,4 @@
-import { html, raw } from "../../html.js";
+import { html, raw, type Raw } from "../../html.js";
 import { type Page, isCommandPage } from "../../content/loader.js";
 
 /** One page in a list, as a full-width row: title, description, and a chevron drawn in CSS.
@@ -12,7 +12,7 @@ import { type Page, isCommandPage } from "../../content/loader.js";
  *  under a real h2 section heading (home sections, grouped command listings), h2 when they sit
  *  directly under the page's own h1 (tag pages, non-grouped category listings). Getting this
  *  wrong skips a heading level, which screen-reader users navigate by. */
-export function pageRow(p: Page, level: "h2" | "h3" = "h3"): string {
+export function pageRow(p: Page, level: "h2" | "h3" = "h3"): Raw {
   // A command page's title is something the reader will type, and is set in mono to say so.
   // Every other title is prose: `bulk-rename-files` is a slug, not a command.
   const mono = isCommandPage(p) ? " row-mono" : "";
@@ -30,6 +30,6 @@ ${raw(`<${level} class="row-title">`)}${p.title}${raw(`</${level}>`)}
 
 /** Wraps rows in the list element they need. Every row on the site goes through here, so the
  *  markup a row assumes around it exists in one place rather than at each call site. */
-export function rowList(pages: Page[], level: "h2" | "h3" = "h3"): string {
-  return html`<ul class="row-list">${pages.map((p) => raw(pageRow(p, level)))}</ul>`;
+export function rowList(pages: Page[], level: "h2" | "h3" = "h3"): Raw {
+  return html`<ul class="row-list">${pages.map((p) => pageRow(p, level))}</ul>`;
 }

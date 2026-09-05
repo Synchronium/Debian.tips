@@ -147,7 +147,7 @@ describe("reading the timings file", () => {
  * that made automation unsafe. Recording timings from CI ages nothing, because the only figures
  * left are in the file being rewritten.
  *
- * The curve itself is `scripts/lib/replayShard.ts`, not this file. `scripts/merge-timings.ts` asks
+ * The curve itself is `scripts/lib/replayShard.ts`, not this file. `scripts/maintain/merge-timings.ts` asks
  * the same question of a candidate recording before writing it, so that the commit CI makes cannot
  * be the thing that fails this test on somebody else's next push.
  */
