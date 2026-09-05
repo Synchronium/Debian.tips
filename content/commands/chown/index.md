@@ -17,5 +17,6 @@ own outright: the rule stops a disk quota being dodged by handing a large file t
 it means anything a script passes to another account has to be passed back by root.
 
 Changing the group is looser. You may change a file's group if you own the file and belong to the
-group you are naming, which is why adding an account to a group with `usermod -aG` is the usual
-first step in setting up a shared directory.
+group you are naming, which is why
+[adding an account to a group with `usermod -aG`](/commands/managing-users/) is the usual first
+step in setting up a shared directory.

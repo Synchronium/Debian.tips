@@ -13,7 +13,8 @@ tier: standard
 password. `su` switches to another account for as long as you keep the shell open, and asks for
 **that account's** password. That difference is why a machine with several administrators uses
 the first: nobody has to know the root password, and `/var/log/auth.log` records which person ran
-what.
+what. For a root shell rather than one command, the choice is between four spellings and
+[su vs sudo -i vs sudo -s](/compare/su-vs-sudo-i-vs-sudo-s/) is about which to type.
 
 ## A fresh Debian install may have neither
 
@@ -24,7 +25,8 @@ does both. That single choice, made once and forgotten, is behind most of
 [sudo: command not found](/troubleshooting/sudo-command-not-found/).
 
 Debian's shipped `/etc/sudoers` grants the privilege through group membership, with one line:
-`%sudo ALL=(ALL:ALL) ALL`. Adding somebody is `usermod -aG sudo alice`, run as root, and it takes
+`%sudo ALL=(ALL:ALL) ALL`. Adding somebody is
+[`usermod -aG sudo alice`](/commands/managing-users/), run as root, and it takes
 effect at their next login rather than immediately.
 
 ## The environment does not come with you

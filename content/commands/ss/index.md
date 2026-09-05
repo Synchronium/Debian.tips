@@ -13,7 +13,8 @@ tier: standard
 comes from `iproute2`, which Debian marks `important`, so it is present on every Debian machine
 down to a minimal container. `netstat` is not. That one ships in `net-tools`, which a minimal
 Debian does not install, so the command in the answer you found is often missing on the machine
-you are trying to fix.
+you are trying to fix. [ss vs netstat](/compare/ss-vs-netstat/) translates the flags and shows
+what the filter syntax does that a `grep` cannot.
 
 ## Reading the columns
 

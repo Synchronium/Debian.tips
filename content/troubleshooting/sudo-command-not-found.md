@@ -111,13 +111,19 @@ You need a root shell, and `sudo` is exactly what you do not have. Use `su`:
 su -
 ```
 
-It asks for the **root** password, not yours. That is the one you set during installation. Then,
-depending on which problem you have:
+It asks for the **root** password, not yours. That is the one you set during installation, and on
+the other install path there is no such password to give:
+[su vs sudo -i vs sudo -s](/compare/su-vs-sudo-i-vs-sudo-s/) covers what each of them asks for.
+Then, depending on which problem you have:
 
 ```bash
 apt update && apt install sudo          # if it was not installed
 /usr/sbin/usermod -aG sudo yourusername # add yourself to the sudo group
 ```
+
+The `-a` in `-aG` is not optional:
+[without it `usermod` replaces every group the account had](/commands/managing-users/), which on
+your own account can remove the very access you are trying to add.
 
 Then **log out and back in.** Group membership is read when your session starts, so your current
 shell will not have it. `id -nG` in the old session keeps showing the old answer, which reliably

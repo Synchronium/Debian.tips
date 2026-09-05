@@ -20,3 +20,5 @@ filesystem and cannot point at a directory.
 
 The difference shows the moment a target is replaced. A symlink resolves the name again and finds
 whatever is there now; a hard link is still attached to the data it was made from.
+[Which to use](/compare/hard-vs-symbolic-links/) works through the consequences for backups,
+copying and disk space.

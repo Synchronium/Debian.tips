@@ -1,0 +1,395 @@
+command: managing-users
+
+fixtures:
+  - name: "the accounts these examples start from"
+    from: "getent passwd tips-dev tips-ops; getent group tips-deploy"
+    note: "Two ordinary accounts and one group. `tips-dev` has nothing done to it, so the examples that inspect an account have something plain to look at; `tips-ops` is in `tips-deploy`, so the group examples have a membership to read and to remove. Both were made with `--disabled-password`, which is why every one of them shows a locked password. The setup script deletes and rebuilds all three on every run, because the account database is not part of what a replay resets."
+    content: |2
+      tips-dev:x:1001:1001:Deployment account:/home/tips-dev:/bin/bash
+      tips-ops:x:1002:1002:Operations account:/home/tips-ops:/bin/bash
+      tips-deploy:x:4000:tips-ops
+
+sections:
+  - title: "Creating an account"
+    intro: "`adduser` is the one to type. It reads `/etc/adduser.conf`, so it picks a shell, creates the home directory, copies in `/etc/skel` and adds the account to the groups Debian's policy names. It prints nothing when it works."
+    examples:
+      - title: "Create an account for a person"
+        code: adduser --disabled-password --gecos "Build account" tips-build >/dev/null; getent passwd tips-build
+        description: "`--gecos` fills the description field without prompting for a name, office and phone number, and `--disabled-password` skips the password prompt. Without both, `adduser` asks interactively, which is right at a terminal and wrong in a script."
+        output: |2
+          tips-build:x:1003:1003:Build account:/home/tips-build:/bin/bash
+        level: basic
+      - title: "Check the home directory was made"
+        code: adduser --disabled-password --gecos "Build account" tips-build >/dev/null; stat -c '%A %U %n' /home/tips-build
+        description: "Mode `700`, owned by the new account. Debian's `DIR_MODE` decides this, and `0700` is the default: a new user's home is private unless the machine's policy says otherwise."
+        output: |2
+          drwx------ tips-build /home/tips-build
+        level: basic
+      - title: "See what was copied into it"
+        code: adduser --disabled-password --gecos "Build account" tips-build >/dev/null; ls -A /home/tips-build
+        description: "Everything in `/etc/skel`, which on a stock Debian system is the three shell startup files. Editing `/etc/skel` changes what every account created afterwards starts with, and nothing about the ones that already exist."
+        output: |2
+          .bash_logout
+          .bashrc
+          .profile
+        level: basic
+      - title: "See which groups it landed in"
+        code: adduser --disabled-password --gecos "Build account" tips-build >/dev/null; id tips-build
+        description: "A group of its own, named after the account, plus `users`. The first is Debian's user-private-group scheme, which is what makes a `umask` of `002` safe; the second is `adduser`'s own default for a non-system account."
+        output: |2
+          uid=1003(tips-build) gid=1003(tips-build) groups=1003(tips-build),100(users)
+        level: basic
+      - title: "Confirm the account can be used"
+        code: adduser --disabled-password --gecos "Build account" tips-build >/dev/null; runuser -u tips-build -- id -un
+        description: "`runuser` runs a command as another account without asking for a password, which only root may do. It is the right tool for checking an account from a script; [`su`](/compare/su-vs-sudo-i-vs-sudo-s/) is the one for a person at a terminal."
+        output: |2
+          tips-build
+        level: intermediate
+      - title: "Put the home directory somewhere else"
+        code: adduser --disabled-password --gecos "Build account" --home /srv/tips-build tips-build >/dev/null; getent passwd tips-build; stat -c '%A %U %n' /srv/tips-build
+        description: "`--home` records the path and creates it, so an account whose data belongs on another filesystem does not need a symlink or a later `usermod`."
+        output: |2
+          tips-build:x:1003:1003:Build account:/srv/tips-build:/bin/bash
+          drwx------ tips-build /srv/tips-build
+        level: intermediate
+      - title: "Give it a different primary group"
+        code: adduser --disabled-password --gecos "Build account" --ingroup tips-deploy tips-build >/dev/null; id tips-build
+        description: "`--ingroup` skips the user-private group and makes an existing group primary instead. Every file this account creates is then group-owned by `tips-deploy`, which is the arrangement a shared project directory wants."
+        output: |2
+          uid=1003(tips-build) gid=4000(tips-deploy) groups=4000(tips-deploy),100(users)
+        level: intermediate
+      - title: "Create an account for a service"
+        code: adduser --system --group tips-svc >/dev/null; getent passwd tips-svc; getent group tips-svc
+        description: "`--system` takes a UID from the low range, sets the shell to `nologin` and gives the account no home directory at all: `/nonexistent` is a path, not a mistake. `--group` adds a matching group, which a service that drops privileges usually wants."
+        output: |2
+          tips-svc:x:100:102::/nonexistent:/usr/sbin/nologin
+          tips-svc:x:102:
+        level: intermediate
+      - title: "See what a locked password looks like"
+        code: adduser --disabled-password --gecos "Build account" tips-build >/dev/null; passwd -S tips-build | cut -d' ' -f1,2
+        description: "`L` for locked. `--disabled-password` leaves the account able to receive an ssh key or a `runuser`, and unable to log in with a password, which is what you want for anything that is not a person."
+        output: |2
+          tips-build L
+        level: intermediate
+      - title: "Read the hash field directly"
+        code: "getent shadow tips-dev | cut -d: -f1,2"
+        description: "The second field of `/etc/shadow` is the password hash, and `!` in front of it means locked. `!` on its own, with no hash behind it, is an account that has never had a password rather than one whose password was disabled."
+        output: |2
+          tips-dev:!
+        level: advanced
+
+  - title: "adduser and useradd are not the same tool"
+    intro: "`useradd` is the low-level command that `adduser` calls. Run on its own it applies no policy at all, and the account it makes is missing most of what a person needs."
+    examples:
+      - title: "See what a bare useradd leaves you with"
+        code: useradd tips-build; getent passwd tips-build; stat -c '%A %U %n' /home/tips-build
+        description: "A shell of `/bin/sh`, an empty description, and a home directory that is recorded in `/etc/passwd` and does not exist on disk. Logging in works and lands the account in a directory it cannot see, with no startup files."
+        output: |2
+          tips-build:x:1003:1003::/home/tips-build:/bin/sh
+          stat: cannot statx '/home/tips-build': No such file or directory
+        level: basic
+      - title: "Ask useradd for the missing pieces"
+        code: useradd -m -s /bin/bash -c "Build account" tips-build; id tips-build
+        description: "`-m` makes the home directory and copies `/etc/skel`, `-s` sets the shell, `-c` fills the description. Close to what `adduser` did, and still not identical: the `users` group is missing, because that part is Debian policy rather than anything `useradd` knows."
+        output: |2
+          uid=1003(tips-build) gid=1003(tips-build) groups=1003(tips-build)
+        level: intermediate
+      - title: "Compare how the two pick an id"
+        code: addgroup tips-web; groupadd tips-web2; getent group tips-web tips-web2
+        description: "`addgroup` takes the lowest free id in its configured range and `groupadd` takes one above the highest in use, so the two disagree on a system whose ids are not contiguous. Neither is wrong, and a script that assumes either is."
+        output: |2
+          tips-web:x:1003:
+          tips-web2:x:4001:
+        level: advanced
+      - title: "Make a system account the low-level way"
+        code: useradd -r -s /usr/sbin/nologin tips-svc; getent passwd tips-svc
+        description: "`-r` is `useradd`'s `--system`, and it stops at the UID range: the home directory is still recorded under `/home` rather than set to `/nonexistent`, and it is still not created. Compare `adduser --system` above."
+        output: |2
+          tips-svc:x:995:995::/home/tips-svc:/usr/sbin/nologin
+        level: advanced
+      - title: "Watch adduser refuse a name in use"
+        code: adduser --disabled-password --gecos "Build account" tips-dev
+        description: "`fatal:` and a backtick-quoted name is how the Perl wrappers report everything. Nothing was changed."
+        output: |2
+          fatal: The user `tips-dev' already exists.
+        level: basic
+      - title: "Watch useradd refuse the same thing"
+        code: useradd tips-dev
+        description: "The same refusal in the other family's wording. Both exit non-zero, so a script can test either, and neither leaves a half-made account behind."
+        output: |2
+          useradd: user 'tips-dev' already exists
+        level: basic
+
+  - title: "Groups"
+    intro: "An account has one primary group, recorded in `/etc/passwd` and used for files it creates, and any number of supplementary groups listed in `/etc/group`. Almost every question about permissions that is not about `chmod` is about this list."
+    examples:
+      - title: "Read an account's groups"
+        code: groups tips-ops
+        description: "The primary group first, then the supplementary ones. `groups` with no argument answers for you."
+        output: |2
+          tips-ops : tips-ops users tips-deploy
+        level: basic
+      - title: "Separate the primary from the rest"
+        code: id -gn tips-ops; id -Gn tips-ops
+        description: "`-g` is the primary group alone and `-G` is every group including it. Lower case `n` asks for names instead of numbers, and without it you get the ids."
+        output: |2
+          tips-ops
+          tips-ops users tips-deploy
+        level: basic
+      - title: "Read a group's members"
+        code: getent group tips-deploy
+        description: "The last field lists the accounts that have this group as a *supplementary* group. An account whose primary group this is does not appear here, which is why `getent group` and `id -Gn` can disagree."
+        output: |2
+          tips-deploy:x:4000:tips-ops
+        level: intermediate
+      - title: "Make a group"
+        code: addgroup tips-web; getent group tips-web
+        description: "No members yet. A group with no members is useful on its own: files can be given to it with [`chown`](/commands/chown/) before anybody is added."
+        output: |2
+          tips-web:x:1003:
+        level: basic
+      - title: "Add an account to a group"
+        code: adduser tips-dev tips-deploy; getent group tips-deploy
+        description: "Two arguments rather than one makes `adduser` a group-membership command. This is the form to use, and it is the one that will not tell you it worked."
+        output: |2
+          tips-deploy:x:4000:tips-ops,tips-dev
+        level: basic
+      - title: "Add to a group with usermod"
+        code: usermod -aG tips-deploy tips-dev; id tips-dev
+        description: "`-a` means append and `-G` names the supplementary groups. The two are written together so often that `-aG` reads as one flag, which is exactly the trouble in the next example."
+        output: |2
+          uid=1001(tips-dev) gid=1001(tips-dev) groups=1001(tips-dev),100(users),4000(tips-deploy)
+        level: intermediate
+      - title: "Leave the -a off, and lose every other group"
+        code: usermod -G tips-deploy tips-dev; id tips-dev
+        description: "`-G` without `-a` *replaces* the supplementary list with what you named, so `users` is gone and nothing was reported. On a real machine this is how an account silently loses `sudo`, `docker` or `dialout`, and the damage is only visible in the next login."
+        danger: true
+        output: |2
+          uid=1001(tips-dev) gid=1001(tips-dev) groups=1001(tips-dev),4000(tips-deploy)
+        level: intermediate
+      - title: "Add to several groups at once"
+        code: addgroup --quiet tips-web; usermod -aG tips-deploy,tips-web tips-dev; id -Gn tips-dev
+        description: "A comma-separated list, no spaces. Every group has to exist first, and the whole command fails if one does not."
+        output: |2
+          tips-dev users tips-deploy tips-web
+        level: intermediate
+      - title: "Watch it fail on a group that is not there"
+        code: usermod -aG tips-deploy,tips-web tips-dev
+        description: "Nothing is added, including the group that does exist. Checking with `getent group` first is cheaper than working out afterwards which half of the list took effect."
+        output: |2
+          usermod: group 'tips-web' does not exist
+        level: intermediate
+      - title: "Grant administrative access"
+        code: usermod -aG sudo tips-dev; id -Gn tips-dev
+        description: "The `sudo` group is what Debian's default `/etc/sudoers` grants on, so this is the whole of making somebody an administrator. It takes effect at their next login, not immediately."
+        output: |2
+          tips-dev sudo users
+        level: intermediate
+
+  - title: "Changing an account that exists"
+    intro: "`usermod` edits every field in `/etc/passwd`. None of these commands print anything on success, so each example reads the result back."
+    examples:
+      - title: "Change the login shell"
+        code: usermod -s /usr/sbin/nologin tips-dev; getent passwd tips-dev
+        description: "`/usr/sbin/nologin` prints a message and exits, which stops interactive logins while leaving the account able to own files and run services. It is the honest way to retire an account you are not ready to delete."
+        output: |2
+          tips-dev:x:1001:1001:Deployment account:/home/tips-dev:/usr/sbin/nologin
+        level: basic
+      - title: "Change the description"
+        code: usermod -c "Deployment account, retired" tips-dev; getent passwd tips-dev
+        description: "The fifth field, historically the GECOS field. It is free text that anything on the machine can read, so it is the wrong place for anything private."
+        output: |2
+          tips-dev:x:1001:1001:Deployment account, retired:/home/tips-dev:/bin/bash
+        level: basic
+      - title: "Move the home directory"
+        code: usermod -d /srv/tips-dev -m tips-dev; getent passwd tips-dev; stat -c '%A %U %n' /srv/tips-dev
+        description: "`-d` records the new path and `-m` moves the contents there. Without `-m` the field changes and the files stay where they were, which leaves the account pointing at a directory that does not exist."
+        output: |2
+          tips-dev:x:1001:1001:Deployment account:/srv/tips-dev:/bin/bash
+          drwx------ tips-dev /srv/tips-dev
+        level: intermediate
+      - title: "Rename an account"
+        code: usermod -l tips-renamed tips-dev; getent passwd tips-renamed
+        description: "The new name comes first. The uid, the home directory and the account's own group all keep their old names, so a rename is the start of the job rather than the whole of it."
+        output: |2
+          tips-renamed:x:1001:1001:Deployment account:/home/tips-dev:/bin/bash
+        level: advanced
+
+  - title: "Passwords, locking and expiry"
+    intro: "The password itself lives in `/etc/shadow`, which only root can read. `passwd` and `chage` are the two commands that edit it, and `usermod` duplicates part of both."
+    examples:
+      - title: "Lock an account's password"
+        code: passwd -l tips-dev; passwd -S tips-dev | cut -d' ' -f1,2
+        description: "`-l` puts a `!` in front of the stored hash, so no password can match. It does not stop an ssh key, and it does not stop `runuser`: locking a password is not the same as locking an account out."
+        output: |2
+          passwd: password changed.
+          tips-dev L
+        level: basic
+      - title: "See the lock in the shadow file"
+        code: "usermod -L tips-dev; getent shadow tips-dev | cut -d: -f2 | head -c1; echo"
+        description: "`usermod -L` is `passwd -l` under another name, and this is the single character it changed. Removing that `!` by hand is how the lock is undone if `passwd -u` will not do it."
+        output: |2
+          !
+        level: advanced
+      - title: "Try to unlock an account that has no password"
+        code: passwd -u tips-dev; passwd -S tips-dev | cut -d' ' -f1,2
+        description: "Unlocking `!` with nothing behind it would leave an account anybody could log into by pressing return, so `passwd` refuses and says so. The account is still locked afterwards."
+        output: |2
+          passwd: unlocking the password would result in a passwordless account.
+          You should set a password with usermod -p to unlock the password of this account.
+          tips-dev L
+        level: intermediate
+      - title: "Read the ageing settings"
+        code: chage -l tips-dev
+        volatile: "the last-change date is the day the account was made, so it is today on this machine and something else on yours"
+        description: "Everything `/etc/shadow` records about time. `99999` days is the package default for maximum age and means the password never expires."
+        output: |2
+          Last password change					: Sep 05, 2026
+          Password expires					: never
+          Password inactive					: never
+          Account expires						: never
+          Minimum number of days between password change		: 0
+          Maximum number of days between password change		: 99999
+          Number of days of warning before password expires	: 7
+        level: intermediate
+      - title: "Expire a password on a schedule"
+        code: chage -M 90 -W 14 tips-dev; chage -l tips-dev | head -5
+        volatile: "both dates are relative to the day the account was made"
+        description: "`-M` is the maximum age in days and `-W` the warning period. The expiry date is computed from the last change rather than from today, so setting `-M` on an old password can expire it immediately."
+        output: |2
+          Last password change					: Sep 05, 2026
+          Password expires					: Dec 04, 2026
+          Password inactive					: never
+          Account expires						: never
+          Minimum number of days between password change		: 0
+        level: advanced
+      - title: "Expire the whole account on a date"
+        code: chage -E 2026-12-31 tips-dev; chage -l tips-dev | grep Account
+        description: "Account expiry is separate from password expiry: after this date the account cannot be used at all, whatever its password says. It is the right control for a contractor or a temporary member of staff."
+        output: |2
+          Account expires						: Dec 31, 2026
+        level: intermediate
+      - title: "See how the date is stored"
+        code: "usermod -e 2026-12-31 tips-dev; getent shadow tips-dev | cut -d: -f8"
+        description: "Days since 1 January 1970, which is what every date field in `/etc/shadow` holds. `usermod -e` and `chage -E` write the same field."
+        output: |2
+          20818
+        level: advanced
+
+  - title: "Removing an account"
+    intro: "`deluser` removes the account and, asked to, the home directory. What it leaves behind is worth checking either way."
+    examples:
+      - title: "Remove an account and keep its files"
+        code: deluser tips-dev; id tips-dev; stat -c '%A %U %n' /home/tips-dev
+        description: "The default. The home directory survives with no owner, which `stat` reports as `UNKNOWN` and `ls -l` shows as a bare number: nothing owns uid 1001 any more, and the next account created will inherit both the number and the files."
+        danger: true
+        output: |2
+          id: 'tips-dev': no such user
+          drwx------ UNKNOWN /home/tips-dev
+        level: basic
+      - title: "Remove the home directory too"
+        code: deluser --remove-home tips-dev; stat -c '%A %U %n' /home/tips-dev
+        description: "What you almost always mean. `--remove-all-files` goes further and deletes everything the account owns anywhere on the system, which is slower and occasionally what a shared machine needs."
+        danger: true
+        output: |2
+          stat: cannot statx '/home/tips-dev': No such file or directory
+        level: basic
+      - title: "Confirm the account's own group went with it"
+        code: "userdel tips-dev; getent group tips-dev; echo \"group gone: $?\""
+        description: "A user-private group is removed with its account, so nothing has to be tidied up afterwards. A group with other members in it is left alone."
+        output: |2
+          group gone: 2
+        level: intermediate
+      - title: "See what a deletion does to group membership"
+        code: deluser --remove-home tips-ops >/dev/null; getent group tips-deploy
+        description: "The name is taken out of every group that listed it, so a shared group survives with one fewer member. There is no dangling reference to clean up."
+        output: |2
+          tips-deploy:x:4000:
+        level: intermediate
+      - title: "Watch deluser refuse a name that is not there"
+        code: deluser tips-build
+        description: "Non-zero exit and nothing changed, which is what a script wants to see."
+        output: |2
+          fatal: The user `tips-build' does not exist.
+        level: basic
+      - title: "Take an account out of one group"
+        code: gpasswd -d tips-ops tips-deploy; id tips-ops
+        description: "`gpasswd -d` is the reliable way to remove a membership without touching the rest, and unlike most of the commands here it says what it did. See the next section for why `deluser` is not the answer."
+        output: |2
+          Removing user tips-ops from group tips-deploy
+          uid=1002(tips-ops) gid=1002(tips-ops) groups=1002(tips-ops),100(users)
+        level: intermediate
+
+  - title: "Two commands that will not do what you ask"
+    intro: "Both of these look right, run without an obvious failure, and leave the system unchanged."
+    examples:
+      - title: "Try to remove a membership with deluser"
+        code: deluser tips-ops tips-deploy
+        description: "The documented form for removing an account from a group, and on Debian's current `adduser` it rejects any name containing a hyphen and does nothing. Hyphens are legal in account names and `adduser tips-ops tips-deploy` accepts them, so only the removal is affected. Use `gpasswd -d`."
+        output: |2
+          invalid characters in input string, see trace output for more details at /usr/share/perl5/Debian/AdduserCommon.pm line 143.
+        level: intermediate
+      - title: "Check that the membership is still there"
+        code: deluser tips-ops tips-deploy >/dev/null 2>&1; getent group tips-deploy
+        description: "`tips-ops` is where it was. The exit status is zero, so a script that trusted it would carry on believing the account had lost the group."
+        output: |2
+          tips-deploy:x:4000:tips-ops
+        level: intermediate
+      - title: "Try to add an account without privilege"
+        code: runuser -u tips-dev -- adduser --disabled-password --gecos "x" tips-build
+        description: "Every command on this page needs root. `adduser` says so before doing any work, which is more useful than the permission error the underlying `useradd` would give."
+        output: |2
+          fatal: Only root may add a user or group to the system.
+        level: basic
+      - title: "Watch addgroup refuse a name in use"
+        code: addgroup tips-deploy
+        description: "The group is untouched, including its members. Worth knowing because the failure looks identical whether the existing group is yours or the system's."
+        output: |2
+          fatal: The group `tips-deploy' already exists.
+        level: basic
+
+  - title: "Finding out who is on the machine"
+    intro: "Every account lives in `/etc/passwd`, system accounts and people alike. Telling them apart is a question about the UID range rather than about anything the file records."
+    examples:
+      - title: "List the accounts a person could log into"
+        code: "getent passwd | awk -F: '$3 >= 1000 && $3 < 60000 { print $1, $3 }'"
+        description: "`UID_MIN` and `UID_MAX` from `/etc/login.defs` are the boundaries, 1000 and 60000 on Debian. Everything below is a system account created by a package."
+        output: |2
+          user 1000
+          tips-dev 1001
+          tips-ops 1002
+        level: intermediate
+      - title: "Look up specific accounts"
+        code: getent passwd tips-dev tips-ops
+        description: "`getent` reads through the same name service the rest of the system uses, so it finds accounts from LDAP or `systemd-homed` that a `grep` of `/etc/passwd` would miss."
+        output: |2
+          tips-dev:x:1001:1001:Deployment account:/home/tips-dev:/bin/bash
+          tips-ops:x:1002:1002:Operations account:/home/tips-ops:/bin/bash
+        level: basic
+      - title: "Read everything about one account at once"
+        code: id tips-dev
+        description: "The uid, the primary group and every supplementary group, in one line. This is the command to reach for when a permission problem does not make sense."
+        output: |2
+          uid=1001(tips-dev) gid=1001(tips-dev) groups=1001(tips-dev),100(users)
+        level: basic
+      - title: "List the groups a machine has"
+        code: "getent group | awk -F: '$3 >= 1000 && $3 < 60000 { print $1, $3 }' | sort"
+        description: "The same range test applied to `/etc/group`. Sorted, because `getent` returns them in file order and that is the order they were created in."
+        output: |2
+          tips-deploy 4000
+          tips-dev 1001
+          tips-ops 1002
+          user 1000
+        level: intermediate
+      - title: "Check who the sudo group lets in"
+        code: getent group sudo
+        description: "Empty on this machine, because the sandbox grants its account sudo through a file in `/etc/sudoers.d` instead. On an ordinary Debian install this is the list of administrators."
+        output: |2
+          sudo:x:27:
+        level: intermediate
+      - title: "Run a command as another account"
+        code: runuser -u tips-dev -- whoami
+        description: "No password, because root is asking. It is the honest way to test what an account can reach, and it needs no `sudo` configuration of any kind."
+        output: |2
+          tips-dev
+        level: intermediate

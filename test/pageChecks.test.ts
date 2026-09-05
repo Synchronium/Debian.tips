@@ -105,7 +105,11 @@ describe("every block a reader is shown as output", () => {
       }
     }
     expect(undercounted).toEqual([]);
-  });
+    // A timeout of its own, because this is the one test whose cost grows with the site: it runs
+    // every prose page through Shiki, and the default five seconds is a budget the corpus will
+    // cross again. Alone it finishes in about a second; the failures come from running beside the
+    // rest of the suite, so the figure has to leave room for contention rather than for the work.
+  }, 60_000);
 });
 
 describe("by-shape and volatile", () => {
