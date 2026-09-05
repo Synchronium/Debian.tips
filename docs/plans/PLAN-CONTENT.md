@@ -4,7 +4,7 @@ Working roadmap for what to write on debian.tips, and why. Not a spec: `src/cont
 and `.claude/skills/write-content-page/SKILL.md` are authoritative on structure, tiering and
 verification; this file is about *what* to cover and in *what order*.
 
-The inventory in §2 is counted from the tree, most recently on 2026-08-29. The vote counts
+The inventory in §2 is counted from the tree, most recently on 2026-09-05. The vote counts
 throughout §3 to §9 are the 2026-08-18 sample and have not been re-taken, so treat them as
 relative weights rather than current figures.
 
@@ -23,16 +23,17 @@ this file stays a live map rather than a wishlist. Batches are suggested groupin
 covers it; require at least two pages that will plausibly use it; prefer nouns for subject tags
 and adjectives for audience tags. Add it in the batch that needs it, not speculatively.
 
-Current usage is lopsided and worth watching. Recounted 2026-08-28 from page frontmatter:
-`performance` still has **zero** pages and `archives` has one. `cron`, `disk` and `ssh` have two;
-`environment` and `regex` have three. A tag with one page is a dead end for a reader who clicks
-it. Either the backlog below fills them or they should be retired.
+Current usage is lopsided and worth watching. Recounted 2026-09-05 from page frontmatter:
+`performance` still has **zero** pages and `archives` has one. `cron` has two; `disk`, `regex` and
+`ssh` have three. A tag with one page is a dead end for a reader who clicks it. Either the backlog
+below fills them or they should be retired.
 
 The fix for a thin tag is usually one page everything else already wanted to link: `terminal` sat
-on that list until the concept page and `less` took it to seven. `disk` has the cheapest such fix
-left, since `df` (§4.6) takes it to three and needs no harness work. `performance` has no page in
-prospect anywhere in this document, so it is the one genuinely facing retirement rather than
-filling.
+on that list until the concept page and `less` took it to nine, and `disk` left it when `df`
+shipped. That leaves two. `archives` waits on §4.10, which is two pages nobody has argued against.
+`performance` has no page in prospect anywhere in this document, so it is the one genuinely facing
+retirement rather than filling, and the honest question about it is whether `top` and `lsof` would
+carry it or whether the subject is really `monitoring`.
 
 ### §1.2. Verification is part of the page, not polish afterwards
 
@@ -46,30 +47,33 @@ doesn't discover it halfway through.
 
 ## §2. Where the site is now
 
-Counted 2026-08-31 by `verificationStats` in `src/content/verificationStats.ts`, which is the
+Counted 2026-09-05 by `verificationStats` in `src/content/verificationStats.ts`, which is the
 same routine the about page renders from, so these figures are the ones the site itself publishes
 rather than a second tally that can drift from them.
 
-**85 pages. 1,701 documented outputs re-run on every push**, across 41 command pages and 43 of
+**93 pages. 1,921 documented outputs re-run on every push**, across 48 command pages and 44 of
 the written articles, with 33 more documented and exempted, each naming how it was verified
-instead. 1,685 examples across the command pages, 119 blocks of sample data, and 81 outputs
+instead. 1,897 examples across the command pages, 128 blocks of sample data, and 119 outputs
 declared `volatile:`.
 
-Twenty-five pages in five days, against the six days for nineteen that §12 measured in August. The
-rate note at the end of §12 still holds and so does its conclusion.
+Eight pages in five days, against twenty-five in the five before them. The drop is not a stall:
+those days went into two decisions the pages had been getting wrong silently, `unordered:`
+(ADR-0026) and the fixture-date band (ADR-0027), and into a review of the whole repository. Both
+ADRs came out of a page that passed, which is the kind of finding that only arrives between
+batches.
 
 **Every page replays.** `unreplayedCommandPages` and `unreplayedProsePages` are both zero: there
 is no page left whose outputs nothing re-runs. That closes the largest item in §11.5.
 
 | Category | Pages | State |
 |---|---|---|
-| `commands` | apt, apt-cache, apt-file, awk, cat, chmod, chown, cowsay, cp, crontab, curl, cut, df, diff, dpkg, du, find, grep, head, job-control, journalctl, jq, kill, less, ls, mv, ps, rm, sed, sort, ssh, sudo, systemctl, tail, tar, tee, tr, uniq, wc, wget, xargs | 41 pages. Text processing and the file basics are both complete enough to stop being the priority. Debian package tooling is done to the §4.1 P1 line. **The process group is done to its P1 line as of 2026-08-30**, with `ps`, `kill` and job control between them covering what a reader can do to a running program. `du` still opens the disk group alone, and there is **no network-diagnostic coverage and no user-management page beyond `chown`**. |
+| `commands` | apt, apt-cache, apt-file, awk, cat, cd, chmod, chown, cowsay, cp, crontab, curl, cut, df, diff, dpkg, du, find, grep, head, job-control, journalctl, jq, kill, less, ln, ls, man, mkdir, mv, ps, rm, sed, sort, ss, ssh, sudo, systemctl, tail, tar, tee, touch, tr, uniq, wc, wget, which, xargs | 48 pages. Text processing and the file basics are both complete enough to stop being the priority, and **the file group closed its P1 and P2 lines on 2026-09-05** bar the combined file-inspection entry. Debian package tooling is done to the §4.1 P1 line, the process group to its own as of 2026-08-30. Every §4 P1 is now written: `ss` and `man` were the last two. What is left is **no user-management page beyond `chown`**, a disk group of three, and a networking group whose remaining pages all wait on §11.3. |
 | `concepts` | environment-variables-and-path, exit-codes-and-error-handling, file-permissions-explained, pipes-and-redirection, processes-and-signals, terminal-shell-and-tty | 6 pages. §3.1 rates this layer above any command page, and the three highest-demand ones are written, so the next concept is a §5 P2 rather than a P1. |
 | `scripting` | your-first-script, variables-and-quoting, conditionals-and-test, loops, script-arguments, functions, arrays, parameter-expansion, where-a-script-lives, arithmetic, here-docs, traps-and-cleanup, debugging-and-robustness, a-real-script | **Complete, 2026-08-29.** 14 lessons ending in a capstone that uses all thirteen before it. The two candidate additions in §7 are the only open items, and neither is a gap a reader would notice. |
 | `recipes` | add-a-directory-to-path, bulk-rename-files, copy-files-between-machines, find-and-replace-across-files, find-permission-denied, find-the-largest-files, keep-a-program-running-after-logout, kill-whatever-is-using-a-port, monitor-a-log-in-real-time | 9 pages. **All four P1 recipes shipped 2026-08-29**, after six weeks in which the category gained nothing. What is left is the §9 P2 list. |
 | `debian` | apt-essentials, install-a-deb-file, list-installed-packages, release-channels, systemd-services, third-party-repositories, which-package-provides-a-file | 7 pages, bounded by §10.0.1 to the explainer shape. Errors go to `troubleshooting` instead. |
 | `troubleshooting` | could-not-get-lock-dpkg-frontend, packages-kept-back, repository-is-not-signed, sudo-command-not-found | 4 pages, all of §6.1's P1 list. The §6.1 P2 list is what remains. |
-| `compare` | apt-vs-apt-get, cron-vs-systemd-timers, remove-vs-purge-vs-autoremove, sh-vs-bash-vs-dash | 4 of the ~19 candidates in §10.1, all of them package management. |
+| `compare` | apt-vs-apt-get, cron-vs-systemd-timers, remove-vs-purge-vs-autoremove, sh-vs-bash-vs-dash, which-vs-type-vs-command | 5 of the ~20 candidates in §10.1. The first four are package management; the fifth was split out of the `which` page and is the first one written because a command page turned out to be answering two questions. |
 
 ## §3. What the evidence says
 
@@ -140,9 +144,9 @@ upgrading a single package (+1125) and removing old kernels (+772).
 
 ## §4. Command pages
 
-29 written. Below is the full candidate set, grouped as `COMMAND_GROUPS` in `src/config.ts`
-groups them, with a priority marker and the reason each earns a page. Adding a slug to
-`COMMAND_GROUPS` is part of shipping it, or it falls into "More commands".
+48 written, and **no P1 left**. Below is the full candidate set, grouped as `COMMAND_GROUPS` in
+`src/config.ts` groups them, with a priority marker and the reason each earns a page. Adding a
+slug to `COMMAND_GROUPS` is part of shipping it, or it falls into "More commands".
 
 **P1** = next two waves. **P2** = clear value, no urgency. **P3** = write if the surrounding
 cluster gets written; not worth a page alone.
@@ -210,11 +214,27 @@ The everyday commands. Low glamour, high traffic.
   the page can show. That applies to anything below whose output changes shape on a terminal.
 - **SHIPPED 2026-08-28 `cp`**, **`mv`** and **`rm`** (light each), sharing `mk_site_tree` in
   `_common.sh` with `chown`.
-- **P2 `ln`** (standard): hard vs symbolic, why `ln -s` argument order confuses, dangling links.
+- **SHIPPED 2026-09-05 `ln`** (standard). Two mistakes carry the page, and both are silent:
+  `ln -s style.css site/assets/wrong.css` is accepted and points at nothing, because a relative
+  target is read from the directory holding the link rather than from where you typed it; and
+  `ln -sf` against an existing `current` symlink creates the new link *inside* the directory that
+  symlink names, which is what `-sfn` is for.
+- **SHIPPED 2026-09-05 `mkdir`** and **`touch`** (light each), split rather than combined as this
+  entry proposed, because each has a mistake of its own to be built around: `mkdir -p -m 700
+  outer/inner` leaves `outer` at the umask default, so a directory meant to be private sits inside
+  one anybody can read, and `touch -d` moves the modification time back while the change time
+  jumps to now, since altering the inode is itself a change and nothing can set that one.
+  **`mktemp` is dropped rather than left outstanding**: the scripting course already teaches it on
+  four lessons, `traps-and-cleanup` and `a-real-script` among them, which is where a reader meets
+  the problem it solves.
+- **SHIPPED 2026-09-05 `cd`** (light), on no backlog in this document, like `cat` before it. The
+  replay names its working directory after the page, so no example may print `pwd` from it: the
+  page shows basenames and fixed system paths instead, the answer `where-a-script-lives` and
+  `sudo` both reached independently.
 - **P2 `stat` / `file` / `basename` / `dirname` / `realpath`** (standard, combined as "inspecting
-  files and paths"): the last three are constant in scripts.
-- **P2 `mkdir` / `touch` / `mktemp`** (light, combined): `-p`, and `mktemp` as the right answer
-  to temp files in scripts.
+  files and paths"): the last three are constant in scripts. With `ln`, `mkdir` and `touch`
+  written, this is the last of the everyday file commands and `COMMAND_GROUPS` already reserves
+  `inspect-files` for it.
 - **P2 `tree`** (light): not installed by default; worth saying so.
 - **P3 `shred`** (light): and the honest SSD caveat, which is really a recipe.
 - **P3 `install`** (light): the underused mkdir+cp+chmod+chown in one.
@@ -281,10 +301,21 @@ The everyday commands. Low glamour, high traffic.
 
 ### §4.7. Networking & diagnostics
 
-Verification, rather than the writing, is the constraint here. See §11.3.
+Verification, rather than the writing, is the constraint here. See §11.3. `ss` was the exception
+and is written; everything below it still waits on a resolver fixture or a real peer.
 
-- **P1 `ss`** (standard): the `netstat` replacement; "finding the PID using a port" is +834 and
-  we have a recipe that needs the page.
+- **SHIPPED 2026-09-02 `ss`** (standard). 53 checked outputs, and the fixture is four small
+  Python services rather than whatever the machine was already listening on, so every socket the
+  page prints is one it created: two TCP listeners with deliberately different backlogs, so the
+  page can say what `Send-Q` means on a listening socket, plus UDP, a Unix socket and one
+  established pair.
+
+  Two things it settled that the next network page will meet. The listeners take a direct
+  `#!/usr/bin/python3` shebang, because a process is named after the file the kernel was told to
+  execute, and going through `env` means `ss -p` reports five processes all called `python3`.
+  And the order two listening sockets are printed in is settled per network namespace, which
+  ADR-0026 and `unordered:` exist to handle: six fresh containers here split three each way, so
+  the page had an even chance of passing wherever it ran.
 - **P2 `ip`** (flagship): `addr`/`route`/`link`; the `ifconfig` replacement everyone still
   googles.
 - **P2 `dig` / `host`** (standard): record types, `+short`, reverse lookups. Needs a local
@@ -308,9 +339,23 @@ Verification, rather than the writing, is the constraint here. See §11.3.
   against the command's own `--help` in the sandbox, and `examples.yaml` carries only what
   produces output. Thirteen of its twenty-eight examples have none, which is the shape `ssh` and
   `crontab` already have.
-- **P1 `man` / `apropos`** (standard, combined): what the section numbers mean (+775), `man -k`,
-  and how to read a synopsis line. A page about how to use the documentation is a good page for a
-  documentation site, and the `less` page now exists for it to link to.
+- **SHIPPED 2026-09-02 `man`** (standard), with `apropos` folded in, since one displays a page and
+  the other is how you find out which page to ask for. 50 checked outputs, and it took the shape
+  `less` settled above.
+
+  The section numbers got the most room, because an unqualified lookup takes the lowest-numbered
+  section that has a page and that is where people lose time; `passwd` is the demonstration, with
+  section 1 changing a password and section 5 the file it writes. Section 3 is shown *failing*,
+  because Debian ships sections 2 and 3 in `manpages-dev` and the error is the result a reader is
+  likelier to meet. Its setup script asserts two states rather than building anything: that
+  `manpages-dev` is absent, since an example whose point is an absence has to establish it, and
+  that the `whatis` index exists, since `apropos`, `whatis` and `man -k` all read that index and
+  answer "nothing appropriate" without it.
+- **SHIPPED 2026-09-05 `which`** (light), on no backlog here. It was written as one page and split
+  after the fact: 24 examples of which only six led with `which`, so the comparison page now owns
+  the limit and the alternatives, and the command page keeps `PATH` order and the fact that
+  Debian's `which` is a shell script from `debianutils`. The demonstration both halves are built
+  on is that `which cd` reports `cd` does not exist.
 - **P2 `date`** (standard): formatting, `-d` parsing, epoch conversion, ISO 8601. Constant in
   scripts and in `find -newermt`.
 - **P2 `history` / `alias` / readline keys** (standard, combined): `Ctrl-R`, `!!`, `!$`,
@@ -661,20 +706,44 @@ is → what actually differs → when to use which → the honest verdict**, 400
 
 **The rule that keeps the category honest**: every page carries at least one real demonstration of
 the difference (`echo` vs `printf` on `\n`, `[` vs `[[` on an unquoted empty variable, `remove` vs
-`purge` on a leftover conffile). All four written so far have a setup script and replay. Without
+`purge` on a leftover conffile). All five written so far have a setup script and replay. Without
 it a comparison page is an unverifiable opinion piece, which is the failure mode to watch for.
 
-Four written. Strong candidates for the rest, all from real top questions: `apt` vs `apt-get` vs `aptitude` vs
-`dpkg`; `terminal` vs `shell` vs `tty` vs `console`; `nohup` vs `disown` vs `&` vs `tmux`;
-`[` vs `[[` vs `((` vs `test`; login vs non-login vs interactive shells; `/opt` vs `/usr/local`
-vs `/usr/bin`; `sh` vs `bash` vs `dash` (and Debian's `/bin/sh` → `dash` decision, which is
-Debian-specific and burns people); `cron` vs systemd timers; `rsync` vs `scp` vs `sftp`;
-`ip` vs `ifconfig`; `ss` vs `netstat`; `su` vs `sudo -i` vs `sudo -s`; `remove` vs `purge` vs
-`autoremove`; `apt upgrade` vs `full-upgrade` vs `dist-upgrade`; `grep` vs `egrep` vs `grep -E`;
-`printf` vs `echo`; `>` vs `>>` vs `tee`; hard vs symbolic links; `useradd` vs `adduser`.
+**Five written**, and the original list of nineteen candidates now divides three ways. What
+decides which pile a candidate is in is whether the command pages under it exist: a comparison
+written before them has to teach both commands from scratch to make its point, and a comparison
+written after them is a paragraph on each and then the demonstration.
 
-That is 19 pages of high-intent, low-competition content that also functions as an internal
-linking hub: every comparison page naturally links to two or three command pages.
+**Writeable now**, every page under them written:
+
+- hard vs symbolic links (`ln`)
+- `ss` vs `netstat` (`ss`)
+- `su` vs `sudo -i` vs `sudo -s` (`sudo`, which folded `su` in)
+- `nohup` vs `disown` vs `&` vs `tmux` (`job-control`, `kill`, `processes-and-signals`), with the
+  caveat the `keep-a-program-running-after-logout` recipe already found: `tmux` is not installed
+  on a base Debian system, and a page recommending it first has to say so
+- `[` vs `[[` vs `((` vs `test` (`scripting/conditionals-and-test`)
+- `>` vs `>>` vs `tee` (`tee`, `concepts/pipes-and-redirection`)
+- `grep` vs `egrep` vs `grep -E` (`grep`)
+- `apt upgrade` vs `full-upgrade` vs `dist-upgrade` (`apt`)
+- login vs non-login vs interactive shells (`concepts/environment-variables-and-path`,
+  `concepts/terminal-shell-and-tty`)
+
+**Still waiting on a command page or a concept page**: `apt` vs `apt-get` vs `aptitude` vs `dpkg`,
+of which `apt-vs-apt-get` is already the written half and `aptitude` is a §4.1 P3; `/opt` vs
+`/usr/local` vs `/usr/bin`, which wants the §5 filesystem-hierarchy page under it; `rsync` vs
+`scp` vs `sftp`; `ip` vs `ifconfig`; `printf` vs `echo`, which §4.4 argues belongs in a lesson
+instead; `useradd` vs `adduser`, behind the §4.5 P2.
+
+**Retired**: `terminal` vs `shell` vs `tty` vs `console`, which `concepts/terminal-shell-and-tty`
+answered on 2026-08-27. A comparison page beside it would be the same content under a second URL,
+and §10.0 is the rule that says so.
+
+That is fifteen pages of high-intent, low-competition content that also functions as an internal
+linking hub: every comparison page naturally links to two or three command pages. The `which` page
+is the demonstration of how the two shapes divide. Written as one page, it spent eighteen of its
+twenty-four examples on commands other than `which`; split, the comparison owns the limit and the
+alternatives and the command page keeps `PATH` order.
 
 ### §10.2. `troubleshooting`, pages named after the error: **BUILT**
 
@@ -851,10 +920,10 @@ queue. That is not a complaint about the choices; it is how to read what follows
 | 2. Scripting 7–14 | **done** 2026-08-29 | Nothing |
 | 3. Concepts | **done** 2026-08-27 | Nothing |
 | 4. Perl track | **blocked** | The §10.4 `order:` change first, then 9 pages |
-| 5. Processes and everyday files | **done** 2026-08-30 | Nothing at P1; `ln` and the combined `stat`/`file`/`basename` entry are the §4.3 P2s |
-| 6. Comparisons | **4 of ~19** | Everything not listed in §10.1 as written |
+| 5. Processes and everyday files | **done** 2026-09-05 | Nothing; the combined `stat`/`file`/`basename` entry is all that is left of §4.3 |
+| 6. Comparisons | **5 of ~20** | Nine writeable now, six waiting on a page under them: §10.1 splits them |
 | 7. Recipes | **4 P1 done** 2026-08-29 | The §9 P2 list |
-| 8. Networking and disk | **1 page** | `df` needs no harness work; everything else waits on a resolver fixture and a loop device |
+| 8. Networking and disk | **3 pages** | `du`, `df` and `ss` are written; everything else waits on a resolver fixture and a loop device |
 
 **Wave 2: the scripting course (§7). Finished 2026-08-29.** Fourteen lessons, roughly 45% of the
 top-100 bash questions, and the "course that stops halfway" problem is gone. The verification cost
@@ -868,16 +937,20 @@ a course out of order would have cost more than it saved.
 
 **Wave 4: the Perl track (§8).** Blocked on the §10.4 `order:` generalisation.
 
-**Wave 5: processes, and the files everyone uses (§4.2, §4.3). Finished 2026-08-30.** Writing
+**Wave 5: processes, and the files everyone uses (§4.2, §4.3). Closed 2026-09-05.** Writing
 `processes-and-signals` before `kill` and job control was the order §5's scope table argued for,
 and it paid: both command pages could name a signal and link for the semantics rather than
-teaching them again, and both came out standard rather than flagship because of it. What is left
-in this wave's territory is §4.3 P2, either `ln` or the combined
-`stat`/`file`/`basename`/`dirname` entry, and `COMMAND_GROUPS` reserves `make-and-link` and
-`inspect-files` for them.
+teaching them again, and both came out standard rather than flagship because of it. The file half
+closed five days later with `ln`, `mkdir`, `touch`, `cd` and `which`, four of them replaying
+against the `mk_site_tree` that `cp`, `mv` and `rm` already share, which is what made a five-page
+batch cost about what one page's fixture usually does. What remains of §4.3 is the combined
+`stat`/`file`/`basename`/`dirname` entry, which `COMMAND_GROUPS` reserves `inspect-files` for.
 
-**Wave 6: comparisons (§10.1).** The four written are all package management, where the command
-pages landed first. The shell and process comparisons want Waves 2 and 5 under them.
+**Wave 6: comparisons (§10.1). The largest open front, and now unblocked.** The first four written
+are all package management, where the command pages landed first; the fifth came out of splitting
+`which`. §12 used to say the shell and process comparisons wanted Waves 2 and 5 under them, and
+both are closed, so §10.1 now lists nine candidates with every page beneath them written. Three of
+those nine were unblocked by a single week: `ln`, `ss` and `sudo`.
 
 **Wave 7: recipes (§9), interleaved.** All four P1 recipes shipped 2026-08-29. Interleaving is
 still the right approach: each one was cheap, and three of the four were written against fixtures
@@ -888,20 +961,24 @@ together.
 
 **Wave 8: networking and disk (§4.6, §4.7).** Deliberately last: §11.2 and §11.3 mean it starts
 with harness work, a local resolver fixture and a loop-device setup, before any page can be
-written honestly. `du` and `df` are the exception and were pulled out of it.
+written honestly. Three pages escaped that. `du` and `df` were pulled out of it for needing no
+loop device, and `ss` turned out to need no peer either, because a fixture can stand up its own
+listeners and the page is about what is listening rather than about reaching anything.
 
 Running alongside: the tag-coverage problem in §1.1 (`performance` at zero, `archives` at one)
 and the `0/0` reporting hole in §11.5.
 
 ### Scale, honestly
 
-The backlog above is roughly 53 command pages, 14 concepts, 20 Debian articles, 9 Perl pages,
-20 recipes, 15 comparisons and 8–15 troubleshooting pages: **something like 153 pages against the
-83 that exist.** At this site's verification standard that is a very large amount of sandbox work,
+The backlog above is roughly 48 command pages, 14 concepts, 20 Debian articles, 9 Perl pages,
+20 recipes, 15 comparisons and 8–15 troubleshooting pages: **something like 147 pages against the
+93 that exist.** At this site's verification standard that is a very large amount of sandbox work,
 and the plan should not pretend otherwise.
 
-The measured rate is 19 pages in six days (2026-08-18 to 08-24) and 21 in five (08-24 to 08-29).
-Sustained, the backlog is a year of work, and it will not be sustained. The waves are ordered so
+The measured rate is 19 pages in six days (2026-08-18 to 08-24), 21 in five (08-24 to 08-29), and
+8 in the five after that. The last figure is the useful one, because it is what a week looks like
+when the harness needs a decision: §2 says where those days went. Sustained at any of the three,
+the backlog is the better part of a year, and it will not be sustained. The waves are ordered so
 that stopping after any one of them leaves the site coherent rather than half-built, which only
 holds if a wave is finished before the next one starts. Waves 1, 2, 3 and 5 are closed and Wave 7
 has cleared its P1 line, so far without leaving a stub behind.
@@ -1088,3 +1165,54 @@ What went out, and what writing it taught that the next batch would otherwise le
   Mounting needs CAP_SYS_ADMIN, so the page asks for `--systemd`. That flag is the only one
   granting `--privileged`, and a page wanting privilege has to ask for systemd it does not need.
   Worth splitting if a second page wants the same thing.
+- **2026-09-02**: `ss` and `man`, the last two §4 P1 pages. 103 checked outputs between them, and
+  each needed a setup script that asserts a state rather than building a tree: `ss` because a
+  container listens on nothing, `man` because the section 3 example has to *fail* and Debian ships
+  that section in a package the image does not have.
+
+  Two rules came out of them. A fixture that starts processes should test for the sockets or files
+  those processes provide, not for the processes, so an example that closes one is repaired on the
+  next restore rather than on the next full run; guarded that way `ss` costs 13ms per restore
+  against 342ms cold. And a listener a page names must be executed directly rather than through
+  `env`, because a process is named after the file the kernel was told to run: with `env` in the
+  way, `ss -p` reports every service as `python3` and the page can say nothing about which one
+  holds which port.
+- **2026-09-02**: `unordered:`, and ADR-0026 with it. The `ss` page prints two listening sockets
+  in an order the kernel settles per network namespace, six fresh containers here splitting three
+  each way, so the page had an even chance of passing wherever it ran and no fixture could pin it.
+  An example may now declare that the order of its lines is not part of its claim, and the lines
+  are compared as a multiset.
+
+  The finding worth keeping is what it replaced. `compare: shape` would have gone green on those
+  examples and was already doing so on two of them, because `shapeOf` masks digit runs and reduces
+  `0.0.0.0:8080` and `127.0.0.1:5432` to the same token: a comparison any two listening rows
+  satisfy. A page reaching for `shape` to fix an ordering problem is trading a real check for one
+  that cannot fail, and the audit that followed found every other `| sort` on the site was doing
+  real work except two on `ps`, which turned out to be deterministic and now checks its rows in
+  order.
+- **2026-09-05**: five command pages and a comparison in one batch: `mkdir`, `touch`, `ln`, `cd`,
+  `which` and `compare/which-vs-type-vs-command`. 122 checked outputs, and the batch cost about
+  what one page's fixture usually does, because four of the six replay against the `mk_site_tree`
+  that `cp`, `mv` and `rm` already share and the other two declare no sample data at all. **That is
+  the argument for choosing a batch by fixture rather than by subject**, and it is the second time
+  it has paid.
+
+  Each page is built around a mistake rather than a flag list, and the four are worth having
+  written down because they are what the pages are for: `mkdir -p -m 700 outer/inner` leaves
+  `outer` at the umask default; `touch -d` moves the modification time back while the change time
+  jumps to now; a relative `ln -s` target is read from the directory holding the link; and `ln -sf`
+  on an existing symlink to a directory creates the new link inside it.
+
+  The `which` page was split after it was written, which is the general finding. Twenty-four
+  examples, of which six led with `which`: the page had become a comparison wearing a command
+  page's shape. §10.1's category existed for exactly that, so the limit and the alternatives moved
+  there. **A command page whose examples keep reaching for other commands is a comparison page**,
+  and noticing it before the replay is cheaper than after.
+
+  Two constraints on what a page may print came out of the batch and are now enforced rather than
+  remembered. `ls -l` switches from a time of day to a year at about six months, so a timestamp
+  goes through `ls` only where the moment is always recent or the date has already settled, and
+  through `stat` otherwise; ADR-0027 and `test/timestampDrift.test.ts` hold the fixture dates clear
+  of that boundary. And the replay names its working directory after the page, so no example may
+  print `pwd` from it, which `cd` met in the form `where-a-script-lives` and `sudo` had each met
+  separately.
