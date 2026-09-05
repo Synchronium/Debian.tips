@@ -47,6 +47,29 @@ export interface VerificationStats {
    *  It opted in, the replay runs it, and it reports its exemptions; it simply contributes no
    *  automated outputs. Counting it here would report an explicit exemption as an oversight. */
   unreplayedProsePages: number;
+  /** The two figures above, written out as a sentence, because the interesting value is zero and
+   *  a substituted digit cannot say what zero means. "0 of the command pages and 0 of the written
+   *  articles" reports that an exception category is empty, which is the site's strongest claim
+   *  stated as an absence; the sentence says every page has a script instead.
+   *
+   *  It also fixes an agreement bug the digits carry: a count of one reads "1 command pages". */
+  setupScriptGap: string;
+}
+
+/** Pluralises a count of pages for `setupScriptGap`, and returns nothing at all for zero so the
+ *  caller can drop that half of the sentence rather than announce it. */
+function pagesWithout(count: number, noun: string): string {
+  if (count === 0) return "";
+  return `${count} ${noun}${count === 1 ? "" : "s"}`;
+}
+
+function setupScriptGap(commands: number, prose: number): string {
+  const missing = [pagesWithout(commands, "command page"), pagesWithout(prose, "written article")].filter(
+    (part) => part !== "",
+  );
+  if (missing.length === 0) return "Every command page and every written article has one.";
+  const verb = commands + prose === 1 ? "is" : "are";
+  return `${missing.join(" and ")} ${verb} still without one.`;
 }
 
 /** Counts the prose pages that actually replay, and their output blocks.
@@ -144,6 +167,7 @@ export function verificationStats(
     prosePages,
     proseOutputs,
     unreplayedProsePages,
+    setupScriptGap: setupScriptGap(allCommandPages.length - commandPages.length, unreplayedProsePages),
   };
 }
 

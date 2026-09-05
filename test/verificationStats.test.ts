@@ -38,6 +38,7 @@ describe("verificationStats", () => {
       prosePages: 1,
       proseOutputs: 1,
       unreplayedProsePages: 1, // lesson-two has no setup script
+      setupScriptGap: "1 written article is still without one.",
     });
   });
 
@@ -79,6 +80,7 @@ describe("fillStats", () => {
     prosePages: 1,
     proseOutputs: 1,
     unreplayedProsePages: 0,
+    setupScriptGap: "Every command page and every written article has one.",
   };
 
   it("substitutes every token it knows", () => {
@@ -91,6 +93,13 @@ describe("fillStats", () => {
 
   it("refuses a counted zero, which always means the counting broke", () => {
     expect(() => fillStats("{{replayed}}", { ...stats, replayed: 0 })).toThrow(/counted zero/);
+  });
+
+  it("states the coverage as a sentence, because zero is the answer worth having", () => {
+    // A digit cannot say "every page has one", and a count of one would read "1 command pages".
+    expect(fillStats("{{setupScriptGap}}", stats)).toBe(
+      "Every command page and every written article has one.",
+    );
   });
 
   it("allows zero for the two figures where zero is the good answer", () => {

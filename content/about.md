@@ -12,34 +12,40 @@ container, and the output on the page is pasted from that run. Then it is run ag
 every push, and the page fails the build if what it prints has changed.
 
 Right now that is **{{replayed}} outputs re-run on every push**, across {{commandPages}}
-command pages and {{prosePages}} of the written articles, alongside {{fixtures}} blocks of
-sample data. A further {{exemptions}} are documented but cannot be automated, and are listed as
-such below. Nothing re-runs a page until a setup script exists for it, and that is still true
-of {{unreplayedCommandPages}} of the command pages and {{unreplayedProsePages}} of the written
-articles. The numbers on this page are counted from the content when the site is built, so they
-cannot drift either.
+command pages and {{prosePages}} written articles, alongside {{fixtures}} blocks of sample
+data. A further {{exemptions}} are documented but cannot be automated; they are listed below.
+A page is only re-run once a setup script exists for it. {{setupScriptGap}} The numbers here
+are counted from the content when the site is built, so they cannot drift either.
 
 ## What the replay does
 
-For each command page there is a setup script that creates the sample files, and a replay
-that runs every example against them:
+Every page gets a container of its own. The replay starts one, runs the setup script that
+creates that page's sample files, restores them before each example, and compares what the
+command printed against what the page claims:
 
 ```sh
-npm run replay              # every page, in one disposable container
+npm run replay              # every page, a container each
 npm run replay -- wget curl # just these
 ```
 
-The replay starts a container, restores the sample files before each example, runs the
-example, and compares what it printed against what the page claims. Anything different
-fails. The container is destroyed afterwards, so nothing accumulates and no example can
-depend on something an earlier one left behind.
+Then the container is thrown away. This is the part that does the most work: a page cannot see
+a package another page installed, a port it opened, or a file it left in `/etc`. No example can
+quietly come to depend on one that ran earlier, because there is nothing for it to depend on.
 
-The sample files get the same treatment. A page showing you a `report.txt` is showing you a
-block that was re-read from the container and diffed rather than a description of it.
-Otherwise the data drifts away from the outputs it is supposed to explain.
+On every push the whole set runs across several machines at once, a share of the pages each,
+alongside the type checks, the link checker and an accessibility pass. A page whose examples no
+longer reproduce does not reach the site.
 
-This runs in CI on every change, alongside the type checks, the link checker and an
-accessibility pass. A page whose examples no longer reproduce does not reach the site.
+## Why the sample files are checked too
+
+An output is only evidence if you can see what produced it. `wc -l report.txt` printing
+`40` tells you nothing unless you know what is in `report.txt`.
+
+So the pages that need it carry their sample files, in a collapsed block above the examples.
+Those files are created by a script in the repository, and the replay runs that script before
+each example. The block on the page and the script in the repository are checked against each
+other, because sample data that has quietly diverged from the examples is worse than none: it
+looks like evidence.
 
 ## The limits of the claim
 
@@ -52,7 +58,7 @@ versions with different output. A container is not a full system: no systemd unl
 asks for it, no real hardware, no other users.
 
 It also does not mean every block. A page opts into the replay by having a setup script that
-puts a container into the state it describes, and the counts above are of the pages that do. A
+puts a container into the state it describes. The counts above are of the pages that do, and a
 page that has a script but whose blocks are all exempt is not counted at all.
 
 Where an example needs something a container cannot provide, the page says so rather than
@@ -61,42 +67,27 @@ inventing output. The {{exemptions}} exempt examples are ones a batch run cannot
 require committing a private key, a request whose answer is your own public IP address. The
 error message a troubleshooting page opens on is usually one of these too, since it is the one
 you already saw and not one this machine can be made to print. Each is listed by name in the
-repository with a note on how it was checked by hand instead, and every page counts them in the
-figure at its own foot, so no page can show you a block the total does not know about.
+repository, with a note on how it was checked by hand instead. Every page counts its own in the
+figure at its foot, so no page can show you a block this total does not know about.
 
 ## Output that cannot be identical
 
-Some useful output contains a value nothing can pin: a process id, an uptime, a
-transfer rate, the amount of memory a service is using. Dropping those examples would make
-the site poorer, and faking them would make it dishonest.
+Some useful output contains a value nothing can pin: a process id, an uptime, the amount of
+memory a service is using. Dropping those examples would make the site poorer, and faking them
+would make it dishonest.
 
 Those examples are marked. You will see a line above the output reading **"Your output will
 differ"**, naming which parts are specific to the machine that produced it. There are
-{{volatile}} of them. They are still checked on every run: the numbers are allowed to
-move, but a renamed field, a missing line or a changed status still fails the build.
+{{volatile}} of them, and they are still checked on every run. The numbers are allowed to
+move; a renamed field, a missing line or a changed status still fails the build.
 
-## Output with no fixed order
-
-`ss` lists the sockets a machine is listening on in the order the kernel walked its own tables.
-That order holds inside one container and differs between containers, so two runs against the same
-services put the rows the other way round about half the time, and `ss` has no flag that sorts.
-
-A script that depends on the order should pipe through `sort`, and the pages here that do are
-checked in the sorted order like anything else. The `ss` page has no such option, since showing
-the plain listing is most of its job. Its listings are marked instead, and the comparison ignores
-the sequence: a vanished socket, an extra one, a changed address or a renamed column all still
-fail.
-
-## Why the sample files are checked too
-
-An output is only evidence if you can see what produced it. `wc -l report.txt` printing
-`40` tells you nothing unless you know what is in `report.txt`.
-
-So the pages that need it carry their sample files, in a collapsed block above the
-examples. Those files are created by a script in the repository, and the replay runs that
-script before each example. The block on the page and the script in the repository are
-checked against each other, because sample data that has quietly diverged from the examples
-is worse than none: it looks like evidence.
+Order is the other thing that will not sit still. `ss` lists sockets in the order the kernel
+walked its own tables, which holds inside one container and differs between containers, so two
+runs against the same services put the rows the other way round about half the time. Where a
+page can sort, it sorts, and it is checked in that order like anything else. The `ss` page
+cannot, since the plain listing is most of what it has to show you. Its listings are marked
+too, and the comparison ignores the sequence while still failing on a vanished socket, an extra
+one, or a renamed column.
 
 ## Read it yourself
 
@@ -114,5 +105,5 @@ all in one public repository. There is no hidden step.
 Every other page on the site carries the same list at its foot, naming the files that produced
 that page in particular and the one command that re-runs its examples.
 
-If you find an example that does not reproduce on a current Debian system, that is a bug
-worth reporting, and one the build should have caught.
+If you find an example that does not reproduce on a current Debian system, that is a bug worth
+reporting, and one the build should have caught.

@@ -75,7 +75,7 @@ command reports exactly that.
     },
     {
       count: checks.unordered,
-      how: raw(html`<a href="/about/#output-with-no-fixed-order">in any order</a>`),
+      how: raw(html`<a href="/about/#output-that-cannot-be-identical">in any order</a>`),
     },
   ].filter((clause) => clause.count > 0);
 

@@ -208,8 +208,12 @@ describe("what the block says is compared how", () => {
   });
 
   it("links each relaxation to the part of /about/ that explains it", () => {
+    // Both land on one section, which covers a value that moves and an order that moves as two
+    // kinds of the same problem. `linkcheck` fails on an anchor with no heading behind it, so a
+    // rename on that page is caught rather than shipped as a link to the top of it.
     const html = say({ checked: 12, byShape: 4, unordered: 3 });
-    expect(html).toContain("/about/#output-that-cannot-be-identical");
-    expect(html).toContain("/about/#output-with-no-fixed-order");
+    expect(html).toContain(">by shape</a>");
+    expect(html).toContain(">in any order</a>");
+    expect(html.match(/\/about\/#output-that-cannot-be-identical/g)).toHaveLength(2);
   });
 });
