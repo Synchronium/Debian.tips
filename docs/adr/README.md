@@ -94,6 +94,7 @@ command shown. These records keep that claim honest.
 | [0024](0024-the-sandbox-image-is-published.md) | The sandbox image is published and identified by its contents, not rebuilt everywhere |
 | [0025](0025-the-sandbox-has-graded-privilege.md) | The sandbox has graded privilege, and a page asks for the weakest flavour it can |
 | [0026](0026-a-comparison-that-ignores-line-order.md) | An example may declare that the order of the lines it prints is not part of its claim |
+| [0027](0027-fixture-dates-stay-clear-of-the-six-month-boundary.md) | A fixed date a page displays stays clear of the six-month boundary `ls -l` prints on |
 
 ## Adding one
 

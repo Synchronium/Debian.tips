@@ -125,13 +125,13 @@ describe("a fixed timestamp a page displays", () => {
   it("is never left drifting across the six-month boundary", () => {
     const found = drifting(all);
 
-    // Two ways out, and which one is right is an editorial call rather than a mechanical one.
-    // Move the date forward and re-capture the pages that show it, which keeps a listing looking
-    // like recent work and buys another few months; or move it back beyond the boundary and
-    // re-capture once, after which it shows a year and never moves again.
+    // The remedy is to shift the whole set of dates forward, keeping the gaps between them,
+    // and re-capture the pages that show them. ADR-0027 has the steps, including the two
+    // re-captures no tool does for you, and why the dates are kept current rather than retired
+    // into the year form.
     expect(
       found,
-      "these dates are about to change how `ls -l` prints them; `npm run replay` will start failing on the pages that show them",
+      "these dates are about to change how `ls -l` prints them, and `npm run replay` will start failing on the pages that show them. docs/adr/0027-fixture-dates-stay-clear-of-the-six-month-boundary.md is what to do",
     ).toEqual([]);
   });
 
