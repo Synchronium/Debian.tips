@@ -24,9 +24,9 @@ covers it; require at least two pages that will plausibly use it; prefer nouns f
 and adjectives for audience tags. Add it in the batch that needs it, not speculatively.
 
 Current usage is lopsided and worth watching. Recounted 2026-09-05 from page frontmatter:
-`performance` still has **zero** pages and `archives` has one. `cron` has two; `disk`, `regex` and
-`ssh` have three. A tag with one page is a dead end for a reader who clicks it. Either the backlog
-below fills them or they should be retired.
+`performance` still has **zero** pages and `archives` has one. `cron` has two; `regex` and `ssh`
+have three. A tag with one page is a dead end for a reader who clicks it. Either the backlog below
+fills them or they should be retired.
 
 The fix for a thin tag is usually one page everything else already wanted to link: `terminal` sat
 on that list until the concept page and `less` took it to nine, and `disk` left it when `df`
@@ -51,29 +51,28 @@ Counted 2026-09-05 by `verificationStats` in `src/content/verificationStats.ts`,
 same routine the about page renders from, so these figures are the ones the site itself publishes
 rather than a second tally that can drift from them.
 
-**93 pages. 1,921 documented outputs re-run on every push**, across 48 command pages and 44 of
+**98 pages. 1,994 documented outputs re-run on every push**, across 49 command pages and 48 of
 the written articles, with 33 more documented and exempted, each naming how it was verified
-instead. 1,897 examples across the command pages, 128 blocks of sample data, and 119 outputs
+instead. 1,950 examples across the command pages, 129 blocks of sample data, and 121 outputs
 declared `volatile:`.
 
-Eight pages in five days, against twenty-five in the five before them. The drop is not a stall:
-those days went into two decisions the pages had been getting wrong silently, `unordered:`
-(ADR-0026) and the fixture-date band (ADR-0027), and into a review of the whole repository. Both
-ADRs came out of a page that passed, which is the kind of finding that only arrives between
-batches.
+Thirteen pages in five days, against twenty-five in the five before those. The middle of that week
+went into two decisions the pages had been getting wrong silently, `unordered:` (ADR-0026) and the
+fixture-date band (ADR-0027), and into a review of the whole repository. Both ADRs came out of a
+page that passed, which is the kind of finding that only arrives between batches.
 
 **Every page replays.** `unreplayedCommandPages` and `unreplayedProsePages` are both zero: there
 is no page left whose outputs nothing re-runs. That closes the largest item in §11.5.
 
 | Category | Pages | State |
 |---|---|---|
-| `commands` | apt, apt-cache, apt-file, awk, cat, cd, chmod, chown, cowsay, cp, crontab, curl, cut, df, diff, dpkg, du, find, grep, head, job-control, journalctl, jq, kill, less, ln, ls, man, mkdir, mv, ps, rm, sed, sort, ss, ssh, sudo, systemctl, tail, tar, tee, touch, tr, uniq, wc, wget, which, xargs | 48 pages. Text processing and the file basics are both complete enough to stop being the priority, and **the file group closed its P1 and P2 lines on 2026-09-05** bar the combined file-inspection entry. Debian package tooling is done to the §4.1 P1 line, the process group to its own as of 2026-08-30. Every §4 P1 is now written: `ss` and `man` were the last two. What is left is **no user-management page beyond `chown`**, a disk group of three, and a networking group whose remaining pages all wait on §11.3. |
+| `commands` | apt, apt-cache, apt-file, awk, cat, cd, chmod, chown, cowsay, cp, crontab, curl, cut, df, diff, dpkg, du, find, grep, head, job-control, journalctl, jq, kill, less, ln, ls, man, managing-users, mkdir, mv, ps, rm, sed, sort, ss, ssh, sudo, systemctl, tail, tar, tee, touch, tr, uniq, wc, wget, which, xargs | 49 pages. Text processing and the file basics are both complete enough to stop being the priority, and **the file group closed its P1 and P2 lines on 2026-09-05** bar the combined file-inspection entry. Debian package tooling is done to the §4.1 P1 line, the process group to its own as of 2026-08-30, and **the privilege group closed with `managing-users`**, which was the last subject §2 could describe as a hole. Every §4 P1 is written: `ss` and `man` were the last two. What is left is a disk group of three and a networking group whose remaining pages all wait on §11.3. |
 | `concepts` | environment-variables-and-path, exit-codes-and-error-handling, file-permissions-explained, pipes-and-redirection, processes-and-signals, terminal-shell-and-tty | 6 pages. §3.1 rates this layer above any command page, and the three highest-demand ones are written, so the next concept is a §5 P2 rather than a P1. |
 | `scripting` | your-first-script, variables-and-quoting, conditionals-and-test, loops, script-arguments, functions, arrays, parameter-expansion, where-a-script-lives, arithmetic, here-docs, traps-and-cleanup, debugging-and-robustness, a-real-script | **Complete, 2026-08-29.** 14 lessons ending in a capstone that uses all thirteen before it. The two candidate additions in §7 are the only open items, and neither is a gap a reader would notice. |
 | `recipes` | add-a-directory-to-path, bulk-rename-files, copy-files-between-machines, find-and-replace-across-files, find-permission-denied, find-the-largest-files, keep-a-program-running-after-logout, kill-whatever-is-using-a-port, monitor-a-log-in-real-time | 9 pages. **All four P1 recipes shipped 2026-08-29**, after six weeks in which the category gained nothing. What is left is the §9 P2 list. |
 | `debian` | apt-essentials, install-a-deb-file, list-installed-packages, release-channels, systemd-services, third-party-repositories, which-package-provides-a-file | 7 pages, bounded by §10.0.1 to the explainer shape. Errors go to `troubleshooting` instead. |
 | `troubleshooting` | could-not-get-lock-dpkg-frontend, packages-kept-back, repository-is-not-signed, sudo-command-not-found | 4 pages, all of §6.1's P1 list. The §6.1 P2 list is what remains. |
-| `compare` | apt-vs-apt-get, cron-vs-systemd-timers, remove-vs-purge-vs-autoremove, sh-vs-bash-vs-dash, which-vs-type-vs-command | 5 of the ~20 candidates in §10.1. The first four are package management; the fifth was split out of the `which` page and is the first one written because a command page turned out to be answering two questions. |
+| `compare` | apt-upgrade-vs-full-upgrade, apt-vs-apt-get, cron-vs-systemd-timers, hard-vs-symbolic-links, remove-vs-purge-vs-autoremove, sh-vs-bash-vs-dash, ss-vs-netstat, su-vs-sudo-i-vs-sudo-s, which-vs-type-vs-command | 9 pages, and **the category is closer to finished than the backlog looked**: of the twenty candidates §10.1 identified, seven are now retired as content their own command pages absorbed, and four wait on a page that does not exist. |
 
 ## §3. What the evidence says
 
@@ -271,8 +270,28 @@ The everyday commands. Low glamour, high traffic.
   three pages it shares `mk_site_tree` with, because every example doing its subject needs the
   privilege; the refusals are shown with `sudo -u user` from that root shell. The same will be
   true of the `adduser` page below.
-- **P2 `adduser` / `useradd` / `usermod` / `deluser`** (standard, combined): including the
-  Debian-specific "`adduser` is the one you want, `useradd` is the low-level one" (+90).
+- **SHIPPED 2026-09-05 `managing-users`** (standard), covering `adduser`, `useradd`, `usermod`,
+  `deluser` and the group commands. 53 checked outputs, and the Debian-specific framing this entry
+  predicted is the page's spine: `adduser` applies `/etc/adduser.conf` and `useradd` applies
+  nothing, so `useradd bob` leaves a legal account with `/bin/sh`, no home directory on disk and no
+  skeleton files.
+
+  Two claims on it are demonstrations rather than warnings, and both fail quietly. `usermod -G`
+  without the `a` replaces the supplementary group list rather than adding to it, which is how an
+  account loses `sudo` between one login and the next. And `deluser <user> <group>`, the documented
+  way to remove a membership, rejects any name containing a hyphen on `adduser` 3.152: it prints a
+  Perl error, changes nothing and **exits zero**. `adduser <user> <group>` accepts the same names,
+  so only removal is affected, and `gpasswd -d` is the working answer.
+
+  **The account database is the sharpest case of state a replay does not reset**, and any page
+  after this one in the same territory will meet it. The restore empties the working directory and
+  re-runs the setup script; it knows nothing about `/etc/passwd`, so an example that creates an
+  account leaves it for every later example and the next run fails on a name already taken. The
+  setup script deletes and rebuilds everything the page touches, with ids pinned explicitly, and
+  the list has to include names only an *example* creates. Two rules came out of writing it:
+  deleting an account takes its group with it, but `usermod -l` renames the account and leaves the
+  group under the old name, which strands a gid and makes every later example report that the user
+  does not exist.
 - **P2 `id` / `groups` / `who` / `w` / `last`** (light, combined): who am I, who else is here.
 - **P2 `passwd` / `chage`** (light): changing, locking, expiring.
 - **P3 `getfacl` / `setfacl`** (standard): POSIX ACLs, when the nine bits aren't enough.
@@ -705,45 +724,61 @@ Applied to §6: the error pages are **`troubleshooting`**, `dpkg vs apt vs aptit
 is → what actually differs → when to use which → the honest verdict**, 400–800 words.
 
 **The rule that keeps the category honest**: every page carries at least one real demonstration of
-the difference (`echo` vs `printf` on `\n`, `[` vs `[[` on an unquoted empty variable, `remove` vs
-`purge` on a leftover conffile). All five written so far have a setup script and replay. Without
-it a comparison page is an unverifiable opinion piece, which is the failure mode to watch for.
+the difference (`remove` vs `purge` on a leftover conffile, `sed -i` severing a hard link,
+`apt-get upgrade` and `apt upgrade` disagreeing about the same pending upgrade). All nine written
+so far have a setup script and replay. Without it a comparison page is an unverifiable opinion
+piece, which is the failure mode to watch for.
 
-**Five written**, and the original list of nineteen candidates now divides three ways. What
-decides which pile a candidate is in is whether the command pages under it exist: a comparison
-written before them has to teach both commands from scratch to make its point, and a comparison
-written after them is a paragraph on each and then the demonstration.
+**Nine written of twenty identified. Seven of the rest are retired**, and the reason they are is
+the more useful half of this entry.
 
-**Writeable now**, every page under them written:
+**A comparison does not survive the command pages beneath it being written.** The original list was
+drawn up when most of those pages did not exist, on the assumption that writing them would unblock
+the comparison. The opposite happened: a command page with room for sixty examples answers the
+comparison on the way past, and what is left is the same content under a second URL. Four of the
+nine written pages survived that test and seven candidates failed it, so the test is worth applying
+before a comparison is chosen rather than after it is drafted.
 
-- hard vs symbolic links (`ln`)
-- `ss` vs `netstat` (`ss`)
-- `su` vs `sudo -i` vs `sudo -s` (`sudo`, which folded `su` in)
-- `nohup` vs `disown` vs `&` vs `tmux` (`job-control`, `kill`, `processes-and-signals`), with the
-  caveat the `keep-a-program-running-after-logout` recipe already found: `tmux` is not installed
-  on a base Debian system, and a page recommending it first has to say so
-- `[` vs `[[` vs `((` vs `test` (`scripting/conditionals-and-test`)
-- `>` vs `>>` vs `tee` (`tee`, `concepts/pipes-and-redirection`)
-- `grep` vs `egrep` vs `grep -E` (`grep`)
-- `apt upgrade` vs `full-upgrade` vs `dist-upgrade` (`apt`)
-- login vs non-login vs interactive shells (`concepts/environment-variables-and-path`,
-  `concepts/terminal-shell-and-tty`)
+**What makes the difference is whether one existing page owns the question.** The four that
+survived all span pages that do not reference each other: hard against symbolic links reaches
+`ln`, `cp`, `du` and backups; `ss` against `netstat` names a command with no page at all;
+`su` against `sudo -i` spans four spellings across two packages; `apt upgrade` against
+`full-upgrade` spans `apt` and `apt-get`. Each of the seven retired below sits inside the
+territory of a single page that already answers it.
 
-**Still waiting on a command page or a concept page**: `apt` vs `apt-get` vs `aptitude` vs `dpkg`,
-of which `apt-vs-apt-get` is already the written half and `aptitude` is a §4.1 P3; `/opt` vs
-`/usr/local` vs `/usr/bin`, which wants the §5 filesystem-hierarchy page under it; `rsync` vs
-`scp` vs `sftp`; `ip` vs `ifconfig`; `printf` vs `echo`, which §4.4 argues belongs in a lesson
-instead; `useradd` vs `adduser`, behind the §4.5 P2.
+**Retired, each with what covers it:**
 
-**Retired**: `terminal` vs `shell` vs `tty` vs `console`, which `concepts/terminal-shell-and-tty`
-answered on 2026-08-27. A comparison page beside it would be the same content under a second URL,
-and §10.0 is the rule that says so.
+| Candidate | Covered by |
+| --- | --- |
+| `terminal` vs `shell` vs `tty` vs `console` | `concepts/terminal-shell-and-tty` |
+| `nohup` vs `disown` vs `&` vs `tmux` | `commands/job-control`, plus the §9 recipe for the task |
+| `[` vs `[[` vs `((` vs `test` | `scripting/conditionals-and-test` and `scripting/arithmetic` |
+| `>` vs `>>` vs `tee` | `concepts/pipes-and-redirection` and `commands/tee` |
+| `grep` vs `egrep` vs `grep -E` | `commands/grep`, in the sentence that introduces `-E` |
+| login vs non-login vs interactive shells | `concepts/environment-variables-and-path` |
+| `useradd` vs `adduser` | `commands/managing-users`, which is built on the distinction |
 
-That is fifteen pages of high-intent, low-competition content that also functions as an internal
-linking hub: every comparison page naturally links to two or three command pages. The `which` page
-is the demonstration of how the two shapes divide. Written as one page, it spent eighteen of its
-twenty-four examples on commands other than `which`; split, the comparison owns the limit and the
-alternatives and the command page keeps `PATH` order.
+The last of those is the pattern arriving in the same week it was named. `useradd` vs `adduser` was
+on the waiting list until §4.5 was written, and the page that unblocked it opens with the contrast
+and spends a section of six examples on it.
+
+**Still waiting on a page beneath them (4):** `/opt` vs `/usr/local` vs `/usr/bin`, which wants the
+§5 filesystem-hierarchy page; `rsync` vs `scp` vs `sftp`; `ip` vs `ifconfig`; `printf` vs `echo`,
+which §4.4 argues belongs in a lesson instead. `apt` vs `apt-get` vs `aptitude` vs `dpkg` is
+half-written as `apt-vs-apt-get` and the remainder waits on `aptitude`, a §4.1 P3 whose own entry
+says the honest verdict is no.
+
+**Read that list against the rule above before writing any of them.** Three of the four are waiting
+on a command page that, once written, is likely to absorb them, which makes the comparison the
+thing to write *instead of* or *before* the command page rather than after it. `ip` vs `ifconfig`
+is the exception and the clearest survivor of the four, because `ifconfig` will never have a page
+here for the same reason `netstat` does not.
+
+The `which` page is the demonstration of how the two shapes divide. Written as one page, it spent
+eighteen of its twenty-four examples on commands other than `which`; split, the comparison owns the
+limit and the alternatives and the command page keeps `PATH` order. That is the split working in
+the direction this section wants, and it happened because the command page was written first and
+noticed.
 
 ### §10.2. `troubleshooting`, pages named after the error: **BUILT**
 
@@ -921,7 +956,7 @@ queue. That is not a complaint about the choices; it is how to read what follows
 | 3. Concepts | **done** 2026-08-27 | Nothing |
 | 4. Perl track | **blocked** | The §10.4 `order:` change first, then 9 pages |
 | 5. Processes and everyday files | **done** 2026-09-05 | Nothing; the combined `stat`/`file`/`basename` entry is all that is left of §4.3 |
-| 6. Comparisons | **5 of ~20** | Nine writeable now, six waiting on a page under them: §10.1 splits them |
+| 6. Comparisons | **9 of 20, and effectively closed** | Four wait on a page that does not exist; seven are retired. §10.1 says why |
 | 7. Recipes | **4 P1 done** 2026-08-29 | The §9 P2 list |
 | 8. Networking and disk | **3 pages** | `du`, `df` and `ss` are written; everything else waits on a resolver fixture and a loop device |
 
@@ -946,11 +981,17 @@ against the `mk_site_tree` that `cp`, `mv` and `rm` already share, which is what
 batch cost about what one page's fixture usually does. What remains of §4.3 is the combined
 `stat`/`file`/`basename`/`dirname` entry, which `COMMAND_GROUPS` reserves `inspect-files` for.
 
-**Wave 6: comparisons (§10.1). The largest open front, and now unblocked.** The first four written
-are all package management, where the command pages landed first; the fifth came out of splitting
-`which`. §12 used to say the shell and process comparisons wanted Waves 2 and 5 under them, and
-both are closed, so §10.1 now lists nine candidates with every page beneath them written. Three of
-those nine were unblocked by a single week: `ln`, `ss` and `sudo`.
+**Wave 6: comparisons (§10.1). Opened and effectively closed on 2026-09-05.** Nine pages of the
+twenty candidates, and the wave ends not because the list ran out but because most of it turned
+out to be already written somewhere else. Four candidates were taken in a batch; the next four were
+checked against the corpus before drafting and every one of them was covered by a command page or a
+lesson, so they are retired rather than queued. §10.1 has the rule that predicts this and the four
+that remain.
+
+**A wave whose backlog dissolves under inspection is a good outcome and an easy one to miss.**
+Nothing failed here: the pages were written, the readers are served, and the queue was describing
+work that no longer existed. The check that found it costs a `grep` per candidate and should run
+before a comparison is chosen, not after it is drafted.
 
 **Wave 7: recipes (§9), interleaved.** All four P1 recipes shipped 2026-08-29. Interleaving is
 still the right approach: each one was cheap, and three of the four were written against fixtures
@@ -970,18 +1011,25 @@ and the `0/0` reporting hole in §11.5.
 
 ### Scale, honestly
 
-The backlog above is roughly 48 command pages, 14 concepts, 20 Debian articles, 9 Perl pages,
-20 recipes, 15 comparisons and 8–15 troubleshooting pages: **something like 147 pages against the
-93 that exist.** At this site's verification standard that is a very large amount of sandbox work,
+The backlog above is roughly 47 command pages, 14 concepts, 20 Debian articles, 9 Perl pages,
+20 recipes, 4 comparisons and 8–15 troubleshooting pages: **something like 125 pages against the
+98 that exist.** At this site's verification standard that is a very large amount of sandbox work,
 and the plan should not pretend otherwise.
 
+**Eleven of those came off the list on 2026-09-05 without a page being written**, seven from §10.1
+and four absorbed into `managing-users` and the file batch. That is worth expecting again: a
+backlog assembled before the pages beneath it existed counts some work twice, and the correction
+arrives when somebody checks a candidate against the corpus rather than against the list. The
+remaining figures have not had that check.
+
 The measured rate is 19 pages in six days (2026-08-18 to 08-24), 21 in five (08-24 to 08-29), and
-8 in the five after that. The last figure is the useful one, because it is what a week looks like
-when the harness needs a decision: §2 says where those days went. Sustained at any of the three,
-the backlog is the better part of a year, and it will not be sustained. The waves are ordered so
-that stopping after any one of them leaves the site coherent rather than half-built, which only
-holds if a wave is finished before the next one starts. Waves 1, 2, 3 and 5 are closed and Wave 7
-has cleared its P1 line, so far without leaving a stub behind.
+13 in the five after that. The last is the useful one, because that week also carried two decisions
+the pages had been getting wrong silently and a review of the whole repository: §2 says where the
+days went. Sustained at any of the three the backlog is months rather than the year it used to be,
+and it will not be sustained. The waves are ordered so that stopping after any one of them leaves
+the site coherent rather than half-built, which only holds if a wave is finished before the next
+one starts. Waves 1, 2, 3, 5 and 6 are closed and Wave 7 has cleared its P1 line, so far without
+leaving a stub behind.
 
 ## §13. Shipped
 
@@ -1216,3 +1264,50 @@ What went out, and what writing it taught that the next batch would otherwise le
   of that boundary. And the replay names its working directory after the page, so no example may
   print `pwd` from it, which `cd` met in the form `where-a-script-lives` and `sudo` had each met
   separately.
+- **2026-09-05**: Wave 6, four comparisons: `apt-upgrade-vs-full-upgrade`,
+  `hard-vs-symbolic-links`, `ss-vs-netstat` and `su-vs-sudo-i-vs-sudo-s`. 20 checked outputs, and
+  each carries the demonstration §10.1 requires of the category rather than a verdict about which
+  command is better.
+
+  The apt page needed the largest fixture and answers what the other three could not: the three
+  upgrade commands fall into three groups rather than two. A signed repository holds two pending
+  upgrades, one needing a package installed and one needing a package installed and another
+  removed. `apt-get upgrade` refuses both, `apt upgrade` performs the first and refuses the second,
+  and `full-upgrade` performs both. One chain would have made the first two commands look
+  identical, which is the belief the page exists to correct.
+
+  Two findings came out of the sandbox rather than out of the plan. `sed -i` breaks a hard link,
+  leaving two names holding different text with nothing reported, because it renames a new file
+  over the old name; pointed at a symlink the same command replaces the link and leaves the target
+  untouched, and `--follow-symlinks` fixes the second while nothing fixes the first. And
+  `ss-vs-netstat` prints one socket per block, because a prose page cannot spell `unordered:`
+  (ADR-0026) and the ordering that cost the `ss` page a CI failure had to be avoided rather than
+  declared. Both are the kind of thing a page is for.
+
+  **Two sentences were wrong when written and were corrected against the sandbox rather than
+  shipped**: `tar` preserves hard links unasked, so `-H` is `rsync`'s flag alone; and `vim` detects
+  a hard link and avoids severing it, so the page names the mechanism instead of listing editors.
+  A comparison page invites exactly this, because the pattern of its sentences is symmetry and a
+  plausible second half is easy to write and hard to notice.
+
+  The batch's largest finding was about the backlog rather than the pages. Four more candidates
+  were checked against the corpus before drafting and all four were already answered by a command
+  page or a lesson; §10.1 now records seven retirements and the rule that predicts them.
+- **2026-09-05**: `managing-users`, closing §4.5 and with it the last subject §2 could call a hole.
+  53 checked outputs, and the page is built on `adduser` applying Debian's policy where `useradd`
+  applies none.
+
+  Two of its claims fail quietly rather than loudly, which is why they are demonstrated: `usermod
+  -G` without the `a` replaces the supplementary group list, and `deluser <user> <group>` rejects
+  any hyphenated name on `adduser` 3.152, changes nothing and exits zero.
+
+  **The account database is state no replay resets**, and the setup script rebuilds every account
+  and group on every restore with ids pinned. Two rules for the next page in this territory:
+  the cleanup list has to include names that only an *example* creates, and `usermod -l` renames an
+  account while leaving its group under the old name, which strands a gid and makes every later
+  example report that the user does not exist.
+
+  `test/pageChecks.test.ts` gained a timeout of its own in the same commit. It renders every prose
+  page through Shiki, so its cost grows with the corpus, and at 98 pages it crossed the default
+  five seconds when run beside the rest of the suite. That is the site outgrowing a default rather
+  than a page misbehaving, and it is the second such limit this month after the replay shard count.
