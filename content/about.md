@@ -30,7 +30,7 @@ npm run replay -- wget curl # just these
 
 Then the container is thrown away. This is the part that does the most work: a page cannot see
 a package another page installed, a port it opened, or a file it left in `/etc`. No example can
-quietly come to depend on one that ran earlier, because there is nothing for it to depend on.
+come to depend on one that ran earlier.
 
 On every push the whole set runs across several machines at once, a share of the pages each,
 alongside the type checks, the link checker and an accessibility pass. A page whose examples no
@@ -86,8 +86,8 @@ walked its own tables, which holds inside one container and differs between cont
 runs against the same services put the rows the other way round about half the time. Where a
 page can sort, it sorts, and it is checked in that order like anything else. The `ss` page
 cannot, since the plain listing is most of what it has to show you. Its listings are marked
-too, and the comparison ignores the sequence while still failing on a vanished socket, an extra
-one, or a renamed column.
+too, and the comparison ignores the sequence. Everything else about the rows is compared as
+usual.
 
 ## Read it yourself
 
