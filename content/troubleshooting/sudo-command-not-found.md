@@ -121,6 +121,10 @@ apt update && apt install sudo          # if it was not installed
 /usr/sbin/usermod -aG sudo yourusername # add yourself to the sudo group
 ```
 
+The `-a` in `-aG` is not optional:
+[without it `usermod` replaces every group the account had](/commands/managing-users/), which on
+your own account can remove the very access you are trying to add.
+
 Then **log out and back in.** Group membership is read when your session starts, so your current
 shell will not have it. `id -nG` in the old session keeps showing the old answer, which reliably
 convinces people the fix did not work.

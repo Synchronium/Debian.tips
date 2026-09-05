@@ -25,7 +25,8 @@ does both. That single choice, made once and forgotten, is behind most of
 [sudo: command not found](/troubleshooting/sudo-command-not-found/).
 
 Debian's shipped `/etc/sudoers` grants the privilege through group membership, with one line:
-`%sudo ALL=(ALL:ALL) ALL`. Adding somebody is `usermod -aG sudo alice`, run as root, and it takes
+`%sudo ALL=(ALL:ALL) ALL`. Adding somebody is
+[`usermod -aG sudo alice`](/commands/managing-users/), run as root, and it takes
 effect at their next login rather than immediately.
 
 ## The environment does not come with you
