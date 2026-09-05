@@ -40,8 +40,9 @@ usually a better starting point than `-a` on anything large.
 ## What gets counted once
 
 Two names for one file are two directory entries and one set of blocks, and `du` counts those
-blocks for whichever name it reaches first. A tree of hard links reports the size of the data
-rather than the sum of the names, unless `-l` asks for every name to be counted.
+blocks for whichever name it reaches first. A tree of
+[hard links](/compare/hard-vs-symbolic-links/) reports the size of the data rather than the sum of
+the names, unless `-l` asks for every name to be counted.
 
 A symlink contributes its own tiny entry rather than whatever it points at, so a tree full of
 links to somewhere else looks nearly empty. `-L` follows them and measures the targets.

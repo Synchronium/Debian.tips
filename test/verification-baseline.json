@@ -383,6 +383,14 @@
     "fixtures": 9,
     "unpaired": 0
   },
+  "compare/apt-upgrade-vs-full-upgrade": {
+    "checked": 4,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
   "compare/apt-vs-apt-get": {
     "checked": 4,
     "byShape": 0,
@@ -399,6 +407,14 @@
     "fixtures": 0,
     "unpaired": 0
   },
+  "compare/hard-vs-symbolic-links": {
+    "checked": 9,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
   "compare/remove-vs-purge-vs-autoremove": {
     "checked": 9,
     "byShape": 0,
@@ -409,6 +425,22 @@
   },
   "compare/sh-vs-bash-vs-dash": {
     "checked": 7,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
+  "compare/ss-vs-netstat": {
+    "checked": 4,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
+  "compare/su-vs-sudo-i-vs-sudo-s": {
+    "checked": 3,
     "byShape": 0,
     "unordered": 0,
     "exempt": 0,

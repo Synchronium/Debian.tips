@@ -111,8 +111,10 @@ You need a root shell, and `sudo` is exactly what you do not have. Use `su`:
 su -
 ```
 
-It asks for the **root** password, not yours. That is the one you set during installation. Then,
-depending on which problem you have:
+It asks for the **root** password, not yours. That is the one you set during installation, and on
+the other install path there is no such password to give:
+[su vs sudo -i vs sudo -s](/compare/su-vs-sudo-i-vs-sudo-s/) covers what each of them asks for.
+Then, depending on which problem you have:
 
 ```bash
 apt update && apt install sudo          # if it was not installed

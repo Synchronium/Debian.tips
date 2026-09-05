@@ -82,7 +82,8 @@ Inst tips-demo [1.0-1] (2.0-1 stable [all])
 Drop the `-s` from either to do it for real.
 
 **Or run `apt full-upgrade`.** This also works, and is the advice you will most often find, but it
-is a bigger hammer than the problem needs: `full-upgrade` is additionally allowed to *remove*
+is a bigger hammer than the problem needs:
+[`full-upgrade` is additionally allowed to *remove*](/compare/apt-upgrade-vs-full-upgrade/)
 packages to resolve dependencies. On a routine update that is more permission than you meant to
 grant. Use it when upgrading between Debian releases, where it is the correct tool. See
 [Debian's release channels](/debian/release-channels/).

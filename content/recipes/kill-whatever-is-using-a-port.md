@@ -56,7 +56,8 @@ fuser -k 9000/tcp
 ```
 
 [`ss`](/commands/ss/) ships with the base system on Debian and doesn't require installing
-anything, making it the first thing to try on a box you don't control. `fuser -k` skips the two-step "find the PID,
+anything, making it the first thing to try on a box you don't control. If the answer you found
+online said `netstat -tulpn`, [that translates](/compare/ss-vs-netstat/) almost letter for letter. `fuser -k` skips the two-step "find the PID,
 then kill it" process entirely, sending `SIGTERM` straight to whatever's using the port; useful
 for a quick cleanup, but skip it when you specifically need to inspect the process (its command
 line, working directory, or owner) before deciding whether killing it is the right call.
