@@ -99,7 +99,7 @@ sections:
         level: intermediate
       - title: "Let it run again"
         code: 'pid=$(pgrep -x -n tips-worker); kill -STOP "$pid"; sleep 0.2; ps -o stat= -p "$pid"; kill -CONT "$pid"; sleep 0.2; ps -o stat= -p "$pid"'
-        description: "`CONT` is the other half. Between the two the process holds every file, socket and lock it had. That makes `STOP` useful for pausing something expensive, and dangerous for pausing something holding a database connection."
+        description: "`CONT` is what undoes it. Between the two the process holds every file, socket and lock it had. That makes `STOP` useful for pausing something expensive, and dangerous for pausing something holding a database connection."
         output: |2
           T
           S

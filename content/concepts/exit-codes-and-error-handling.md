@@ -166,7 +166,7 @@ false || echo "ran because false failed"
 
 `&&` runs its right side only if the left side exited `0`; `||` runs its right side only if the
 left side exited non-zero. Chains of these are exit-status logic, not boolean logic on output;
-this is the mechanism behind idioms like `mkdir -p "$dir" && cd "$dir"` and `command -v jq ||
+this is the mechanism behind idioms like `mkdir -p "$dir" && [cd](/commands/cd/) "$dir"` and `[command -v](/compare/which-vs-type-vs-command/) jq ||
 echo "jq not installed"`.
 
 ## Common misconceptions

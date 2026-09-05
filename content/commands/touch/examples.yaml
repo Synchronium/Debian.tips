@@ -1,0 +1,251 @@
+command: touch
+fixtures:
+  - name: site
+    note: "the tree the [cp](/commands/cp/), [mv](/commands/mv/) and [rm](/commands/rm/) pages use as well; every timestamp in it is set deliberately, so one file's time can be copied onto another and the two compared"
+    from: ls -lAR site
+    content: |2
+      site:
+      total 16
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 assets
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 backups
+      -rw-r--r-- 1 user user   36 Jun  1 09:00 index.html
+      lrwxrwxrwx 1 user user    9 Jun 18 09:00 latest.css -> style.css
+      -rw-r--r-- 1 user user   33 Jun 20 09:00 style.css
+
+      site/assets:
+      total 4
+      -rw-r--r-- 1 user user 35 Jun 10 09:00 logo.svg
+
+      site/backups:
+      total 0
+  - name: notes.txt
+    note: "one line, beside `site/` rather than inside it"
+    content: |
+      Rebuild before deploying.
+sections:
+  - title: "Creating an empty file"
+    intro: "A name that does not exist becomes an empty regular file. A name that does exist keeps everything it had."
+    examples:
+      - title: "Create an empty file"
+        code: touch report.txt && stat -c "%a %s %F %n" report.txt
+        description: "Zero bytes, and a mode from your umask. `%s` is the size and `%F` the kind of thing it is, so this says the file exists and has nothing in it."
+        output: |
+          644 0 regular empty file report.txt
+        level: basic
+        tags: [beginner]
+      - title: "Create several at once"
+        code: touch a.txt b.txt c.txt && ls *.txt
+        description: "Every argument is a name. `notes.txt` was already there and appears because the glob matched it, not because `touch` did anything to it."
+        output: |
+          a.txt
+          b.txt
+          c.txt
+          notes.txt
+        level: basic
+        tags: [beginner]
+      - title: "Touch a file that already has something in it"
+        code: cat notes.txt; touch notes.txt; cat notes.txt
+        description: "The contents are untouched. That is the point of the name. Only the timestamps moved."
+        output: |
+          Rebuild before deploying.
+          Rebuild before deploying.
+        level: basic
+        tags: [beginner]
+      - title: "See what a redirect does instead"
+        code: 'cat notes.txt; : > notes.txt; wc -c notes.txt'
+        description: "`> file` truncates to zero on the spot, before anything is written, so using it to make sure a file exists destroys the contents of one that already did. That idiom wants `touch`."
+        danger: true
+        output: |
+          Rebuild before deploying.
+          0 notes.txt
+        level: intermediate
+        tags: [scripting]
+      - title: "Update a file only if it is already there"
+        code: touch -c missing.txt; ls missing.txt
+        description: "`-c` (`--no-create`) drops the creating behaviour and reports no error when the file is absent. Useful when the point is to move a timestamp and creating an empty file would be wrong."
+        output: |
+          ls: cannot access 'missing.txt': No such file or directory
+        level: intermediate
+      - title: "See the mode a new file gets"
+        code: umask 077; touch tight.txt; umask 022; touch loose.txt; stat -c "%a %n" tight.txt loose.txt
+        description: "`touch` asks for 666 and the umask takes bits away, so 022 gives 644. There is no `-m` here as there is on [mkdir](/commands/mkdir/): change the mode afterwards with [chmod](/commands/chmod/) if the default is wrong."
+        output: |
+          600 tight.txt
+          644 loose.txt
+        level: intermediate
+        tags: [permissions]
+      - title: "Try a path whose directory does not exist"
+        code: touch site/2026/report.csv; echo "exit $?"
+        description: "`touch` creates a file and never a directory. [mkdir -p](/commands/mkdir/) on the parent first is the pairing a script wants."
+        output: |
+          touch: cannot touch 'site/2026/report.csv': No such file or directory
+          exit 1
+        level: basic
+      - title: "Create a file you have no permission for"
+        code: touch /etc/tips; echo "exit $?"
+        description: "Write permission on the directory decides it, `/etc` here, and [sudo](/commands/sudo/) is the usual answer."
+        output: |
+          touch: cannot touch '/etc/tips': Permission denied
+          exit 1
+        level: basic
+        tags: [permissions]
+
+  - title: "The three timestamps"
+    intro: "Every file carries an access time, a modification time and a change time. `touch` sets the first two. None of the three is a creation time, which Linux did not record at all until recently and still does not expose through these tools."
+    examples:
+      - title: "Read all three"
+        code: stat --printf "access %.19x\nmodify %.19y\nchange %.19z\n" site/index.html
+        description: "The fixture set access and modify to the same moment. The change time is when the inode was last written. For this file that was when the fixture created it."
+        volatile: "the change time is whenever the file arrived on your machine"
+        compare: shape
+        output: |
+          access 2026-06-01 09:00:00
+          modify 2026-06-01 09:00:00
+          change 2026-09-04 10:38:12
+        level: basic
+      - title: "Move both to now"
+        code: touch site/index.html && ls -l site/index.html
+        description: "A bare `touch` on an existing file sets the access and modification times to the current moment. This is the form that makes a build system think a source file changed. [ls -l](/commands/ls/) shows the modification time, which is the one you nearly always mean."
+        volatile: "the timestamp is the moment you ran it"
+        compare: shape
+        output: |
+          -rw-r--r-- 1 user user 36 Sep  5 07:39 site/index.html
+        level: basic
+        tags: [beginner]
+      - title: "Move only the access time"
+        code: touch -a -d "2026-02-02 08:00" site/index.html && stat --printf "access %.19x\nmodify %.19y\n" site/index.html
+        description: "`-a` leaves the modification time where it was. `ls -lu` reads the access time back if you would rather not run `stat`, and a tool that sorts by age is almost always reading the modification time instead."
+        output: |
+          access 2026-02-02 08:00:00
+          modify 2026-06-01 09:00:00
+        level: intermediate
+      - title: "Move only the modification time"
+        code: touch -m -d "2026-03-03 08:00" site/index.html && stat --printf "access %.19x\nmodify %.19y\n" site/index.html
+        description: "`-m` sets the modification time instead, and it is the one you usually want. `--time=atime` and `--time=mtime` are the long spellings."
+        output: |
+          access 2026-06-01 09:00:00
+          modify 2026-03-03 08:00:00
+        level: intermediate
+      - title: "Fail to set the change time"
+        code: touch -d "2020-01-01" site/index.html && ls -l site/index.html && ls -lc site/index.html
+        description: "`ls -lc` reads the change time where a plain `ls -l` reads the modification time. The modification time went back to 2020 and the change time went to now, because altering the inode is itself a change. Nothing sets it, and that is why an audit tool reads it."
+        volatile: "the change time is the moment you ran it"
+        compare: shape
+        output: |
+          -rw-r--r-- 1 user user 36 Jan  1  2020 site/index.html
+          -rw-r--r-- 1 user user 36 Sep  5 07:39 site/index.html
+        level: advanced
+        tags: [security]
+
+  - title: "Choosing the time"
+    intro: "`-d` takes anything `date` understands and `-t` takes a fixed numeric stamp. Both beat running the command at the right moment."
+    examples:
+      - title: "Set a date and time"
+        code: touch -d "2026-01-01 09:30" site/index.html && stat -c "%.19y %n" site/index.html
+        description: "`-d` (`--date`) parses a wide range of formats. A date with no time gives midnight."
+        output: |
+          2026-01-01 09:30:00 site/index.html
+        level: basic
+      - title: "Use a relative phrase"
+        code: touch -d "2 hours ago" site/index.html && ls -l site/index.html
+        description: "\"yesterday\", \"last monday\" and \"+3 days\" all work too. Handy for making a file old enough to be caught by a [find -mtime](/commands/find/) you are testing."
+        volatile: "the timestamp is two hours before you ran it"
+        compare: shape
+        output: |
+          -rw-r--r-- 1 user user 36 Sep  5 05:40 site/index.html
+        level: intermediate
+      - title: "Use the numeric stamp instead"
+        code: touch -t 202601011200 site/index.html && stat -c "%.19y %n" site/index.html
+        description: "`-t` takes `CCYYMMDDhhmm` with no punctuation and no room for interpretation. Worth preferring in a script, where `-d` parsing a string differently on another machine is a real risk."
+        output: |
+          2026-01-01 12:00:00 site/index.html
+        level: intermediate
+        tags: [scripting]
+      - title: "Add seconds to the stamp"
+        code: touch -t 202601011200.30 site/index.html && stat -c "%.19y %n" site/index.html
+        description: "A dot and two digits after the minutes. Without them the seconds are zero."
+        output: |
+          2026-01-01 12:00:30 site/index.html
+        level: advanced
+      - title: "Copy the time from another file"
+        code: touch -r site/style.css site/index.html && stat -c "%.19y %n" site/style.css site/index.html
+        description: "`-r` (`--reference`) takes both times from the file you name. This is how you restore a timestamp you have just destroyed by editing something, provided you kept a copy."
+        output: |
+          2026-06-20 09:00:00 site/style.css
+          2026-06-20 09:00:00 site/index.html
+        level: intermediate
+      - title: "Set several files to one time"
+        code: touch -d "2025-04-04" site/index.html site/style.css && ls -l site/index.html site/style.css
+        description: "Every argument gets the same time. Note what `ls` does with a date this old: past about six months it prints the year in place of the time of day, so the 00:00 is not visible here."
+        output: |
+          -rw-r--r-- 1 user user 36 Apr  4  2025 site/index.html
+          -rw-r--r-- 1 user user 33 Apr  4  2025 site/style.css
+        level: intermediate
+
+  - title: "Symlinks"
+    intro: "A symlink has timestamps of its own, and by default `touch` sets the ones on the file at the far end. `stat` is the other way round and reports on the link unless you pass `-L`, so the two need reading carefully together."
+    examples:
+      - title: "Touch through the link"
+        code: touch -d "2026-05-05" site/latest.css && stat -c "%.19y %n" site/latest.css site/style.css
+        description: "`latest.css` points at `style.css`, and it is `style.css` that moved. The link kept its own time, which `stat` is showing because it does not follow a link on its own."
+        output: |
+          2026-06-18 09:00:00 site/latest.css
+          2026-05-05 00:00:00 site/style.css
+        level: intermediate
+      - title: "Touch the link itself"
+        code: touch -h -d "2026-05-05" site/latest.css && stat -c "%.19y %n" site/latest.css site/style.css
+        description: "`-h` (`--no-dereference`) moves the link and leaves the target alone. The two lines have swapped over from the example above."
+        output: |
+          2026-05-05 00:00:00 site/latest.css
+          2026-06-20 09:00:00 site/style.css
+        level: advanced
+
+  - title: "What it is actually for"
+    intro: "Creating an empty file is the demonstration. Setting a time on purpose is the job."
+    examples:
+      - title: "Make a reference point for find"
+        code: touch -d "2026-06-15" marker && find site -newer marker | sort
+        description: "Anything modified after the marker comes back. `find -newer` compares against a file rather than a duration. Counting days backwards with `-mtime` is harder to get right."
+        output: |
+          site
+          site/assets
+          site/backups
+          site/latest.css
+          site/style.css
+        level: intermediate
+        tags: [search]
+      - title: "Touch a directory rather than a file"
+        code: touch -d "2026-08-08" site/assets && stat -c "%.19y %n" site/assets site/assets/logo.svg
+        description: "A directory has timestamps like anything else, and setting them says nothing about what is inside. `logo.svg` did not move."
+        output: |
+          2026-08-08 00:00:00 site/assets
+          2026-06-10 09:00:00 site/assets/logo.svg
+        level: intermediate
+      - title: "Read a modification time without stat"
+        code: date -r site/style.css "+%F"
+        description: "`date -r` prints one file's modification time in whatever format you ask for. Shorter than a `stat` when a script wants the date as a string."
+        output: |
+          2026-06-20
+        level: intermediate
+        tags: [scripting]
+      - title: "Leave a marker that a step has run"
+        code: touch .setup-done && ls -a | grep setup
+        description: "A file whose contents nobody reads and whose existence is the whole message. A later run tests for it with `[ -e .setup-done ]` and skips the work."
+        output: |
+          .setup-done
+        level: basic
+        tags: [scripting]
+      - title: "Confirm the mode survives"
+        code: chmod 400 notes.txt && touch notes.txt; echo "exit $?"; stat -c "%a %n" notes.txt
+        description: "A read-only file you own can still be touched, and it keeps its mode. Permissions and timestamps are separate pieces of the inode, and `touch` only ever writes the second."
+        output: |
+          exit 0
+          400 notes.txt
+        level: advanced
+        tags: [permissions]
+      - title: "Handle a name that begins with a dash"
+        code: touch -- -notes.txt && ls -d -- -notes.txt
+        description: "Without `--` the shell hands `touch` a filename and `touch` reads it as flags. `./-notes.txt` works as well."
+        output: |
+          -notes.txt
+        level: advanced

@@ -125,7 +125,7 @@ sections:
         level: basic
       - title: "Find symlinks"
         code: find projects -type l | sort
-        description: "`-type l` matches the symlink itself, not whatever it points to."
+        description: "`-type l` matches the symlink itself, not whatever it points to. [ln](/commands/ln/) has the counterpart, `-xtype l`, for the broken ones."
         output: |2
           projects/logs/main-link.js
           projects/logs/rotated-link
@@ -220,7 +220,8 @@ sections:
         description: >-
           `-newer` compares modification times against another file instead of
           the current time, useful for "what changed since the last deploy",
-          using a marker file's timestamp as the cutoff.
+          using a marker file's timestamp as the cutoff. [touch -d](/commands/touch/)
+          puts that marker wherever you need it.
         output: |2
           projects/.hidden/.env
           projects/backups/site-2026-06-01.tar.gz

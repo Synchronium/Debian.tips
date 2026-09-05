@@ -101,7 +101,7 @@ sections:
         tags: [beginner]
       - title: "Remove an empty directory"
         code: rmdir site/backups && ls site
-        description: "`rmdir` removes nothing that is not empty, which makes it the safe way to clear up a directory you believe you have already emptied. `rm -d` is the same thing spelled as a flag."
+        description: "`rmdir` removes nothing that is not empty, which makes it the safe way to clear up a directory you believe you have already emptied. `rm -d` is the same thing spelled as a flag, and `rmdir -p` unwinds a whole chain the way [mkdir -p](/commands/mkdir/) builds one."
         output: |
           assets
           index.html
@@ -189,7 +189,7 @@ sections:
         level: advanced
       - title: "Without the slash, only the link goes"
         code: ln -s site sitelink && rm sitelink && ls -A site | wc -l
-        description: "`rm` never follows a symlink it was asked to remove. All five entries in `site` are still there. Tab completion adds that slash for you on a link to a directory, so the safe form is the one you have to delete a character to reach."
+        description: "`rm` never follows a symlink it was asked to remove, so removing a link made by [ln -s](/commands/ln/) leaves the target alone. All five entries in `site` are still there. Tab completion adds that slash for you on a link to a directory, so the safe form is the one you have to delete a character to reach."
         output: |
           5
         level: intermediate

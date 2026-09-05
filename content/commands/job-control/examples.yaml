@@ -19,7 +19,7 @@ sections:
         level: basic
       - title: "Start a pipeline in the background"
         code: sleep 300 2>&1 | cat >/dev/null 2>&1 & jobs
-        description: "The two programs share a single entry. A whole pipeline counts as one job, so suspending or killing it takes every stage with it instead of leaving the second half reading from a pipe nothing writes to."
+        description: "The two programs share a single entry. A whole pipeline counts as one job, so suspending or killing it takes every stage with it instead of leaving `cat` reading from a pipe nothing writes to."
         output: |2
           [1]+  Running                 sleep 300 2>&1 | cat > /dev/null 2>&1 &
         level: intermediate

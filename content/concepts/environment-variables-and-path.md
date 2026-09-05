@@ -92,7 +92,9 @@ parent sees: [yes]
 ## How the shell finds a command
 
 `PATH` holds directories separated by colons. When you type a command with no slash in it, the
-shell tries each directory in turn and runs the first match it finds:
+shell tries each directory in turn and runs the first match it finds, though only after it has
+ruled out an alias, a function and a builtin of the same name
+([which vs type vs command -v](/compare/which-vs-type-vs-command/)):
 
 ```bash
 printenv PATH

@@ -1,0 +1,108 @@
+command: which
+sections:
+  - title: "What it searches"
+    intro: "`which` walks the directories in `PATH` from left to right and prints the first executable file matching each name. It knows nothing about aliases, functions or builtins, which is [a comparison of its own](/compare/which-vs-type-vs-command/)."
+    examples:
+      - title: "Ask about several commands at once"
+        code: which ls cat nosuchthing; echo "exit $?"
+        description: "Each argument is looked up in turn and the misses are simply absent from the output. The status is 1 because one of them failed, so a script cannot read it as \"none were found\"."
+        output: |
+          /usr/bin/ls
+          /usr/bin/cat
+          exit 1
+        level: basic
+        tags: [beginner]
+      - title: "See every match instead of the first"
+        code: which -a sh
+        description: "`-a` keeps going after the first hit. Two answers here for one program: Debian's usrmerge makes `/bin` a symlink to `/usr/bin`, so the same file is reachable by two paths and both are on `PATH`."
+        output: |
+          /usr/bin/sh
+          /bin/sh
+        level: intermediate
+      - title: "Ask without wanting the answer printed"
+        code: 'which -s ls; echo "found: $?"; which -s nosuchcommand; echo "missing: $?"'
+        description: "`-s` reports through the exit status alone. It is one of the two options this `which` has, and it is not in every implementation, so a portable script wants `command -v` instead."
+        output: |
+          found: 0
+          missing: 1
+        level: intermediate
+        tags: [scripting]
+      - title: "Find the manual page as well as the binary"
+        code: whereis ls
+        description: "`whereis` looks in a fixed set of standard directories rather than at `PATH`, and reports the binary, the source and the manual page. A different question from the one `which` answers, and it comes from the `util-linux` package."
+        output: |
+          ls: /usr/bin/ls /usr/share/man/man1/ls.1.gz
+        level: intermediate
+
+  - title: "When PATH order decides the answer"
+    intro: "The first match wins, so the order of the directories in `PATH` is the whole resolution rule. It is also how a command gets replaced without anybody noticing."
+    examples:
+      - title: "Shadow a command from a directory earlier on PATH"
+        code: mkdir -p tools && printf "#!/bin/sh\necho fake\n" > tools/ls && chmod +x tools/ls && PATH="tools:$PATH" which ls
+        description: "`tools` comes first, so `tools/ls` is the answer and the real `ls` is never reached. Prepending to `PATH` is how a project's own scripts take precedence, and how a stray executable quietly replaces a system command."
+        danger: true
+        output: |
+          tools/ls
+        level: advanced
+        tags: [environment]
+      - title: "See what was shadowed"
+        code: mkdir -p tools && printf "#!/bin/sh\necho fake\n" > tools/ls && chmod +x tools/ls && PATH="tools:$PATH" which -a ls
+        description: "`-a` shows the whole search in order, which is the quickest way to answer \"why am I getting a different `ls` than I expected\". [Environment variables and PATH](/concepts/environment-variables-and-path/) covers how `PATH` gets set."
+        output: |
+          tools/ls
+          /usr/bin/ls
+          /bin/ls
+        level: advanced
+        tags: [environment]
+      - title: "See what the shell has already looked up"
+        code: ls -d . >/dev/null; hash
+        description: "The shell remembers where it found a command so it need not search `PATH` again, and `which` knows nothing about that table. `hash -r` empties it, which is the fix on the rare occasion a command has moved under a running shell."
+        output: |2
+          hits	command
+             1	/usr/bin/ls
+        level: advanced
+        tags: [environment]
+
+  - title: "The which Debian actually ships"
+    intro: "It is not the GNU program, and knowing that saves a puzzled minute the first time a flag you expected is refused."
+    examples:
+      - title: "Read the first two lines of it"
+        code: head -2 /usr/bin/which
+        description: "A shell script, not a compiled program. It is short enough to read in full, and reading it is the fastest way to be sure what it does and does not do."
+        output: |
+          #! /bin/sh
+          set -ef
+        level: intermediate
+        tags: [debian]
+      - title: "Follow it to the real file"
+        code: readlink /usr/bin/which; readlink -f "$(command -v which)"
+        description: "`/usr/bin/which` is managed by the alternatives system, so the name on `PATH` points into `/etc/alternatives` and only then at the implementation."
+        output: |
+          /etc/alternatives/which
+          /usr/bin/which.debianutils
+        level: advanced
+        tags: [debian]
+      - title: "Find which package it came from"
+        code: dpkg -S "$(readlink -f "$(command -v which)")"
+        description: "`debianutils`, which is priority `required`, so it is on every Debian system. [dpkg -S](/commands/dpkg/) answers this for any file that a package placed."
+        output: |
+          debianutils: /usr/bin/which.debianutils
+        level: intermediate
+        tags: [debian, apt]
+      - title: "Ask it for a version"
+        code: which --version 2>&1; echo "exit $?"
+        description: "There is no `--version`, and no `--help` either. The options are `-a` and `-s`, and anything else is an error with exit status 2. A script written against GNU `which` fails here."
+        output: |
+          Illegal option --
+          Usage: /usr/bin/which [-as] args
+          exit 2
+        level: intermediate
+        tags: [debian]
+      - title: "Read why it is still here"
+        code: zcat /usr/share/doc/debianutils/changelog.gz | grep -iE "deprecate which|revert deprecation of which"
+        description: "The changelog is newest first, so the reversal is printed above the deprecation it undid. `which` was deprecated in 2021 and restored by a Technical Committee ruling, and the package has shipped it ever since."
+        output: |2
+            * Revert deprecation of which (no. 2).
+            * Deprecate which.
+        level: advanced
+        tags: [debian]

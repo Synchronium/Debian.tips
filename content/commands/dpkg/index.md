@@ -33,7 +33,7 @@ Given that, most installing is better done through apt. What `dpkg` is for:
   [Listing what is installed](/debian/list-installed-packages/) is the tour of that question.
 - **Finding which package owns a file.** `dpkg -S /path` is the fastest way to identify an
   unfamiliar file on a system, and it only sees files that are already there.
-  [Which package provides a file](/debian/which-package-provides-a-file/) covers the other half,
+  [Which package provides a file](/debian/which-package-provides-a-file/) covers the case
   where the file is still in the archive.
 - **Inspecting a `.deb` before installing it.** `dpkg -I` and `dpkg -c` read a package file
   without touching the system, which is exactly what you want for a `.deb` downloaded from

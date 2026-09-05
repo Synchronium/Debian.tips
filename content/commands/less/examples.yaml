@@ -51,7 +51,7 @@ sections:
         level: intermediate
       - title: "Follow a file as it grows"
         code: less +F /var/log/syslog
-        description: "`+F` behaves like `tail -f`, printing new lines as they arrive. `Ctrl-C` drops back into the file where you can search and scroll, and `F` starts following again. [tail](/commands/tail/) cannot do that second half."
+        description: "`+F` behaves like `tail -f`, printing new lines as they arrive. `Ctrl-C` drops back into the file where you can search and scroll, and `F` starts following again. [tail](/commands/tail/) cannot drop out of following like that."
         level: intermediate
         tags: [monitoring, sysadmin]
       - title: "Keep the text on screen after quitting"

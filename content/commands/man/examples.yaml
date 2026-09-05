@@ -56,7 +56,7 @@ sections:
         level: basic
       - title: "Get the option summary without the page"
         code: man --help | head -6
-        description: "`--help` is a different thing from the manual page, and usually a shorter one. For a command you half-remember it is the faster of the two."
+        description: "`--help` is a different thing from the manual page, and usually a shorter one. For a command you half-remember it is the faster of the two, and [type](/commands/which/) says whether the name is a program at all."
         output: |2
           Usage: man [OPTION...] [SECTION] PAGE...
 

@@ -51,7 +51,7 @@ sections:
     examples:
       - title: "List the current directory"
         code: ls
-        description: "With no arguments, the working directory. The sample tree and one loose file are all that is here."
+        description: "With no arguments, the working directory, wherever [cd](/commands/cd/) last left you. The sample tree and one loose file are all that is here."
         output: |2
           Meeting Notes (final).docx
           projects
@@ -78,7 +78,7 @@ sections:
         level: basic
       - title: "Force columns even into a pipe"
         code: ls -C projects
-        description: "`-C` is the other half of the pair: columns even when standard output is not a terminal. Comparing this against the example above is the clearest way to see the rule."
+        description: "`-C` forces the opposite: columns even when standard output is not a terminal. Comparing this against the example above is the clearest way to see the rule."
         output: |2
           backups  empty-dir  logs  src
         level: intermediate
@@ -371,7 +371,7 @@ sections:
         level: intermediate
 
   - title: "Timestamps"
-    intro: "Every file carries three times and `ls` can show any of them, but none of the three is a creation time."
+    intro: "Every file carries three times and `ls` can show any of them, but none of the three is a creation time. [touch](/commands/touch/) is what sets the two that can be set."
     examples:
       - title: "See how the date format changes with age"
         code: ls -l projects/backups
@@ -434,7 +434,7 @@ sections:
         level: advanced
 
   - title: "Symlinks and entry types"
-    intro: "`ls` describes a symlink itself unless told otherwise, which is usually what you want and occasionally the opposite."
+    intro: "`ls` describes a symlink itself unless told otherwise, which is usually what you want and occasionally the opposite. [ln](/commands/ln/) covers making them."
     examples:
       - title: "See where a symlink points"
         code: ls -l projects/logs/main-link.js

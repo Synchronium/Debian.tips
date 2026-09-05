@@ -35,7 +35,7 @@ sections:
         tags: [beginner]
       - title: "Move a file into a directory"
         code: mv notes.txt site/backups/ && ls site/backups
-        description: "A destination that is a directory means \"in here, keeping the name\". The directory has to exist; `mv` never creates one."
+        description: "A destination that is a directory means \"in here, keeping the name\". The directory has to exist; `mv` never creates one, which is what [mkdir](/commands/mkdir/) is for."
         output: |
           notes.txt
         level: basic

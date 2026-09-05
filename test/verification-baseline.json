@@ -39,6 +39,14 @@
     "fixtures": 4,
     "unpaired": 0
   },
+  "commands/cd": {
+    "checked": 24,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 2,
+    "unpaired": 0
+  },
   "commands/chmod": {
     "checked": 43,
     "byShape": 0,
@@ -191,6 +199,14 @@
     "fixtures": 2,
     "unpaired": 0
   },
+  "commands/ln": {
+    "checked": 25,
+    "byShape": 1,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 2,
+    "unpaired": 0
+  },
   "commands/ls": {
     "checked": 52,
     "byShape": 1,
@@ -205,6 +221,14 @@
     "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
+    "unpaired": 0
+  },
+  "commands/mkdir": {
+    "checked": 26,
+    "byShape": 1,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 2,
     "unpaired": 0
   },
   "commands/mv": {
@@ -303,6 +327,14 @@
     "fixtures": 2,
     "unpaired": 0
   },
+  "commands/touch": {
+    "checked": 27,
+    "byShape": 4,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 2,
+    "unpaired": 0
+  },
   "commands/tr": {
     "checked": 33,
     "byShape": 0,
@@ -333,6 +365,14 @@
     "unordered": 0,
     "exempt": 0,
     "fixtures": 3,
+    "unpaired": 0
+  },
+  "commands/which": {
+    "checked": 12,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 0,
     "unpaired": 0
   },
   "commands/xargs": {
@@ -369,6 +409,14 @@
   },
   "compare/sh-vs-bash-vs-dash": {
     "checked": 7,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
+  "compare/which-vs-type-vs-command": {
+    "checked": 8,
     "byShape": 0,
     "unordered": 0,
     "exempt": 0,

@@ -51,7 +51,7 @@ set -e
 echo "hello-tips: postinst running as $(id -un)"
 ```
 
-`preinst`, `prerm` and `postrm` are the other names to look for. `dpkg -c` covers the other half,
+`preinst`, `prerm` and `postrm` are the other names to look for. `dpkg -c` covers the files themselves,
 listing every path the package would place and the mode it would place it with:
 
 <!-- verify: shape the timestamps are from when the package was built -->

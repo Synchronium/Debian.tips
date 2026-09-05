@@ -139,7 +139,7 @@ sections:
         tags: [permissions, beginner]
       - title: "You cannot change the group to one you are not in"
         code: sudo -u user chgrp webdev notes.txt
-        description: "The group half is not root-only, but it is restricted: you must own the file *and* belong to the group you are naming."
+        description: "Changing the group is not root-only, but it is restricted: you must own the file *and* belong to the group you are naming."
         output: |
           chgrp: changing group of 'notes.txt': Operation not permitted
         level: intermediate

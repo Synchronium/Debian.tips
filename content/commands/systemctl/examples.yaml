@@ -39,7 +39,7 @@ sections:
         tags: [beginner, monitoring]
       - title: "Check whether a service starts at boot"
         code: systemctl is-enabled cron
-        description: "The other half of the question, and independent of the first: a service can be enabled and stopped, or running and disabled."
+        description: "Starting at boot is a separate question from running now, and the answers are independent: a service can be enabled and stopped, or running and disabled."
         output: |2
           enabled
         level: basic
@@ -360,7 +360,7 @@ sections:
         tags: [sysadmin]
 
   - title: "Unit files and changing them"
-    intro: "systemd works from its own parsed copy of a unit file, so editing one on disk is only half the job."
+    intro: "systemd works from its own parsed copy of a unit file, so editing one on disk does not change what is running."
     examples:
       - title: "Read a unit file, wherever it lives"
         code: systemctl cat deploy-agent
@@ -536,7 +536,7 @@ sections:
           else
             echo "will not survive a reboot"
           fi
-        description: "The check worth putting in a provisioning script, where 'it is running' is the easy half to get right."
+        description: "The check worth putting in a provisioning script. Whether a service is running now is easy to get right; whether it comes back after a reboot is what people forget."
         output: |2
           will not survive a reboot
         level: intermediate

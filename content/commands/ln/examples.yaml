@@ -1,0 +1,225 @@
+command: ln
+fixtures:
+  - name: site
+    note: "the tree the [cp](/commands/cp/), [mv](/commands/mv/) and [rm](/commands/rm/) pages use as well; `latest.css` is already a symlink to `style.css`, and `assets/` is the subdirectory the relative-target examples make a link in"
+    from: ls -lAR site
+    content: |2
+      site:
+      total 16
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 assets
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 backups
+      -rw-r--r-- 1 user user   36 Jun  1 09:00 index.html
+      lrwxrwxrwx 1 user user    9 Jun 18 09:00 latest.css -> style.css
+      -rw-r--r-- 1 user user   33 Jun 20 09:00 style.css
+
+      site/assets:
+      total 4
+      -rw-r--r-- 1 user user 35 Jun 10 09:00 logo.svg
+
+      site/backups:
+      total 0
+  - name: notes.txt
+    note: "one line, beside `site/` rather than inside it"
+    content: |
+      Rebuild before deploying.
+sections:
+  - title: "Making a symbolic link"
+    intro: "`ln -s target linkname`, in that order. The target is written into the link as text and nothing verifies it."
+    examples:
+      - title: "Create a symlink"
+        code: ln -s style.css site/newest.css && ls -l site/newest.css
+        description: "The `l` in the mode column and the `->` are how [ls](/commands/ls/) reports a link. The size is the length of the target string."
+        volatile: "the timestamp is the moment you ran it"
+        compare: shape
+        output: |
+          lrwxrwxrwx 1 user user 9 Sep  5 08:10 site/newest.css -> style.css
+        level: basic
+        tags: [beginner]
+      - title: "Read the target, then follow it"
+        code: ln -s site/style.css shortcut.css && readlink shortcut.css && cat shortcut.css
+        description: "`readlink` prints the text the link holds and stops there. Every other command follows the link instead, so `cat` gets the file at the far end."
+        output: |
+          site/style.css
+          body { font-family: monospace; }
+        level: basic
+        tags: [beginner]
+      - title: "Leave the link name out"
+        code: ln -s site/style.css && readlink style.css
+        description: "With one argument the link is created in the working directory under the target's own basename. Convenient, and worth spelling out in a script where the reader cannot see your working directory."
+        output: |
+          site/style.css
+        level: intermediate
+      - title: "Say what was linked"
+        code: ln -sv site/style.css link.css
+        description: "`-v` (`--verbose`) prints the pair in the order `ln` thinks of them, link first. Useful when a script builds the names and you want them in the log."
+        output: |
+          'link.css' -> 'site/style.css'
+        level: basic
+      - title: "Try to reuse a name"
+        code: ln -s site/index.html notes.txt; echo "exit $?"
+        description: "`ln` will not replace an existing name, whatever kind of thing it is. This refusal is the reason a deploy script that forgets `-f` works once and fails every run after."
+        output: |
+          ln: failed to create symbolic link 'notes.txt': File exists
+          exit 1
+        level: basic
+      - title: "Replace it anyway"
+        code: ln -sf site/index.html notes.txt && readlink notes.txt
+        description: "`-f` (`--force`) removes the existing name first. `notes.txt` was a regular file and its contents are gone, so aim this carefully."
+        danger: true
+        output: |
+          site/index.html
+        level: intermediate
+      - title: "Remove a link without touching the target"
+        code: ln -s site/style.css link.css && rm link.css; ls link.css; cat site/style.css
+        description: "[rm](/commands/rm/) on a symlink removes the link. Nothing at the far end is disturbed, which is why deleting a link is safe in a way that deleting the wrong file is not."
+        output: |
+          ls: cannot access 'link.css': No such file or directory
+          body { font-family: monospace; }
+        level: basic
+        tags: [beginner]
+
+  - title: "The target is a string, and it is read from the link"
+    intro: "A relative target is resolved from the directory holding the link, not from the directory you ran `ln` in. The two are the same often enough that the rule goes unnoticed until they are not."
+    examples:
+      - title: "Write a target that looks right and is not"
+        code: ln -s style.css site/assets/wrong.css && readlink site/assets/wrong.css; cat site/assets/wrong.css
+        description: "`style.css` exists, but not inside `site/assets`, so the link points at nothing. `ln` accepted it without complaint, and the link looks correct in every listing."
+        danger: true
+        output: |
+          style.css
+          cat: site/assets/wrong.css: No such file or directory
+        level: intermediate
+      - title: "Write it from the link's point of view"
+        code: ln -s ../style.css site/assets/right.css && cat site/assets/right.css
+        description: "`../style.css` reads correctly from inside `site/assets`, which is the only place it is ever read from. An absolute target avoids the question and breaks instead when the tree is moved."
+        output: |
+          body { font-family: monospace; }
+        level: intermediate
+      - title: "Link to something that does not exist"
+        code: ln -s missing.css broken.css && [ -L broken.css ] && echo "the link is there"; [ -e broken.css ] || echo "what it points at is not"
+        description: "`-L` asks about the link and `-e` follows it. A dangling symlink is a legal thing to create, and creating one deliberately is how a package prepares for a file that arrives later."
+        output: |
+          the link is there
+          what it points at is not
+        level: intermediate
+        tags: [scripting]
+      - title: "Find the broken ones"
+        code: ln -s style.css site/assets/wrong.css && find site -xtype l
+        description: "`-xtype l` resolves each link and matches the ones that still report as a link afterwards, which only a broken target does. [find -type l](/commands/find/) lists every link instead, broken or not."
+        output: |
+          site/assets/wrong.css
+        level: advanced
+        tags: [search]
+
+  - title: "Hard links"
+    intro: "`ln` with no `-s` gives the same data a second name. Neither name is the original, and the file survives until the last one is removed."
+    examples:
+      - title: "Make a second name for a file"
+        code: ln notes.txt copy.txt && stat -c "%h %n" notes.txt copy.txt
+        description: "`%h` is the link count, and both names report 2 because both are counted by the same file. Nothing was copied and no extra disk was used."
+        output: |
+          2 notes.txt
+          2 copy.txt
+        level: basic
+      - title: "Confirm two names are one file"
+        code: ln notes.txt copy.txt && [ notes.txt -ef copy.txt ] && echo "the same file under two names"
+        description: "`-ef` compares the device and inode rather than the contents, so it answers yes only for names that really are the same file. Two files with identical bytes answer no."
+        output: |
+          the same file under two names
+        level: intermediate
+        tags: [scripting]
+      - title: "Write through one name"
+        code: ln notes.txt copy.txt && printf "second line\n" >> copy.txt && cat notes.txt
+        description: "There is one file, so there is one set of contents. An editor that saves by writing a new file and renaming it over the old one breaks the link instead, which is why this surprises people."
+        output: |
+          Rebuild before deploying.
+          second line
+        level: intermediate
+      - title: "Remove one name"
+        code: ln notes.txt copy.txt && rm notes.txt && stat -c "%h %n" copy.txt && cat copy.txt
+        description: "The count drops to 1 and the data stays. Removing a name is not removing a file: the kernel frees the data when the last name goes and nothing has it open."
+        output: |
+          1 copy.txt
+          Rebuild before deploying.
+        level: intermediate
+      - title: "See what an ordinary file counts"
+        code: stat -c "%h %n" site/style.css
+        description: "Every file has at least one link, its own name in a directory. A hard link is not a special kind of thing, it is a second entry pointing at what was already there."
+        output: |
+          1 site/style.css
+        level: basic
+      - title: "Try to hard link a directory"
+        code: ln site copy-dir; echo "exit $?"
+        description: "Refused, because a second name for a directory would let a tree contain itself and nothing that walks a filesystem would terminate. `ln -s` on a directory is fine and is what you want."
+        output: |
+          ln: site: hard link not allowed for directory
+          exit 1
+        level: intermediate
+      - title: "Try to hard link across filesystems"
+        code: ln notes.txt /dev/shm/elsewhere.txt; echo "exit $?"
+        description: "A hard link is an entry in a directory pointing at an inode number, and inode numbers mean nothing outside their own filesystem. `/dev/shm` is a separate one, so this cannot work however the paths are written."
+        output: |
+          ln: failed to create hard link '/dev/shm/elsewhere.txt' => 'notes.txt': Invalid cross-device link
+          exit 1
+        level: advanced
+
+  - title: "Choosing between them"
+    intro: "The two behave alike until the target is replaced, which is the moment to understand before picking one."
+    examples:
+      - title: "Replace the target and watch them disagree"
+        code: 'ln notes.txt hard.txt && ln -s notes.txt soft.txt && printf "replaced\n" > new.txt && mv new.txt notes.txt && echo "-- hard:" && cat hard.txt && echo "-- soft:" && cat soft.txt'
+        description: "[mv](/commands/mv/) put a different file at the name `notes.txt`. The hard link is attached to the data and still has the old contents; the symlink resolves the name again and finds the new ones. This is the whole difference."
+        output: |
+          -- hard:
+          Rebuild before deploying.
+          -- soft:
+          replaced
+        level: advanced
+      - title: "Test which kind you are holding"
+        code: ln -s site/style.css link.css && [ -L link.css ] && echo "it is a symlink"; [ -f link.css ] && echo "and -f follows it to a regular file"
+        description: "`-L` is the only test that does not follow the link. A hard link answers no to `-L`, because from the filesystem's point of view it is simply the file."
+        output: |
+          it is a symlink
+          and -f follows it to a regular file
+        level: intermediate
+        tags: [scripting]
+      - title: "Resolve a link to the real path"
+        code: ln -s site/style.css link.css && basename "$(readlink -f link.css)"
+        description: "`readlink -f` follows every link in the path and returns an absolute answer, where a bare `readlink` gives you the one string the link holds. `basename` is here because the absolute path depends on where you are."
+        output: |
+          style.css
+        level: intermediate
+        tags: [scripting]
+      - title: "Count the links in a tree"
+        code: find site -type l | sort
+        description: "`-type l` matches the link itself rather than following it. Sorting matters because [find](/commands/find/) walks directory order, which is not an order you can predict."
+        output: |
+          site/latest.css
+        level: basic
+        tags: [search]
+
+  - title: "Repointing a link that names a directory"
+    intro: "The `current -> releases/v3` arrangement is how a deploy switches versions. Repointing that link has a trap in it."
+    examples:
+      - title: "Repoint it the obvious way"
+        code: mkdir -p releases/v1 releases/v2 && ln -s releases/v1 current && ln -sf releases/v2 current && readlink current; ls current
+        description: "`current` still points at `v1`, and there is now a `v2` inside it. `-f` removed nothing, because `ln` followed the existing link to a directory and made the new link inside that directory."
+        danger: true
+        output: |
+          releases/v1
+          v2
+        level: advanced
+      - title: "Repoint it correctly"
+        code: mkdir -p releases/v1 releases/v2 && ln -s releases/v1 current && ln -sfn releases/v2 current && readlink current
+        description: "`-n` (`--no-dereference`) treats an existing symlink as the thing to replace rather than as a directory to descend into. Any script that moves a `current` link wants `-sfn` and not `-sf`."
+        output: |
+          releases/v2
+        level: advanced
+        tags: [scripting]
+      - title: "Mind the trailing slash when removing one"
+        code: ln -s site dirlink && rm dirlink/; echo "exit $?"
+        description: "A trailing slash asks for the directory the link names, and [rm](/commands/rm/) will not remove a directory. Drop the slash and the link goes; tab completion is what adds it."
+        output: |
+          rm: cannot remove 'dirlink/': Is a directory
+          exit 1
+        level: intermediate

@@ -423,7 +423,7 @@ sections:
         level: advanced
       - title: "See the same test come back clear"
         code: ss -ltnH sport = :9999 | grep -q . && echo listening || echo free
-        description: "The other half of the previous example, on a port nothing has bound. Both branches are worth checking when you write this, since a test that can only say one thing is not a test."
+        description: "The same test on a port nothing has bound. Both branches are worth checking when you write this, since a test that can only say one thing is not a test."
         output: |2
           free
         level: advanced

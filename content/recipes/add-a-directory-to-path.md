@@ -9,7 +9,7 @@ related: [environment-variables-and-path, your-first-script, sh-vs-bash-vs-dash]
 ---
 
 **Problem:** a script you wrote is in a directory of your own, and running it by name gets you
-`command not found`. Exporting `PATH` in the terminal fixes it until you close the terminal.
+`command not found`, and [which](/commands/which/) cannot see it either. Exporting `PATH` in the terminal fixes it until you close the terminal.
 
 **Solution:** on Debian, if the directory is `~/.local/bin` or `~/bin`, create it and log in
 again. Nothing needs editing.

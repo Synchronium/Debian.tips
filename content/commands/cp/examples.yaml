@@ -36,7 +36,7 @@ sections:
         tags: [beginner]
       - title: "Copy a file into a directory"
         code: cp site/index.html site/backups/ && ls site/backups
-        description: "The name is unchanged. The destination directory has to exist already, because `cp` creates files and never directories."
+        description: "The name is unchanged. The destination directory has to exist already, because `cp` creates files and never directories, so a path that is not there yet wants [mkdir -p](/commands/mkdir/) first."
         output: |
           index.html
         level: basic

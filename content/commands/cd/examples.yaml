@@ -1,0 +1,224 @@
+command: cd
+fixtures:
+  - name: site
+    note: "the tree the [cp](/commands/cp/), [mv](/commands/mv/) and [rm](/commands/rm/) pages use as well, with `shortcut` added: a symlink to `depot/inner`, so that the directory it is reached through and the one it really sits in have different names"
+    from: ls -lAR site depot
+    content: |2
+      depot:
+      total 4
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 inner
+
+      depot/inner:
+      total 0
+
+      site:
+      total 16
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 assets
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 backups
+      -rw-r--r-- 1 user user   36 Jun  1 09:00 index.html
+      lrwxrwxrwx 1 user user    9 Jun 18 09:00 latest.css -> style.css
+      lrwxrwxrwx 1 user user   14 Jun 18 09:00 shortcut -> ../depot/inner
+      -rw-r--r-- 1 user user   33 Jun 20 09:00 style.css
+
+      site/assets:
+      total 4
+      -rw-r--r-- 1 user user 35 Jun 10 09:00 logo.svg
+
+      site/backups:
+      total 0
+  - name: notes.txt
+    note: "one line, beside `site/` rather than inside it, and the file the examples try to `cd` into"
+    content: |
+      Rebuild before deploying.
+sections:
+  - title: "cd is part of the shell"
+    intro: "Every example below prints a directory name rather than a full path, because the directory this page runs in is named after the page and you would never see it."
+    examples:
+      - title: "Look for the program"
+        code: type cd; ls /usr/bin/cd
+        description: "There is no program, and there could not be one. A process can change only its own working directory, so a `/usr/bin/cd` would move itself, exit, and leave your shell where it was."
+        output: |
+          cd is a shell builtin
+          ls: cannot access '/usr/bin/cd': No such file or directory
+        level: basic
+        tags: [beginner]
+      - title: "Find the documentation"
+        code: man cd; help cd | head -2
+        description: "No program means no manual page. `help` is where the shell documents its own builtins, and [man bash](/commands/man/) carries the same text in its SHELL BUILTIN COMMANDS section."
+        output: |
+          No manual entry for cd
+          cd: cd [-L|[-P [-e]] [-@]] [dir]
+              Change the shell working directory.
+        level: basic
+        tags: [beginner]
+      - title: "Watch a subshell's move not escape it"
+        code: cd /etc; (cd /usr/share && pwd); pwd
+        description: "The brackets run a child shell, which moves and exits. A script you run does exactly the same thing, which is why `cd` inside one cannot move the shell that called it, and why `(cd elsewhere && …)` is the safe way to visit a directory in the middle of a script."
+        output: |
+          /usr/share
+          /etc
+        level: intermediate
+        tags: [scripting]
+
+  - title: "Moving around"
+    examples:
+      - title: "Go to an absolute path"
+        code: cd /etc && pwd
+        description: "A leading `/` means the path is read from the root of the filesystem, so it means the same thing wherever you started."
+        output: |
+          /etc
+        level: basic
+        tags: [beginner]
+      - title: "Go somewhere relative"
+        code: cd site && basename "$PWD"
+        description: "Anything else is read from where you already are. `basename` is here to print the last component, since the full path depends on where the shell started."
+        output: |
+          site
+        level: basic
+        tags: [beginner]
+      - title: "Go back up"
+        code: cd site/assets && cd .. && basename "$PWD"
+        description: "`..` is a real entry in every directory, pointing at its parent, so nothing about it is shell syntax. `.` is the other one, and `cd .` does nothing at all."
+        output: |
+          site
+        level: basic
+        tags: [beginner]
+      - title: "Go home"
+        code: cd /etc; cd; basename "$PWD"
+        description: "`cd` with no argument goes to `$HOME`. `cd ~` and `cd \"$HOME\"` are the same journey spelled two other ways."
+        output: |
+          user
+        level: basic
+        tags: [beginner]
+      - title: "Go back where you were"
+        code: cd /etc; cd /usr/share; cd -
+        description: "`-` means the previous directory, and `cd` prints where it landed so you can see which one that was. Running it twice returns you again, so it toggles."
+        output: |
+          /etc
+        level: basic
+      - title: "Read the two directories the shell remembers"
+        code: cd /etc; cd /usr/share; echo "$PWD $OLDPWD"
+        description: "`$PWD` is where you are and `$OLDPWD` is what `cd -` would use. Both are ordinary variables, so a script can save one and return to it later without a subshell."
+        output: |
+          /usr/share /etc
+        level: intermediate
+        tags: [scripting]
+      - title: "Go up from the root"
+        code: cd /; cd ..; pwd
+        description: "`/` is its own parent, so this is not an error and does not move. A loop climbing with `cd ..` until it finds something needs its own stopping condition."
+        output: |
+          /
+        level: intermediate
+        tags: [scripting]
+      - title: "Go into a name with a space in it"
+        code: mkdir "two words" && cd "two words" && basename "$PWD"
+        description: "Unquoted, the shell would hand `cd` two arguments and `cd` would use the first. Quoting is the same rule as everywhere else, and [variables and quoting](/scripting/variables-and-quoting/) has the whole of it."
+        output: |
+          two words
+        level: intermediate
+
+  - title: "When it will not go"
+    intro: "Each of these returns non-zero and leaves you where you were, which matters more in a script than at a prompt."
+    examples:
+      - title: "Ask for a directory that is not there"
+        code: cd /nosuchdir; echo "exit $?"
+        description: "The complaint names the path and the status is 1. Nothing moved."
+        output: |
+          bash: line 1: cd: /nosuchdir: No such file or directory
+          exit 1
+        level: basic
+      - title: "Ask for something that is not a directory"
+        code: cd notes.txt; echo "exit $?"
+        description: "A different message for a different reason, which is worth reading rather than assuming: this one means the name exists."
+        output: |
+          bash: line 1: cd: notes.txt: Not a directory
+          exit 1
+        level: basic
+      - title: "Ask for one you may not enter"
+        code: chmod 600 site/backups && cd site/backups; echo "exit $?"; chmod 755 site/backups
+        description: "Entering a directory needs its execute bit, not its read bit. The `chmod` at the end puts it back. See [file permissions explained](/concepts/file-permissions-explained/) for why execute means something different on a directory."
+        output: |
+          bash: line 1: cd: site/backups: Permission denied
+          exit 1
+        level: intermediate
+        tags: [permissions]
+      - title: "Stop a script that could not move"
+        code: cd /nosuchdir || echo "the script stops here"
+        description: "Without a guard the script carries on in the wrong directory, and the next `rm` or `tar` runs against whatever is there instead. `cd somewhere || exit 1` is the line to write."
+        danger: true
+        output: |
+          bash: line 1: cd: /nosuchdir: No such file or directory
+          the script stops here
+        level: intermediate
+        tags: [scripting]
+      - title: "Let set -e do it"
+        code: set -e; cd /nosuchdir; echo "not reached"
+        description: "A failed `cd` ends the script under `set -e`, so the `echo` never runs. [Debugging and robustness](/scripting/debugging-and-robustness/) covers what `set -e` does and does not catch."
+        output: |
+          bash: line 1: cd: /nosuchdir: No such file or directory
+        level: intermediate
+        tags: [scripting]
+
+  - title: "Symlinks, and the two answers to ..."
+    intro: "`cd` keeps the path you typed rather than the one on disk. Where a symlink is involved those differ, and so does everything downstream of them."
+    examples:
+      - title: "See where you are and where you really are"
+        code: cd site/shortcut && basename "$PWD" && basename "$(pwd -P)"
+        description: "`shortcut` is a symlink to `depot/inner`. `$PWD` holds the path you walked and `pwd -P` resolves every link in it, so the two disagree by design."
+        output: |
+          shortcut
+          inner
+        level: intermediate
+      - title: "Go up from a symlinked directory"
+        code: cd site/shortcut && cd .. && basename "$PWD"
+        description: "Back to `site`, because that is where you came from. The shell is retracing the path you typed, not the one on disk."
+        output: |
+          site
+        level: advanced
+      - title: "Go up the way the filesystem sees it"
+        code: cd site/shortcut && cd -P .. && basename "$PWD"
+        description: "`-P` (`--physical`) resolves the link first, so `..` is `depot`, the real parent. A script walking upward with `cd ..` and one using `cd -P ..` visit different directories."
+        output: |
+          depot
+        level: advanced
+        tags: [scripting]
+      - title: "Land on the real directory in the first place"
+        code: cd -P site/shortcut && basename "$PWD"
+        description: "`-P` on the way in means `$PWD` never holds the link at all, so everything afterwards agrees with the filesystem. `set -o physical` makes it the default for the whole shell."
+        output: |
+          inner
+        level: advanced
+
+  - title: "A stack, and a search path"
+    examples:
+      - title: "Push a directory and come back"
+        code: cd /etc; pushd /usr/share; popd; pwd
+        description: "`pushd` moves and remembers, `popd` returns and forgets. Each prints the stack, which is why `/usr/share /etc` appears before the return."
+        output: |
+          /usr/share /etc
+          /etc
+          /etc
+        level: intermediate
+      - title: "Read the stack without moving"
+        code: cd /etc; pushd /usr/share >/dev/null; dirs
+        description: "`dirs` prints the stack alone, current directory first. `dirs -v` numbers the entries, and `cd ~2` jumps to one by number."
+        output: |
+          /usr/share /etc
+        level: advanced
+      - title: "Give cd a search path"
+        code: CDPATH=/usr; cd share && pwd
+        description: "`CDPATH` is a list of directories a relative name is looked up in, so `cd share` reaches `/usr/share` from anywhere. Note the path printed twice: `cd` announces where it went whenever `CDPATH` was what found it."
+        output: |
+          /usr/share
+          /usr/share
+        level: advanced
+        tags: [environment]
+      - title: "Watch CDPATH corrupt a captured path"
+        code: 'CDPATH=/usr; d=$(cd share && pwd); echo "d is: [$d]"'
+        description: "The announcement goes to standard output, so `$( )` captures it along with the answer and the variable holds two lines. This is why `CDPATH` belongs in an interactive shell's configuration and never in a script."
+        danger: true
+        output: |
+          d is: [/usr/share
+          /usr/share]
+        level: advanced
+        tags: [scripting, environment]

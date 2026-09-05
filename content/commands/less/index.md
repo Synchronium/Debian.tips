@@ -15,7 +15,7 @@ pager, so [`man`](/commands/man/), [systemctl](/commands/systemctl/) and
 hand their output to it. The shared inheritance is why they all quit on `q`, and why several of
 them grew a `--no-pager` flag.
 
-The keys are the half of `less` that no example can show. All of these are listed by
+The keys are what no example can show. All of these are listed by
 `less --help`, and `h` prints the same list without leaving the file.
 
 | Key | What it does |

@@ -1,0 +1,250 @@
+command: mkdir
+fixtures:
+  - name: site
+    note: "the tree the [cp](/commands/cp/), [mv](/commands/mv/) and [rm](/commands/rm/) pages use as well; `backups` is empty, so `rmdir` has something it will agree to remove"
+    from: ls -lAR site
+    content: |2
+      site:
+      total 16
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 assets
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 backups
+      -rw-r--r-- 1 user user   36 Jun  1 09:00 index.html
+      lrwxrwxrwx 1 user user    9 Jun 18 09:00 latest.css -> style.css
+      -rw-r--r-- 1 user user   33 Jun 20 09:00 style.css
+
+      site/assets:
+      total 4
+      -rw-r--r-- 1 user user 35 Jun 10 09:00 logo.svg
+
+      site/backups:
+      total 0
+  - name: notes.txt
+    note: "one line, beside `site/` rather than inside it, and the file that stands in for a name already taken"
+    content: |
+      Rebuild before deploying.
+sections:
+  - title: "Making a directory"
+    intro: "`mkdir` takes one name or several and creates a directory for each. The parent has to exist, and the name must not."
+    examples:
+      - title: "Create a directory"
+        code: mkdir reports && ls -d reports
+        description: "The directory appears in the working directory. `-d` asks [ls](/commands/ls/) for the directory itself instead of a listing of what is inside it, which for a new one would be nothing."
+        output: |
+          reports
+        level: basic
+        tags: [beginner]
+      - title: "Create several at once"
+        code: mkdir css js img && ls -d css js img
+        description: "Every argument is a name to create. They come back alphabetically because [ls](/commands/ls/) sorts what it prints, not because `mkdir` did anything with the order."
+        output: |
+          css
+          img
+          js
+        level: basic
+        tags: [beginner]
+      - title: "Say what was created"
+        code: mkdir -v reports
+        description: "`-v` (`--verbose`) names each directory as it appears. Worth adding to a `-p` run, where how many directories get created is the part you cannot predict."
+        output: |
+          mkdir: created directory 'reports'
+        level: basic
+      - title: "Use a name that is already taken"
+        code: mkdir site; echo "exit $?"
+        description: "An existing name is an error, and the exit status says so. A script that would rather not care about this wants `-p`, below."
+        output: |
+          mkdir: cannot create directory 'site': File exists
+          exit 1
+        level: basic
+        tags: [beginner]
+      - title: "Watch one failure not stop the rest"
+        code: mkdir site reports; echo "exit $?"; ls -d reports
+        description: "`mkdir` works through its arguments and reports the failure afterwards. `reports` was created regardless, so an exit status of 1 does not mean nothing happened."
+        output: |
+          mkdir: cannot create directory 'site': File exists
+          exit 1
+          reports
+        level: intermediate
+        tags: [scripting]
+      - title: "Create a directory you have no permission for"
+        code: mkdir /etc/tips; echo "exit $?"
+        description: "The permission being checked is write on the *parent*, `/etc` here. The directory being created does not exist yet, so it has no permissions to consult. [sudo](/commands/sudo/) is the usual answer."
+        output: |
+          mkdir: cannot create directory '/etc/tips': Permission denied
+          exit 1
+        level: basic
+        tags: [permissions]
+
+  - title: "The two things -p does"
+    intro: "`-p` (`--parents`) creates every missing directory in the path, and separately it stops an existing target being an error. A script usually wants both, and they fail in different ways when only one of them was the point."
+    examples:
+      - title: "Create a path whose parent is missing"
+        code: mkdir site/2026/07; echo "exit $?"
+        description: "Plain `mkdir` creates the last component and no more. `site` exists, `site/2026` does not, so there is nowhere to put `07`."
+        output: |
+          mkdir: cannot create directory 'site/2026/07': No such file or directory
+          exit 1
+        level: basic
+      - title: "Create the whole path at once"
+        code: mkdir -p site/2026/07 && find site/2026
+        description: "`-p` invents every level it needs on the way down. [find](/commands/find/) shows both of them, where `ls site/2026` would show only the last."
+        output: |
+          site/2026
+          site/2026/07
+        level: basic
+        tags: [beginner]
+      - title: "Ask for a directory that is already there"
+        code: mkdir -p site; echo "exit $?"
+        description: "Nothing is printed and nothing changes. This has nothing to do with parents, and it is why the flag turns up in scripts that create a directory they may already have."
+        output: |
+          exit 0
+        level: basic
+        tags: [scripting]
+      - title: "See only what -p actually created"
+        code: mkdir -pv site/2026/07
+        description: "`site` was already there and goes unmentioned. A second run of the same line prints nothing at all."
+        output: |
+          mkdir: created directory 'site/2026'
+          mkdir: created directory 'site/2026/07'
+        level: intermediate
+      - title: "Point -p at a name a file is holding"
+        code: mkdir -p notes.txt; echo "exit $?"
+        description: "The quiet success of `-p` covers an existing *directory*. A file of the same name is still an error, and this is the case that catches a script written as though `-p` cannot fail."
+        output: |
+          mkdir: cannot create directory 'notes.txt': File exists
+          exit 1
+        level: intermediate
+        tags: [scripting]
+      - title: "Create several paths from one expansion"
+        code: mkdir -p logs/{2025,2026}/{q1,q2} && find logs -type d | sort
+        description: "Brace expansion is the shell's, so `mkdir` is handed four finished paths and never sees a brace. `sort` is here because [find](/commands/find/) walks directory order."
+        output: |
+          logs
+          logs/2025
+          logs/2025/q1
+          logs/2025/q2
+          logs/2026
+          logs/2026/q1
+          logs/2026/q2
+        level: intermediate
+      - title: "Make sure a file's directory exists before writing to it"
+        code: 'f=site/2026/07/report.csv; mkdir -p "$(dirname "$f")" && touch "$f" && find site/2026'
+        description: "The standard idiom for a script handed a path it did not choose. `dirname` drops the last component, `-p` builds whatever of the rest is missing, and [touch](/commands/touch/) creates the file itself. A script that then wants to work inside it needs [cd](/commands/cd/) in a subshell."
+        output: |
+          site/2026
+          site/2026/07
+          site/2026/07/report.csv
+        level: intermediate
+        tags: [scripting]
+      - title: "Create through a symlinked parent"
+        code: ln -s site linked && mkdir -p linked/2026 && ls site
+        description: "A symlink already pointing at a directory is followed, so the new directory lands in `site` itself. The target gets it, not the link."
+        output: |
+          2026
+          assets
+          backups
+          index.html
+          latest.css
+          style.css
+        level: advanced
+
+  - title: "The mode of a new directory"
+    intro: "A new directory takes its mode from your umask. `-m` overrides that, and it reaches only the directory you named."
+    examples:
+      - title: "See the mode a new directory gets"
+        code: mkdir reports && stat -c "%a %A %n" reports
+        description: "`%a` is the mode in octal and `%A` is the same thing drawn the way [ls](/commands/ls/) draws it. The umask here is 0022; it takes the write bit away from group and other."
+        output: |
+          755 drwxr-xr-x reports
+        level: basic
+        tags: [permissions]
+      - title: "Watch the umask decide it"
+        code: umask 077; mkdir tight; umask 022; mkdir loose; stat -c "%a %n" tight loose
+        description: "`mkdir` asks for 777 every time and the umask takes bits away. Nothing here is specific to directories: the same subtraction sets the mode of every file the shell creates."
+        output: |
+          700 tight
+          755 loose
+        level: intermediate
+        tags: [permissions]
+      - title: "Set the mode explicitly"
+        code: mkdir -m 700 private && stat -c "%a %A %n" private
+        description: "`-m` (`--mode`) accepts what [chmod](/commands/chmod/) accepts. Better than a `chmod` on the next line, because the directory never exists with the looser mode at all."
+        output: |
+          700 drwx------ private
+        level: basic
+        tags: [permissions]
+      - title: "Confirm -m ignores the umask"
+        code: mkdir -m 777 open && stat -c "%a %n" open
+        description: "The umask is still 0022 and would have taken the group and other write bits. `-m` is applied instead of it, so you get exactly what you asked for."
+        output: |
+          777 open
+        level: intermediate
+        tags: [permissions]
+      - title: "Use a symbolic mode"
+        code: mkdir -m u=rwx,g=rx,o= team && stat -c "%a %A %n" team
+        description: "The symbolic form reads better in a script somebody else has to change later. `o=` with nothing after it clears every bit for other."
+        output: |
+          750 drwxr-x--- team
+        level: intermediate
+        tags: [permissions]
+      - title: "Create a shared directory that holds its group"
+        code: mkdir -m 2775 shared && stat -c "%a %A %n" shared
+        description: "The leading `2` is setgid, drawn as an `s` in the group execute slot. Files created inside take the directory's group instead of the creating user's, so a shared directory stays usable by everybody in that group."
+        output: |
+          2775 drwxrwsr-x shared
+        level: advanced
+        tags: [permissions]
+      - title: "See what -m leaves at the default"
+        code: mkdir -p -m 700 outer/inner && stat -c "%a %n" outer outer/inner
+        description: "`outer` was invented by `-p` and took the umask default, so a directory meant to be private is sitting inside one anybody can read. Create the parent on its own line when its mode matters."
+        output: |
+          755 outer
+          700 outer/inner
+        level: advanced
+        tags: [permissions, scripting]
+
+  - title: "In a script"
+    intro: "`-p` appears in almost every setup script for its silence about a directory that already exists, and there are places where leaving it off is the better choice."
+    examples:
+      - title: "Run the same line twice"
+        code: mkdir -p reports/drafts; mkdir -p reports/drafts; echo "exit $?"
+        description: "Idempotent, so a setup script can be re-run without a guard in front of it. Plain `mkdir` would need `[ -d reports/drafts ] ||` to survive the second run."
+        output: |
+          exit 0
+        level: basic
+        tags: [scripting]
+      - title: "Stop a script on a directory that is already there"
+        code: set -e; mkdir site; echo "never reached"
+        description: "Under `set -e` the failure ends the script and the `echo` does not run. Where an existing directory means something has gone wrong, that is the behaviour you want, and it is the argument for leaving `-p` off."
+        output: |
+          mkdir: cannot create directory 'site': File exists
+        level: intermediate
+        tags: [scripting]
+      - title: "Use a directory as a lock"
+        code: mkdir lock && echo "got the lock"; mkdir lock || echo "someone else holds it"
+        description: "Creating a directory is atomic: the kernel either makes it or reports that it exists, with no gap in between for a second process to slip into. A `[ -d lock ]` test followed by a `mkdir` has exactly that gap. `flock`, which the [crontab](/commands/crontab/) page uses, is tidier where it is available."
+        output: |
+          got the lock
+          mkdir: cannot create directory 'lock': File exists
+          someone else holds it
+        level: advanced
+        tags: [scripting]
+      - title: "Name a directory after the current month"
+        code: mkdir -p "backups/$(date +%Y-%m)" && ls backups
+        description: "`-p` is covering two things here: `backups` does not exist on the first run, and the month directory does exist on every run after the first."
+        volatile: "the month is whichever one you run it in"
+        compare: shape
+        output: |
+          2026-09
+        level: intermediate
+        tags: [scripting]
+
+  - title: "Removing one again"
+    intro: "`rmdir` is the counterpart, and it removes only an empty directory. [rm](/commands/rm/) covers it against the rest of the ways to delete something; the form that belongs here is the one mirroring `-p`."
+    examples:
+      - title: "Remove a whole empty chain"
+        code: mkdir -p tree/a/b/c && rmdir -p tree/a/b/c && ls
+        description: "`rmdir -p` walks back up the path, removing each directory once its child has gone. It stops at the first one that still has something else in it."
+        output: |
+          notes.txt
+          site
+        level: intermediate

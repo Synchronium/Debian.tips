@@ -516,7 +516,7 @@ sections:
         tags: [scripting, disk]
       - title: "Read the list of paths from stdin"
         code: printf '%s\0' projects snapshots | du --files0-from=- -sch
-        description: "The other half of the NUL convention, and the way to hand `du` a list from [`find -print0`](/commands/find/) without an argument-length limit."
+        description: "`--files0-from` reads NUL-separated paths where `-0` writes them, and it is how to hand `du` a list from [`find -print0`](/commands/find/) without an argument-length limit."
         output: |2
           6.1M	projects
           2.1M	snapshots

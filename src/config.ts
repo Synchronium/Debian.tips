@@ -207,7 +207,21 @@ export const COMMAND_GROUPS: { title: string; commands: string[] }[] = [
   },
   {
     title: "Files & directories",
-    commands: ["ls", "find", "cp", "mv", "rm", "make-and-link", "inspect-files", "touch", "du", "df", "tree"],
+    commands: [
+      "ls",
+      "cd",
+      "find",
+      "cp",
+      "mv",
+      "rm",
+      "mkdir",
+      "ln",
+      "inspect-files",
+      "touch",
+      "du",
+      "df",
+      "tree",
+    ],
   },
   { title: "Searching", commands: ["locate"] },
   { title: "Getting help", commands: ["man"] },
@@ -223,7 +237,7 @@ export const COMMAND_GROUPS: { title: string; commands: string[] }[] = [
   { title: "Users & permissions", commands: ["chmod", "chown", "sudo", "managing-users"] },
   {
     title: "Shell & automation",
-    commands: ["xargs", "watch", "crontab", "date", "env-export", "history", "alias"],
+    commands: ["which", "xargs", "watch", "crontab", "date", "env-export", "history", "alias"],
   },
 ];
 export const COMMAND_GROUP_FALLBACK = "More commands";
