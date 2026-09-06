@@ -8,9 +8,8 @@ related: [dpkg, apt, which-package-provides-a-file, file-permissions-explained]
 ---
 
 Every directory at the root of a Debian system has an owner, and it is not always you. Knowing
-which of them are yours to write in is most of what the layout is for, and it answers the two
-questions people actually arrive with: where do I put this script, and why is the configuration
-for one program in three different places.
+which of them are yours to write in answers the two questions people actually arrive with: where
+do I put this script, and why is the configuration for one program in three different places.
 
 Three rules cover nearly all of it.
 
@@ -20,8 +19,6 @@ replaced by the next upgrade.
 **`/etc` is yours.** Packages put their defaults there and then leave your edits alone.
 
 **`/var` is what the machine accumulates while it runs.** Logs, caches, queues, databases.
-
-The rest of this page is those three rules and the places they do not reach.
 
 ## The layout is smaller than it looks
 
@@ -42,7 +39,7 @@ still runs. There is one directory of programs, one of libraries, and three name
 
 Historically the split meant something: `/bin` held what was needed to bring the system up far
 enough to mount `/usr`, which might be on another disk or another machine. An initramfs does that
-job now, and the distinction had been decorative for years before it was removed.
+job now. The distinction had been decorative for years before it was removed.
 
 ## /usr belongs to the package manager
 
@@ -66,7 +63,7 @@ dpkg -L cron | grep -E '/(cron|crontab)$' | sort
 default templates, translations. `/usr/lib` holds the shared libraries and the helper programs a
 package runs but you do not.
 
-The question goes the other way too, which is what makes an unfamiliar file explainable:
+Asked in reverse, it explains a file you did not expect to find:
 
 ```bash
 dpkg -S /usr/games/cowsay
@@ -106,8 +103,8 @@ dpkg -V cron
 ```
 
 `c` marks it a conffile and `5` says the checksum no longer matches. `dpkg -V` with no package
-name audits every installed package the same way, which is a fast answer to "what has been changed
-on this machine".
+name audits every installed package the same way. On a machine somebody else has been
+administering, that is the fastest thing to run first.
 
 This is why configuration is spread across several files rather than one. `/etc/default/cron`
 holds Debian's own settings for the service, `/etc/init.d/cron` starts it, `/etc/pam.d/cron`
@@ -118,15 +115,14 @@ and `/etc/sudoers.d/` are the two you will meet first.
 ## /var is what accumulates
 
 Nothing in `/var` arrives with a package in any useful sense: it is what the machine writes while
-it runs, and it is the directory that fills up.
+it runs. It is also the directory that fills up.
 
 - `/var/log` holds logs, whether written by a program directly or by the journal under
   `/var/log/journal`.
 - `/var/cache` holds things that can be regenerated. `/var/cache/apt/archives` is every `.deb`
-  apt has downloaded, and `apt clean` empties it.
+  apt has downloaded; `apt clean` empties it.
 - `/var/lib` holds state a program cannot regenerate. `/var/lib/dpkg/status` is the database of
-  what is installed on this system, which makes it the single most important file on a Debian
-  machine.
+  what is installed on this system. Lose it and no package manager knows what the machine has.
 - `/var/tmp` is for temporary files that should survive a reboot, where `/tmp` is for ones that
   should not.
 
@@ -147,16 +143,15 @@ dpkg-query: no path found matching pattern /usr/local/bin/deploy
 ```
 
 That file exists and is executable. `dpkg` reports no owner because nothing in the package database
-claims it, which is the guarantee: `/usr/local` is outside what an upgrade considers.
+claims it. That absence is the guarantee: `/usr/local` sits outside what an upgrade considers.
 
-`/opt` is the other one, and the difference is shape rather than ownership. `/usr/local` is a
-merged tree, so a program's binary, its manual page and its data go to three separate directories.
-`/opt` gives a program one directory of its own, `/opt/something`, laid out however its vendor
-likes. Software that ships as a tarball and expects to live in one place belongs there; something
+`/opt` differs in shape rather than in ownership. `/usr/local` is a merged tree, so a program's
+binary, its manual page and its data go to three separate directories. `/opt` gives a program one
+directory of its own, `/opt/something`, laid out however its vendor likes. Software that ships as a tarball and expects to live in one place belongs there; something
 you compiled from source belongs in `/usr/local`, which is where `make install` puts it by default.
 
-`/srv` is the third of these and the least used. It is for data a machine serves to the outside
-world: `/srv/www`, `/srv/ftp`. Debian creates it empty and has no opinion about what goes inside.
+`/srv` is the least used of the three. It is for data a machine serves to the outside world:
+`/srv/www`, `/srv/ftp`. Debian creates it empty and has no opinion about what goes inside.
 
 ## Not everything under / is on a disk
 
@@ -169,20 +164,18 @@ stat -f -c '%n is %T' /proc /sys
 ```
 
 Neither exists on any disk. `/proc` is the kernel presenting process and system information as
-files, which is where `ps` and `free` get their answers. `/sys` is the same idea for devices and
-drivers. `/run` is a third case, a filesystem in memory holding runtime state like PID files and
-sockets, emptied on every boot by virtue of never having been written down.
+files, and it is where `ps` and `free` get their answers. `/sys` does the same for devices and
+drivers. `/run` holds runtime state like PID files and sockets in memory, so it empties on every
+boot by never having been written down.
 
-Writing to a file under `/proc` or `/sys` is how you change a kernel setting, and none of it
-survives a reboot. Making the change permanent is a file in `/etc`, which is the pattern working as
-intended.
+Writing to a file under `/proc` or `/sys` changes a kernel setting until the next reboot. Making
+the change permanent means a file in `/etc`.
 
 ## Common misconceptions
 
 **"`/usr` stands for Unix System Resources."** That expansion was invented afterwards to fit the
-letters. It stood for *user*, because home directories were kept there in the 1970s, and they moved
-to `/home` when the disk filled up. The name outlived the reason, which is true of a good deal of
-this layout.
+letters. It stood for *user*, because home directories were kept there in the 1970s. They moved to
+`/home` when the disk filled up, and the name stayed.
 
 **"I should install my script in `/bin` because that is where commands live."** `/bin` is a symlink
 to `/usr/bin`, which apt owns. Use `/usr/local/bin`, which is on `PATH` for exactly this reason, or
@@ -192,9 +185,8 @@ to `/usr/bin`, which apt owns. Use `/usr/local/bin`, which is on `PATH` for exac
 settings go under `~/.config`, and the two are read in that order, so your dotfile wins over the
 machine's default.
 
-**"`lost+found` is a problem."** It is an empty directory `fsck` puts recovered fragments into
-after a bad shutdown, and every ext4 filesystem has one at its root. An empty one is a filesystem
-working normally.
+**"`lost+found` is a problem."** Every ext4 filesystem has one at its root. It is where `fsck` puts
+fragments it recovers after a bad shutdown, so an empty one is a filesystem working normally.
 
 ## Go deeper
 
@@ -205,4 +197,4 @@ and Debian Policy chapter 9 records where Debian departs from it.
 
 [`dpkg`](/commands/dpkg/) is the tool for asking which package owns a path, and
 [`apt`](/commands/apt/) for the rest. [File permissions](/concepts/file-permissions-explained/)
-covers who may write to any of this, which is the other half of deciding where a file belongs.
+covers who may write where, which this page has taken for granted throughout.

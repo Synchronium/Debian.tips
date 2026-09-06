@@ -33,12 +33,12 @@ script session.log
 **How it works:**
 
 `tee` sits in a pipeline and copies its input to a file and to standard output, so you still see
-what you would have seen. Everything after it in the pipeline still works, which is why it goes in
-the middle rather than at the end.
+what you would have seen. Everything downstream of it still works, so it belongs in the middle of a
+pipeline rather than at the end.
 
 `script` is different in kind. It starts a new shell under a pseudo-terminal and records the whole
 conversation: what you typed, what came back, and anything a program wrote straight to the terminal
-rather than through a pipe. That last part is what `tee` cannot do, and it is why an installer or a
+instead of through a pipe. `tee` never sees that third category, which is why an installer or a
 progress bar shows up in a typescript and vanishes from a pipeline.
 
 The file `script` writes opens and closes with a line of its own:
@@ -65,8 +65,8 @@ ls: cannot access 'missing.txt': No such file or directory
 data.txt
 ```
 
-The trailing `>/dev/null` throws away `tee`'s copy of the output, which is what you want when the
-point is the file rather than the screen.
+The trailing `>/dev/null` throws away `tee`'s copy of the output. Use it when you want the file and
+not the screen.
 
 `tee -a` appends instead of truncating, so several commands can build one log:
 
@@ -80,8 +80,8 @@ cat run.log
 8 data.txt
 ```
 
-Run a single command under `script` with `-c`, which is the form to use in a script of your own
-since it needs nobody to type `exit`:
+`script -c` runs a single command and exits, so it needs nobody to type `exit` and can be used
+inside a script of your own:
 
 ```bash
 script -q -c 'wc -l data.txt' session.log >/dev/null
@@ -105,13 +105,12 @@ status: 0
 PIPESTATUS: 1
 ```
 
-`${PIPESTATUS[0]}` is the first command's own status and is a bash array, so it is not available in
+`${PIPESTATUS[0]}` is the first command's own status. It is a bash array, so it is not available in
 `/bin/sh`. In a script that must catch the failure, `set -o pipefail` makes the pipeline report the
-first non-zero status instead, which is the answer
-[exit codes and error handling](/concepts/exit-codes-and-error-handling/) recommends and the one
-worth reaching for by default.
+first non-zero status instead, and
+[exit codes and error handling](/concepts/exit-codes-and-error-handling/) sets out its exceptions.
 
-A typescript records the control characters a program sent, so colour codes and the redrawing a
-progress bar does are in the file and look like noise. `col -b` strips most of them, and
-`cat -v` shows what is there before you decide. Where the recording is for a person rather than a
-machine, `script -q` plus a command that does not colour its output is the shorter path.
+A typescript keeps every control character a program sent, so colour codes and the cursor movements
+behind a progress bar all end up in the file looking like noise. `cat -v` shows what is there and
+`col -b` strips most of it. For a recording somebody is going to read, the shorter path is
+`script -q` and a command that does not colour its output.

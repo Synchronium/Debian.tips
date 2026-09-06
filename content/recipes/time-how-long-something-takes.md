@@ -26,8 +26,7 @@ sys	0m0.002s
 
 **How it works:**
 
-The three numbers measure different things, and the gaps between them are where the information
-is.
+The three numbers measure different things. Reading them means reading the gaps between them.
 
 **`real`** is wall-clock time: what a stopwatch would have said. It includes time the command spent
 waiting on a disk, a network or another process, and time the machine spent on something else
@@ -45,8 +44,8 @@ several cores at once.
 
 **Variations:**
 
-The `time` you type is not a program. It is part of the shell's grammar, which is why it can time a
-whole pipeline:
+The `time` you type is not a program. It is part of the shell's grammar, so it can time a whole
+pipeline:
 
 ```bash
 type time
@@ -69,8 +68,8 @@ It reports the same measurements differently and knows things the keyword does n
 0inputs+0outputs (0major+85minor)pagefaults 0swaps
 ```
 
-`maxresident` is the peak memory the command used, in kilobytes, and it is the reason to reach for
-the program rather than the keyword. `-f` chooses what to print:
+`maxresident` is the peak memory the command used, in kilobytes. The keyword reports no memory at
+all, so that figure is the reason to install the program. `-f` chooses what to print:
 
 <!-- verify: shape both figures are specific to the run -->
 ```bash
@@ -80,7 +79,7 @@ the program rather than the keyword. `-f` chooses what to print:
 elapsed 0.20s, max RSS 1352kB
 ```
 
-`%e` is elapsed seconds, `%M` peak resident memory, `%P` the CPU percentage, and `-v` prints
+`%e` is elapsed seconds, `%M` peak resident memory and `%P` the CPU percentage. `-v` prints
 everything it knows in a long block, including page faults and context switches.
 
 > [!WARNING]
