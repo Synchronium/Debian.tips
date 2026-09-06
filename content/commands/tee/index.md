@@ -16,6 +16,8 @@ exactly what it does to a pipeline.
 That covers two jobs that look unrelated. The first is keeping a copy of something you are
 watching go past, without running the command twice: `make | tee build.log` puts the build on
 screen and on disk at once.
+[Saving a terminal session](/recipes/save-a-terminal-session/) covers that job in full, including
+the stderr it misses by default and what it does to the exit status.
 
 The second is the one people arrive here for. `sudo echo something > /etc/somefile` **does not
 work**, and the reason surprises everyone: `sudo` applies to `echo`, but the redirect is

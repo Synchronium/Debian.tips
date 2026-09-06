@@ -53,7 +53,8 @@ find /var -size +500k -exec ls -lh {} \;   # only files over a size threshold
 
 Restricting to top-level directories first (`du -sh */`) is often the faster starting point on
 a large filesystem: it tells you which subtree to dig into with the full `du -ah` command,
-rather than sorting through every individual file up front.
+rather than sorting through every individual file up front. On a filesystem big enough for the
+difference to matter, [time both](/recipes/time-how-long-something-takes/) rather than guessing.
 
 > [!NOTE]
 > Searching from `/` rather than a specific directory like `/var`? Add `-xdev` to the `find`

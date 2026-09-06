@@ -111,7 +111,9 @@ dpkg-query: no path found matching pattern /etc/passwd
 `/etc/passwd` is built during installation from a template the `base-passwd` package ships as
 `/usr/share/base-passwd/passwd.master`, and it changes every time an account is added, so
 shipping it as a packaged file would mean overwriting your accounts on every upgrade. Log files
-and anything else generated at first boot are absent for the same sort of reason.
+and anything else generated at first boot are absent for the same sort of reason, and
+[where things live](/concepts/filesystem-hierarchy/) is the general form of it: `/usr` is what
+came out of a package, and `/etc` and `/var` are what the machine did afterwards.
 
 The same is true of a command that is definitely installed:
 

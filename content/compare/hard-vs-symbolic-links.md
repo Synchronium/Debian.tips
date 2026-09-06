@@ -66,10 +66,10 @@ body { font-family: serif; }
 body { font-family: monospace; }
 ```
 
-Both link counts are back to one, and the two names now hold different text. Nothing failed and
-nothing printed a warning. Anything that writes a temporary file and renames it over the original
-behaves this way, which is how a save is made atomic, so a hard link can stop being one at any
-point without the arrangement being touched directly.
+Both link counts are back to one, and the two names now hold different text. No error was printed,
+because from `sed`'s side nothing went wrong. Anything that writes a temporary file and renames it
+over the original behaves this way, which is how a save is made atomic, so a hard link can stop
+being one without anybody touching the link.
 
 Point the same command at the symlink and it goes wrong the other way:
 

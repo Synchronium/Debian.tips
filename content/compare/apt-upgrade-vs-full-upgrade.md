@@ -101,9 +101,8 @@ Conf tips-tool (2.0-1 stable [all])
 ```
 
 Nothing is held now. `REMOVING` is capitalised by apt because it is the part you are being asked
-to read, and it is the reason `full-upgrade` is not the default: a dependency change upstream can
-propose removing something you rely on, and the removal is what you have to check before
-answering yes.
+to read. It is also why `full-upgrade` is not the default: a dependency change upstream can propose
+removing something you rely on, so the `REMOVING` list is the part to check before answering yes.
 
 ## dist-upgrade is the same command
 
@@ -117,9 +116,9 @@ diff <(apt-get dist-upgrade -s) <(apt-get full-upgrade -s) && echo "dist-upgrade
 dist-upgrade and full-upgrade: identical
 ```
 
-The name is misleading, which is why it was replaced. `dist-upgrade` does not move you between
-Debian releases: what moves you is editing your sources to name the new suite, and `dist-upgrade`
-is then the command you run afterwards because it is the one allowed to remove things.
+The name misleads, which is why it was replaced. `dist-upgrade` does not move you between Debian
+releases. Editing your sources to name the new suite does that; `dist-upgrade` is then what you run
+afterwards, because it is the one allowed to remove things.
 [Release channels](/debian/release-channels/) covers that procedure.
 
 ## Which to use
@@ -132,9 +131,9 @@ a moment's attention rather than an error.
 of moving between releases. Read the `REMOVING` list before you answer.
 
 **`apt-get upgrade`** in a script, and for that reason only: `apt-get` has a stable command line
-across versions where `apt` does not promise one, which is the distinction
-[apt vs apt-get](/compare/apt-vs-apt-get/) is about. Its stricter rule is a side effect of its age
-rather than a safety feature you are choosing.
+across versions where `apt` does not promise one, which is what
+[apt vs apt-get](/compare/apt-vs-apt-get/) covers. Its stricter rule comes from its age, so do not
+read it as a safety feature somebody designed for you.
 
-**Never `apt full-upgrade` unattended** on a machine you care about. The one thing it can do that
-the others cannot is exactly the thing nobody wants to discover afterwards.
+**Never `apt full-upgrade` unattended** on a machine you care about. Removal is the one thing it
+can do that the others cannot, and an unattended run is where you would find out about it last.

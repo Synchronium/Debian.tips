@@ -225,7 +225,7 @@
   },
   "commands/managing-users": {
     "checked": 53,
-    "byShape": 0,
+    "byShape": 2,
     "unordered": 0,
     "exempt": 0,
     "fixtures": 1,
@@ -487,6 +487,14 @@
     "fixtures": 0,
     "unpaired": 0
   },
+  "concepts/filesystem-hierarchy": {
+    "checked": 7,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
   "concepts/pipes-and-redirection": {
     "checked": 4,
     "byShape": 0,
@@ -636,6 +644,22 @@
     "byShape": 0,
     "unordered": 0,
     "exempt": 2,
+    "fixtures": 0,
+    "unpaired": 0
+  },
+  "recipes/save-a-terminal-session": {
+    "checked": 5,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 1,
+    "fixtures": 0,
+    "unpaired": 1
+  },
+  "recipes/time-how-long-something-takes": {
+    "checked": 5,
+    "byShape": 4,
+    "unordered": 0,
+    "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
   },

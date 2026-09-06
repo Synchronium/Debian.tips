@@ -126,8 +126,9 @@ first if you are only turning on one.
 
 The line at the top of most careful scripts, and the three flags in it are not equal.
 `-u` is above. `-e` stops on the first failing command and `-o pipefail` makes a pipeline report
-a failure from any stage rather than only the last; both have exceptions that a script can and
-does fall through, which
+a failure from any stage rather than only the last, which is what
+[saves a `| tee` from hiding a failure](/recipes/save-a-terminal-session/); both have exceptions
+that a script can and does fall through, which
 [Exit codes and error handling](/concepts/exit-codes-and-error-handling/) sets out with the cases.
 Read that before relying on `-e`, because a script that fails to stop where you assumed it would
 is harder to debug than one with no error handling at all.

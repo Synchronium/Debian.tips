@@ -33,7 +33,7 @@ all five because Debian's sudoers sets it that way; on a distribution that does 
 rows would differ as well.
 
 Those `su` rows are reached through `sudo` because `su` asks for a password and a captured page
-cannot answer one. That is not a trick to make the example work, it is the first real difference.
+cannot answer one. Which password each of them asks for is the first thing that separates them.
 
 ## Which password each one wants
 
@@ -52,11 +52,12 @@ root L
 
 `L` is locked. Debian's installer offers you a root password or, if you leave it empty, puts the
 first account in the `sudo` group instead, and most people take the second. A locked account
-rejects every password, so `su -` on such a machine cannot succeed no matter what you type. This
-is behind a good share of "su: Authentication failure" on an otherwise working system: nothing is
-broken, and there was never a password to get right.
+rejects every password, so `su -` on such a machine cannot succeed no matter what you type. That
+accounts for a good share of "su: Authentication failure" on machines where everything else works:
+there was never a password to get right.
 
-`sudo -i` is the working equivalent, and it needs no root password because it never asks for one.
+`sudo -i` gets you the same shell and never asks for a root password, because it authenticates you
+against the sudoers policy instead.
 
 ## sudo su - is sudo -i with an extra process
 
@@ -75,9 +76,8 @@ root
 /root
 ```
 
-Identical, because `sudo` has already made you root by the time `su` runs, and `su` then has
-nothing to authenticate. The difference is one extra process and a slightly worse audit record.
-Nothing goes wrong if you type it, and there is no reason to.
+Identical, because `sudo` has already made you root by the time `su` runs, so `su` has nothing left
+to authenticate. What you get for the extra process is a slightly worse audit record.
 
 ## What gets recorded
 
@@ -86,10 +86,10 @@ Nothing goes wrong if you type it, and there is no reason to.
 nothing inside it: the record says you became root at half past two and says nothing about the
 next forty minutes.
 
-That is the argument for `sudo <command>` over any of the shells above, and it is the reason
-distributions moved to it. It is also why `sudo -i` for a long piece of work is an honest choice
-rather than a lazy one: you are not going to prefix forty commands, and pretending otherwise
-produces a shell opened by other means.
+That granularity is why distributions moved to `sudo <command>` in the first place. It is also why
+`sudo -i` for a long piece of administration beats pretending you will prefix forty commands: the
+alternative is not forty logged commands, it is a root shell opened some other way and logged just
+as thinly.
 
 ## Which to use
 
@@ -101,8 +101,8 @@ inherited variables from your own account to surprise a script. Reach for it whe
 otherwise type `sudo` five times in a row.
 
 **`sudo -s`** when you want a root shell but need to stay in the directory you are standing in.
-It keeps your working directory and your own shell's startup, which is convenient and is also the
-form most likely to run something with a variable it should not have had.
+It keeps your working directory and your own shell's startup. That convenience is also how a root
+command ends up running with a variable from your account that it should never have seen.
 
 **`su -`** on a machine with no `sudo`, or when you have the root password and it is the account
 you mean. It is in `util-linux`, which every Debian system has, where `sudo` is `optional` and a

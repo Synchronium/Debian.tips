@@ -50,7 +50,9 @@ nothing against the other.
 
 The `%CPU` column is the process's accumulated CPU time divided by how long it has been alive.
 That makes it an average across the whole lifetime rather than a reading of what the process is
-doing now: something that saturated a core this morning still reports a high figure tonight.
+doing now: something that saturated a core this morning still reports a high figure tonight. For a
+command you are about to run rather than one already going,
+[timing it](/recipes/time-how-long-something-takes/) separates the CPU time from the waiting.
 
 ## Finding a process by name
 

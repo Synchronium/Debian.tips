@@ -242,6 +242,7 @@ sections:
       - title: "Read the ageing settings"
         code: chage -l tips-dev
         volatile: "the last-change date is the day the account was made, so it is today on this machine and something else on yours"
+        compare: shape
         description: "Everything `/etc/shadow` records about time. `99999` days is the package default for maximum age and means the password never expires."
         output: |2
           Last password change					: Sep 05, 2026
@@ -255,6 +256,7 @@ sections:
       - title: "Expire a password on a schedule"
         code: chage -M 90 -W 14 tips-dev; chage -l tips-dev | head -5
         volatile: "both dates are relative to the day the account was made"
+        compare: shape
         description: "`-M` is the maximum age in days and `-W` the warning period. The expiry date is computed from the last change rather than from today, so setting `-M` on an old password can expire it immediately."
         output: |2
           Last password change					: Sep 05, 2026
