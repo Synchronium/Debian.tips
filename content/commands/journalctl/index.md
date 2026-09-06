@@ -15,7 +15,8 @@ started and why it stopped, all with the metadata to filter by unit, priority, t
 
 The journal is not a text file. It is an indexed binary store, which is why `journalctl`
 has flags for questions that would otherwise be `grep` with a date regex, and why
-`/var/log/` looks emptier on a systemd machine than you might expect. `grep` still works on
+[`/var/log/`](/concepts/filesystem-hierarchy/) looks emptier on a systemd machine than you might
+expect. `grep` still works on
 the output, and [`grep`](/commands/grep/) is the right tool once you have narrowed things
 down with `-u` and `--since`.
 
