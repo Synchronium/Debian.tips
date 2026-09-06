@@ -21,8 +21,8 @@ net-tools: /usr/bin/netstat
 
 `iproute2` is on every Debian system, because everything that configures an interface needs it.
 `net-tools` is the older suite (`netstat`, `ifconfig`, `route`, `arp`) and has to be installed on
-purpose. Debian has not dropped it and shows no sign of wanting to, so the answer to "where is
-`netstat`" is `apt install net-tools`, and the better answer is that you probably do not need it.
+purpose. Debian has not dropped it and shows no sign of wanting to, so `apt install net-tools`
+answers the question. Most of the time you will not need to.
 
 ## The same question, two layouts
 
@@ -50,7 +50,7 @@ leads with the protocol and puts the state last. The `Send-Q` figures differ bec
 answering different questions: on a listening socket `ss` reports the backlog the program asked
 for, and `netstat` reports zero.
 
-The flags are otherwise the same letters, which is deliberate:
+The flags are otherwise the same letters, kept that way on purpose:
 
 | what you want | `netstat` | `ss` |
 | --- | --- | --- |
@@ -60,8 +60,8 @@ The flags are otherwise the same letters, which is deliberate:
 | the owning process | `-p` | `-p` |
 | everything, not just listeners | `-a` | `-a` |
 
-So `netstat -tulpn` becomes `ss -tulpn`, and it is the same command with a letter's worth of
-difference. That much is muscle memory rather than knowledge, and it transfers unchanged.
+So `netstat -tulpn` becomes `ss -tulpn`. Whatever you already type from memory transfers with the
+`net` dropped off the front.
 
 ## What ss can express and netstat cannot
 
@@ -74,10 +74,9 @@ ss -ltnH state listening '( sport = :5432 )'
 0      5      127.0.0.1:5432 0.0.0.0:*
 ```
 
-`sport` and `dport` compare ports, `src` and `dst` compare addresses, and the states have names
-you can ask for by name (`established`, `time-wait`, `syn-sent`). Anything equivalent with
-`netstat` is a `grep`, which means matching text that happens to contain a port number rather
-than asking about the port.
+`sport` and `dport` compare ports, `src` and `dst` compare addresses, and every TCP state can be
+named (`established`, `time-wait`, `syn-sent`). The nearest thing `netstat` offers is a `grep`,
+which matches any line containing the digits `5432` instead of asking about the port.
 
 The difference underneath is where each one gets its data. `netstat` reads `/proc/net/tcp` and
 parses it a line at a time, so a machine holding tens of thousands of connections takes a

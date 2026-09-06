@@ -225,7 +225,7 @@
   },
   "commands/managing-users": {
     "checked": 53,
-    "byShape": 0,
+    "byShape": 2,
     "unordered": 0,
     "exempt": 0,
     "fixtures": 1,
