@@ -20,7 +20,7 @@
 		// authentication, since the anonymous API returns 403 for it, so without `gh` the only way
 		// to see why a run failed is to paste it in by hand. It isn't in Debian's repositories, so
 		// this feature (upstream apt repo) rather than postCreateCommand.
-		"ghcr.io/devcontainers/features/github-cli:1.1.1": {}
+		"ghcr.io/devcontainers/features/github-cli:1.1.2": {}
 	},
 	"privileged": true,
 
