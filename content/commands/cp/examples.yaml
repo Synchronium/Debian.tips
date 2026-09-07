@@ -164,7 +164,7 @@ sections:
     examples:
       - title: "A plain copy is stamped with the time you made it"
         code: cp site/index.html published.html && date -r published.html +%F
-        description: "`site/index.html` was last written in June and the copy is dated today. `date -r` reads a file's modification time. It stands in for `ls -l` because it prints nothing but the date."
+        description: "`site/index.html` was last written in June and the copy is dated today. [date -r](/commands/date/) reads a file's modification time. It stands in for `ls -l` because it prints nothing but the date."
         volatile: "the date is whatever day you run the command"
         compare: shape
         output: |

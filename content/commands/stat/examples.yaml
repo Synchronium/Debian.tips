@@ -224,7 +224,7 @@ sections:
         tags: [scripting]
       - title: "Turn an epoch time back into a date"
         code: date -d @$(stat -c %Y site/index.html) "+%A %-d %B %Y"
-        description: "`date -d @seconds` reads the number back, and its own format string decides how it looks."
+        description: "[date -d @seconds](/commands/date/) reads the number back, and its own format string decides how it looks."
         output: |
           Monday 1 June 2026
         level: intermediate

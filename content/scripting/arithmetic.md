@@ -134,7 +134,7 @@ first, and `awk` needs neither.
 
 ## A leading zero means octal
 
-Inherited from C, and it bites here because `date` pads its output:
+Inherited from C, and it bites here because [date](/commands/date/) pads its output:
 
 ```bash
 echo "octal:  $(( 010 + 1 ))"

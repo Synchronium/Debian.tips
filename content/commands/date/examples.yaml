@@ -1,0 +1,394 @@
+command: date
+fixtures:
+  - name: site
+    note: "the tree the [cp](/commands/cp/), [touch](/commands/touch/) and [stat](/commands/stat/) pages use as well; `date -r` reads a modification time, so the two files below carry times set deliberately rather than whatever a checkout stamped on them"
+    from: ls -lAR site
+    content: |2
+      site:
+      total 16
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 assets
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 backups
+      -rw-r--r-- 1 user user   36 Jun  1 09:00 index.html
+      lrwxrwxrwx 1 user user    9 Jun 18 09:00 latest.css -> style.css
+      -rw-r--r-- 1 user user   33 Jun 20 09:00 style.css
+
+      site/assets:
+      total 4
+      -rw-r--r-- 1 user user 35 Jun 10 09:00 logo.svg
+
+      site/backups:
+      total 0
+sections:
+  - title: "The time now"
+    intro: "With no arguments `date` prints the current time in the system's own zone, in a format nothing should ever parse. Every other form on this page states what it wants."
+    examples:
+      - title: "Print the current date and time"
+        code: date
+        description: "The default layout comes from the C locale, and it changes with `LC_TIME`. Anything reading this output is depending on a setting that belongs to whoever runs it."
+        volatile: "the time is when the example ran, and the zone abbreviation is the machine's"
+        compare: shape
+        output: |
+          Mon Sep  7 11:08:28 UTC 2026
+        level: basic
+        tags: [beginner]
+      - title: "Print it in a format that sorts"
+        code: date -Is
+        description: "`-Is` is `--iso-8601=seconds`. Dates in this form sort correctly as plain text, which is why log files and filenames want it."
+        volatile: "the time is when the example ran"
+        compare: shape
+        output: |
+          2026-09-07T11:09:42+00:00
+        level: basic
+        tags: [scripting, beginner]
+      - title: "Print seconds since 1970"
+        code: date +%s
+        description: "The Unix epoch as one integer. A shell can subtract these, and no other form `date` prints can be subtracted at all."
+        volatile: "the number grows by one every second"
+        compare: shape
+        output: |
+          1788779335
+        level: basic
+        tags: [scripting]
+  - title: "Choosing the output format"
+    intro: "Each example below is given a fixed date with `-d`, so the format string is the only thing changing. The specifiers are the ones `strftime(3)` documents, and `date --help` lists them all."
+    examples:
+      - title: "Print the date and time as numbers"
+        code: date -d "2026-06-01 09:00" "+%F %T"
+        description: "`%F` is `%Y-%m-%d` and `%T` is `%H:%M:%S`. These two cover most of what a script wants and are worth knowing by name."
+        output: |
+          2026-06-01 09:00:00
+        level: basic
+        tags: [beginner]
+      - title: "Write the date out in words"
+        code: date -d "2026-06-01" "+%A %-d %B %Y"
+        description: "`%A` is the weekday and `%B` the month, both in the current locale. `%-d` drops the padding that `%d` would add."
+        output: |
+          Monday 1 June 2026
+        level: basic
+      - title: "See the three ways a day number can be padded"
+        code: date -d "2026-06-01" "+%d %-d %e|"
+        description: "`%d` pads with a zero, `%-d` does not pad at all, and `%e` pads with a space. The trailing `|` is there to make the space visible."
+        output: |
+          01 1  1|
+        level: intermediate
+      - title: "Use the twelve-hour clock"
+        code: date -d "2026-06-01 15:30" "+%I:%M %p"
+        description: "`%I` is the hour from 01 to 12 and `%p` gives `AM` or `PM`. In some locales `%p` is empty, so a format built on it can lose the only thing distinguishing morning from afternoon."
+        output: |
+          03:30 PM
+        level: intermediate
+      - title: "Print an ISO 8601 timestamp with the offset"
+        code: date -d "2026-06-01 09:00" "+%Y-%m-%dT%H:%M:%S%z"
+        description: "`%z` is the numeric offset from UTC. Writing it out by hand gives control that `-I` does not, which matters when something downstream expects no colon in the offset."
+        output: |
+          2026-06-01T09:00:00+0000
+        level: intermediate
+        tags: [scripting]
+      - title: "Ask for ISO 8601 without spelling it out"
+        code: date -d "2026-06-01 09:00" --iso-8601=seconds
+        description: "`--iso-8601` takes `date`, `hours`, `minutes`, `seconds` or `ns`, and puts a colon in the offset. `-I` on its own means `--iso-8601=date`."
+        output: |
+          2026-06-01T09:00:00+00:00
+        level: intermediate
+      - title: "Print the format email and HTTP use"
+        code: date -d "2026-06-01 09:00" --rfc-email
+        description: "RFC 5322, which is what a `Date:` header holds. `-R` is the short form."
+        output: |
+          Mon, 01 Jun 2026 09:00:00 +0000
+        level: intermediate
+      - title: "Get the day of the year and the week number"
+        code: date -d "2026-06-01 09:00" "+%j %V %u"
+        description: "`%j` is the day of the year, `%V` the ISO week and `%u` the weekday as 1 to 7 starting on Monday. `%U` counts weeks from Sunday and gives 22 for this same date."
+        output: |
+          152 23 1
+        level: advanced
+      - title: "See where the ISO week year disagrees with the calendar"
+        code: date -d "2026-01-01" "+%V %G"
+        description: "1 January 2026 falls in ISO week 1 of 2026, and some years it falls in week 52 or 53 of the year before. `%G` is the year that goes with `%V`, and pairing `%V` with `%Y` is how off-by-one bugs get into weekly reports."
+        output: |
+          01 2026
+        level: advanced
+        tags: [scripting]
+      - title: "Print fractions of a second"
+        code: date -d "2026-06-01 09:00:00.123456789" "+%T.%N"
+        description: "`%N` is nanoseconds, and the input has to carry them for there to be anything to print. `date +%s%N` gives an epoch timestamp in nanoseconds, which is the usual way of getting a unique-enough id out of a shell."
+        output: |
+          09:00:00.123456789
+        level: advanced
+        tags: [scripting]
+      - title: "Print a two-digit year, and see why not to"
+        code: date -d "2026-06-01" "+%y %C %G"
+        description: "`%y` is the year within the century and `%C` the century itself, so the two together make the year `%Y` would have given on its own. A log file written with `%y` sorts 1999 after 2026."
+        output: |
+          26 20 2026
+        level: intermediate
+        tags: [scripting]
+      - title: "Build a filename from the date"
+        code: echo "backup-$(date -d "2026-06-01" +%F).tar.gz"
+        description: "The format string is ordinary text with specifiers in it, so the whole filename can be built inside it: `date -d \"2026-06-01\" \"+backup-%F.tar.gz\"` gives the same thing."
+        output: |
+          backup-2026-06-01.tar.gz
+        level: basic
+        tags: [scripting, one-liners]
+      - title: "Stamp a line of output"
+        code: echo "$(date -d "2026-06-01 09:00:00" "+%Y-%m-%d %H:%M:%S") deploy finished"
+        description: "A script logging its own progress wants a fixed format rather than the default, so that later greps and sorts have something predictable to work on."
+        output: |
+          2026-06-01 09:00:00 deploy finished
+        level: intermediate
+        tags: [scripting]
+  - title: "Reading a date that is not now"
+    intro: "`-d` (`--date`) takes a string and works out what date it names. What it accepts is broad, and two of the readings below are not what a British reader expects."
+    examples:
+      - title: "Give date a date to work on"
+        code: date -d "2026-06-01 09:00:00"
+        description: "The rest of this page is this command with a format string on the end. Given no format, `-d` prints in the same layout `date` uses for now."
+        output: |
+          Mon Jun  1 09:00:00 UTC 2026
+        level: basic
+        tags: [beginner]
+      - title: "Read an ISO 8601 timestamp"
+        code: date -d "2026-06-01T09:00:00Z" -u "+%F %T"
+        description: "The `T` and the trailing `Z` are both understood, `Z` meaning UTC. This is the shape a JSON API or a log file usually hands you."
+        output: |
+          2026-06-01 09:00:00
+        level: intermediate
+        tags: [scripting]
+      - title: "Watch a slash-separated date come back wrong"
+        code: date -d "01/06/2026" +%F
+        description: "Read as 6 January, because `date` takes month first when the parts are separated by slashes. Nothing warns, and the two readings only differ for a fortnight in each month, so this survives testing and fails in production."
+        danger: true
+        output: |
+          2026-01-06
+        level: intermediate
+        tags: [scripting]
+      - title: "Hand it something it cannot read"
+        code: date -d "not a date"; echo "exit $?"
+        description: "The message goes to stderr and the status is 1, so a script can test for a bad date rather than carrying on with an empty variable."
+        output: |
+          date: invalid date 'not a date'
+          exit 1
+        level: basic
+        tags: [scripting]
+      - title: "Ask for a day that does not exist"
+        code: date -d "2026-02-29" +%F; echo "exit $?"
+        description: "2026 is not a leap year, so there is no 29 February to return and `date` refuses rather than rounding to the 28th or the 1st. `date -d \"2028-02-29\"` answers normally."
+        output: |
+          date: invalid date '2026-02-29'
+          exit 1
+        level: intermediate
+      - title: "Turn epoch seconds back into a date"
+        code: date -u -d @1780304400
+        description: "`@` marks the argument as seconds since 1970. `-u` prints the result in UTC, which is what the number means, and without it the answer is shifted into the machine's zone."
+        output: |
+          Mon Jun  1 09:00:00 UTC 2026
+        level: intermediate
+        tags: [scripting]
+      - title: "See where the epoch starts"
+        code: date -u -d @0
+        description: "Midnight on 1 January 1970 UTC, and the instant every `%s` value counts from."
+        output: |
+          Thu Jan  1 00:00:00 UTC 1970
+        level: basic
+      - title: "Convert a date to epoch seconds"
+        code: date -d "2026-06-01 09:00:00 UTC" +%s
+        description: "Naming the zone in the string removes the dependency on the machine's own. Without `UTC` here the answer would differ for every reader."
+        output: |
+          1780304400
+        level: intermediate
+        tags: [scripting]
+      - title: "Convert a list of dates at once"
+        code: printf "2026-06-01 09:00\n2026-06-20 17:30\n2026-01-31 + 1 month\n" > dates.txt; date -f dates.txt +%F
+        description: "`-f` (`--file`) reads one date per line and applies the same format to each, which saves starting a process per line in a loop. `date -f -` reads them from a pipe."
+        output: |
+          2026-06-01
+          2026-06-20
+          2026-03-03
+        level: advanced
+        tags: [scripting]
+  - title: "Arithmetic on dates"
+    intro: "A relative phrase in the `-d` string is applied to the date in front of it. Adding days is predictable. Adding months is not, and `--debug` prints the reasoning."
+    examples:
+      - title: "Add days to a date"
+        code: date -d "2026-06-01 + 30 days" +%F
+        description: "`day`, `week`, `month` and `year` all work, singular or plural. Days and weeks are the units with no surprises in them."
+        output: |
+          2026-07-01
+        level: basic
+        tags: [scripting]
+      - title: "Go back a month"
+        code: date -d "2026-03-31 - 1 month" +%F
+        description: "February has no 31st, so subtracting a month from 31 March gives 31 February, which normalises to 3 March. The answer is later than the date you started from."
+        danger: true
+        output: |
+          2026-03-03
+        level: intermediate
+        tags: [scripting]
+      - title: "Add a month to the end of January"
+        code: date -d "2026-01-31 + 1 month" +%F
+        description: "The same normalisation, in the direction it is usually met first. A monthly job that adds a month to today runs on 3 March once a year and is otherwise correct."
+        danger: true
+        output: |
+          2026-03-03
+        level: intermediate
+        tags: [scripting, cron]
+      - title: "Ask date to explain itself"
+        code: date --debug -d "2026-01-31 + 1 month" +%F 2>&1 | grep -A2 "shifted dates"
+        description: "`--debug` prints about fifteen lines to stderr describing every step it took, and warns wherever the answer moved. These three lines are the warning behind the 3 March."
+        output: |
+          date: warning: month/year adjustment resulted in shifted dates:
+          date:      adjusted Y M D: 2026 02 31
+          date:    normalized Y M D: 2026 03 03
+        level: advanced
+        tags: [scripting]
+      - title: "Step a day either side"
+        code: date -d "2026-06-01 yesterday" +%F; date -d "2026-06-01 tomorrow" +%F
+        description: "`yesterday`, `today` and `tomorrow` are read relative to the date given rather than to now, which makes them usable on a date from a file."
+        output: |
+          2026-05-31
+          2026-06-02
+        level: basic
+      - title: "Find the last day of a month"
+        code: date -d "2026-06-01 + 1 month - 1 day" +%F
+        description: "Going forward to the first of next month and back one day avoids having to know which months have 31 days. Starting from the first keeps it clear of the normalisation above."
+        output: |
+          2026-06-30
+        level: advanced
+        tags: [scripting, one-liners]
+      - title: "Find the next Friday from today"
+        code: date -d "next friday" +%F
+        description: "Weekday names are read relative to now. Combined with an explicit date in the same string they are ignored: `date -d \"2026-06-01 friday\"` hands back 1 June, which is a Monday."
+        volatile: "the answer moves with the day the example runs"
+        compare: shape
+        output: |
+          2026-09-11
+        level: intermediate
+  - title: "A file's timestamp"
+    intro: "`-r` (`--reference`) takes the modification time off a file instead of parsing a string, and formats it exactly as `-d` would."
+    examples:
+      - title: "Read a file's modification time"
+        code: date -r site/index.html
+        description: "The same time [ls -l](/commands/ls/) shows in a column and [stat](/commands/stat/) prints as `%y`, in `date`'s own default format."
+        output: |
+          Mon Jun  1 09:00:00 UTC 2026
+        level: basic
+        tags: [files]
+      - title: "Format a file's timestamp"
+        code: date -r site/style.css "+%F"
+        description: "A format string applies to `-r` exactly as it does to `-d`, so this is the short way to get a file's date into a variable."
+        output: |
+          2026-06-20
+        level: basic
+        tags: [files, scripting]
+      - title: "Date several files in a loop"
+        code: for f in site/index.html site/style.css; do echo "$(date -r "$f" +%F) $f"; done
+        description: "`-r` takes one file, so more than one needs a loop. [stat](/commands/stat/) accepts a list and is the better tool once there are many."
+        output: |
+          2026-06-01 site/index.html
+          2026-06-20 site/style.css
+        level: intermediate
+        tags: [files, scripting]
+      - title: "Convert a timestamp stat gave you"
+        code: date -d "@$(stat -c %Y site/index.html)" "+%F %T"
+        description: "[stat -c %Y](/commands/stat/) is the modification time as epoch seconds, and `@` reads it back. Worth knowing because `stat` can produce the number for anything on the filesystem while `date -r` is limited to a modification time."
+        output: |
+          2026-06-01 09:00:00
+        level: advanced
+        tags: [files, scripting]
+  - title: "Time zones"
+    intro: "`TZ` in the environment decides which zone `date` reads and prints in, for that one command. The zone names come from `tzdata` and live under `/usr/share/zoneinfo`."
+    examples:
+      - title: "Print one instant in two zones"
+        code: TZ=America/New_York date -d "2026-06-01 09:00:00 UTC"; TZ=Asia/Tokyo date -d "2026-06-01 09:00:00 UTC"
+        description: "The same moment in time, named twice. Setting `TZ` in front of the command affects only that command, so nothing else in the shell changes."
+        output: |
+          Mon Jun  1 05:00:00 EDT 2026
+          Mon Jun  1 18:00:00 JST 2026
+        level: intermediate
+        tags: [sysadmin]
+      - title: "Watch the same zone change name in summer"
+        code: TZ=Europe/London date -d "2026-01-15 12:00:00 UTC"; TZ=Europe/London date -d "2026-06-15 12:00:00 UTC"
+        description: "GMT in January and BST in June, one hour apart, from the same `TZ`. A server storing local times rather than UTC has two readings for one hour every autumn."
+        output: |
+          Thu Jan 15 12:00:00 GMT 2026
+          Mon Jun 15 13:00:00 BST 2026
+        level: intermediate
+        tags: [sysadmin]
+      - title: "Print the zone name and its offset"
+        code: TZ=Europe/London date -d "2026-06-15 12:00" "+%Z %z"
+        description: "`%Z` is the abbreviation and `%z` the numeric offset. Only `%z` is unambiguous: abbreviations are not unique across the world's zones, so nothing in `BST` says which one it is."
+        output: |
+          BST +0100
+        level: advanced
+        tags: [sysadmin]
+      - title: "See that -u changes the reading as well as the printing"
+        code: TZ=Asia/Tokyo date -d "2026-06-01 09:00:00" +%s; TZ=Asia/Tokyo date -u -d "2026-06-01 09:00:00" +%s
+        description: "The same string, nine hours apart. `-u` sets the zone for the whole operation, so the input is taken as UTC too, and a `-u` added to make the output tidy has quietly changed the answer."
+        danger: true
+        output: |
+          1780272000
+          1780304400
+        level: advanced
+        tags: [scripting, sysadmin]
+      - title: "Put the zone in the string instead"
+        code: date -d "2026-06-01 09:00:00 JST" -u "+%F %T"
+        description: "Naming the zone in the date says what the input means, and leaves `-u` to do nothing but choose the output. This is the version to write when both ends matter."
+        output: |
+          2026-06-01 00:00:00
+        level: advanced
+        tags: [scripting]
+      - title: "Fix the zone for a whole script"
+        code: export TZ=Asia/Tokyo; date -d "2026-06-01 09:00:00 UTC" "+%F %T %Z"
+        description: "Exporting `TZ` once at the top of a script makes every date in it agree, and `TZ=UTC` is the usual choice: it has no daylight saving, so no hour is ever repeated or skipped."
+        output: |
+          2026-06-01 18:00:00 JST
+        level: intermediate
+        tags: [scripting, sysadmin]
+      - title: "Give it a zone that does not exist"
+        code: TZ=Europe/Nowhere date -d "2026-06-01 12:00" "+%F %T %Z"
+        description: "No error, no warning. An unknown `TZ` falls back to UTC and `%Z` prints whatever it made of the name, so a typo in a cron file shifts every timestamp and says nothing."
+        danger: true
+        output: |
+          2026-06-01 12:00:00 Europe
+        level: advanced
+        tags: [sysadmin, cron]
+  - title: "Durations, and the clock itself"
+    intro: "Subtracting two `%s` values gives seconds, and `date` can format that count back into something readable as long as it stays under a day."
+    examples:
+      - title: "Measure the gap between two times"
+        code: start=$(date -d "2026-06-01 09:00" +%s); end=$(date -d "2026-06-01 17:30" +%s); echo $(( (end - start) / 3600 )) hours
+        description: "Epoch seconds are integers, so the shell's own [arithmetic](/scripting/arithmetic/) handles them. Dividing by 3600 truncates, which is why this says 8 rather than 8.5."
+        output: |
+          8 hours
+        level: intermediate
+        tags: [scripting, one-liners]
+      - title: "Format a duration as a clock time"
+        code: date -u -d @$(( $(date -d "2026-06-01 17:30" +%s) - $(date -d "2026-06-01 09:00" +%s) )) +%H:%M:%S
+        description: "Treating the count of seconds as a time since the epoch and printing it in UTC gives hours, minutes and seconds. It works only below 24 hours, since anything longer rolls into a day the format does not print."
+        output: |
+          08:30:00
+        level: advanced
+        tags: [scripting]
+      - title: "Handle a duration longer than a day"
+        code: secs=$(( $(date -d "2026-06-03 11:15" +%s) - $(date -d "2026-06-01 09:00" +%s) )); echo "$((secs/86400))d $(date -u -d @$((secs%86400)) +%H:%M)"
+        description: "Days come out of the division and the remainder goes through the same trick as above. Anything more elaborate than this wants a real language."
+        output: |
+          2d 02:15
+        level: advanced
+        tags: [scripting]
+      - title: "Compare two dates"
+        code: a=$(date -d "2026-06-01" +%s); b=$(date -d "2026-06-20" +%s); [ "$a" -lt "$b" ] && echo "the first date is earlier"
+        description: "Converting both to `%s` first gives `-lt` two integers to compare. Comparing the printed forms as strings works for `%F` and fails for every other format."
+        output: |
+          the first date is earlier
+        level: intermediate
+        tags: [scripting]
+      - title: "Try to set the system clock"
+        code: date -s "2026-06-01 09:00:00" >/dev/null; echo "exit $?"
+        description: "Refused without the `CAP_SYS_TIME` capability, which an ordinary account does not have. As root on a machine syncing time it succeeds and is then undone by the next sync, so `timedatectl` is the command that lasts."
+        danger: true
+        output: |
+          date: cannot set date: Operation not permitted
+          exit 1
+        level: advanced
+        tags: [sysadmin, security]

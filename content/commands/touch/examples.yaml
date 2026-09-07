@@ -138,7 +138,7 @@ sections:
         tags: [security]
 
   - title: "Choosing the time"
-    intro: "`-d` takes anything `date` understands and `-t` takes a fixed numeric stamp. Both beat running the command at the right moment."
+    intro: "`-d` takes anything [date](/commands/date/) understands and `-t` takes a fixed numeric stamp. Both beat running the command at the right moment."
     examples:
       - title: "Set a date and time"
         code: touch -d "2026-01-01 09:30" site/index.html && stat -c "%.19y %n" site/index.html

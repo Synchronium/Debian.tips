@@ -85,7 +85,7 @@ backup.sh: archived site (3 files)
 site-001.tar.gz
 ```
 
-`-l` names the archive. Left off, the label is a timestamp from `date`, which is what a scheduled
+`-l` names the archive. Left off, the label is a timestamp from [date](/commands/date/), which is what a scheduled
 run wants and what makes an example impossible to check, so every run below passes one.
 
 The archive went to `archives/` beside the script rather than beside you, because `outdir`

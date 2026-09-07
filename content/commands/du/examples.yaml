@@ -492,7 +492,7 @@ sections:
         tags: [disk, sysadmin]
       - title: "Choose the time format"
         code: du --time --time-style=+%Y-%m-%d -h projects/backups
-        description: "`--time-style` takes a `date`-style format string after a `+`, along with the names `full-iso`, `long-iso` and `iso`."
+        description: "`--time-style` takes a [date](/commands/date/)-style format string after a `+`, along with the names `full-iso`, `long-iso` and `iso`."
         output: |2
           20K	2026-06-26	projects/backups
         level: advanced

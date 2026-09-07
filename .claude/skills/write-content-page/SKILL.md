@@ -205,9 +205,9 @@ a changed state still fails. The schema requires the note whenever `compare: sha
 two are written together.
 
 The replay is what says which of the two an example needs. A page that sets `volatile:` and stops
-there will fail on exactly the lines the note describes, so read the mismatch before reaching for
-the flag: a value that moves every run wants `compare: shape`, and a value that moves once a day
-wants it too, even though today's replay passed.
+there will fail on exactly the lines the note describes, so read the mismatch before adding the
+flag: a value that moves every run wants `compare: shape`, and a value that moves once a day wants
+it too, even though today's replay passed.
 
 `volatile:` is not an escape hatch either way: output containing something the reader could never
 see (a container id, a path from the harness) still has to be removed rather than declared.

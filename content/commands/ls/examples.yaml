@@ -402,7 +402,7 @@ sections:
         level: advanced
       - title: "Choose the date format yourself"
         code: ls -l --time-style=+%Y-%m-%d projects/logs
-        description: "A leading `+` takes a `date`-style format string, so the timestamp can be cut down to just the part being read."
+        description: "A leading `+` takes a [date](/commands/date/)-style format string, so the timestamp can be cut down to just the part being read."
         output: |2
           total 6156
           -rw-r--r-- 1 user user   10240 2026-06-21 app.log

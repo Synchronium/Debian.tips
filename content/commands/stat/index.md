@@ -6,7 +6,7 @@ category: commands
 tags: [files, permissions, scripting]
 updated: 2026-09-07
 tier: standard
-related: [ls, touch, chmod, find, file-permissions-explained]
+related: [ls, touch, date, chmod, find, file-permissions-explained]
 ---
 
 `stat` prints what the filesystem records about a name: size, mode, owner, link count, the three
