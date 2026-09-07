@@ -6,7 +6,7 @@ category: commands
 tags: [permissions, files, security]
 updated: 2026-08-12
 tier: standard
-related: [file-permissions-explained, find]
+related: [file-permissions-explained, stat, find]
 ---
 
 `chmod` changes who can read, write, or execute a file or directory. It never changes *who* the

@@ -183,7 +183,7 @@ sections:
         level: intermediate
 
   - title: "Symlinks"
-    intro: "A symlink has timestamps of its own, and by default `touch` sets the ones on the file at the far end. `stat` is the other way round and reports on the link unless you pass `-L`, so the two need reading carefully together."
+    intro: "A symlink has timestamps of its own, and by default `touch` sets the ones on the file at the far end. [stat](/commands/stat/) is the other way round and reports on the link unless you pass `-L`, so the two need reading carefully together."
     examples:
       - title: "Touch through the link"
         code: touch -d "2026-05-05" site/latest.css && stat -c "%.19y %n" site/latest.css site/style.css

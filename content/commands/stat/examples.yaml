@@ -1,0 +1,447 @@
+command: stat
+fixtures:
+  - name: site
+    note: "the tree the [cp](/commands/cp/), [mv](/commands/mv/) and [touch](/commands/touch/) pages use as well; every mode, owner and timestamp in it is set deliberately, because `stat` prints them back exactly as the filesystem holds them"
+    from: ls -lAR site
+    content: |2
+      site:
+      total 16
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 assets
+      drwxr-xr-x 2 user user 4096 Jun 15 10:00 backups
+      -rw-r--r-- 1 user user   36 Jun  1 09:00 index.html
+      lrwxrwxrwx 1 user user    9 Jun 18 09:00 latest.css -> style.css
+      -rw-r--r-- 1 user user   33 Jun 20 09:00 style.css
+
+      site/assets:
+      total 4
+      -rw-r--r-- 1 user user 35 Jun 10 09:00 logo.svg
+
+      site/backups:
+      total 0
+  - name: notes.txt
+    note: "one line, beside `site/` rather than inside it"
+    content: |
+      Rebuild before deploying.
+sections:
+  - title: "Reading a file's record"
+    intro: "Given nothing but a name, `stat` prints every field the inode holds. `-c` cuts that down to the fields you asked for, in the order you asked for them."
+    examples:
+      - title: "Read everything about a file"
+        code: stat site/index.html
+        description: "The whole record. `Size` is in bytes, `Access:` appears twice because the first one is the mode and the second is a time, and the last three lines are the timestamps."
+        volatile: "the device and inode numbers identify this filesystem and this file, and the change and birth times are when the example tree was built"
+        compare: shape
+        output: |2
+            File: site/index.html
+            Size: 36        	Blocks: 8          IO Block: 4096   regular file
+          Device: 0,53	Inode: 460496      Links: 1
+          Access: (0644/-rw-r--r--)  Uid: ( 1000/    user)   Gid: ( 1000/    user)
+          Access: 2026-06-01 09:00:00.000000000 +0000
+          Modify: 2026-06-01 09:00:00.000000000 +0000
+          Change: 2026-09-07 10:49:31.215599011 +0000
+           Birth: 2026-09-07 10:49:31.207599011 +0000
+        level: basic
+        tags: [files, beginner]
+      - title: "Pick the fields you want"
+        code: stat -c "%n %F %s" site/index.html site site/latest.css
+        description: "`-c` (`--format`) takes a format string. `%n` is the name, `%F` the kind of thing it is and `%s` the size, and anything else in the string is printed as it stands."
+        output: |
+          site/index.html regular file 36
+          site directory 4096
+          site/latest.css symbolic link 9
+        level: basic
+        tags: [files, beginner]
+      - title: "Print one field on its own"
+        code: stat -c "%s" site/style.css
+        description: "No label, no padding, nothing to strip afterwards. This is the form that goes into a variable."
+        output: |
+          33
+        level: basic
+        tags: [scripting, beginner]
+      - title: "Read the same field from several files"
+        code: stat -c "%s %n" site/index.html site/style.css site/assets/logo.svg notes.txt
+        description: "Every argument gets the format applied to it, one line each, in the order given."
+        output: |
+          36 site/index.html
+          33 site/style.css
+          35 site/assets/logo.svg
+          26 notes.txt
+        level: basic
+        tags: [files]
+      - title: "Get a size without opening the file"
+        code: stat -c %s site/index.html; wc -c < site/index.html
+        description: "The answer is 36 either way. [wc](/commands/wc/) reads the file through to count the bytes, whereas `stat` asks the filesystem how many there are, so its answer costs the same whatever the size."
+        output: |
+          36
+          36
+        level: intermediate
+        tags: [files, performance]
+      - title: "Ask about a name that is not there"
+        code: stat site/missing.css; echo "exit $?"
+        description: "The message says `statx` rather than `stat`, after the system call that current coreutils uses. Exit status 1 is what a script should test."
+        output: |
+          stat: cannot statx 'site/missing.css': No such file or directory
+          exit 1
+        level: basic
+        tags: [scripting]
+      - title: "Test whether a path exists at all"
+        code: stat -c "%s" site/missing.css 2>/dev/null; echo "exit $?"
+        description: "Discarding stderr leaves the exit status as the whole answer. `[ -e path ]` is shorter for this alone, and `stat` wins when the same call has to bring back a field as well."
+        output: |
+          exit 1
+        level: intermediate
+        tags: [scripting]
+      - title: "Read every field as one line"
+        code: stat -t site/index.html
+        description: "`-t` (`--terse`) prints the fields in a fixed order with single spaces between them, for something else to split. Name, size, blocks, mode in hex, uid, gid, then the device in hex, the inode and the link count, then the timestamps as epoch seconds."
+        volatile: "the inode number, the device number and the last two timestamps belong to this machine and this run"
+        compare: shape
+        output: |
+          site/index.html 36 8 81a4 1000 1000 35 460496 1 0 0 1780304400 1780304400 1788778171 1788778171 4096
+        level: advanced
+        tags: [scripting]
+  - title: "Mode and ownership"
+    intro: "The permission bits and the owner, in whichever notation suits what you are doing with them. [ls -l](/commands/ls/) prints the same information already, but only in the letters."
+    examples:
+      - title: "Read the mode as digits"
+        code: stat -c "%a %n" site/index.html site site/latest.css
+        description: "`%a` is the number you would pass to [chmod](/commands/chmod/). A symlink is always 777 and the bits are never consulted, so the permissions that decide anything are the target's."
+        output: |
+          644 site/index.html
+          755 site
+          777 site/latest.css
+        level: basic
+        tags: [permissions, beginner]
+      - title: "Read the mode as ls draws it"
+        code: stat -c "%A %n" site/index.html site
+        description: "`%A` is the ten-character form, with the leading character giving the file type."
+        output: |
+          -rw-r--r-- site/index.html
+          drwxr-xr-x site
+        level: basic
+        tags: [permissions]
+      - title: "Read the owner and group by name"
+        code: stat -c "%U %G %n" site/index.html
+        description: "`%U` and `%G` look the numbers up in `/etc/passwd` and `/etc/group`. An account that has since been deleted has nothing to find, and prints `UNKNOWN`."
+        output: |
+          user user site/index.html
+        level: basic
+        tags: [permissions]
+      - title: "Read the owner and group as numbers"
+        code: stat -c "%u %g %n" site/index.html
+        description: "The lowercase pair is what the filesystem actually stores. Comparing files across a backup or a container wants these, since the same name can be a different number on the other machine."
+        output: |
+          1000 1000 site/index.html
+        level: intermediate
+        tags: [permissions, sysadmin]
+      - title: "Compare with what ls -l prints"
+        code: stat -c "%a %A %U %G %s %n" site/index.html; ls -l site/index.html
+        description: "The same fields, minus the date and the link count. `ls` puts them in an arrangement of its own choosing, whereas `stat` puts them in yours, so anything reading the line downstream can be told where to look."
+        output: |
+          644 -rw-r--r-- user user 36 site/index.html
+          -rw-r--r-- 1 user user 36 Jun  1 09:00 site/index.html
+        level: intermediate
+        tags: [permissions, files]
+      - title: "Check a mode after changing it"
+        code: chmod 600 site/style.css; stat -c "%a %n" site/style.css
+        description: "`chmod` prints nothing on success, so reading the mode back is how a script confirms the change landed."
+        output: |
+          600 site/style.css
+        level: basic
+        tags: [permissions]
+      - title: "Sort a directory's files by mode"
+        code: stat -c "%a %n" site/index.html site/style.css site/assets/logo.svg | sort
+        description: "Putting the mode first makes the output sortable, which is the usual reason for choosing an order in a format string."
+        output: |
+          644 site/assets/logo.svg
+          644 site/index.html
+          644 site/style.css
+        level: intermediate
+        tags: [permissions, one-liners]
+      - title: "Count the names a file has"
+        code: stat -c "%h %n" site site/assets site/index.html
+        description: "`%h` is the link count. A directory starts at 2, its own entry and the `.` inside it, and gains one for every subdirectory's `..`, so `site` reaching 4 says it holds two of them."
+        output: |
+          4 site
+          2 site/assets
+          1 site/index.html
+        level: intermediate
+        tags: [files]
+      - title: "Give a file a second name and count again"
+        code: ln site/index.html site/mirror.html; stat -c "%h %n" site/index.html site/mirror.html
+        description: "A hard link is not a copy. Both names now report a count of two because there is one file with two directory entries pointing at it."
+        output: |
+          2 site/index.html
+          2 site/mirror.html
+        level: intermediate
+        tags: [files]
+      - title: "Prove two names are the same file"
+        code: ln site/index.html site/mirror.html; [ "$(stat -c %i site/index.html)" = "$(stat -c %i site/mirror.html)" ] && echo "one file, two names"
+        description: "`%i` is the inode number, unique within a filesystem. Comparing sizes or checksums would say the same thing about two files that happen to match; comparing inodes says there is only one."
+        output: |
+          one file, two names
+        level: advanced
+        tags: [files, scripting]
+      - title: "Look at something behind a directory you cannot enter"
+        code: mkdir -p locked/inner; touch locked/inner/secret.txt; chmod 000 locked; stat locked/inner/secret.txt; chmod 755 locked
+        description: "Reading a file's record needs search permission on every directory in the path, and `locked` has none. The final `chmod` puts it back so the rest of the page is unaffected."
+        output: |
+          stat: cannot statx 'locked/inner/secret.txt': Permission denied
+        level: advanced
+        tags: [permissions, security]
+  - title: "The three timestamps"
+    intro: "Access is the last read, modification the last write, and change the last alteration to the inode itself. `%x`, `%y` and `%z` print them; `%X`, `%Y` and `%Z` give the same instants as epoch seconds."
+    examples:
+      - title: "Read the modification time"
+        code: stat -c "%y %n" site/index.html
+        description: "Nanoseconds and the UTC offset come as standard. Most filesystems record whatever precision they keep, and this one stores zeroes because [touch -d](/commands/touch/) set the time to a whole second."
+        output: |
+          2026-06-01 09:00:00.000000000 +0000 site/index.html
+        level: basic
+        tags: [files]
+      - title: "Cut the fraction and the offset off"
+        code: stat -c "%.19y %n" site/index.html site/style.css
+        description: "`%.19y` keeps the first 19 characters, which is the date and the time to the second. Any width works, so `%.10y` gives the date alone."
+        output: |
+          2026-06-01 09:00:00 site/index.html
+          2026-06-20 09:00:00 site/style.css
+        level: intermediate
+        tags: [files]
+      - title: "Read the access and modification times together"
+        code: stat -c "%.19x accessed, %.19y modified" site/style.css
+        description: "Anything outside the specifiers is printed literally, so a format string can label its own fields."
+        output: |
+          2026-06-20 09:00:00 accessed, 2026-06-20 09:00:00 modified
+        level: basic
+        tags: [files]
+      - title: "Read a time as seconds since the epoch"
+        code: stat -c "%Y %n" site/index.html site/style.css
+        description: "An integer sorts and subtracts. Every date format `stat` can print is awkward to compare in a shell, and these are just numbers."
+        output: |
+          1780304400 site/index.html
+          1781946000 site/style.css
+        level: intermediate
+        tags: [scripting]
+      - title: "Turn an epoch time back into a date"
+        code: date -d @$(stat -c %Y site/index.html) "+%A %-d %B %Y"
+        description: "`date -d @seconds` reads the number back, and its own format string decides how it looks."
+        output: |
+          Monday 1 June 2026
+        level: intermediate
+        tags: [scripting, one-liners]
+      - title: "Work out how old a file is"
+        code: days=$(( ($(date +%s) - $(stat -c %Y site/index.html)) / 86400 )); echo "index.html was last written $days days ago"
+        description: "Subtracting one epoch time from another gives seconds, and 86400 of those make a day. Integer division truncates, so this is a floor rather than a rounding."
+        volatile: "the number grows by one every day"
+        compare: shape
+        output: |
+          index.html was last written 98 days ago
+        level: advanced
+        tags: [scripting, one-liners]
+      - title: "Find the newest of a set of files"
+        code: stat -c "%Y %n" site/*.css site/*.html | sort -rn | head -1
+        description: "Epoch seconds first, sorted numerically in reverse. [ls -t](/commands/ls/) answers the same question for a directory, and this version works on any list of names you can build."
+        output: |
+          1781946000 site/style.css
+        level: advanced
+        tags: [scripting, one-liners]
+      - title: "Watch a chmod move the change time"
+        code: before=$(stat -c %Z site/index.html); sleep 1; chmod 600 site/index.html; after=$(stat -c %Z site/index.html); echo "modified $(stat -c %.19y site/index.html)"; [ "$after" -gt "$before" ] && echo "change time moved"
+        description: "The contents were never touched, so the modification time stands still while the change time follows the `chmod`. `%Z` gives each reading as a number, which is what makes them comparable in a shell. A backup tool that compares modification times alone misses permission changes for this reason."
+        output: |
+          modified 2026-06-01 09:00:00
+          change time moved
+        level: advanced
+        tags: [files, sysadmin]
+      - title: "See when a file was created"
+        code: touch fresh.txt; touch -d "2020-01-01 12:00:00" fresh.txt; stat -c "%.19w born, %.19y modified" fresh.txt
+        description: "`%w` is the birth time, recorded when the inode was made. `touch` moved the modification time six years into the past and left the birth time where it was, and there is no flag anywhere that moves it."
+        volatile: "the birth time is when the example ran"
+        compare: shape
+        output: |
+          2026-09-07 10:50:58 born, 2020-01-01 12:00:00 modified
+        level: advanced
+        tags: [files]
+  - title: "Symlinks, and which end you are asking about"
+    intro: "`stat` describes the link rather than its target, which is the opposite of what most commands do with a symlink. `-L` (`--dereference`) switches it round."
+    examples:
+      - title: "Show a link and its target"
+        code: stat -c "%N" site/latest.css
+        description: "`%N` quotes the name and, for a symlink, adds where it points. Quoting is what makes it safe to read back when a name contains a space or a newline."
+        output: |
+          'site/latest.css' -> 'style.css'
+        level: basic
+        tags: [files]
+      - title: "Read the link rather than the file"
+        code: stat -c "%F %s %n" site/latest.css
+        description: "The size is the length of the string `style.css`. A symlink is a small file whose contents are a path."
+        output: |
+          symbolic link 9 site/latest.css
+        level: intermediate
+        tags: [files]
+      - title: "Follow the link instead"
+        code: stat -L -c "%F %s %n" site/latest.css
+        description: "The same name now reports on `style.css`, at 33 bytes. `%n` still prints the name you gave."
+        output: |
+          regular file 33 site/latest.css
+        level: intermediate
+        tags: [files]
+      - title: "Read the target's timestamp"
+        code: stat --dereference -c "%.19y %n" site/latest.css
+        description: "The 20 June here belongs to `style.css`; the link itself carries the 18th. Any script comparing timestamps through a symlink has to say which of the two it means."
+        output: |
+          2026-06-20 09:00:00 site/latest.css
+        level: advanced
+        tags: [files, scripting]
+      - title: "Describe a link whose target is gone"
+        code: ln -s gone.css site/broken.css; stat -c "%N %F" site/broken.css
+        description: "The link is a perfectly good file and `stat` reads it without complaint. Nothing checks that a symlink's target exists, at the moment it is made or ever after."
+        output: |
+          'site/broken.css' -> 'gone.css' symbolic link
+        level: intermediate
+        tags: [files]
+      - title: "Try to follow a broken link"
+        code: ln -s gone.css site/broken.css; stat -L site/broken.css; echo "exit $?"
+        description: "`-L` asks about the target, and there is no target. Running the same name with and without `-L` is how a script tells a dangling link from a missing one."
+        output: |
+          stat: cannot statx 'site/broken.css': No such file or directory
+          exit 1
+        level: advanced
+        tags: [files, scripting]
+  - title: "Size against space used"
+    intro: "`%s` is how long the file is. What it occupies is `%b` blocks of `%B` bytes, and the two answers often disagree."
+    examples:
+      - title: "See the size and the blocks together"
+        code: stat -c "%s %b %B %n" site/index.html
+        description: "36 bytes stored in 8 blocks of 512, which is 4096: one filesystem block, the smallest unit it will hand out. This is why a directory of tiny files takes far more room than adding up their sizes suggests."
+        output: |
+          36 8 512 site/index.html
+        level: intermediate
+        tags: [disk]
+      - title: "Make a sparse file and measure it"
+        code: truncate -s 1M sparse.img; stat -c "%s %b %n" sparse.img
+        description: "A megabyte long and zero blocks used. `truncate` declared a length without writing anything, so the filesystem recorded the length and allocated nothing."
+        output: |
+          1048576 0 sparse.img
+        level: advanced
+        tags: [disk]
+      - title: "Compare what du says about it"
+        code: truncate -s 1M sparse.img; du -h sparse.img; stat -c "%s" sparse.img
+        description: "[du](/commands/du/) reports space consumed and `stat -c %s` reports length, so the two disagree by the whole megabyte. Neither is wrong; they answer different questions."
+        output: |
+          0	sparse.img
+          1048576
+        level: advanced
+        tags: [disk]
+      - title: "Read a directory's size"
+        code: stat -c "%s %n" site site/backups
+        description: "The size of a directory is the space its list of names takes up, and an empty one is charged the same 4096 as a full one here. It says nothing about what is inside."
+        output: |
+          4096 site
+          4096 site/backups
+        level: intermediate
+        tags: [disk, files]
+      - title: "Read a file that reports no size"
+        code: stat -c "%s %F %n" /proc/cpuinfo
+        description: "Zero bytes, and `regular empty file`, for something [cat](/commands/cat/) will happily print pages from. Files under `/proc` are generated when read, so there is nothing on a disk for `stat` to measure."
+        output: |
+          0 regular empty file /proc/cpuinfo
+        level: advanced
+        tags: [files]
+      - title: "Ask what kind of thing a name is"
+        code: mkfifo pipe.tmp; stat -c "%F %s %n" pipe.tmp
+        description: "`%F` names the seven types Unix has. A fifo is a named pipe, and it has no size because nothing is stored in it."
+        output: |
+          fifo 0 pipe.tmp
+        level: advanced
+        tags: [files]
+      - title: "Look at a device node"
+        code: stat -c "%F %n" /dev/null /dev/zero
+        description: "A character special file is a name that a driver answers to rather than a file with contents. `%t` and `%T` give the major and minor numbers that say which driver."
+        output: |
+          character special file /dev/null
+          character special file /dev/zero
+        level: advanced
+        tags: [files, sysadmin]
+  - title: "The filesystem underneath"
+    intro: "`-f` (`--file-system`) changes the subject from the file to the filesystem holding it, and the format specifiers change with it."
+    examples:
+      - title: "Name the filesystem a path is on"
+        code: stat -f -c "%T %n" /dev/shm /proc
+        description: "Neither of these is on a disk. `/dev/shm` is memory and `/proc` is the kernel answering questions, and a path on your root filesystem would report `ext2/ext3` for ext4."
+        output: |
+          tmpfs /dev/shm
+          proc /proc
+        level: intermediate
+        tags: [disk, sysadmin]
+      - title: "Read the block size"
+        code: stat -f -c "%s %S %n" site
+        description: "Under `-f`, `%s` is the block size the filesystem prefers for transfers and `%S` is the one it allocates in. A specifier means something different here from what it means without the flag."
+        output: |
+          4096 4096 site
+        level: advanced
+        tags: [disk]
+      - title: "Find the mount point a file sits on"
+        code: stat -c "%m %n" site/index.html
+        description: "`%m` walks up until the filesystem changes. A file under `/home` on its own partition would answer `/home` here rather than `/`."
+        output: |
+          / site/index.html
+        level: intermediate
+        tags: [disk, sysadmin]
+  - title: "In a script"
+    intro: "The reason to prefer `stat` over parsing [ls](/commands/ls/) is that you choose the fields and the separator, so nothing downstream has to guess at columns."
+    examples:
+      - title: "Put a size into a variable"
+        code: size=$(stat -c %s site/index.html); echo "index.html is $size bytes"
+        description: "The field comes back with no whitespace around it, so nothing has to be trimmed before it is used."
+        output: |
+          index.html is 36 bytes
+        level: basic
+        tags: [scripting, beginner]
+      - title: "Guard on a file having contents"
+        code: if [ "$(stat -c %s notes.txt)" -gt 0 ]; then echo "notes.txt has something in it"; fi
+        description: "`[ -s notes.txt ]` is the shorter way to ask this exact question. The `stat` form earns its length when the threshold is a real size rather than zero."
+        output: |
+          notes.txt has something in it
+        level: intermediate
+        tags: [scripting]
+      - title: "Print one line per file"
+        code: stat --printf="%n %s\n" site/index.html site/style.css
+        description: "`--printf` interprets backslash escapes and adds no newline of its own, so `\\n` at the end is doing the line breaks. `-c` is the same thing with the newline supplied."
+        output: |
+          site/index.html 36
+          site/style.css 33
+        level: intermediate
+        tags: [scripting]
+      - title: "Print with no trailing newline"
+        code: stat --printf="%s" site/index.html; echo "|"
+        description: "The `|` lands on the same line, which is what makes this form safe inside a larger string being built up."
+        output: |
+          36|
+        level: advanced
+        tags: [scripting]
+      - title: "Write a sentence around the fields"
+        code: stat --format="%n is %s bytes, mode %a" site/style.css
+        description: "`--format` is the long spelling of `-c`. Text around the specifiers goes through untouched, so the output can be the finished message."
+        output: |
+          site/style.css is 33 bytes, mode 644
+        level: basic
+        tags: [scripting]
+      - title: "Handle a name with a space in it"
+        code: touch "my report.txt"; stat -c "%N %s" "my report.txt"
+        description: "`%N` quotes the name, so a reader of the output can tell where it ends. `%n` would print it bare and leave the space looking like a separator."
+        output: |
+          'my report.txt' 0
+        level: intermediate
+        tags: [scripting]
+      - title: "Describe everything in a directory"
+        code: stat -c "%n %F" site/*
+        description: "The shell expands the glob and sorts it, and `stat` takes as many names as it is given. Dotfiles are missing because the glob skips them, not because `stat` does."
+        output: |
+          site/assets directory
+          site/backups directory
+          site/index.html regular file
+          site/latest.css symbolic link
+          site/style.css regular file
+        level: intermediate
+        tags: [scripting, files]

@@ -283,7 +283,7 @@ sections:
     examples:
       - title: "Remove an account and keep its files"
         code: deluser tips-dev; id tips-dev; stat -c '%A %U %n' /home/tips-dev
-        description: "The default. The home directory survives with no owner, which `stat` reports as `UNKNOWN` and `ls -l` shows as a bare number: nothing owns uid 1001 any more, and the next account created will inherit both the number and the files."
+        description: "The default. The home directory survives with no owner, which [stat](/commands/stat/) reports as `UNKNOWN` and `ls -l` shows as a bare number: nothing owns uid 1001 any more, and the next account created will inherit both the number and the files."
         danger: true
         output: |2
           id: 'tips-dev': no such user

@@ -196,10 +196,21 @@ with its PID and uptime, `df -h` on the reader's own disks) don't drop it and do
     ...
 ```
 
-The note is shown to the reader above the output, and the replay checks that example by shape:
-numbers, quantities, dates and identifiers are free to differ, everything else must match. It is
-not an escape hatch: output containing something the reader could never see (a container id, a
-path from the harness) still has to be removed rather than declared volatile.
+The note is shown to the reader above the output, and it does not on its own change how the
+example is checked. Most volatile output still compares exactly, because `scripts/lib/normalise.ts`
+masks the specific line the moving value appears on, and an anchored mask is stricter than a
+general one. Where no anchored mask covers it, add `compare: shape` alongside the note: numbers,
+quantities, dates and identifiers are then free to differ, and a renamed field, a vanished line or
+a changed state still fails. The schema requires the note whenever `compare: shape` is set, so the
+two are written together.
+
+The replay is what says which of the two an example needs. A page that sets `volatile:` and stops
+there will fail on exactly the lines the note describes, so read the mismatch before reaching for
+the flag: a value that moves every run wants `compare: shape`, and a value that moves once a day
+wants it too, even though today's replay passed.
+
+`volatile:` is not an escape hatch either way: output containing something the reader could never
+see (a container id, a path from the harness) still has to be removed rather than declared.
 
 For examples a batch genuinely can't replay *at all* (needing a concurrent writer, like `tail -f`,
 or a network peer), list the title in `scripts/fixtures/<command>.skip` with a comment saying how it

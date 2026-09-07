@@ -6,7 +6,7 @@ category: commands
 tags: [files, beginner, terminal]
 updated: 2026-08-23
 tier: flagship
-related: [find, chmod, file-permissions-explained, find-the-largest-files]
+related: [find, chmod, stat, file-permissions-explained, find-the-largest-files]
 ---
 
 `ls` lists what is in a directory. Given no arguments it lists the current one, given a directory

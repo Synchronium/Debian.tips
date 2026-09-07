@@ -295,6 +295,14 @@
     "fixtures": 2,
     "unpaired": 0
   },
+  "commands/stat": {
+    "checked": 51,
+    "byShape": 4,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 2,
+    "unpaired": 0
+  },
   "commands/sudo": {
     "checked": 31,
     "byShape": 0,

@@ -90,7 +90,7 @@ sections:
     examples:
       - title: "Recurse into a directory"
         code: chown -R deploy:webdev site && stat -c '%U:%G %n' site site/assets site/assets/logo.svg
-        description: "`-R` (`--recursive`) covers the directory, everything in it and everything below. `stat -c` is used here in place of [ls](/commands/ls/) because it prints no timestamps."
+        description: "`-R` (`--recursive`) covers the directory, everything in it and everything below. [stat -c](/commands/stat/) is used here in place of [ls](/commands/ls/) because it prints no timestamps."
         output: |
           deploy:webdev site
           deploy:webdev site/assets

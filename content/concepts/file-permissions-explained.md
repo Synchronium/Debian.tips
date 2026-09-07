@@ -36,7 +36,7 @@ file type (`-` for a regular file, `d` for a directory, `l` for a symlink).
 For a **directory**, the three bits mean something slightly different: `r` lets you list its
 contents, `w` lets you create or delete entries inside it, and `x` lets you `cd` into it or
 access anything inside by name at all. A directory with `r--` and no `x` shows you filenames
-with `ls`, but you can't open, read, or even `stat` any file inside it, because reaching a file
+with `ls`, but you can't open, read, or even [stat](/commands/stat/) any file inside it, because reaching a file
 requires traversing the directory, and traversal needs `x`.
 
 ## Numeric mode: three digits, one per actor

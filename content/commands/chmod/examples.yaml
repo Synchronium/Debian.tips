@@ -83,7 +83,7 @@ sections:
         level: intermediate
       - title: "Check a file's current mode as a number"
         code: stat --format '%a %n' deploy.sh
-        description: "`stat` prints the numeric mode directly, handy for scripts that need to compare or restore permissions rather than parse `ls -l`."
+        description: "[stat](/commands/stat/) prints the numeric mode directly, handy for scripts that need to compare or restore permissions rather than parse `ls -l`."
         output: |2
           744 deploy.sh
         level: intermediate

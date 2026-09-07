@@ -216,6 +216,7 @@ export const COMMAND_GROUPS: { title: string; commands: string[] }[] = [
       "mkdir",
       "ln",
       "inspect-files",
+      "stat",
       "touch",
       "du",
       "df",

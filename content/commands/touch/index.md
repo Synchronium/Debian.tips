@@ -6,7 +6,7 @@ category: commands
 tags: [files, beginner]
 updated: 2026-09-04
 tier: light
-related: [ls, find, mkdir, cp, file-permissions-explained]
+related: [ls, stat, find, mkdir, cp, file-permissions-explained]
 ---
 
 `touch` does two jobs. Given a name that does not exist it creates an empty file; given one that
