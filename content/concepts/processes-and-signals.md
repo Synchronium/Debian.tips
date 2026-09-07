@@ -57,7 +57,7 @@ for zombie.
 ```bash
 perl -e 'fork or exit 0; sleep 300' & disown
 sleep 0.5
-zpid=$(ps -eo pid=,stat= | awk '$2 ~ /^Z/ {print $1; exit}')
+zpid=$(ps -eo pid=,stat=,comm= | awk '$2 ~ /^Z/ && $3 == "perl" {print $1; exit}')
 ps -o stat,comm -p $zpid
 kill -KILL $zpid; sleep 0.3
 ps -o stat,comm -p $zpid

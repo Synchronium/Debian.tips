@@ -46,6 +46,12 @@ chmod 755 stubborn.sh polite.sh
 # Matched narrowly on purpose. `pkill -x sleep` would be correct on a desktop and wrong here:
 # systemd units in this container run sleeps of their own, and killing those changes what the
 # rest of the page sees. Only the two scripts above and the exact durations the examples use.
+#
+# The same rule binds the examples, and the zombie one is where it bites. This page is not the
+# only thing on the machine making zombies: systemd respawns a console `agetty` per virtual
+# terminal, and each one is briefly a `Z` entry between exiting and being collected. An example
+# that takes the first zombie in the process table therefore reports on whichever process happened
+# to be dying, so the one here selects on `comm` as well as state.
 pkill -f 'stubborn\.sh' 2>/dev/null
 pkill -f 'polite\.sh' 2>/dev/null
 pkill -f '^sleep 300$' 2>/dev/null
