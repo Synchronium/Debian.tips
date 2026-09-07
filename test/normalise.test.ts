@@ -3,6 +3,7 @@ import {
   MASK_TOKENS,
   lineOrderIgnored,
   normalise,
+  refuseMaskTokens,
   shapeOf,
   stripArtifacts,
 } from "../scripts/lib/normalise.js";
@@ -114,6 +115,52 @@ describe("stripArtifacts: what gets written onto a page", () => {
     const written = stripArtifacts(real);
     for (const token of MASK_TOKENS) expect(written).not.toContain(token);
     expect(written).toBe(real);
+  });
+});
+
+describe("refuseMaskTokens: the guard that keeps a block failable", () => {
+  /* The check above proves `stripArtifacts` does not introduce a mask. This one is the backstop
+   * for a mask arriving by any other route: a hand-edited page, a paste from a replay diff, an
+   * older capture. It matters more than its size suggests, because a page carrying a mask is
+   * masked to itself and matches any future output for ever, so the block reads as verified,
+   * counts towards the page's score, and can never fail again. */
+
+  it("passes output carrying no mask", () => {
+    expect(() => refuseMaskTokens("wc", [{ where: '"Count lines"', text: "40 report.txt" }])).not.toThrow();
+  });
+
+  it("refuses every token it publishes, not just the ones it was written for", () => {
+    // Driven off MASK_TOKENS rather than a literal list: a mask added to that array without a
+    // matching case here would otherwise be free to reach a page.
+    for (const token of MASK_TOKENS) {
+      expect(() => refuseMaskTokens("wc", [{ where: '"Count lines"', text: `saved at ${token}` }])).toThrow(
+        token,
+      );
+    }
+  });
+
+  it("names the page and every offending block, not the first one it meets", () => {
+    // The caller reports and exits, so a message naming one block turns a page-wide repair into
+    // one round trip per masked example.
+    try {
+      refuseMaskTokens("wget", [
+        { where: '"Download a file"', text: "saved at <TIMESTAMP>" },
+        { where: '"Show the rate"', text: "done (<RATE>)" },
+        { where: '"Fetch a page"', text: "200 OK" },
+      ]);
+      expect.unreachable("a page carrying two masks must be refused");
+    } catch (error) {
+      const message = (error as Error).message;
+      expect(message).toContain("wget");
+      expect(message).toContain("2 documented output(s)");
+      expect(message).toContain('"Download a file"');
+      expect(message).toContain('"Show the rate"');
+      expect(message).not.toContain('"Fetch a page"');
+    }
+  });
+
+  it("accepts a page with no blocks at all", () => {
+    expect(() => refuseMaskTokens("wc", [])).not.toThrow();
   });
 });
 

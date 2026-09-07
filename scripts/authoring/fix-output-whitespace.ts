@@ -17,6 +17,7 @@ import type { Example } from "../../src/content/schema.js";
 import { examplesPath, readExamplesFile } from "../lib/examplesFile.js";
 import { ReplayError, readSetupDirectives } from "../lib/replayMetadata.js";
 import { SANDBOX_TOOL, captureAll, openSandbox } from "../lib/sandbox.js";
+import { REPAIR, classifyRepair, trimEdges } from "../lib/whitespaceRepair.js";
 import { findOutputBlock, replaceOutputBlock } from "../lib/yamlBlock.js";
 
 function main(): void {
@@ -50,20 +51,6 @@ function main(): void {
     examples.map((example) => example.code),
   );
 
-  /** Trailing spaces per line, and leading and trailing blank lines.
-   *
-   *  Deliberately narrower than the replay's `normalise`: this tool decides whether two blocks
-   *  differ *only* in indentation, so anything it cannot explain that way must be left alone. A
-   *  looser comparison here would let it rewrite a block that genuinely differs. */
-  const trimEdges = (text: string): string => text.replace(/[ \t\r]+$/gm, "").replace(/^\n+|\n+$/g, "");
-
-  /** Comparable ignoring the indentation this tool exists to restore. */
-  const withoutIndentation = (text: string): string =>
-    trimEdges(text)
-      .split("\n")
-      .map((line) => line.trimStart())
-      .join("\n");
-
   let lines = readFileSync(path, "utf-8").split("\n");
   let repaired = 0;
   const leftAlone: { title: string; reason: string }[] = [];
@@ -72,10 +59,9 @@ function main(): void {
   for (let index = examples.length - 1; index >= 0; index--) {
     const example = examples[index] as Example;
     const got = trimEdges(captured.get(index) ?? "");
-    const want = trimEdges(example.output ?? "");
-    if (got === want) continue;
-
-    if (withoutIndentation(got) !== withoutIndentation(want)) {
+    const verdict = classifyRepair(got, example.output ?? "");
+    if (verdict === REPAIR.unchanged) continue;
+    if (verdict === REPAIR.substance) {
       leftAlone.push({ title: example.title, reason: example.code.split("\n")[0] ?? "" });
       continue;
     }

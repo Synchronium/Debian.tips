@@ -14,6 +14,7 @@
 // A setup script is required, unlike in the replay: fixtures are restored before every
 // example, and capturing against an empty directory would record nothing worth adopting.
 import { readFileSync, writeFileSync } from "node:fs";
+import { ADOPT_ALL, selectAdoptTargets } from "../lib/adoptTargets.js";
 import { examplesPath, readExamplesFile } from "../lib/examplesFile.js";
 import { stripArtifacts } from "../lib/normalise.js";
 import { ReplayError, loadSkipTitles, readSetupDirectives } from "../lib/replayMetadata.js";
@@ -25,7 +26,9 @@ function main(): void {
   const asUserFlag = argv[0] === "--user" ? (argv.shift(), true) : false;
   const [sandboxName, command, setupPath, ...titles] = argv;
   if (!sandboxName || !command || !setupPath || titles.length === 0) {
-    console.error('usage: adopt-real-output.ts [--user] <sandbox> <command> <setup.sh> "<title>"|--all');
+    console.error(
+      `usage: adopt-real-output.ts [--user] <sandbox> <command> <setup.sh> "<title>"|${ADOPT_ALL}`,
+    );
     process.exit(2);
   }
 
@@ -44,20 +47,11 @@ function main(): void {
     command,
     withOutput.map((example) => example.title),
   );
-  const adoptable = withOutput.filter((example) => !skipTitles.has(example.title));
 
-  // Titles are matched whole. A prefix match takes "Find symlinks" for "Find symlinks that
-  // point to a regular file" and writes one example's output into the other's block.
-  const wantAll = titles[0] === "--all";
-  const targets = adoptable
-    .map((example, index) => ({ example, index }))
-    .filter(({ example }) => wantAll || titles.includes(example.title));
-  if (!wantAll) {
-    const missing = titles.filter((title) => !adoptable.some((example) => example.title === title));
-    if (missing.length) {
-      console.error(`no example titled: ${missing.map((title) => JSON.stringify(title)).join(", ")}`);
-      process.exit(2);
-    }
+  const { adoptable, targets, missing } = selectAdoptTargets(withOutput, skipTitles, titles);
+  if (missing.length) {
+    console.error(`no example titled: ${missing.map((title) => JSON.stringify(title)).join(", ")}`);
+    process.exit(2);
   }
 
   const sandbox = openSandbox({
