@@ -68,12 +68,12 @@ not in `docs/adr/`.
 
 ## §2. Where the site is now
 
-103 pages, counted 2026-09-09. `src/content/verificationStats.ts` is what the about page renders
+105 pages, counted 2026-09-11. `src/content/verificationStats.ts` is what the about page renders
 from, so its figures are the ones the site publishes about itself.
 
 | Category | Pages | State |
 | --- | --- | --- |
-| `commands` | 51 | Text processing, the file basics, the process group and the privilege group are all closed. What remains is the diagnostic foundation in §6.1 and the breadth in §6.2 to §6.9. |
+| `commands` | 53 | Text processing, the file basics, the process group and the privilege group are all closed. What remains is the diagnostic foundation in §6.1 and the breadth in §6.2 to §6.9. |
 | `concepts` | 7 | The three highest-demand concepts are written. §7 holds the rest, and several of them are what a §5 hub will want to link to rather than re-explain. |
 | `scripting` | 14 | Complete since 2026-08-29, ending in a capstone that uses the thirteen lessons before it. §11 is the only thing that would extend it. |
 | `recipes` | 11 | §9 holds the backlog, led by the ones that tie several written pages together. |
@@ -260,8 +260,8 @@ message is unambiguous, high-intent, and not well served by sites that write aro
   itself is readable; wrong owner; right owner and wrong group; the case where `sudo` does not help
   because the operation is not the one being refused; and the case where the mode is correct and
   something else is refusing. Replays as the unprivileged `user`, since root is never refused.
-- **`disk-full`**, titled for `No space left on device`. **Needs**: `du`, `df`, `find`, `lsof`
-  (§6.1). **Demo**: bytes exhausted; inodes exhausted while `df` reports space free; one directory
+- **`disk-full`**, titled for `No space left on device`. **Needs**: §4.1 only; `du`, `df`, `find`
+  and `lsof` are all written. **Demo**: bytes exhausted; inodes exhausted while `df` reports space free; one directory
   holding most of it; one file holding most of it; a deleted file a process still holds open, which
   is the case that makes `df` and `du` disagree. `scripts/fixtures/df.sh` already mounts tmpfs with
   `size=` and `nr_inodes=` pinned and already exhausts an inode table, so most of this is buildable
@@ -302,7 +302,8 @@ message is unambiguous, high-intent, and not well served by sites that write aro
   **Demo**: a process spinning against one that is blocked; resident against virtual size; cache
   and buffers counted as used, which is the misreading `free` invites. These two give the
   `performance` tag its first pages.
-- **`cannot-remove-file-in-use`**. **Needs**: `lsof`, `fuser` (§6.1). **Demo**: unlinking a file a
+- **`cannot-remove-file-in-use`**. **Needs**: §4.1 only; `lsof` and `fuser` are written.
+  **Demo**: unlinking a file a
   process holds open, and why the space does not return until it closes. Note gate 1 against §9's
   port recipe: the operand differs, the method does not, so this earns a page only if the
   explanation differs.
@@ -318,17 +319,17 @@ does not" is not an argument.
 
 ### §6.1. Diagnostic foundations
 
-Written first, because §5 cannot proceed without them.
+Written first, because §5 cannot proceed without them. `lsof` and `fuser` are done, on one shared
+fixture; §13.2 has what they cost.
 
-- **`lsof`** (`flagship`). **Needs**: nothing. **Demo**: open files by process, by port, by user;
-  a deleted file still held; `+D` on a directory. The page `kill-whatever-is-using-a-port` already
-  leans on `lsof` with nothing to link to.
-- **`fuser`** (`light`). **Needs**: `lsof`. **Demo**: what holds a mount point, and killing by
-  file. Shares `lsof`'s fixture.
-- **`free`** (`light`). **Needs**: nothing. **Demo**: available against free, and where cache sits.
-  Figures are volatile, so the page shows the shape of the answer and names what it is reading.
-- **`top`** (`standard`). **Needs**: `free`. **Demo**: batch mode, since interactive output cannot
-  be replayed; sorting; what the load average is counting.
+- **`free`** (`light`) and **`top`** (`standard`). **Blocked, and not on a dependency.** Measured
+  2026-09-11: inside the sandbox `free` reports the *host's* memory, not the container's, and
+  `/sys/fs/cgroup/memory.max` is `max`, so there is no limit to report instead. `compare: shape`
+  masks every digit, which leaves a page verifying its column headers. The figures are also ones
+  the reader could never see, which §4b says to remove rather than declare volatile. Writing these
+  needs the decision in the immediate backlog about what verification owes a page it cannot check,
+  and that decision also gates the two hubs in §5.3, which are built on `free`'s cache-counted-as-
+  used misreading. Do not start them before it is made.
 - **`mount`** (`standard`). **Needs**: nothing. **Demo**: a tmpfs and a loop device, both under
   `# verify: --privileged`. Shares a fixture with `mkfs` and `blkid` in §6.7.
 - **`id`** (`light`). **Needs**: nothing. **Demo**: real against effective, supplementary groups.
@@ -409,9 +410,13 @@ All three share a fixture with `tar`, which is written.
 
 ### §6.7. Disk and storage
 
-Unblocked. `# verify: --privileged` exists as a fixture directive, `scripts/fixtures/README.md`
-documents it, and `scripts/fixtures/df.sh` uses it. Loop devices work under it, which is what the
-previous plan was waiting for.
+Unblocked, and checked rather than assumed. `# verify: --privileged` exists as a fixture
+directive, `scripts/fixtures/README.md` documents it, and `scripts/fixtures/df.sh`,
+`scripts/fixtures/lsof.sh` and `scripts/fixtures/fuser.sh` all use it. The whole chain was run in
+the sandbox on 2026-09-11: `losetup --find --show`, `mkfs.ext4`, `mount`, `blkid` and `fsck.ext4`
+all work, every tool is already in the image, and `losetup -f` answers `/dev/loop0` consistently in
+a container with nothing else attached. `mkfs.ext4 -U` pins the filesystem UUID, so `blkid` output
+compares exactly instead of by shape.
 
 - **`mkfs`** (`standard`), **`blkid`** (`light`), **`fsck`** (`standard`) share a loop-device
   fixture with `mount` (§6.1) and `dd` (§6.2). **Demo**: making a filesystem in a file, mounting
@@ -645,7 +650,15 @@ Distilled from the shipped ledger this plan replaces. Each of these cost a batch
   line contains the pattern.
 - **Killing a process and then counting needs `# verify: --systemd`.** The default sandbox's PID 1
   is the `sleep` holding the container open, so it reaps nothing and every killed process stays as a
-  zombie carrying its own name.
+  zombie carrying its own name. A page whose own tools ignore zombies can stay on the weaker
+  `--privileged` grant instead: `lsof` and `fuser` both do, since a zombie holds no files, so that
+  page's fixture waits on the files the processes held rather than on `pgrep`, which would never
+  come back. Twenty-four accumulated zombies changed nothing either command printed.
+- **Two streams from one command is a race whenever both land in a pipe.** `fuser` writes process
+  ids to stdout and the filename, the access letters and everything `-v` adds to stderr. Captured
+  together the order moved between runs, once splicing mid-line. Every example redirects one
+  stream, and the one that shows the interleaved form runs under `script -qec`, where a terminal
+  makes the order deterministic.
 - **A fixture that starts processes should test for the sockets or files they provide**, not for
   the processes, so an example that closes one is repaired on the next restore. Guarded that way
   `ss` costs 13ms per restore against 342ms cold.
@@ -663,7 +676,9 @@ Distilled from the shipped ledger this plan replaces. Each of these cost a batch
 - **The replay's working directory**, which is named after the page. No example prints `pwd` from
   it. A fixture that needs a stable path builds one under `/srv`.
 - **`$HOME`**, for the same reason.
-- **An architecture**, including a number that encodes one.
+- **An architecture**, including a number that encodes one, and including the multiarch triplet in
+  a shared library's path. That last one rules out any unnarrowed `lsof`: a process's `mem` rows
+  are its libraries, and every one of them sits under `/usr/lib/<triplet>/`.
 - **A timestamp near the six-month boundary**, where `ls -l` switches from a time of day to a year.
   ADR-0027 and `test/timestampDrift.test.ts` hold fixture dates clear of it.
 - **`df` with no arguments**, which reports the host's overlay filesystem. Mount tmpfs with `size=`
@@ -678,6 +693,12 @@ Distilled from the shipped ledger this plan replaces. Each of these cost a batch
   `unordered:` (ADR-0026) is what an ordering problem wants.
 - **A page that publishes a script should `cat` it**, so the listing a reader reads is a checked
   block rather than a copy that can drift.
+- **A shape-heavy page is not automatically a weak one.** Every row `lsof` prints carries a pid, a
+  device number and an inode, so most of that page compares by shape, which still holds the command
+  name, the user, the descriptor's mode letter, the type, the whole path and the `(deleted)` and
+  `(LISTEN)` markers. Where the volatile part can be pinned instead, pin it: `mkfs.ext4 -U` fixes a
+  filesystem UUID, and binding a client's source port rather than taking an ephemeral one turned
+  every socket row on two pages from shape into an exact comparison.
 
 ### §13.5. Writing the page
 
