@@ -5,7 +5,7 @@ description: "Tested df examples: reading the output, asking about the filesyste
 category: commands
 tags: [disk, sysadmin, files]
 updated: 2026-08-31
-related: [du, find-the-largest-files, ls, processes-and-signals]
+related: [du, find-the-largest-files, ls, lsof, processes-and-signals]
 tier: light
 ---
 

@@ -177,3 +177,175 @@ mk_access_log() { cat > access.log <<'EOF'
 EOF
 }
 mk_report() { for i in $(seq 1 40); do echo "line $i of the report"; done > report.txt; }
+mk_open_files() {
+# The processes that lsof and fuser report on. Both pages ask the same question of the same
+# machine, so a reader moving between them meets one set of open files rather than two that
+# resemble each other.
+#
+# Every process name is at most nine characters except tips-archiver, which is over on
+# purpose: lsof truncates the COMMAND column at nine and prints the rest only when asked, so
+# a page documenting `+c 0` needs a name long enough to be cut.
+#
+# Each one is a script with a shebang naming the interpreter directly. `#!/usr/bin/env
+# python3` executes env, which executes Python, and a process is named after the file the
+# kernel was told to run, so every one of these would come back as `python3`.
+#
+# /srv/cache is a tmpfs rather than an ordinary directory. `fuser -m` reports on a whole
+# filesystem and lsof's DEVICE column names one, and left on the container's root both would
+# answer about the host's overlay: every process on the machine for the first, and a device
+# number belonging to whoever started the container for the second.
+#
+# Sizes are written explicitly because both pages print a SIZE column.
+
+  # Rebuilt only when something is missing, since starting four interpreters and a mount costs
+  # more than every example on either page put together. The test is the open files themselves
+  # rather than the processes holding them, so it covers both a process an example killed and a
+  # file an example closed.
+  open_files_ready() {
+    [ -n "$(lsof -t /srv/tips/app.log 2>/dev/null)" ] &&
+      [ -n "$(lsof -t /srv/tips/spool/job-0142.json 2>/dev/null)" ] &&
+      [ -n "$(lsof -t /srv/cache/site.tar 2>/dev/null)" ] &&
+      [ "$(lsof -t -i :8080 2>/dev/null | wc -l)" = "2" ] &&
+      lsof +L1 /srv/cache 2>/dev/null | grep -q 'scratch\.dat (deleted)'
+  }
+  open_files_ready && return 0
+
+  # Killed by exact name. `pkill -f tips-` would match the shell running this script, because
+  # `-f` tests the whole command line rather than the process name.
+  for name in tips-log tips-api tips-tmp tips-archiver tips-job tips-client; do
+    pkill -x "$name" 2>/dev/null || true
+  done
+
+  # Waited for by the files they held rather than by `pgrep`. This sandbox's pid 1 is the `sleep`
+  # holding the container open, which reaps nothing, so a killed process stays in the table as a
+  # zombie carrying its own name for as long as the container runs. A zombie holds no files, so
+  # both pages report on it correctly and only a wait written against `pgrep` would hang.
+  for _ in $(seq 1 50); do
+    [ -z "$(lsof -t /srv/tips/app.log /srv/tips/queue.dat /srv/cache/site.tar 2>/dev/null)" ] && break
+    sleep 0.1
+  done
+
+  mountpoint -q /srv/cache && umount -l /srv/cache
+  rm -rf /srv/tips
+  mkdir -p /srv/tips/spool /srv/cache
+  mount -t tmpfs -o size=20M,nr_inodes=2000 tmpfs /srv/cache
+
+  # One file in a subdirectory, held open like the rest. Without it `+d` and `+D` print the
+  # same thing, and a page showing both would be documenting a distinction it never made.
+  yes "queued job payload" | head -c 4096 > /srv/tips/queue.dat
+  printf '{"id": 142, "state": "running"}\n' > /srv/tips/spool/job-0142.json
+  : > /srv/tips/app.log
+  chmod 755 /srv/tips /srv/tips/spool
+  chmod 644 /srv/tips/queue.dat /srv/tips/app.log /srv/tips/spool/job-0142.json
+  chown -R user:user /srv/tips
+
+  # Holds its log open for append, which is what a service does and what stops the space
+  # coming back when someone deletes one.
+  cat > /usr/local/bin/tips-log <<'PY'
+#!/usr/bin/python3
+import os, time
+os.chdir("/srv/tips")
+f = open("/srv/tips/app.log", "a")
+f.write("worker started\n")
+f.flush()
+while True:
+    time.sleep(3600)
+PY
+
+  # Listens on every address, so `lsof -i` has a socket to report and `fuser -n tcp` has a
+  # port. The backlog is not asserted anywhere; 128 is what a service would ask for.
+  cat > /usr/local/bin/tips-api <<'PY'
+#!/usr/bin/python3
+import os, socket, time
+os.chdir("/srv/tips")
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.bind(("0.0.0.0", 8080))
+s.listen(128)
+while True:
+    time.sleep(3600)
+PY
+
+  # Writes five megabytes to the tmpfs and then unlinks the file while still holding it. The
+  # name is gone from the directory and the blocks are not, so `df` and `du` disagree about
+  # /srv/cache by exactly this much until the process exits. Five megabytes of twenty, against
+  # the one that site.tar accounts for, so both figures are legible on the page.
+  cat > /usr/local/bin/tips-tmp <<'PY'
+#!/usr/bin/python3
+import os, time
+os.chdir("/srv/cache")
+f = open("/srv/cache/scratch.dat", "w")
+f.write("x" * 5242880)
+f.flush()
+os.unlink("/srv/cache/scratch.dat")
+while True:
+    time.sleep(3600)
+PY
+
+  # The only one whose working directory is on the tmpfs, so `fuser -m /srv/cache` names one
+  # process rather than every process that happens to be running.
+  cat > /usr/local/bin/tips-archiver <<'PY'
+#!/usr/bin/python3
+import os, time
+os.chdir("/srv/cache")
+f = open("/srv/cache/site.tar", "w")
+f.write("y" * 1048576)
+f.flush()
+while True:
+    time.sleep(3600)
+PY
+
+  # Runs as `user` and reads rather than writes, so both pages can show the USER column
+  # distinguishing two processes and the access mode distinguishing a reader from a writer.
+  cat > /usr/local/bin/tips-job <<'PY'
+#!/usr/bin/python3
+import os, time
+os.chdir("/srv/tips")
+f = open("/srv/tips/queue.dat", "r")
+f.read(1024)
+j = open("/srv/tips/spool/job-0142.json", "r")
+j.read()
+while True:
+    time.sleep(3600)
+PY
+
+  # Connects to tips-api and holds the connection open, so both pages can show a port in use by
+  # something other than the process listening on it. Holding it rather than reconnecting keeps
+  # the client's ephemeral port the same for every example in a run.
+  # Binds its own source port before connecting rather than taking whatever the kernel offers.
+  # Both pages print that port, and an ephemeral one is a different number on every run.
+  cat > /usr/local/bin/tips-client <<'PY'
+#!/usr/bin/python3
+import os, socket, time
+os.chdir("/srv/tips")
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.bind(("127.0.0.1", 45400))
+s.connect(("127.0.0.1", 8080))
+while True:
+    time.sleep(3600)
+PY
+
+  chmod 755 /usr/local/bin/tips-log /usr/local/bin/tips-api /usr/local/bin/tips-tmp \
+    /usr/local/bin/tips-archiver /usr/local/bin/tips-job /usr/local/bin/tips-client
+
+  # Started one at a time, each waited for before the next. lsof reports in the order it reads
+  # /proc, which is the order the pids were handed out, so starting them together would list
+  # them in whatever order the kernel happened to schedule them.
+  #
+  # Each sets its own working directory rather than being started from one. A `( cd dir &&
+  # setsid prog & )` leaves the subshell itself running with that directory open, and a page
+  # about open files would then be reporting on its own fixture script.
+  setsid /usr/local/bin/tips-log </dev/null >/dev/null 2>&1 &
+  for _ in $(seq 1 100); do [ -n "$(lsof -t /srv/tips/app.log 2>/dev/null)" ] && break; sleep 0.1; done
+  setsid /usr/local/bin/tips-api </dev/null >/dev/null 2>&1 &
+  for _ in $(seq 1 100); do [ -n "$(lsof -t -i :8080 2>/dev/null)" ] && break; sleep 0.1; done
+  setsid /usr/local/bin/tips-tmp </dev/null >/dev/null 2>&1 &
+  for _ in $(seq 1 100); do lsof +L1 /srv/cache 2>/dev/null | grep -q 'scratch\.dat (deleted)' && break; sleep 0.1; done
+  setsid /usr/local/bin/tips-archiver </dev/null >/dev/null 2>&1 &
+  for _ in $(seq 1 100); do [ -n "$(lsof -t /srv/cache/site.tar 2>/dev/null)" ] && break; sleep 0.1; done
+  setsid setpriv --reuid=user --regid=user --init-groups /usr/local/bin/tips-job </dev/null >/dev/null 2>&1 &
+  for _ in $(seq 1 100); do [ -n "$(lsof -t /srv/tips/spool/job-0142.json 2>/dev/null)" ] && break; sleep 0.1; done
+  setsid /usr/local/bin/tips-client </dev/null >/dev/null 2>&1 &
+  for _ in $(seq 1 100); do open_files_ready && break; sleep 0.1; done
+}

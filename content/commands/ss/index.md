@@ -5,7 +5,7 @@ description: "Tested ss examples: listing listening sockets, finding the process
 category: commands
 tags: [networking, sysadmin, processes]
 updated: 2026-09-02
-related: [ps, kill, kill-whatever-is-using-a-port, ssh]
+related: [ps, kill, lsof, kill-whatever-is-using-a-port, ssh]
 tier: standard
 ---
 
@@ -15,6 +15,10 @@ down to a minimal container. `netstat` is not. That one ships in `net-tools`, wh
 Debian does not install, so the command in the answer you found is often missing on the machine
 you are trying to fix. [ss vs netstat](/compare/ss-vs-netstat/) translates the flags and shows
 what the filter syntax does that a `grep` cannot.
+
+A row here names the process as an attribute of a socket. [lsof](/commands/lsof/) answers from the
+other direction, listing the socket alongside every other file the process has open, which is the
+order you want when the question is what a service is doing rather than what is connected to it.
 
 ## Reading the columns
 

@@ -6,7 +6,7 @@ category: commands
 tags: [disk, files, sysadmin]
 updated: 2026-08-24
 tier: standard
-related: [find-the-largest-files, sort, ls, find]
+related: [find-the-largest-files, sort, ls, find, lsof]
 ---
 
 `du` walks a directory tree and reports how much disk each part of it uses. `du -sh somedir` is
@@ -51,4 +51,5 @@ links to somewhere else looks nearly empty. `-L` follows them and measures the t
 
 `du` adds up what it can reach by walking the tree. [`df`](/commands/df/) asks the filesystem how
 many blocks are free. A file deleted while a process still holds it open belongs to neither, so `df` counts space
-`du` cannot find, and it comes back when that process exits.
+`du` cannot find, and it comes back when that process exits. [`lsof +L1`](/commands/lsof/) is what
+names the file and the process, since there is no name left for either command to walk to.

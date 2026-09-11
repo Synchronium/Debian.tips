@@ -200,7 +200,7 @@ sections:
           rm /srv/small/tmpfile
           du -sh /srv/small
           df -h /srv/small | tail -1
-        description: "A deleted file that a process still has open. [`du`](/commands/du/) walks the directory and finds nothing, because the name is gone; `df` asks the kernel, which cannot release the blocks until the last descriptor closes. On a real machine this is usually a log file somebody deleted without restarting the service that writes it."
+        description: "A deleted file that a process still has open. [`du`](/commands/du/) walks the directory and finds nothing, because the name is gone; `df` asks the kernel, which cannot release the blocks until the last descriptor closes. On a real machine this is usually a log file somebody deleted without restarting the service that writes it, and [`lsof +L1`](/commands/lsof/) is what says which service."
         output: |2
           0	/srv/small
           tmpfs            10M  5.0M  5.0M  50% /srv/small

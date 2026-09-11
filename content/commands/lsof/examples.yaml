@@ -1,0 +1,520 @@
+command: lsof
+fixtures:
+  - name: "the files under /srv"
+    note: "the setup script starts six small Python services and every open file on this page belongs to one of them. `tips-log` appends to `app.log`, `tips-job` runs as `user` and reads both `queue.dat` and `spool/job-0142.json`, `tips-api` listens on port 8080, `tips-client` holds one connection to it, `tips-archiver` writes `site.tar`, and `tips-tmp` wrote a five-megabyte `scratch.dat` and then deleted it while still holding it open. `/srv/cache` is a 20M tmpfs of its own, so a question about a whole filesystem lands on that rather than on the container's root. `scratch.dat` is missing from the listing below because it has no name left."
+    from: "ls -R /srv/tips /srv/cache"
+    content: |
+      /srv/cache:
+      site.tar
+
+      /srv/tips:
+      app.log
+      queue.dat
+      spool
+
+      /srv/tips/spool:
+      job-0142.json
+sections:
+  - title: "What has this file open"
+    intro: "Give `lsof` a path and it names every process holding that file. The `FD` column says which descriptor and in which mode: `3w` is descriptor 3 open for writing, `3r` for reading. `DEVICE`, `SIZE/OFF` and `NODE` describe the file itself rather than the process."
+    examples:
+      - title: "Find out what is writing to a log file"
+        code: lsof /srv/tips/app.log
+        description: "A single writer, on descriptor 3. This is the question `lsof` exists for, and a path is all it needs."
+        volatile: "the pid, the device number and the inode are this machine's"
+        compare: shape
+        output: |
+          COMMAND  PID USER FD   TYPE DEVICE SIZE/OFF   NODE NAME
+          tips-log 152 root 3w   REG   0,53       15 460592 /srv/tips/app.log
+        level: basic
+      - title: "Ask about several files at once"
+        code: lsof /srv/tips/app.log /srv/tips/queue.dat
+        description: "Paths accumulate, and the answer is one table covering all of them. The mode letters differ here because one process is appending and the other only reading."
+        volatile: "the pids, the device number and the inodes are this machine's"
+        compare: shape
+        output: |
+          COMMAND  PID USER FD   TYPE DEVICE SIZE/OFF   NODE NAME
+          tips-log 152 root 3w   REG   0,53       15 460592 /srv/tips/app.log
+          tips-job 182 user 3r   REG   0,53     4096 460590 /srv/tips/queue.dat
+        level: basic
+      - title: "Check whether anything has a file open at all"
+        code: lsof /etc/passwd; echo "exit $?"
+        description: "Nothing is holding it, so `lsof` prints nothing and exits 1. A script can read that status rather than testing whether the output came back empty."
+        output: |
+          exit 1
+        level: basic
+      - title: "Get just the process ids"
+        code: lsof -t /srv/tips/app.log
+        description: "`-t` drops the table and prints one pid per line, in the form `kill` and `xargs` want. It is the only output mode that suppresses the header."
+        volatile: "the pid is this machine's"
+        compare: shape
+        output: |
+          152
+        level: basic
+      - title: "Count how many processes hold a file"
+        code: lsof -t /srv/tips/app.log | wc -l
+        description: "A count is often the whole answer: one writer is a service doing its job, and several are a problem. Without `-t` the table prints a line per descriptor, so the count would be of descriptors rather than of processes."
+        output: |
+          1
+        level: basic
+      - title: "Test a file before touching it in a script"
+        code: |-
+          for f in /srv/tips/queue.dat /etc/passwd; do
+            if lsof -t "$f" >/dev/null; then echo "$f: in use"; else echo "$f: free"; fi
+          done
+        description: "The exit status carries the answer, so the output can go to `/dev/null`. Worth doing before a rotate, a truncate or a `mv` that would otherwise land on a file something is mid-write on."
+        output: |
+          /srv/tips/queue.dat: in use
+          /etc/passwd: free
+        level: intermediate
+      - title: "Name the command without reading a table"
+        code: lsof -F c /srv/tips/app.log | grep ^c
+        description: "`-F` prints one field per line with a letter saying which field it is, so `c` is the command name. A pid line comes with it whether you asked or not, which is why the `grep` is there."
+        output: |
+          ctips-log
+        level: intermediate
+
+  - title: "Narrowing, and the -a that is not optional"
+    intro: "`-c`, `-u`, `-p`, `-i` and `-d` all select, and they combine with **OR** unless `-a` is present. Two selectors without `-a` widen the answer rather than narrowing it."
+    examples:
+      - title: "Select by command name"
+        code: lsof -a -c tips-log -d 3
+        description: "`-c` matches the start of the command name, and `-d 3` limits the answer to descriptor 3. Both conditions apply because `-a` is there."
+        volatile: "the pid, the device number and the inode are this machine's"
+        compare: shape
+        output: |
+          COMMAND  PID USER FD   TYPE DEVICE SIZE/OFF   NODE NAME
+          tips-log 152 root 3w   REG   0,53       15 460592 /srv/tips/app.log
+        level: basic
+      - title: "See two selectors combine as OR"
+        code: lsof -c tips-log -u user | awk 'NR>1 {print $1}' | sort -u
+        description: "The command asks for a process named `tips-log` and for files owned by `user`, and gets both sets: `tips-job` runs as `user` and is nothing to do with `tips-log`. Reading this as a two-part filter is how a `lsof -c sshd -u root` comes back with the whole machine in it."
+        output: |
+          tips-job
+          tips-log
+        level: intermediate
+      - title: "Turn the same two selectors into AND"
+        code: lsof -a -c tips-log -u user; echo "exit $?"
+        description: "`-a` makes the conditions apply together, and no process called `tips-log` runs as `user`, so the answer is empty."
+        output: |
+          exit 1
+        level: intermediate
+      - title: "List what one user has open"
+        code: lsof -a -u user -d 3,4
+        description: "`-d` takes a list, so `3,4` covers both of this process's data descriptors. Without `-a` the `-d` would apply to every process on the machine as well."
+        volatile: "the pid, the device number and the inodes are this machine's"
+        compare: shape
+        output: |
+          COMMAND  PID USER FD   TYPE DEVICE SIZE/OFF   NODE NAME
+          tips-job 182 user 3r   REG   0,53     4096 460590 /srv/tips/queue.dat
+          tips-job 182 user 4r   REG   0,53       32 460591 /srv/tips/spool/job-0142.json
+        level: intermediate
+      - title: "Exclude a user instead of selecting one"
+        code: lsof -a -u ^root -d 3
+        description: "A `^` in front of the value negates it. On a real machine `-u ^root` is the quickest way to see what the service accounts are doing without wading through everything root has open."
+        volatile: "the pid, the device number and the inode are this machine's"
+        compare: shape
+        output: |
+          COMMAND  PID USER FD   TYPE DEVICE SIZE/OFF   NODE NAME
+          tips-job 182 user 3r   REG   0,53     4096 460590 /srv/tips/queue.dat
+        level: intermediate
+      - title: "Ask about two command names"
+        code: lsof -a -c tips-log -c tips-api -d 3
+        description: "Repeating a selector ORs it with itself, which is the behaviour you want here: either command, and descriptor 3. The `-a` applies between the different kinds of selector, not within one kind."
+        volatile: "the pids, the device numbers and the inodes are this machine's"
+        compare: shape
+        output: |
+          COMMAND  PID USER FD   TYPE  DEVICE SIZE/OFF   NODE NAME
+          tips-log 152 root 3w   REG    0,53       15 460592 /srv/tips/app.log
+          tips-api 157 root 3u  IPv4 2527152      0t0    TCP *:http-alt (LISTEN)
+        level: intermediate
+      - title: "Exclude a command and search a tree"
+        code: lsof -a -c ^tips-log -d 3,4 +D /srv/tips
+        description: "Not `tips-log`, descriptor 3 or 4, and somewhere under `/srv/tips`, all applying together. Useful when one noisy service is drowning out whatever else is in a directory."
+        volatile: "the pid, the device number and the inodes are this machine's"
+        compare: shape
+        output: |
+          COMMAND  PID USER FD   TYPE DEVICE SIZE/OFF   NODE NAME
+          tips-job 182 user 3r   REG   0,53     4096 460590 /srv/tips/queue.dat
+          tips-job 182 user 4r   REG   0,53       32 460591 /srv/tips/spool/job-0142.json
+        level: intermediate
+      - title: "Match a prefix across several services"
+        code: lsof -a -c tips- -d 3,4
+        description: "`-c` matches from the beginning of the name rather than the whole of it, so one selector covers a family of processes named alike. The `TYPE` column changes with what is open: `REG` for a file, `IPv4` for a socket."
+        volatile: "the pids, the device numbers, the inodes and the socket ids are this machine's"
+        compare: shape
+        output: |
+          COMMAND   PID USER FD   TYPE  DEVICE SIZE/OFF   NODE NAME
+          tips-log  152 root 3w   REG    0,53       15 460592 /srv/tips/app.log
+          tips-api  157 root 3u  IPv4 2527152      0t0    TCP *:http-alt (LISTEN)
+          tips-tmp  164 root 3w   REG    0,55  5242880      2 /srv/cache/scratch.dat (deleted)
+          tips-arch 173 root 3w   REG    0,55  1048576      3 /srv/cache/site.tar
+          tips-job  182 user 3r   REG    0,53     4096 460590 /srv/tips/queue.dat
+          tips-job  182 user 4r   REG    0,53       32 460591 /srv/tips/spool/job-0142.json
+          tips-clie 187 root 3u  IPv4 2528819      0t0    TCP localhost:45400->localhost:http-alt (ESTABLISHED)
+        level: intermediate
+      - title: "Look at everything one process has open"
+        code: lsof -a -p "$(lsof -t -a -i :8080 -s TCP:LISTEN)" -d ^mem
+        description: "Find the pid with one `lsof`, then hand it to `-p` in another. `-d ^mem` drops the shared libraries, which would otherwise be most of the answer."
+        volatile: "the pid, the device numbers, the inodes and the Python version are this machine's"
+        compare: shape
+        output: |
+          COMMAND  PID USER  FD   TYPE  DEVICE SIZE/OFF   NODE NAME
+          tips-api 157 root cwd    DIR    0,53     4096 460585 /srv/tips
+          tips-api 157 root rtd    DIR    0,53     4096 460534 /
+          tips-api 157 root txt    REG    0,53  6673736 442800 /usr/bin/python3.13
+          tips-api 157 root   0r   CHR     1,3      0t0     61 /dev/null
+          tips-api 157 root   1w   CHR     1,3      0t0     61 /dev/null
+          tips-api 157 root   2w   CHR     1,3      0t0     61 /dev/null
+          tips-api 157 root   3u  IPv4 2527152      0t0    TCP *:http-alt (LISTEN)
+        level: advanced
+
+  - title: "Reading the FD column"
+    intro: "`FD` holds a descriptor number for most entries and a name for four of them. `cwd` is the process's working directory, `rtd` its root directory, `txt` the executable it is running, and `mem` a file mapped into its address space. A number arrives followed by `r`, `w` or `u` for read, write or both."
+    examples:
+      - title: "See the whole picture for one process"
+        code: lsof -a -c tips-job -d ^mem
+        description: "The three standard descriptors are there as 0, 1 and 2, pointing at `/dev/null` because nothing attached a terminal. `cwd` and `txt` answer where a process thinks it is and which binary it is really running."
+        volatile: "the pid, the device number, the inodes and the Python version are this machine's"
+        compare: shape
+        output: |
+          COMMAND  PID USER  FD   TYPE DEVICE SIZE/OFF   NODE NAME
+          tips-job 182 user cwd    DIR   0,53     4096 460585 /srv/tips
+          tips-job 182 user rtd    DIR   0,53     4096 460534 /
+          tips-job 182 user txt    REG   0,53  6673736 442800 /usr/bin/python3.13
+          tips-job 182 user   0r   CHR    1,3      0t0     61 /dev/null
+          tips-job 182 user   1w   CHR    1,3      0t0     61 /dev/null
+          tips-job 182 user   2w   CHR    1,3      0t0     61 /dev/null
+          tips-job 182 user   3r   REG   0,53     4096 460590 /srv/tips/queue.dat
+          tips-job 182 user   4r   REG   0,53       32 460591 /srv/tips/spool/job-0142.json
+        level: intermediate
+      - title: "Find a process's working directory"
+        code: lsof -a -c tips-log -d cwd
+        description: "A service started from the wrong place writes its relative paths somewhere nobody is looking, and `cwd` is how you confirm it. `TYPE` is `DIR` rather than `REG`, since a directory is a file too."
+        volatile: "the pid, the device number and the inode are this machine's"
+        compare: shape
+        output: |
+          COMMAND  PID USER  FD   TYPE DEVICE SIZE/OFF   NODE NAME
+          tips-log 152 root cwd    DIR   0,53     4096 460585 /srv/tips
+        level: intermediate
+      - title: "Find the binary a process is running"
+        code: lsof -a -c tips-log -d txt
+        description: "`txt` is the executable, read from the kernel rather than from the command line, so it survives a process that was started through a wrapper or renamed itself. Here it is the interpreter, because the script has a `#!` line."
+        volatile: "the pid, the device number, the inode and the Python version are this machine's"
+        compare: shape
+        output: |
+          COMMAND  PID USER  FD   TYPE DEVICE SIZE/OFF   NODE NAME
+          tips-log 152 root txt    REG   0,53  6673736 442800 /usr/bin/python3.13
+        level: intermediate
+      - title: "Look at one of the mapped files"
+        code: lsof -a -c tips-log -d mem | grep locale
+        description: "`mem` entries are the shared libraries and data files the loader mapped in, and there are usually a dozen or more per process. A bare `lsof` scrolls mostly because of them, which is what `-d ^mem` removes."
+        volatile: "the pid, the device number, the inode and the size of the locale data are this machine's"
+        compare: shape
+        output: |
+          tips-log 152 root mem    REG   0,53   367708 188274 /usr/lib/locale/C.utf8/LC_CTYPE
+        level: advanced
+      - title: "See where stdin, stdout and stderr are pointing"
+        code: lsof -a -c tips-log -d 0,1,2
+        description: "Descriptors 0, 1 and 2 are the standard streams, and their modes read the way you would expect: `0r` for input, `1w` and `2w` for output. A daemon whose output vanished is one whose 1 and 2 point at `/dev/null`."
+        volatile: "the pid and the device number are this machine's"
+        compare: shape
+        output: |
+          COMMAND  PID USER FD   TYPE DEVICE SIZE/OFF NODE NAME
+          tips-log 152 root 0r   CHR    1,3      0t0   61 /dev/null
+          tips-log 152 root 1w   CHR    1,3      0t0   61 /dev/null
+          tips-log 152 root 2w   CHR    1,3      0t0   61 /dev/null
+        level: intermediate
+      - title: "Tell a reader from a writer"
+        code: lsof -a -d 3 +d /srv/tips
+        description: "Same descriptor number on both processes, different mode letters. A file with two writers is worth investigating, whereas a file with one writer and several readers is a log."
+        volatile: "the pids, the device number and the inodes are this machine's"
+        compare: shape
+        output: |
+          COMMAND  PID USER FD   TYPE DEVICE SIZE/OFF   NODE NAME
+          tips-log 152 root 3w   REG   0,53       15 460592 /srv/tips/app.log
+          tips-job 182 user 3r   REG   0,53     4096 460590 /srv/tips/queue.dat
+        level: intermediate
+      - title: "Watch a long command name get cut off"
+        code: lsof -a -c tips-arch -d cwd,3
+        description: "The `COMMAND` column is nine characters wide, so `tips-archiver` arrives as `tips-arch`. The selector has to match the truncated form too, which is why `-c tips-arch` finds it at all."
+        volatile: "the pid, the device number and the inodes are this machine's"
+        compare: shape
+        output: |
+          COMMAND   PID USER  FD   TYPE DEVICE SIZE/OFF NODE NAME
+          tips-arch 173 root cwd    DIR   0,55       60    1 /srv/cache
+          tips-arch 173 root   3w   REG   0,55  1048576    3 /srv/cache/site.tar
+        level: intermediate
+      - title: "Print the full command name"
+        code: lsof +c 0 -a -c tips-arch -d cwd,3
+        description: "`+c` sets the column width and `0` means no limit. Worth having in any output you intend to read by name rather than by pid, since two services can easily share their first nine characters."
+        volatile: "the pid, the device number and the inodes are this machine's"
+        compare: shape
+        output: |
+          COMMAND       PID USER  FD   TYPE DEVICE SIZE/OFF NODE NAME
+          tips-archiver 173 root cwd    DIR   0,55       60    1 /srv/cache
+          tips-archiver 173 root   3w   REG   0,55  1048576    3 /srv/cache/site.tar
+        level: intermediate
+
+  - title: "A directory, and a filesystem"
+    intro: "`+d` looks at one directory, `+D` descends the whole tree below it. Both take the path as the thing to search rather than the thing to report on, so they find files by where they live rather than by which process opened them."
+    examples:
+      - title: "List open files in one directory"
+        code: lsof +d /srv/tips
+        description: "`spool/job-0142.json` is open and missing from this answer, because `+d` stops at the top level. The `cwd` rows appear because a working directory is an open file like any other."
+        volatile: "the pids, the device number and the inodes are this machine's"
+        compare: shape
+        output: |
+          COMMAND   PID USER  FD   TYPE DEVICE SIZE/OFF   NODE NAME
+          tips-log  152 root cwd    DIR   0,53     4096 460585 /srv/tips
+          tips-log  152 root   3w   REG   0,53       15 460592 /srv/tips/app.log
+          tips-api  157 root cwd    DIR   0,53     4096 460585 /srv/tips
+          tips-job  182 user cwd    DIR   0,53     4096 460585 /srv/tips
+          tips-job  182 user   3r   REG   0,53     4096 460590 /srv/tips/queue.dat
+          tips-clie 187 root cwd    DIR   0,53     4096 460585 /srv/tips
+        level: intermediate
+      - title: "Search a whole tree"
+        code: lsof +D /srv/tips
+        description: "The capital letter descends, and `spool/job-0142.json` now appears. `+D` walks the tree itself, so it costs more on a large one and needs permission to read every directory in it."
+        volatile: "the pids, the device number and the inodes are this machine's"
+        compare: shape
+        output: |
+          COMMAND   PID USER  FD   TYPE DEVICE SIZE/OFF   NODE NAME
+          tips-log  152 root cwd    DIR   0,53     4096 460585 /srv/tips
+          tips-log  152 root   3w   REG   0,53       15 460592 /srv/tips/app.log
+          tips-api  157 root cwd    DIR   0,53     4096 460585 /srv/tips
+          tips-job  182 user cwd    DIR   0,53     4096 460585 /srv/tips
+          tips-job  182 user   3r   REG   0,53     4096 460590 /srv/tips/queue.dat
+          tips-job  182 user   4r   REG   0,53       32 460591 /srv/tips/spool/job-0142.json
+          tips-clie 187 root cwd    DIR   0,53     4096 460585 /srv/tips
+        level: intermediate
+      - title: "Notice that the search stops at a mount point"
+        code: lsof +D /srv
+        description: "`/srv/cache` is a separate filesystem with two processes working in it, and none of them is here. The walk stops where the mount begins, so a `+D /` answers about one filesystem rather than about the machine."
+        volatile: "the pids, the device number and the inodes are this machine's"
+        compare: shape
+        output: |
+          COMMAND   PID USER  FD   TYPE DEVICE SIZE/OFF   NODE NAME
+          tips-log  152 root cwd    DIR   0,53     4096 460585 /srv/tips
+          tips-log  152 root   3w   REG   0,53       15 460592 /srv/tips/app.log
+          tips-api  157 root cwd    DIR   0,53     4096 460585 /srv/tips
+          tips-job  182 user cwd    DIR   0,53     4096 460585 /srv/tips
+          tips-job  182 user   3r   REG   0,53     4096 460590 /srv/tips/queue.dat
+          tips-job  182 user   4r   REG   0,53       32 460591 /srv/tips/spool/job-0142.json
+          tips-clie 187 root cwd    DIR   0,53     4096 460585 /srv/tips
+        level: advanced
+      - title: "Let the search cross mount points"
+        code: lsof -x f +D /srv
+        description: "`-x f` permits the walk to follow mounts, and the two processes in `/srv/cache` appear. It has to come before `+D` on the command line, and `-x l` does the same for symbolic links."
+        volatile: "the pids, the device numbers and the inodes are this machine's"
+        compare: shape
+        output: |
+          COMMAND   PID USER  FD   TYPE DEVICE SIZE/OFF   NODE NAME
+          tips-log  152 root cwd    DIR   0,53     4096 460585 /srv/tips
+          tips-log  152 root   3w   REG   0,53       15 460592 /srv/tips/app.log
+          tips-api  157 root cwd    DIR   0,53     4096 460585 /srv/tips
+          tips-tmp  164 root cwd    DIR   0,55       60      1 /srv/cache
+          tips-arch 173 root cwd    DIR   0,55       60      1 /srv/cache
+          tips-arch 173 root   3w   REG   0,55  1048576      3 /srv/cache/site.tar
+          tips-job  182 user cwd    DIR   0,53     4096 460585 /srv/tips
+          tips-job  182 user   3r   REG   0,53     4096 460590 /srv/tips/queue.dat
+          tips-job  182 user   4r   REG   0,53       32 460591 /srv/tips/spool/job-0142.json
+          tips-clie 187 root cwd    DIR   0,53     4096 460585 /srv/tips
+        level: advanced
+      - title: "Ask about a mount point instead of a directory"
+        code: lsof /srv/cache
+        description: "A path on its own reports on the filesystem mounted there, rather than walking it, which is the form to use before an `umount`. It finds the deleted file that `+D` cannot, since that file no longer has a name to walk to."
+        volatile: "the pids, the device number and the inodes are this machine's"
+        compare: shape
+        output: |
+          COMMAND   PID USER  FD   TYPE DEVICE SIZE/OFF NODE NAME
+          tips-tmp  164 root cwd    DIR   0,55       60    1 /srv/cache
+          tips-tmp  164 root   3w   REG   0,55  5242880    2 /srv/cache/scratch.dat (deleted)
+          tips-arch 173 root cwd    DIR   0,55       60    1 /srv/cache
+          tips-arch 173 root   3w   REG   0,55  1048576    3 /srv/cache/site.tar
+        level: intermediate
+      - title: "Walk the same directory and lose a file"
+        code: lsof +D /srv/cache
+        description: "The same four rows minus one: `scratch.dat` was deleted while open, so nothing in the directory leads to it. Anything that answers by walking names will miss it."
+        volatile: "the pids, the device number and the inodes are this machine's"
+        compare: shape
+        output: |
+          COMMAND   PID USER  FD   TYPE DEVICE SIZE/OFF NODE NAME
+          tips-tmp  164 root cwd    DIR   0,55       60    1 /srv/cache
+          tips-arch 173 root cwd    DIR   0,55       60    1 /srv/cache
+          tips-arch 173 root   3w   REG   0,55  1048576    3 /srv/cache/site.tar
+        level: advanced
+
+  - title: "A deleted file that is still open"
+    intro: "Deleting a file removes its name. The blocks stay allocated until the last process holding it closes it, so `df` keeps counting them while `du` and `ls` cannot see them. This is the usual reason a filesystem stays full after a large file has been removed."
+    examples:
+      - title: "See df and du disagree"
+        code: df -h /srv/cache; du -sh /srv/cache
+        description: "The filesystem reports six megabytes in use; walking the directory finds one. The five between them belong to a file with no name."
+        output: |
+          Filesystem      Size  Used Avail Use% Mounted on
+          tmpfs            20M  6.0M   14M  30% /srv/cache
+          1.0M	/srv/cache
+        level: intermediate
+      - title: "Confirm there is nothing there to delete"
+        code: ls /srv/cache
+        description: "`site.tar` accounts for the megabyte `du` reported, and nothing you can remove will recover the other five. This is the point at which most people start restarting services at random."
+        output: |
+          site.tar
+        level: intermediate
+      - title: "Find every deleted file still held open"
+        code: lsof -nP +L1
+        description: "`+L1` selects files whose link count is below 1, which is exactly what an unlinked-but-open file is. Run without a path it covers the whole machine, and on a server that is usually a short list worth reading in full."
+        volatile: "the pid, the device number and the inode are this machine's"
+        compare: shape
+        output: |
+          COMMAND  PID USER FD   TYPE DEVICE SIZE/OFF NLINK NODE NAME
+          tips-tmp 164 root 3w   REG   0,55  5242880     0    2 /srv/cache/scratch.dat (deleted)
+        level: advanced
+      - title: "Show the link count alongside the files in one filesystem"
+        code: lsof +L1 /srv/cache
+        description: "With a path, `+L1` adds the `NLINK` column to the whole answer rather than filtering by it. `0` marks the deleted file, `1` an ordinary one and `2` a directory, counting its own entry and its child's `..`."
+        volatile: "the pids, the device number and the inodes are this machine's"
+        compare: shape
+        output: |
+          COMMAND   PID USER  FD   TYPE DEVICE SIZE/OFF NLINK NODE NAME
+          tips-tmp  164 root cwd    DIR   0,55       60     2    1 /srv/cache
+          tips-tmp  164 root   3w   REG   0,55  5242880     0    2 /srv/cache/scratch.dat (deleted)
+          tips-arch 173 root cwd    DIR   0,55       60     2    1 /srv/cache
+          tips-arch 173 root   3w   REG   0,55  1048576     1    3 /srv/cache/site.tar
+        level: advanced
+      - title: "Recover the space by ending the process holding it"
+        code: |-
+          lsof -t -a +L1 /srv/cache | xargs -r kill
+          sleep 1
+          df -h /srv/cache | tail -1
+        description: "The kernel frees the blocks when the last descriptor closes, so the space comes back when the process ends: 6.0M down to 1.0M with nothing deleted. Check what you are about to kill first, because a service that has a scratch file open is a service in the middle of something."
+        danger: true
+        output: |
+          tmpfs            20M  1.0M   19M   5% /srv/cache
+        level: advanced
+
+  - title: "Sockets and ports"
+    intro: "`-i` selects network files. A socket has no path, so the `NAME` column holds an address instead, and `TYPE` reads `IPv4` or `IPv6` rather than `REG`. Addresses are resolved to names unless `-n` and `-P` say otherwise."
+    examples:
+      - title: "Find out what is using a port"
+        code: lsof -i :8080
+        description: "The process listening, and the one connected to it. This is the answer to the message about an address already being in use, and worth running before restarting anything."
+        volatile: "the pids, the socket ids and the client's port are this machine's"
+        compare: shape
+        output: |
+          COMMAND   PID USER FD   TYPE  DEVICE SIZE/OFF NODE NAME
+          tips-api  157 root 3u  IPv4 2527152      0t0  TCP *:http-alt (LISTEN)
+          tips-clie 187 root 3u  IPv4 2528819      0t0  TCP localhost:45400->localhost:http-alt (ESTABLISHED)
+        level: basic
+      - title: "Stop lsof translating ports and addresses"
+        code: lsof -nP -i :8080
+        description: "The same two sockets with the lookups turned off: `-P` leaves ports as numbers and `-n` leaves addresses as addresses. `8080` printing as `http-alt` comes from `/etc/services`, and it makes the output harder to match against the port you were asked about."
+        volatile: "the pids and the socket ids are this machine's"
+        compare: shape
+        output: |
+          COMMAND   PID USER FD   TYPE  DEVICE SIZE/OFF NODE NAME
+          tips-api  157 root 3u  IPv4 2531449      0t0  TCP *:8080 (LISTEN)
+          tips-clie 187 root 3u  IPv4 2527150      0t0  TCP 127.0.0.1:45400->127.0.0.1:8080 (ESTABLISHED)
+        level: basic
+      - title: "List every network connection on the machine"
+        code: lsof -nP -i
+        description: "`-i` with nothing after it takes the lot. On a working server this is where you find the connection nobody remembered opening."
+        volatile: "the pids and the socket ids are this machine's"
+        compare: shape
+        output: |
+          COMMAND   PID USER FD   TYPE  DEVICE SIZE/OFF NODE NAME
+          tips-api  157 root 3u  IPv4 2531449      0t0  TCP *:8080 (LISTEN)
+          tips-clie 187 root 3u  IPv4 2527150      0t0  TCP 127.0.0.1:45400->127.0.0.1:8080 (ESTABLISHED)
+        level: basic
+      - title: "Show only what is listening"
+        code: lsof -nP -i TCP -s TCP:LISTEN
+        description: "`-s` filters on the protocol state, and `TCP:LISTEN` is the one worth knowing by heart: one line per port this machine will accept a connection on."
+        volatile: "the pid and the socket id are this machine's"
+        compare: shape
+        output: |
+          COMMAND  PID USER FD   TYPE  DEVICE SIZE/OFF NODE NAME
+          tips-api 157 root 3u  IPv4 2531449      0t0  TCP *:8080 (LISTEN)
+        level: intermediate
+      - title: "Show only the established connections"
+        code: lsof -nP -i TCP -s TCP:ESTABLISHED
+        description: "`TCP:ESTABLISHED` asks the question a restart depends on, since these are the clients that will notice one."
+        volatile: "the pid and the socket id are this machine's"
+        compare: shape
+        output: |
+          COMMAND   PID USER FD   TYPE  DEVICE SIZE/OFF NODE NAME
+          tips-clie 187 root 3u  IPv4 2527150      0t0  TCP 127.0.0.1:45400->127.0.0.1:8080 (ESTABLISHED)
+        level: intermediate
+      - title: "Select by address as well as port"
+        code: lsof -nP -i@127.0.0.1
+        description: "`-i@host` narrows to one address, with `-i@host:port` narrowing further. The listener bound to `*` is absent because it is not bound to that address, which is the distinction between a service anyone can reach and one only this machine can."
+        volatile: "the pid and the socket id are this machine's"
+        compare: shape
+        output: |
+          COMMAND   PID USER FD   TYPE  DEVICE SIZE/OFF NODE NAME
+          tips-clie 187 root 3u  IPv4 2528819      0t0  TCP 127.0.0.1:45400->127.0.0.1:8080 (ESTABLISHED)
+        level: advanced
+      - title: "Check whether a port is free"
+        code: lsof -i :22; echo "exit $?"
+        description: "Nothing is bound to 22 here, so there is no output and the exit status is 1. A script that wants to pick a free port can loop on this rather than binding and catching the failure."
+        output: |
+          exit 1
+        level: intermediate
+      - title: "Count what is attached to a port"
+        code: lsof -t -i :8080 | wc -l
+        description: "The listener plus one client. A count like this is what a health check wants, since the number rather than the names says whether anything is connected."
+        output: |
+          2
+        level: intermediate
+      - title: "Name the listener without its clients"
+        code: lsof -F c -a -i :8080 -s TCP:LISTEN | grep ^c
+        description: "`-s TCP:LISTEN` drops the clients, leaving the service, and `-F c` then prints its command name with nothing around it. Swap the `-F c` for `-t` when you want the pid instead."
+        output: |
+          ctips-api
+        level: advanced
+
+  - title: "In a script"
+    intro: "`-t` and `-F` are the two output modes meant for other programs. The exit status is the third, and 1 means nothing matched rather than something went wrong."
+    examples:
+      - title: "Kill whatever is holding a file"
+        code: |-
+          lsof -t /srv/cache/site.tar | xargs -r kill
+          sleep 1
+          lsof /srv/cache/site.tar; echo "exit $?"
+        description: "`-r` on `xargs` stops an empty list turning into a bare `kill`, which would report a usage error rather than doing nothing. Read the list before piping it anywhere: this one ends a process that is mid-write, and a `kill -9` in the same position would not let it finish."
+        danger: true
+        output: |
+          exit 1
+        level: advanced
+      - title: "Print named fields instead of a table"
+        code: lsof -F pcn -a -c tips-log -d 3
+        description: "Each field arrives on its own line, prefixed by a letter naming it: `p` for pid, `c` for command, `n` for name. No column widths, no truncation, and nothing to split on."
+        volatile: "the pid is this machine's"
+        compare: shape
+        output: |
+          p152
+          ctips-log
+          n/srv/tips/app.log
+        level: advanced
+      - title: "Ask for one field and get two"
+        code: lsof -F n -a -c tips-log -d 3
+        description: "The pid line comes back whether it was asked for or not, since it tells a parser which process the lines after it belong to. Filter it out with `grep '^n'` rather than assuming a fixed line count."
+        volatile: "the pid is this machine's"
+        compare: shape
+        output: |
+          p152
+          n/srv/tips/app.log
+        level: advanced
+      - title: "Repeat the search on a timer"
+        code: lsof -r1 /srv/tips/app.log 2>/dev/null | head -6
+        description: "`-r1` re-runs the search every second and separates each pass with a line of equals signs, which is the closest `lsof` comes to watching something. Without the `head` it runs until interrupted."
+        volatile: "the pid, the device number and the inode are this machine's"
+        compare: shape
+        output: |
+          COMMAND  PID USER FD   TYPE DEVICE SIZE/OFF   NODE NAME
+          tips-log 443 root 3w   REG   0,53       15 460592 /srv/tips/app.log
+          =======
+          COMMAND  PID USER FD   TYPE DEVICE SIZE/OFF   NODE NAME
+          tips-log 443 root 3w   REG   0,53       15 460592 /srv/tips/app.log
+          =======
+        level: advanced

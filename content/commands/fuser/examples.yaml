@@ -1,0 +1,264 @@
+command: fuser
+fixtures:
+  - name: "the files under /srv"
+    note: "the setup script starts six small Python services, and every process named on this page is one of them. `tips-log` appends to `app.log`, `tips-job` runs as `user` and reads both `queue.dat` and `spool/job-0142.json`, `tips-api` listens on port 8080, `tips-client` holds one connection to it, `tips-archiver` writes `site.tar`, and `tips-tmp` deleted a scratch file it still has open. `/srv/cache` is a tmpfs of its own, so `-m` reports on that rather than on the container's root. The same set backs [lsof](/commands/lsof/)."
+    from: "ls -R /srv/tips /srv/cache"
+    content: |
+      /srv/cache:
+      site.tar
+
+      /srv/tips:
+      app.log
+      queue.dat
+      spool
+
+      /srv/tips/spool:
+      job-0142.json
+sections:
+  - title: "What has this open"
+    intro: "`-v` turns the compact answer into a table with a row per process. The `ACCESS` column is five positions, one per kind of use: `f` for an open file, `c` for a working directory, `r` for a root directory, `e` for a running executable and `m` for a mapping. A capital `F` or `R` means the same as the lower-case letter with write access."
+    examples:
+      - title: "Find out what is writing to a log file"
+        code: fuser -v /srv/tips/app.log 2>&1 >/dev/null
+        description: "The capital `F` says the file is open for writing. The redirect keeps the process id out of the way so the table arrives on its own."
+        output: |2
+                               USER        PID ACCESS COMMAND
+          /srv/tips/app.log:   root      F.... tips-log
+        level: basic
+      - title: "Get the process ids on their own"
+        code: fuser /srv/tips/app.log 2>/dev/null
+        description: "Everything but the ids went to standard error, so discarding that stream leaves a list `kill` or `xargs` can take. The leading spaces are padding, and there is no newline at the end of it."
+        volatile: "the pid is this machine's"
+        compare: shape
+        output: |2
+              43
+        level: basic
+      - title: "See both streams the way a terminal does"
+        code: script -qec 'fuser -v /srv/tips/app.log' /dev/null
+        description: "With a terminal attached the two streams interleave into one aligned table, `PID` column included, which is why the split goes unnoticed until something is piped. `script` attaches one here."
+        volatile: "the pid is this machine's"
+        compare: shape
+        output: |2
+                               USER        PID ACCESS COMMAND
+          /srv/tips/app.log:   root         43 F.... tips-log
+        level: intermediate
+      - title: "Ask about several files at once"
+        code: fuser -v /srv/tips/app.log /srv/tips/queue.dat 2>&1 >/dev/null
+        description: "A row per file, and the access letters tell the two apart: `F` for the process appending to the log, lower-case `f` for the one only reading the queue."
+        output: |2
+                               USER        PID ACCESS COMMAND
+          /srv/tips/app.log:   root      F.... tips-log
+          /srv/tips/queue.dat: user      f.... tips-job
+        level: basic
+      - title: "Show the owner of each process"
+        code: fuser -uv /srv/tips/queue.dat 2>&1 >/dev/null
+        description: "`-u` appends the owner in brackets to the command name. The `USER` column already carries it under `-v`, so `-u` is for the compact form, which has no such column."
+        output: |2
+                               USER        PID ACCESS COMMAND
+          /srv/tips/queue.dat: user      f.... (user)tips-job
+        level: basic
+      - title: "Read the answer for a long filename"
+        code: fuser -v /srv/tips/spool/job-0142.json 2>&1 >/dev/null
+        description: "A name too wide for its column pushes the rest of the row onto the next line. Worth knowing before writing anything that reads this output by column position."
+        output: |2
+                               USER        PID ACCESS COMMAND
+          /srv/tips/spool/job-0142.json:
+                               user      f.... tips-job
+        level: intermediate
+      - title: "Find what a directory is being used as"
+        code: fuser -v /srv/tips 2>&1 >/dev/null
+        description: "The `c` in the third position says how each of these four is using the directory: as a working directory rather than as an open file. Nothing here would stop you deleting a file inside it, which is the distinction `-m` makes."
+        output: |2
+                               USER        PID ACCESS COMMAND
+          /srv/tips:           root      ..c.. tips-log
+                               root      ..c.. tips-api
+                               user      ..c.. tips-job
+                               root      ..c.. tips-client
+        level: intermediate
+
+  - title: "The exit status, and using it"
+    intro: "`fuser` exits 0 when it found something and 1 when it did not, which makes it usable as a test without reading either stream. `-s` is the same search with both streams silenced."
+    examples:
+      - title: "Test whether a file is in use"
+        code: |-
+          for f in /srv/tips/app.log /etc/passwd; do
+            if fuser -s "$f"; then echo "$f: in use"; else echo "$f: free"; fi
+          done
+        description: "`-s` prints nothing at all, so the `if` reads only the exit status. This is the form to put in front of a rotate, a truncate or a `mv` that would otherwise land on a file something is mid-write on."
+        output: |
+          /srv/tips/app.log: in use
+          /etc/passwd: free
+        level: basic
+      - title: "See what an empty answer looks like"
+        code: fuser -v /etc/passwd 2>&1 >/dev/null; echo "exit $?"
+        description: "Nothing holds it, so there is no table and no header either: `fuser` prints the heading only when it has a row to put under it."
+        output: |
+          exit 1
+        level: basic
+      - title: "Keep the files nothing is using in the listing"
+        code: fuser -av /srv/tips/app.log /etc/passwd 2>&1 >/dev/null; echo "exit $?"
+        description: "`-a` gives a row to every name you asked about, whether or not anything holds it. Without it a file with no holders is silently absent, which is hard to tell apart from a name you typed wrong."
+        output: |2
+                               USER        PID ACCESS COMMAND
+          /srv/tips/app.log:   root      F.... tips-log
+          /etc/passwd:
+          exit 0
+        level: intermediate
+      - title: "Ask about a file that has been deleted"
+        code: fuser -v /srv/cache/scratch.dat 2>&1 >/dev/null; echo "exit $?"
+        description: "`fuser` reaches a file through its name, so a file that has been unlinked while a process still holds it open is beyond it entirely. [`lsof +L1`](/commands/lsof/) finds those, and they are the usual reason a filesystem stays full after a deletion."
+        output: |
+          Specified filename /srv/cache/scratch.dat does not exist.
+          exit 1
+        level: advanced
+      - title: "Count the processes holding a file"
+        code: fuser /srv/tips/queue.dat 2>/dev/null | wc -w
+        description: "`wc -w` rather than `wc -l`, because the ids arrive space-separated on a single line with no newline after them. The count is what a rotation script wants before it decides whether to wait."
+        output: |
+          1
+        level: intermediate
+      - title: "Hand the ids to another command"
+        code: fuser /srv/tips/app.log 2>/dev/null | xargs -r ps -o pid=,user=,comm= -p
+        description: "`fuser` names processes by id and [ps](/commands/ps/) turns those back into something readable. `-r` stops `xargs` from running `ps` at all when the list is empty."
+        volatile: "the pid is this machine's"
+        compare: shape
+        output: |2
+              511 root     tips-log
+        level: intermediate
+
+  - title: "A whole filesystem"
+    intro: "A path on its own asks about that one file. `-m` asks about the filesystem it sits on, which is the question behind `umount: target is busy`."
+    examples:
+      - title: "Find out what is keeping a mount busy"
+        code: fuser -mv /srv/cache 2>&1 >/dev/null
+        description: "`F.c..` on both rows: a file open for writing, and a working directory, each of them on this filesystem. The `mount` row is the kernel's own reference to it and is there on every mounted filesystem."
+        output: |2
+                               USER        PID ACCESS COMMAND
+          /srv/cache:          root      mount /srv/cache
+                               root      F.c.. tips-tmp
+                               root      F.c.. tips-archiver
+        level: intermediate
+      - title: "Get the ids of everything on a filesystem"
+        code: fuser -m /srv/cache 2>/dev/null
+        description: "The list `-k` would act on. `-m` reaches every process with anything at all open on the device, so this is worth reading before it is worth piping anywhere."
+        volatile: "the pids are this machine's"
+        compare: shape
+        output: |2
+              55    64
+        level: intermediate
+      - title: "Count what a filesystem is busy with"
+        code: fuser -m /srv/cache 2>/dev/null | wc -w
+        description: "The filesystem is held open by two processes. A number is enough for a script deciding whether to retry an `umount`, and it avoids parsing a table whose columns move with the length of the path."
+        output: |
+          2
+        level: intermediate
+      - title: "Refuse to answer unless the path is a mount point"
+        code: fuser -Mv /srv/tips 2>&1 >/dev/null; echo "exit $?"
+        description: "`-M` makes the command fail rather than widen a path you thought was a mount point into the filesystem above it. Worth pairing with `-m` in a script, where `/srv/cache` failing to mount would otherwise turn a targeted kill into a machine-wide one."
+        output: |
+          Specified filename /srv/tips is not a mountpoint.
+          exit 1
+        level: advanced
+
+  - title: "Ports"
+    intro: "`-n tcp` or `-n udp` switches the name space from files to sockets, and the argument becomes a port number. `-4` and `-6` narrow it to one address family."
+    examples:
+      - title: "Find the process listening on a port"
+        code: fuser -vn tcp 8080 2>&1 >/dev/null
+        description: "The answer to an address already being in use. Only the listener is reported, not the clients connected to it, which is where [lsof](/commands/lsof/) says more."
+        output: |2
+                               USER        PID ACCESS COMMAND
+          8080/tcp:            root      F.... tips-api
+        level: basic
+      - title: "Check whether a port is free"
+        code: fuser -vn tcp 22 2>&1 >/dev/null; echo "exit $?"
+        description: "Nothing is bound to 22, so nothing is printed and the status is 1. A script picking a port can loop on this instead of binding and catching the failure."
+        output: |
+          exit 1
+        level: intermediate
+      - title: "Count what is bound to a port"
+        code: fuser -n tcp 8080 2>/dev/null | wc -w
+        description: "A single holder. More than one means something is sharing the socket, through `SO_REUSEPORT` or through a parent that forked after binding."
+        output: |
+          1
+        level: intermediate
+
+  - title: "Killing what holds it"
+    intro: "`-k` sends a signal to every process the search found, `SIGKILL` unless another is named. There is no dry run, so run the same command without `-k` first and read what comes back."
+    examples:
+      - title: "Kill whatever has a file open"
+        code: |-
+          fuser -kv /srv/cache/site.tar 2>&1 >/dev/null
+          sleep 1
+          fuser -s /srv/cache/site.tar; echo "still held: $?"
+        description: "`-v` alongside `-k` reports what is being killed as it goes, which is the closest this command comes to telling you what it did. The status of 1 afterwards confirms nothing holds the file any more."
+        danger: true
+        output: |2
+                               USER        PID ACCESS COMMAND
+          /srv/cache/site.tar: root      F.... tips-archiver
+          still held: 1
+        level: advanced
+      - title: "Be asked before each process is killed"
+        code: |-
+          yes n | fuser -ikv /srv/cache/site.tar 2>&1 >/dev/null; echo "exit $?"
+          sleep 1
+          fuser -s /srv/cache/site.tar; echo "still held: $?"
+        description: "`-i` asks per process and takes silence for no, so answering `n` leaves everything running. The prompt goes to standard error along with the table, which is why it lands in the middle of this one."
+        danger: true
+        volatile: "the pid in the prompt is this machine's"
+        compare: shape
+        output: |2
+                               USER        PID ACCESS COMMAND
+          /srv/cache/site.tar: root      F.... tips-archiver
+          Kill process 1346 ? (y/N) exit 1
+          still held: 0
+        level: advanced
+      - title: "Send a signal the process can handle"
+        code: |-
+          fuser -k -TERM /srv/tips/app.log >/dev/null 2>&1; echo "exit $?"
+          sleep 1
+          fuser -s /srv/tips/app.log; echo "still held: $?"
+        description: "The default is `SIGKILL`, which no process can catch, so a service with a cleanup handler never runs it. Naming `-TERM` gives it the chance, and [kill](/commands/kill/) covers what the difference costs."
+        danger: true
+        output: |
+          exit 0
+          still held: 1
+        level: advanced
+      - title: "Spare the processes that are only reading"
+        code: |-
+          fuser -kw /srv/tips/queue.dat >/dev/null 2>&1; echo "exit $?"
+          sleep 1
+          fuser -uv /srv/tips/queue.dat 2>&1 >/dev/null
+        description: "`-w` kills only processes with write access, and `tips-job` has the file open read-only, so nothing is signalled and the status is 1. It still appears in the listing afterwards, since `-w` restricts what gets the signal rather than what gets found."
+        danger: true
+        output: |2
+          exit 1
+                               USER        PID ACCESS COMMAND
+          /srv/tips/queue.dat: user      f.... (user)tips-job
+        level: advanced
+      - title: "Free a port by killing what is bound to it"
+        code: |-
+          fuser -kvn tcp 8080 2>&1 >/dev/null
+          sleep 1
+          fuser -sn tcp 8080; echo "still bound: $?"
+        description: "Faster than finding the pid and killing it by hand, and correspondingly easier to point at the wrong port. The listing `-v` produces is the only confirmation of what went."
+        danger: true
+        output: |2
+                               USER        PID ACCESS COMMAND
+          8080/tcp:            root      F.... tips-api
+          still bound: 1
+        level: advanced
+      - title: "Clear a filesystem so it can be unmounted"
+        code: |-
+          fuser -kmv /srv/cache 2>&1 >/dev/null
+          sleep 1
+          fuser -sm /srv/cache; echo "still busy: $?"
+        description: "This one kills everything with anything open on the device, including a shell whose working directory happens to be inside it. On a real mount point run it without `-k` first, and read every row."
+        danger: true
+        output: |2
+                               USER        PID ACCESS COMMAND
+          /srv/cache:          root      mount /srv/cache
+                               root      F.c.. tips-tmp
+                               root      F.c.. tips-archiver
+          still busy: 1
+        level: advanced

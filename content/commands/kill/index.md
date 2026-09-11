@@ -5,7 +5,7 @@ description: "Tested kill, pkill and killall examples: choosing a signal, why -9
 category: commands
 tags: [processes, sysadmin]
 updated: 2026-08-29
-related: [ps, processes-and-signals, kill-whatever-is-using-a-port, systemctl]
+related: [ps, processes-and-signals, lsof, fuser, kill-whatever-is-using-a-port, systemctl]
 tier: standard
 ---
 
@@ -24,6 +24,10 @@ Three commands close that gap and they select differently.
 name, or against the whole command line under `-f`. `killall` matches a name exactly unless you
 give it `-r`. `pgrep` is `pkill` with no signal attached: the same selection, printed instead of
 acted on.
+
+All three select by name. Where the thing you can name is a file, a directory or a port rather than
+a process, [lsof](/commands/lsof/) and [fuser](/commands/fuser/) select by that instead, and
+`fuser -k` sends the signal too.
 
 Run the `pgrep` before the `pkill`. A pattern that turns out to match four processes rather than
 one is a great deal cheaper to discover that way.

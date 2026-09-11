@@ -5,7 +5,7 @@ description: "Identify the process bound to a TCP port that's refusing to let a 
 category: recipes
 tags: [networking, processes, sysadmin]
 updated: 2026-07-05
-related: [find, exit-codes-and-error-handling]
+related: [lsof, fuser, find, exit-codes-and-error-handling]
 ---
 
 **Problem:** Starting a service fails with "address already in use," and you need to find out
@@ -24,7 +24,8 @@ python3  87 root 3u  IPv4 1792818      0t0  TCP *:9000 (LISTEN)
 
 **How it works:**
 
-- `-i :9000` filters `lsof`'s (list open files) output to sockets on port 9000, on any address.
+- `-i :9000` filters [`lsof`](/commands/lsof/)'s (list open files) output to sockets on port 9000,
+  on any address.
 - The `PID` column is what you need next: [`kill 87`](/commands/kill/) stops that specific
   process. Try a plain
   `kill` first (sends `SIGTERM`, letting the process shut down cleanly) before escalating to
@@ -57,10 +58,12 @@ fuser -k 9000/tcp
 
 [`ss`](/commands/ss/) ships with the base system on Debian and doesn't require installing
 anything, making it the first thing to try on a box you don't control. If the answer you found
-online said `netstat -tulpn`, [that translates](/compare/ss-vs-netstat/) almost letter for letter. `fuser -k` skips the two-step "find the PID,
-then kill it" process entirely, sending `SIGTERM` straight to whatever's using the port; useful
-for a quick cleanup, but skip it when you specifically need to inspect the process (its command
-line, working directory, or owner) before deciding whether killing it is the right call.
+online said `netstat -tulpn`, [that translates](/compare/ss-vs-netstat/) almost letter for letter.
+[`fuser -k`](/commands/fuser/) skips the two-step "find the PID, then kill it" process entirely,
+sending `SIGKILL` straight to whatever's using the port. That is the unblockable signal rather than
+the polite one, so add `-TERM` to give the process a chance to shut down, and skip `fuser`
+altogether when you need to inspect the process (its command line, working directory, or owner)
+before deciding whether killing it is the right call.
 
 > [!WARNING]
 > `fuser -k` kills every process using the port, not just the one you expect. On a shared or
