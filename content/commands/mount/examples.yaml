@@ -342,10 +342,12 @@ sections:
       - title: "Mount a filesystem that lives in memory"
         code: |-
           mount -t tmpfs -o size=8M,mode=1777 tmpfs /mnt/backup
-          findmnt -no SOURCE,FSTYPE,OPTIONS /mnt/backup
-        description: "`tmpfs` has no device, so the first argument is a name that shows up in the listing and means nothing else. `size=` is a cap rather than an allocation: nothing is taken from memory until something is written."
+          findmnt -no SOURCE,FSTYPE,SIZE /mnt/backup
+          stat -c "%A %n" /mnt/backup
+        description: "`tmpfs` has no device, so the first argument is a name that shows up in the listing and means nothing else. `size=` is a cap rather than an allocation: nothing is taken from memory until something is written, and `mode=1777` gives the mount point the sticky, world-writable permissions `/tmp` has."
         output: |
-          tmpfs tmpfs rw,relatime,size=8192k
+          tmpfs tmpfs    8M
+          drwxrwxrwt /mnt/backup
         level: intermediate
       - title: "See how big a tmpfs really is"
         code: |-
