@@ -349,3 +349,95 @@ PY
   setsid /usr/local/bin/tips-client </dev/null >/dev/null 2>&1 &
   for _ in $(seq 1 100); do open_files_ready && break; sleep 0.1; done
 }
+mk_loop_disks() {
+# A filesystem the page made, in a file. Five pages document one story between them: dd makes the
+# image, mkfs puts a filesystem in it, blkid identifies it, mount attaches it, fsck breaks and
+# repairs it. They share this so a reader moving between them meets one disk.
+#
+# A container's real filesystems belong to the host, at sizes that differ between a laptop and a
+# runner and under names no reader has, so every one of those pages measures something built here
+# instead. Mounting it needs CAP_SYS_ADMIN, which is why each of them carries `# verify:
+# --privileged`.
+#
+# Rebuilt from nothing on every run rather than repaired. These pages reformat, corrupt and
+# unmount the disk on purpose, so there is no state worth preserving between examples, and a
+# 32M ext4 costs about a sixth of a second to make.
+#
+# The label and the UUID are given explicitly. Left to itself `mkfs.ext4` picks a random UUID,
+# and `blkid` prints it, so the pages would document a value that changed on every run.
+
+  # Everything under /mnt, deepest first, rather than the two mount points this function makes.
+  # An example is free to mount somewhere else, and `mount --mkdir` invents the directory as it
+  # goes, so a fixed list would leave that mount up for every example after it. Reversed sort puts
+  # a nested mount ahead of the one it sits inside.
+  #
+  # Ordinary `umount` rather than `umount -l`. A lazy unmount returns before the filesystem is
+  # released, so the `losetup -D` below finds the device still in use and leaves it attached, and
+  # the next example's `losetup --find` answers with the second loop device instead of the first.
+  # Every mount here is one an example made, so there is nothing holding one that a retry cannot
+  # clear.
+  for _ in 1 2 3; do
+    mounted=$(awk '$2 ~ /^\/mnt\// {print $2}' /proc/mounts | sort -r)
+    [ -z "$mounted" ] && break
+    printf '%s\n' "$mounted" | while read -r m; do umount "$m" 2>/dev/null || true; done
+  done
+
+  # Only the loop devices backed by this fixture's own images, never `losetup -D`. **Loop devices
+  # belong to the kernel, not to the container**, so a privileged container detaching all of them
+  # detaches whatever the machine outside it had attached. On a host that keeps a filesystem on
+  # one, that is someone else's mount going away.
+  losetup -a 2>/dev/null | awk -F: '/\(\/srv\/images\// {print $1}' | while read -r d; do
+    losetup -d "$d" 2>/dev/null || true
+  done
+
+  # Only once nothing is mounted. A `rm -rf` over a live mount point deletes the contents of the
+  # filesystem mounted there rather than the directory standing in for it.
+  if [ -z "$(awk '$2 ~ /^\/mnt\// {print $2}' /proc/mounts)" ]; then
+    rm -rf /mnt
+  fi
+  rm -rf /srv/images
+  mkdir -p /srv/images /mnt/data /mnt/backup
+
+  # 32 megabytes, which is the smallest an ext4 with a journal is comfortable in and small enough
+  # that `df` and `fsck` print figures a reader can hold in their head.
+  dd if=/dev/zero of=/srv/images/data.img bs=1M count=32 status=none
+  mkfs.ext4 -q -F -L tipsdata -U 4f6b2c18-9a3d-4e07-b5c1-2d8e7a904f31 /srv/images/data.img
+
+  # Contents, so the mounted filesystem has something in it and `fsck` has inodes to count.
+  # Mtimes are pinned for the reason `mk_projects` gives: an unpinned tree is listed differently
+  # on every run, and ADR-0027 keeps fixture dates clear of the six-month boundary where `ls -l`
+  # changes column.
+  loop=$(losetup --find --show /srv/images/data.img)
+  mount "$loop" /mnt/data
+  mkdir -p /mnt/data/backups
+  printf 'Rebuild before deploying.\n' > /mnt/data/notes.txt
+  yes "site backup payload" | head -c 20480 > /mnt/data/backups/site.tar
+  chmod 644 /mnt/data/notes.txt /mnt/data/backups/site.tar
+  chmod 755 /mnt/data/backups
+  touch -d "2026-06-01 09:00:00" /mnt/data/notes.txt
+  touch -d "2026-06-10 09:00:00" /mnt/data/backups/site.tar
+  touch -d "2026-06-15 10:00:00" /mnt/data/backups
+  # lost+found is made by mkfs rather than by this script, so its timestamp is the moment the
+  # fixture ran. A page listing the mounted filesystem would print today's date on that one line.
+  touch -d "2026-06-15 10:00:00" /mnt/data/lost+found
+  touch -d "2026-06-15 10:00:00" /mnt/data
+  umount /mnt/data
+  losetup -d "$loop"
+
+  # No filesystem at all, so `mkfs` has something to make one on and `blkid` has something to
+  # report nothing about.
+  dd if=/dev/zero of=/srv/images/blank.img bs=1M count=16 status=none
+
+  # Both images are listed on the pages, so their timestamps are pinned like any other fixture's.
+  chmod 644 /srv/images/data.img /srv/images/blank.img
+  touch -d "2026-06-15 10:00:00" /srv/images/data.img /srv/images/blank.img /srv/images
+
+  # blkid keeps what it probed in a cache outside the page's working directory, so an example
+  # that changes a label or a uuid would otherwise be answered from the old reading for every
+  # example after it.
+  rm -f /run/blkid/blkid.tab /run/blkid/blkid.tab.old
+
+  # Left detached. Every page here shows the attachment itself, so a loop device the fixture had
+  # already taken would make `losetup --find` answer with the second one.
+  :
+}

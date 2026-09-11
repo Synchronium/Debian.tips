@@ -81,13 +81,21 @@ const timestamps = (s: string): string =>
  *  `tar --totals`  ->  `Total bytes written: 30720 (30KiB, 305MiB/s)`
  *  wget's summary  ->  `<TIMESTAMP> (49.0 MB/s) - 'page.html' saved [120/120]`
  *  curl -m         ->  `curl: (28) Operation timed out after 2001 milliseconds ...`
- *  curl -w         ->  `time_total=0.230857s` */
+ *  curl -w         ->  `time_total=0.230857s`
+ *  `dd`'s summary  ->  `8388608 bytes (8.4 MB, 8.0 MiB) copied, 0.002727 s, 3.1 GB/s`
+ *
+ *  Only the elapsed time and the rate go. The byte count and the two human-readable sizes in
+ *  front of them are what a page using `dd` is claiming, and they stay compared exactly. */
 const rates = (s: string): string =>
   s
     .replace(/^(Total bytes written: \d+ \([0-9.]+[KMG]?i?B, )\d+(\.\d+)?[KMG]iB\/s\)$/gm, "$1<RATE>)")
     .replace(/^(<TIMESTAMP> )\(\d+(\.\d+)? [KMGT]?B\/s\)(?= - )/gm, "$1(<RATE>)")
     .replace(/^(curl: \(28\) Operation timed out after )\d+(?= milliseconds)/gm, "$1<ELAPSED>")
-    .replace(/^(time_total=)\d+(\.\d+)?s$/gm, "$1<ELAPSED>s");
+    .replace(/^(time_total=)\d+(\.\d+)?s$/gm, "$1<ELAPSED>s")
+    .replace(
+      /^(\d+ bytes \([^)]*\) copied, )\d+(\.\d+)?(e-\d+)? s, \d+(\.\d+)? [KMGT]?B\/s$/gm,
+      "$1<ELAPSED>, <RATE>",
+    );
 
 /* Response headers are not masked: every example printing them talks to
  * scripts/fixtures/http-mock.py, which pins its own Date and Last-Modified so those lines
@@ -120,7 +128,17 @@ const rates = (s: string): string =>
 const versions = (s: string): string =>
   s
     .replace(/^OpenSSH_[^,\n]*, OpenSSL \S+ \d{1,2} [A-Z][a-z]{2} \d{4}$/gm, "<VERSION>")
-    .replace(/("User-Agent": "(?:curl|Wget)\/)[^"\n]+/g, "$1<VERSION>");
+    .replace(/("User-Agent": "(?:curl|Wget)\/)[^"\n]+/g, "$1<VERSION>")
+    // The e2fsprogs tools announce themselves before doing anything, so this banner is the first
+    // line of nearly every example on the mkfs and fsck pages. Its date is the release's, not
+    // today's, which is why it is masked here rather than with the timestamps.
+    .replace(
+      /^(e2fsck|mke2fs|dumpe2fs|debugfs|tune2fs|resize2fs) \d+(\.\d+)+ \(\d{1,2}-[A-Z][a-z]{2}-\d{4}\)$/gm,
+      "$1 <VERSION>",
+    )
+    // util-linux prints its own version above whichever checker it dispatches to, so a page
+    // running `fsck` carries two banners from two packages that move independently.
+    .replace(/^(fsck from util-linux) \d+(\.\d+)+$/gm, "$1 <VERSION>");
 
 /** wget redraws its progress bar with carriage returns and sizes it to the terminal, so no
  *  single frame is worth publishing. Matched one line at a time, never across lines.

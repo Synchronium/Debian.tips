@@ -5,7 +5,7 @@ description: "Tested df examples: reading the output, asking about the filesyste
 category: commands
 tags: [disk, sysadmin, files]
 updated: 2026-08-31
-related: [du, find-the-largest-files, ls, lsof, processes-and-signals]
+related: [du, find-the-largest-files, ls, lsof, mount, processes-and-signals]
 tier: light
 ---
 
@@ -16,7 +16,9 @@ kernel, and `du` walks a tree and can only count what it is allowed to see.
 Give it a path and it answers about whatever filesystem that path is on, so `df -h .` is usually
 the fastest way to find out whether the thing you are about to write will fit. Give it nothing
 and it lists every mounted filesystem, most of which on a modern Debian system are `tmpfs`
-pseudo-filesystems that hold no files you put there.
+pseudo-filesystems that hold no files you put there. `findmnt --target`, on the
+[mount](/commands/mount/) page, answers the same question about which filesystem a path is on
+without the size columns in the way.
 
 ## Two ways a disk fills up
 

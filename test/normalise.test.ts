@@ -198,6 +198,43 @@ describe("normalise: what gets compared", () => {
     differs('    "User-Agent": "curl/8.14.1"', '    "User-Agent": "Wget/8.14.1"');
   });
 
+  it("masks the banner the e2fsprogs tools print before doing anything", () => {
+    changes("e2fsck 1.47.2 (1-Jan-2025)", "e2fsck 1.48.0 (3-Mar-2027)");
+    changes("mke2fs 1.47.2 (1-Jan-2025)", "mke2fs 1.48.0 (3-Mar-2027)");
+    // The tool's name is outside the mask, so one cannot pass as another.
+    differs("e2fsck 1.47.2 (1-Jan-2025)", "mke2fs 1.47.2 (1-Jan-2025)");
+  });
+
+  it("masks the version fsck prints above the checker it dispatches to", () => {
+    changes("fsck from util-linux 2.41.5", "fsck from util-linux 2.42.0");
+    // Two packages that move independently, so a page running fsck carries both banners.
+    differs("fsck from util-linux 2.41.5", "mkfs from util-linux 2.41.5");
+  });
+
+  it("leaves a version inside a filesystem check's findings alone", () => {
+    // The banner is the whole anchor. A count or a figure e2fsck reports is the page's claim.
+    differs(
+      "tipsdata: 15/8192 files (0.0% non-contiguous), 6992/32768 blocks",
+      "tipsdata: 14/8192 files (0.0% non-contiguous), 6992/32768 blocks",
+    );
+  });
+
+  it("masks the time and rate in dd's summary but not the byte count", () => {
+    changes(
+      "8388608 bytes (8.4 MB, 8.0 MiB) copied, 0.002727 s, 3.1 GB/s",
+      "8388608 bytes (8.4 MB, 8.0 MiB) copied, 0.00958692 s, 875 MB/s",
+    );
+    // How much was copied is the page's claim, so it stays checked.
+    differs(
+      "8388608 bytes (8.4 MB, 8.0 MiB) copied, 0.002727 s, 3.1 GB/s",
+      "4194304 bytes (4.2 MB, 4.0 MiB) copied, 0.002727 s, 3.1 GB/s",
+    );
+    differs(
+      "8388608 bytes (8.4 MB, 8.0 MiB) copied, 0.002727 s, 3.1 GB/s",
+      "8388608 bytes (8.4 MB, 8.0 GiB) copied, 0.002727 s, 3.1 GB/s",
+    );
+  });
+
   it("leaves a User-Agent the page chose alone", () => {
     // The -A and --user-agent examples document a value the page picked, so it stays checked.
     differs('    "user-agent": "MyScript/1.0"', '    "user-agent": "MyScript/2.0"');

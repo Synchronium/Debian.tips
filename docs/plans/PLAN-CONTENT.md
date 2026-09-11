@@ -68,12 +68,12 @@ not in `docs/adr/`.
 
 ## §2. Where the site is now
 
-105 pages, counted 2026-09-11. `src/content/verificationStats.ts` is what the about page renders
+110 pages, counted 2026-09-11. `src/content/verificationStats.ts` is what the about page renders
 from, so its figures are the ones the site publishes about itself.
 
 | Category | Pages | State |
 | --- | --- | --- |
-| `commands` | 53 | Text processing, the file basics, the process group and the privilege group are all closed. What remains is the diagnostic foundation in §6.1 and the breadth in §6.2 to §6.9. |
+| `commands` | 58 | Text processing, the file basics, the process group and the privilege group are all closed. What remains is the diagnostic foundation in §6.1 and the breadth in §6.2 to §6.9. |
 | `concepts` | 7 | The three highest-demand concepts are written. §7 holds the rest, and several of them are what a §5 hub will want to link to rather than re-explain. |
 | `scripting` | 14 | Complete since 2026-08-29, ending in a capstone that uses the thirteen lessons before it. §11 is the only thing that would extend it. |
 | `recipes` | 11 | §9 holds the backlog, led by the ones that tie several written pages together. |
@@ -320,7 +320,8 @@ does not" is not an argument.
 ### §6.1. Diagnostic foundations
 
 Written first, because §5 cannot proceed without them. `lsof` and `fuser` are done, on one shared
-fixture; §13.2 has what they cost.
+fixture, and `mount` went with the §6.7 batch that shares the loop-device one. §13.2 has what both
+cost.
 
 - **`free`** (`light`) and **`top`** (`standard`). **Blocked, and not on a dependency.** Measured
   2026-09-11: inside the sandbox `free` reports the *host's* memory, not the container's, and
@@ -330,8 +331,6 @@ fixture; §13.2 has what they cost.
   needs the decision in the immediate backlog about what verification owes a page it cannot check,
   and that decision also gates the two hubs in §5.3, which are built on `free`'s cache-counted-as-
   used misreading. Do not start them before it is made.
-- **`mount`** (`standard`). **Needs**: nothing. **Demo**: a tmpfs and a loop device, both under
-  `# verify: --privileged`. Shares a fixture with `mkfs` and `blkid` in §6.7.
 - **`id`** (`light`). **Needs**: nothing. **Demo**: real against effective, supplementary groups.
   Shares a fixture with `getent` and with `managing-users`, which is written.
 - **`getent`** (`light`). **Needs**: `id`. **Demo**: passwd, group and hosts against the local
@@ -352,8 +351,6 @@ fixture; §13.2 has what they cost.
 - **`mktemp`** (`light`). **Demo**: templates, directories, and why the predictable name is a bug.
 - **`install`** (`light`). **Demo**: mode and ownership in one step, against `cp` followed by
   `chmod`.
-- **`dd`** (`standard`). **Demo**: block sizes, `status=progress`, and a loop-device image. Shares
-  §6.7's fixture.
 
 ### §6.3. Text processing, completing the group
 
@@ -418,10 +415,12 @@ all work, every tool is already in the image, and `losetup -f` answers `/dev/loo
 a container with nothing else attached. `mkfs.ext4 -U` pins the filesystem UUID, so `blkid` output
 compares exactly instead of by shape.
 
-- **`mkfs`** (`standard`), **`blkid`** (`light`), **`fsck`** (`standard`) share a loop-device
-  fixture with `mount` (§6.1) and `dd` (§6.2). **Demo**: making a filesystem in a file, mounting
-  it, breaking it and repairing it.
-- **`ncdu`** (`light`). **Demo**: batch export, since the interface cannot be replayed.
+`dd`, `mkfs`, `mount`, `blkid` and `fsck` are all written, on `mk_loop_disks` in
+`scripts/fixtures/_common.sh`: one 32M ext4 in a file and one image with nothing on it, between
+them carrying every example on the five pages.
+
+- **`ncdu`** (`light`). **Demo**: batch export, since the interface cannot be replayed. The only
+  entry left in this group.
 
 Still out of reach, and not on any list here: `lsblk`, `lspci`, `lsusb`, `fdisk -l`, `smartctl`,
 `sensors`, `ethtool`. The container has no hardware, so each prints nothing or a synthetic view.
@@ -658,7 +657,19 @@ Distilled from the shipped ledger this plan replaces. Each of these cost a batch
   ids to stdout and the filename, the access letters and everything `-v` adds to stderr. Captured
   together the order moved between runs, once splicing mid-line. Every example redirects one
   stream, and the one that shows the interleaved form runs under `script -qec`, where a terminal
-  makes the order deterministic.
+  makes the order deterministic. The same split caught `findmnt --verify`, whose per-entry detail
+  and summary count come from different streams, and every `fsck ... | tail -n`, where the banner
+  and the passes are on stderr and the findings on stdout, so a `tail` over one stream cuts an
+  unpredictable place. **A `| tail` or `| head` on a command that writes to both needs `2>&1`
+  before the pipe.**
+- **A loop device belongs to the kernel, not to the container.** `losetup --find` hands out the
+  first one free *on the host*, so a page that writes `/dev/loop0` into a command or an output
+  passes on an idle machine and fails wherever anything else has one attached. Proven by holding
+  three from a second container: every hardcoded example moved to `loop1` and up. Commands take
+  whatever `losetup --find --show` returned, outputs carrying a device name compare by shape, and
+  `losetup -a` is never used where `losetup -j <image>` will do. **A fixture must never run
+  `losetup -D` either**, which detaches every loop device the machine has, including ones outside
+  the container.
 - **A fixture that starts processes should test for the sockets or files they provide**, not for
   the processes, so an example that closes one is repaired on the next restore. Guarded that way
   `ss` costs 13ms per restore against 342ms cold.
@@ -693,12 +704,27 @@ Distilled from the shipped ledger this plan replaces. Each of these cost a batch
   `unordered:` (ADR-0026) is what an ordering problem wants.
 - **A page that publishes a script should `cat` it**, so the listing a reader reads is a checked
   block rather than a copy that can drift.
+- **A progress display is not output.** `dd status=progress` gave four different results in four
+  runs, because its updates interleave with carriage returns as they redraw. The same goes for
+  `mkfs.ext4` without `-q`, whose progress counters carry backspaces and trailing padding. Name the
+  flag in a description and show the quiet form.
+- **Where a figure moves, look for the one beside it that does not.** `dd` reading from a pipe
+  warns `partial read (65536 bytes)`, and that number moved between runs. The record counts on the
+  same command did not, and `0+2 records in` is the better teaching anyway: zero whole blocks and
+  two partial ones is the mechanism rather than a symptom of it.
+- **Pin the volatile value where the command will let you.** `mkfs.ext4 -U` fixes a filesystem's
+  UUID and `-L` its label, which is what lets `blkid` compare exactly; binding a client's source
+  port rather than taking an ephemeral one did the same for two pages of socket output. A tool's
+  own version banner cannot be pinned, and the e2fsprogs and util-linux ones are now masked in
+  `scripts/lib/normalise.ts` beside the OpenSSL one, anchored so the tool's name still has to
+  match.
 - **A shape-heavy page is not automatically a weak one.** Every row `lsof` prints carries a pid, a
   device number and an inode, so most of that page compares by shape, which still holds the command
   name, the user, the descriptor's mode letter, the type, the whole path and the `(deleted)` and
   `(LISTEN)` markers. Where the volatile part can be pinned instead, pin it: `mkfs.ext4 -U` fixes a
   filesystem UUID, and binding a client's source port rather than taking an ephemeral one turned
-  every socket row on two pages from shape into an exact comparison.
+  every socket row on two pages from shape into an exact comparison. Where that is not possible,
+  the count of shaped examples is the honest cost of the command rather than a defect in the page.
 
 ### §13.5. Writing the page
 

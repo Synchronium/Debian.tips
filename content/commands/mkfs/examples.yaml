@@ -1,0 +1,278 @@
+command: mkfs
+fixtures:
+  - name: "two disk images"
+    note: "`blank.img` is 16M of zeros with no filesystem on it, and most examples here format that one. `data.img` holds a 32M ext4 labelled `tipsdata` with `notes.txt` and `backups/site.tar` in it, so the page has something to show being destroyed. Both are rebuilt before every example, so each one starts from the same state whatever the last did. The same pair backs [mount](/commands/mount/), [blkid](/commands/blkid/) and [fsck](/commands/fsck/)."
+    from: "ls -l /srv/images"
+    content: |2
+      total 20912
+      -rw-r--r-- 1 root root 16777216 Jun 15 10:00 blank.img
+      -rw-r--r-- 1 root root 33554432 Jun 15 10:00 data.img
+sections:
+  - title: "Making one"
+    intro: "`-q` on every example, because the ordinary output reports progress with backspaces and padding. A successful `mkfs` prints nothing and says so only through its exit status."
+    examples:
+      - title: "Make an ext4 filesystem"
+        code: |-
+          mkfs.ext4 -q /srv/images/blank.img
+          echo "exit $?"
+          blkid -c /dev/null -s TYPE -o value /srv/images/blank.img
+        description: "Nothing to see, which is what success looks like. `mkfs.ext4` works on a plain file as readily as on a device, and the result is the same filesystem either way."
+        output: |
+          exit 0
+          ext4
+        level: basic
+      - title: "Go through the generic front end"
+        code: |-
+          mkfs -t ext4 -q /srv/images/blank.img
+          blkid -c /dev/null -s TYPE -o value /srv/images/blank.img
+        description: "`mkfs -t ext4` finds and runs `mkfs.ext4`, passing everything else through. The front end is worth using in a script that takes the type as a variable, and adds nothing when the type is known."
+        output: |
+          ext4
+        level: basic
+      - title: "Ask for a type whose helper is missing"
+        code: mkfs -t vfat /srv/images/blank.img; echo "exit $?"
+        description: "The message is about the helper rather than about the filesystem, and that is the shape of every unsupported type on Debian: `mkfs.vfat` lives in `dosfstools`, `mkfs.xfs` in `xfsprogs`, and neither is installed by default."
+        output: |
+          mkfs: failed to execute mkfs.vfat: No such file or directory
+          exit 1
+        level: intermediate
+      - title: "Make an older ext filesystem"
+        code: |-
+          mkfs.ext3 -q /srv/images/blank.img
+          blkid -c /dev/null -s TYPE -o value /srv/images/blank.img
+          dumpe2fs -h /srv/images/blank.img 2>/dev/null | grep -E "^Filesystem features" | tr " " "\n" | grep journal
+        description: "`mkfs.ext2`, `mkfs.ext3` and `mkfs.ext4` are the same binary choosing different defaults. ext3 is ext2 with a journal, which is the feature the last line is looking for."
+        output: |
+          ext3
+          has_journal
+        level: intermediate
+      - title: "Make a filesystem with no journal"
+        code: |-
+          mkfs.ext2 -q /srv/images/blank.img
+          blkid -c /dev/null -s TYPE -o value /srv/images/blank.img
+        description: "ext2 has no journal, so a crash leaves it needing a full [fsck](/commands/fsck/) rather than a few seconds of replay. Worth it only where the writes are few and the medium wears out, which in practice means some flash devices."
+        output: |
+          ext2
+        level: intermediate
+      - title: "Format a loop device rather than the file"
+        code: |-
+          loop=$(losetup --find --show /srv/images/blank.img)
+          mkfs.ext4 -q "$loop"; echo "exit $?"
+          blkid -c /dev/null -s TYPE -o value "$loop"
+        description: "The same result through the device. On real hardware this is the only form, and the argument is `/dev/sdb1` rather than `/dev/sdb`: formatting the whole disk destroys its partition table along with everything on it."
+        output: |
+          exit 0
+          ext4
+        level: intermediate
+      - title: "Mount what you just made"
+        code: |-
+          mkfs.ext4 -q -L spare /srv/images/blank.img
+          loop=$(losetup --find --show /srv/images/blank.img)
+          mount "$loop" /mnt/backup
+          df -h /mnt/backup | tail -1
+        description: "14M usable out of 16M: the journal, the inode tables and the reserved blocks are all spent before a single file is written. The smaller the filesystem, the larger that share."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |
+          /dev/loop0       14M   46K   13M   1% /mnt/backup
+        level: intermediate
+
+  - title: "Naming it"
+    intro: "A label and a UUID are both written at creation, and both can be changed later with `tune2fs`. Naming the filesystem lets [/etc/fstab](/commands/mount/) refer to it without naming a device that may renumber."
+    examples:
+      - title: "Give the filesystem a label"
+        code: |-
+          mkfs.ext4 -q -L spare /srv/images/blank.img
+          blkid -c /dev/null -s LABEL -s TYPE /srv/images/blank.img
+          echo "uuid characters: $(blkid -c /dev/null -o value -s UUID /srv/images/blank.img | tr -d '\n' | wc -c)"
+        description: "`-L` sets the label, and a UUID is generated whether you ask or not: 36 characters of one, different on every run, which is why the count stands in for it here. `-c /dev/null` stops `blkid` answering from a cache that still holds the reading from before the format."
+        output: |
+          /srv/images/blank.img: LABEL="spare" TYPE="ext4"
+          uuid characters: 36
+        level: basic
+      - title: "Set the UUID as well"
+        code: |-
+          mkfs.ext4 -q -L spare -U 22222222-3333-4444-5555-666666666666 /srv/images/blank.img
+          blkid -c /dev/null /srv/images/blank.img
+        description: "`-U` pins the identifier instead of taking a random one. Worth doing when a machine is being rebuilt to a known configuration, so the `/etc/fstab` written for it stays right."
+        output: |
+          /srv/images/blank.img: LABEL="spare" UUID="22222222-3333-4444-5555-666666666666" BLOCK_SIZE="1024" TYPE="ext4"
+        level: intermediate
+      - title: "Give a label that is too long"
+        code: mkfs.ext4 -q -L "this-label-is-far-too-long-for-ext4" /srv/images/blank.img; echo "exit $?"
+        description: "ext4 stores sixteen characters and truncates the rest, with a warning rather than a failure. A script that later looks the label up by its full name finds nothing."
+        output: |2
+          Warning: label too long; will be truncated to 'this-label-is-fa'
+
+          exit 0
+        level: intermediate
+
+  - title: "Choosing the shape"
+    intro: "Block size, inode count and inode size are fixed at creation. `dumpe2fs -h` reads them back, and the defaults come from `/etc/mke2fs.conf` rather than from anything on the command line."
+    examples:
+      - title: "See what the defaults produced"
+        code: dumpe2fs -h /srv/images/data.img 2>/dev/null | grep -E "^(Block size|Inode count|Block count|Reserved block count|Inode size)"
+        description: "The numbers a plain `mkfs.ext4` chose for a 32M image. `dumpe2fs` sends its banner to standard error, which is what the redirect drops."
+        output: |
+          Inode count:              8192
+          Block count:              32768
+          Reserved block count:     1638
+          Block size:               1024
+          Inode size:               256
+        level: intermediate
+      - title: "Read Debian's defaults for yourself"
+        code: grep -A6 "^\[defaults\]" /etc/mke2fs.conf
+        description: "`/etc/mke2fs.conf` is where the numbers come from before any flag adjusts them. `enable_periodic_fsck = 0` is the line that stops Debian checking a filesystem every so many mounts."
+        output: |2
+          [defaults]
+          	base_features = sparse_super,large_file,filetype,resize_inode,dir_index,ext_attr
+          	default_mntopts = acl,user_xattr
+          	enable_periodic_fsck = 0
+          	blocksize = 4096
+          	inode_size = 256
+          	inode_ratio = 16384
+        level: advanced
+      - title: "Set the block size"
+        code: |-
+          mkfs.ext4 -q -b 4096 /srv/images/blank.img
+          dumpe2fs -h /srv/images/blank.img 2>/dev/null | grep -E "^(Block size|Block count)"
+        description: "The block size is four times larger, so there are a quarter as many of them. A large block size wastes space on small files and moves large ones faster, and it cannot be changed afterwards."
+        output: |
+          Block count:              4096
+          Block size:               4096
+        level: advanced
+      - title: "Ask for a fixed number of inodes"
+        code: |-
+          mkfs.ext4 -q -N 256 /srv/images/blank.img
+          dumpe2fs -h /srv/images/blank.img 2>/dev/null | grep -E "^(Inode count|Block count|Free inodes)"
+        description: "`-N` names the count outright. Twelve are spent before anything is written, on the root directory, `lost+found` and the reserved inodes ext4 keeps for itself."
+        output: |
+          Inode count:              256
+          Block count:              16384
+          Free inodes:              244
+        level: advanced
+      - title: "Set the ratio instead of the count"
+        code: |-
+          mkfs.ext4 -q -i 8192 /srv/images/blank.img
+          dumpe2fs -h /srv/images/blank.img 2>/dev/null | grep -E "^Inode count"
+        description: "`-i` is bytes of filesystem per inode, so a smaller number buys more of them. Give it on a filesystem that will hold mail or a package cache, where the files are many and tiny."
+        output: |
+          Inode count:              2048
+        level: advanced
+      - title: "Use a named usage type"
+        code: |-
+          mkfs.ext4 -q -T small /srv/images/blank.img
+          dumpe2fs -h /srv/images/blank.img 2>/dev/null | grep -E "^(Block size|Inode count)"
+        description: "`-T` picks a set of defaults from `/etc/mke2fs.conf` by name: `small`, `floppy`, `big`, `largefile`. Easier to get right than the individual flags, and easier to explain to whoever reads the script next."
+        output: |
+          Inode count:              4096
+          Block size:               1024
+        level: advanced
+      - title: "Reclaim the reserved blocks"
+        code: |-
+          mkfs.ext4 -q -m 0 /srv/images/blank.img
+          dumpe2fs -h /srv/images/blank.img 2>/dev/null | grep -E "^Reserved block count"
+        description: "The default holds five per cent back for root, so a full filesystem still lets root log in and a daemon writing as itself stops first. Setting it to 0 is right for a data disk and wrong for anything the system boots from."
+        output: |
+          Reserved block count:     0
+        level: advanced
+      - title: "Turn a feature off"
+        code: |-
+          mkfs.ext4 -q -O "^has_journal" /srv/images/blank.img
+          dumpe2fs -h /srv/images/blank.img 2>/dev/null | grep -E "^Filesystem features"
+        description: "A `^` in front of a feature name removes it, so this is an ext4 without a journal. The quoting matters: unquoted, the shell reads `^` as an ordinary character here but a different shell may not."
+        output: |
+          Filesystem features:      ext_attr resize_inode dir_index filetype extent 64bit flex_bg metadata_csum_seed sparse_super large_file huge_file dir_nlink extra_isize metadata_csum
+        level: advanced
+      - title: "Own the root directory as someone else"
+        code: |-
+          mkfs.ext4 -q -E root_owner=1000:1000 /srv/images/blank.img
+          loop=$(losetup --find --show /srv/images/blank.img)
+          mount "$loop" /mnt/backup
+          stat -c "%U:%G %a" /mnt/backup
+        description: "A new filesystem's root belongs to root at mode 755, so a user cannot write to it until someone runs `chown`. `-E root_owner` settles it at creation, which matters when the filesystem is built by a script that will not be around later."
+        output: |
+          user:user 755
+        level: advanced
+
+  - title: "Before you press return"
+    intro: "`mkfs` destroys what it is pointed at without asking. It refuses only one thing, and everything else is on you."
+    examples:
+      - title: "See what it would make without making it"
+        code: mkfs.ext4 -n -U 22222222-3333-4444-5555-666666666666 /srv/images/blank.img
+        description: "`-n` prints the parameters and writes nothing, which is the check to run against a device you are not certain about. It still needs `-U` to be worth comparing, since the UUID it would use is otherwise made up fresh each time."
+        output: |2
+          mke2fs 1.47.2 (1-Jan-2025)
+          Creating filesystem with 16384 1k blocks and 4096 inodes
+          Filesystem UUID: 22222222-3333-4444-5555-666666666666
+          Superblock backups stored on blocks:
+          	8193
+
+        level: intermediate
+      - title: "Try to format a mounted filesystem"
+        code: |-
+          loop=$(losetup --find --show /srv/images/data.img)
+          mount "$loop" /mnt/data
+          mkfs.ext4 -q "$loop"; echo "exit $?"
+        description: "The one refusal `mkfs` makes on its own. Unmount and it will do exactly what you asked, so this catches the mistake rather than the intent."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |
+          /dev/loop0 is mounted; will not make a filesystem here!
+          exit 1
+        level: intermediate
+      - title: "Format over a filesystem with files on it"
+        code: |-
+          mkfs.ext4 -q -L data /srv/images/data.img
+          blkid -c /dev/null -s LABEL -s TYPE /srv/images/data.img
+          loop=$(losetup --find --show /srv/images/data.img)
+          mount "$loop" /mnt/data
+          ls -A /mnt/data
+        description: "`data.img` held `notes.txt` and a backups directory, and now holds the empty directory `mkfs` makes. It was unmounted, so nothing objected. Run [blkid](/commands/blkid/) on the target first: a label you recognise is the cheapest check there is."
+        danger: true
+        output: |
+          /srv/images/data.img: LABEL="data" TYPE="ext4"
+          lost+found
+        level: advanced
+      - title: "Fill the filesystem as you make it"
+        code: |-
+          mkdir -p /tmp/seed/docs
+          echo hello > /tmp/seed/notes.txt
+          echo doc > /tmp/seed/docs/a.txt
+          mkfs.ext4 -q -d /tmp/seed /srv/images/blank.img
+          loop=$(losetup --find --show /srv/images/blank.img)
+          mount "$loop" /mnt/backup
+          ls -R /mnt/backup
+        description: "`-d` copies a directory tree into the filesystem while building it, with no mount involved. This is how a disk image is populated in a build script, and it needs no privilege beyond what making the filesystem already took."
+        output: |
+          /mnt/backup:
+          docs
+          lost+found
+          notes.txt
+
+          /mnt/backup/docs:
+          a.txt
+
+          /mnt/backup/lost+found:
+        level: advanced
+      - title: "Confirm the filesystem really is a new one"
+        code: |-
+          blkid -c /dev/null -o value -s UUID /srv/images/data.img > /tmp/before
+          mkfs.ext4 -q -L data /srv/images/data.img
+          blkid -c /dev/null -o value -s UUID /srv/images/data.img > /tmp/after
+          if cmp -s /tmp/before /tmp/after; then echo "same uuid"; else echo "new uuid"; fi
+        description: "A fresh UUID every time, which is what breaks an `/etc/fstab` entry naming the old one. Reformatting a disk and leaving fstab alone is a reliable way to make a machine drop to an emergency shell at its next boot."
+        danger: true
+        output: |
+          new uuid
+        level: advanced
+      - title: "Format the same image twice"
+        code: |-
+          mkfs.ext4 -q /srv/images/blank.img
+          mkfs.ext4 -q /srv/images/blank.img
+          echo "exit $?"
+        description: "No warning and no prompt: the second one overwrites the first without noticing it was there. A device already carrying a filesystem gets a confirmation only when `mkfs` is talking to a terminal, which a script never is."
+        danger: true
+        output: |
+          exit 0
+        level: advanced

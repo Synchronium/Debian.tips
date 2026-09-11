@@ -1,0 +1,217 @@
+command: dd
+fixtures:
+  - name: "two disk images"
+    note: "`data.img` holds a 32M ext4 labelled `tipsdata`, and `blank.img` is 16M of zeros. Examples that make a file of their own write it into the page's working directory, which is emptied before the next one runs. The same pair backs [mkfs](/commands/mkfs/), [mount](/commands/mount/), [blkid](/commands/blkid/) and [fsck](/commands/fsck/)."
+    from: "ls -l /srv/images"
+    content: |2
+      total 20912
+      -rw-r--r-- 1 root root 16777216 Jun 15 10:00 blank.img
+      -rw-r--r-- 1 root root 33554432 Jun 15 10:00 data.img
+sections:
+  - title: "Making a file of a given size"
+    intro: "`bs` is the block size and `count` is how many blocks, so the size is the two multiplied. `status=none` silences the summary, which is worth having in a script and worth leaving on when you want to see what happened."
+    examples:
+      - title: "Make an 8M file of zeros"
+        code: dd if=/dev/zero of=disk.img bs=1M count=8
+        description: "The summary goes to standard error, which is why it appears even when the output is redirected. `records in` and `records out` count blocks rather than bytes, and a mismatch between the two means something was short-read."
+        volatile: "the elapsed time and the transfer rate are this machine's"
+        output: |
+          8+0 records in
+          8+0 records out
+          8388608 bytes (8.4 MB, 8.0 MiB) copied, 0.002727 s, 3.1 GB/s
+        level: basic
+      - title: "Make the same file without the commentary"
+        code: |-
+          dd if=/dev/zero of=disk.img bs=1M count=8 status=none
+          stat -c "%s bytes" disk.img
+        description: "`status=none` drops the summary entirely. The alternative, `status=progress`, replaces it with a running count that updates in place, which is what you want on a copy that takes minutes."
+        output: |
+          8388608 bytes
+        level: basic
+      - title: "Use a smaller block size"
+        code: |-
+          dd if=/dev/zero of=disk.img bs=512 count=16 status=none
+          stat -c "%s bytes" disk.img
+        description: "Sixteen blocks of 512 bytes rather than eight of a megabyte. `count` is always in blocks, so changing `bs` and leaving `count` alone changes the size of the result."
+        output: |
+          8192 bytes
+        level: basic
+      - title: "Fill a file with random bytes"
+        code: |-
+          dd if=/dev/urandom of=r.bin bs=1k count=4 status=none
+          stat -c "%s bytes" r.bin
+        description: "`/dev/urandom` is the source for a file that has to be unguessable rather than merely present. It is slower than `/dev/zero` by orders of magnitude, which shows up on anything larger than this."
+        output: |
+          4096 bytes
+        level: intermediate
+      - title: "Make a large file that occupies nothing"
+        code: |-
+          dd if=/dev/zero of=sparse.img bs=1M count=0 seek=64 status=none
+          echo "apparent: $(stat -c %s sparse.img)"
+          echo "allocated: $(du -h sparse.img | cut -f1)"
+        description: "`count=0` writes no data and `seek=64` moves the offset first, so the file ends 64M in with nothing behind it. [du](/commands/du/) reports what is allocated and `stat` reports the length, and a sparse file is where the two disagree."
+        output: |
+          apparent: 67108864
+          allocated: 0
+        level: advanced
+      - title: "Flush to the device before reporting success"
+        code: dd if=/dev/zero of=disk.img bs=1M count=4 conv=fsync
+        description: "Without `conv=fsync` the copy is finished when the kernel has the data, not when the disk does, so the rate `dd` reports is partly a measure of how much memory was free. Add it before drawing conclusions from the number, and before unplugging anything."
+        volatile: "the elapsed time and the transfer rate are this machine's"
+        output: |
+          4+0 records in
+          4+0 records out
+          4194304 bytes (4.2 MB, 4.0 MiB) copied, 0.00781867 s, 536 MB/s
+        level: advanced
+
+  - title: "Position within the file"
+    intro: "`skip` moves the read forward in the input, `seek` moves the write forward in the output, and both count in blocks of `bs`. Setting `bs=1` makes them byte offsets, at the cost of a system call per byte."
+    examples:
+      - title: "Copy a file whole"
+        code: |-
+          printf 'hello world\n' > src.txt
+          dd if=src.txt of=dst.txt status=none
+          cat dst.txt
+        description: "With no `bs`, `count`, `skip` or `seek` this is a slow `cp` with a stranger syntax. Everything below is what makes it worth using instead."
+        output: |
+          hello world
+        level: basic
+      - title: "Take the first few bytes"
+        code: |-
+          printf '0123456789' > src.txt
+          dd if=src.txt of=part.txt bs=1 count=5 status=none
+          cat part.txt; echo
+        description: "`bs=1 count=5` is five bytes from the start. `head -c 5` does the same thing faster, and `dd` is only the better tool here once `skip` or `seek` is involved."
+        output: |
+          01234
+        level: intermediate
+      - title: "Start partway into the input"
+        code: |-
+          printf '0123456789' > src.txt
+          dd if=src.txt of=part.txt bs=1 skip=5 status=none
+          cat part.txt; echo
+        description: "`skip=5` discards the first five bytes and copies the rest. This is how a partition is pulled out of a whole-disk image, with `skip` set to where the partition starts."
+        output: |
+          56789
+        level: intermediate
+      - title: "Take a slice from the middle"
+        code: |-
+          printf '0123456789' > src.txt
+          dd if=src.txt bs=1 skip=3 count=4 status=none
+          echo
+        description: "`skip` and `count` together, and no `of=` at all, so the result goes to standard output where a pipe can take it. Four bytes starting at the fourth."
+        output: |
+          3456
+        level: intermediate
+      - title: "Take a slice out of a disk image"
+        code: |-
+          dd if=/srv/images/data.img of=part.img bs=1M skip=1 count=2 status=none
+          stat -c "%s bytes" part.img
+        description: "A two-megabyte slice, starting one megabyte in. The same arithmetic pulls a partition out of a whole-disk image, once `fdisk -l` has said where that partition starts and how long it is."
+        output: |
+          2097152 bytes
+        level: intermediate
+      - title: "Overwrite bytes in place"
+        code: |-
+          printf 'AAAA' > f.txt
+          printf 'BB' | dd of=f.txt bs=1 seek=1 conv=notrunc status=none
+          echo "result: $(cat f.txt)"
+        description: "`seek=1` starts writing one byte in and `conv=notrunc` keeps what follows. The input comes from a pipe, so there is no `if=`."
+        output: |
+          result: ABBA
+        level: advanced
+      - title: "Watch what happens without conv=notrunc"
+        code: |-
+          printf 'AAAA' > f.txt
+          printf 'BB' | dd of=f.txt bs=1 seek=1 status=none
+          echo "result: $(cat f.txt)"
+          echo "size: $(stat -c %s f.txt)"
+        description: "The same command without `conv=notrunc`: `dd` truncates the output file first, so the tail is gone and four bytes have become three. There is no warning and no way back."
+        danger: true
+        output: |
+          result: ABB
+          size: 3
+        level: advanced
+
+  - title: "Reading from a pipe"
+    intro: "A read from a pipe returns what is available rather than what was asked for, and `dd` counts a short read as a whole block. This is the trap that makes a piped `dd` quietly copy a fraction of what it was told to."
+    examples:
+      - title: "Watch a piped read come up short"
+        code: head -c 3000000 /dev/zero | dd of=short.img bs=1M count=2 2>&1 >/dev/null | grep records
+        description: "`0+2` means zero full blocks and two partial ones: `dd` asked for a megabyte twice, got whatever the pipe had ready, and counted each as one of its two blocks. The file it wrote is a fraction of two megabytes and a different fraction on every run."
+        danger: true
+        output: |
+          0+2 records in
+          0+2 records out
+        level: advanced
+      - title: "Make it wait for whole blocks"
+        code: |-
+          head -c 3000000 /dev/zero | dd of=full.img bs=1M count=2 iflag=fullblock 2>&1 >/dev/null | grep records
+          stat -c "%s bytes" full.img
+        description: "`iflag=fullblock` keeps reading until the block is full or the input ends, and `2+0` says both blocks were whole. Give it to any `dd` whose input is a pipe, a socket or a slow device."
+        output: |
+          2+0 records in
+          2+0 records out
+          2097152 bytes
+        level: advanced
+      - title: "Pad a short block instead"
+        code: |-
+          printf 'abc' | dd of=padded.bin bs=8 count=1 conv=sync status=none
+          stat -c "%s bytes" padded.bin
+          od -c padded.bin | head -1
+        description: "`conv=sync` pads each short block out to `bs` with NUL bytes rather than writing it short. That is what a fixed-record format wants and what a file copy never does."
+        output: |2
+          8 bytes
+          0000000   a   b   c  \0  \0  \0  \0  \0
+        level: advanced
+
+  - title: "Whole devices and images"
+    intro: "The job `dd` is still kept around for. An image of a device is a byte-for-byte copy including the filesystem's own structures, so it restores to a working disk, and so pointing it at the wrong one leaves nothing to recover."
+    examples:
+      - title: "Copy an image byte for byte"
+        code: |-
+          dd if=/srv/images/data.img of=copy.img bs=1M status=none
+          cmp /srv/images/data.img copy.img && echo identical
+        description: "`cmp` afterwards rather than trust: a copy that reported success and differs is the case worth catching, and it costs one command. `bs=1M` is what keeps a copy of any size from taking all day."
+        output: |
+          identical
+        level: intermediate
+      - title: "Make an image and put a filesystem on it"
+        code: |-
+          dd if=/dev/zero of=disk.img bs=1M count=8 status=none
+          loop=$(losetup --find --show disk.img)
+          mkfs.ext4 -q -L made "$loop"
+          mount "$loop" /mnt/backup
+          df -h /mnt/backup | tail -1
+        description: "The whole sequence: `dd` makes the space, [mkfs](/commands/mkfs/) makes the filesystem, [mount](/commands/mount/) attaches it. 6.5M usable out of 8M, because the journal and the inode tables were spent first."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |
+          /dev/loop0      6.5M   46K  5.9M   1% /mnt/backup
+        level: intermediate
+      - title: "Keep the holes when copying a sparse image"
+        code: |-
+          dd if=/dev/zero of=big.img bs=1M count=8 status=none
+          dd if=big.img of=copy.img bs=1M conv=sparse status=none
+          echo "apparent: $(stat -c %s copy.img)"
+          echo "allocated: $(du -h copy.img | cut -f1)"
+        description: "`conv=sparse` skips writing a block that is all zeros, so the copy takes no space at all while reporting the same length. Wrong for a device, where the blocks that go unwritten keep whatever was on them."
+        output: |
+          apparent: 8388608
+          allocated: 0
+        level: advanced
+      - title: "Read a device without writing anything"
+        code: |-
+          dd if=/srv/images/data.img of=/dev/null bs=1M status=none
+          echo "read ok: $?"
+        description: "Writing to `/dev/null` reads the whole device and discards it, which is a way to find out whether every block is readable. A failing disk reports an I/O error part way through rather than at the end."
+        output: |
+          read ok: 0
+        level: advanced
+      - title: "Send the summary somewhere separate"
+        code: dd if=/dev/zero bs=1M count=4 2>&1 >/dev/null | tail -1
+        description: "`dd` writes its data to standard output and its summary to standard error, so the two can be separated. Here the data is discarded and the summary kept, which is the form for timing a read without storing it."
+        volatile: "the elapsed time and the transfer rate are this machine's"
+        output: |
+          4194304 bytes (4.2 MB, 4.0 MiB) copied, 0.000507625 s, 8.3 GB/s
+        level: advanced

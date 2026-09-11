@@ -1,0 +1,212 @@
+command: blkid
+fixtures:
+  - name: "two disk images"
+    note: "a container's block devices belong to whoever is running it, so this page brings its own filesystem rather than reporting on those. `data.img` holds a 32M ext4 labelled `tipsdata` with a pinned UUID; `blank.img` is 16M of zeros with nothing on it. `blkid` reads a file as readily as a device, so most examples here name the image directly. The same pair backs [mount](/commands/mount/) and [fsck](/commands/fsck/)."
+    from: "ls -l /srv/images"
+    content: |2
+      total 20912
+      -rw-r--r-- 1 root root 16777216 Jun 15 10:00 blank.img
+      -rw-r--r-- 1 root root 33554432 Jun 15 10:00 data.img
+sections:
+  - title: "What is on this device"
+    intro: "Given a device or an image, `blkid` prints the tags it recognised. `TYPE` is the filesystem, `LABEL` and `UUID` are what an `/etc/fstab` entry should name it by, and `BLOCK_SIZE` is what the filesystem was made with."
+    examples:
+      - title: "Identify a filesystem"
+        code: blkid /srv/images/data.img
+        description: "The tags come from the superblock, read without mounting anything. This is the command to run on an unfamiliar disk before deciding what to do with it."
+        output: |
+          /srv/images/data.img: LABEL="tipsdata" UUID="4f6b2c18-9a3d-4e07-b5c1-2d8e7a904f31" BLOCK_SIZE="1024" TYPE="ext4"
+        level: basic
+      - title: "Ask about something with no filesystem on it"
+        code: blkid /srv/images/blank.img; echo "exit $?"
+        description: "No output and a status of 2, which is the same answer a device that does not exist gives. Worth pairing with a `test -e` when a script needs to tell the two apart."
+        output: |
+          exit 2
+        level: basic
+      - title: "Identify a loop device rather than the file behind it"
+        code: |-
+          loop=$(losetup --find --show /srv/images/data.img)
+          blkid "$loop"
+        description: "The same filesystem under its device name. On real hardware this is the only form there is, since the filesystem has no file standing behind it."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |
+          /dev/loop0: LABEL="tipsdata" UUID="4f6b2c18-9a3d-4e07-b5c1-2d8e7a904f31" BLOCK_SIZE="1024" TYPE="ext4"
+        level: intermediate
+      - title: "Show one tag instead of all of them"
+        code: blkid -s TYPE /srv/images/data.img
+        description: "`-s` keeps the named tag and drops the rest, with the device name still in front of it. `-s` can be repeated to keep several."
+        output: |
+          /srv/images/data.img: TYPE="ext4"
+        level: basic
+      - title: "Keep two tags and drop the rest"
+        code: blkid -s LABEL -s UUID -o export /srv/images/data.img
+        description: "Repeating `-s` accumulates rather than replacing, so this asks for the two identifiers and nothing about the filesystem's shape. `DEVNAME` is always included under `-o export`."
+        output: |
+          DEVNAME=/srv/images/data.img
+          LABEL=tipsdata
+          UUID=4f6b2c18-9a3d-4e07-b5c1-2d8e7a904f31
+        level: intermediate
+
+  - title: "Output for a script"
+    intro: "The default format is for reading. `-o value` prints the values alone, `-o export` prints assignments a shell can source, and both are stable in a way the default layout is not."
+    examples:
+      - title: "Get a UUID with nothing around it"
+        code: blkid -o value -s UUID /srv/images/data.img
+        description: "`-o value` with a single `-s` is the form to put in a command substitution. Without the `-s` it prints every value on its own line, which is rarely what a script wants."
+        output: |
+          4f6b2c18-9a3d-4e07-b5c1-2d8e7a904f31
+        level: basic
+      - title: "Get the label"
+        code: blkid -o value -s LABEL /srv/images/data.img
+        description: "A label is chosen by whoever made the filesystem and nothing stops two disks sharing one, so it is the friendlier identifier and the less reliable one."
+        output: |
+          tipsdata
+        level: basic
+      - title: "Get the filesystem type"
+        code: blkid -o value -s TYPE /srv/images/data.img
+        description: "The answer `mount -t` wants, and the one to branch on in a script that handles more than one filesystem. An empty answer with status 2 means nothing recognised it."
+        output: |
+          ext4
+        level: basic
+      - title: "Build an fstab line from the device"
+        code: |-
+          u=$(blkid -o value -s UUID /srv/images/data.img)
+          echo "UUID=$u /mnt/data ext4 loop 0 0"
+        description: "The reason `-o value -s` exists. Generating the line rather than typing the UUID keeps a transposed character from taking the machine down at its next boot."
+        output: |
+          UUID=4f6b2c18-9a3d-4e07-b5c1-2d8e7a904f31 /mnt/data ext4 loop 0 0
+        level: intermediate
+      - title: "Print assignments a shell can read"
+        code: blkid -o export /srv/images/data.img
+        description: "`-o export` is shaped for `eval` or for sourcing, and it names the device as `DEVNAME`. The tag names match what udev puts in the environment, which is where the format comes from."
+        output: |
+          DEVNAME=/srv/images/data.img
+          LABEL=tipsdata
+          UUID=4f6b2c18-9a3d-4e07-b5c1-2d8e7a904f31
+          BLOCK_SIZE=1024
+          TYPE=ext4
+        level: intermediate
+      - title: "Print a table with the mount state"
+        code: blkid -o list /srv/images/data.img
+        description: "`-o list` adds where the filesystem is mounted, which the other formats do not carry. The blank line under the header is part of the format rather than a missing row."
+        output: |2
+          device     fs_type label    mount point    UUID
+
+          /srv/images/data.img
+                     ext4    tipsdata (not mounted)  4f6b2c18-9a3d-4e07-b5c1-2d8e7a904f31
+        level: intermediate
+
+  - title: "Searching"
+    intro: "`-L` and `-U` go the other way: given a label or a UUID, they name the device carrying it. `-t` filters a list of devices down to the ones matching a tag."
+    examples:
+      - title: "Find the device with a given label"
+        code: |-
+          losetup --find --show /srv/images/data.img >/dev/null
+          blkid -L tipsdata; echo "exit $?"
+        description: "The lookup [mount](/commands/mount/) performs for `LABEL=tipsdata`, and running it by hand is the way to check an fstab entry resolves before rebooting on it. The answer is the device rather than the image behind it, because that is what a mount would be given."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |
+          /dev/loop0
+          exit 0
+        level: intermediate
+      - title: "Find the device with a given UUID"
+        code: |-
+          losetup --find --show /srv/images/data.img >/dev/null
+          blkid -U 4f6b2c18-9a3d-4e07-b5c1-2d8e7a904f31; echo "exit $?"
+        description: "Same lookup against the identifier that cannot collide. `-U` takes the UUID exactly, so a partial one finds nothing rather than matching a prefix."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |
+          /dev/loop0
+          exit 0
+        level: intermediate
+      - title: "Search for a label nothing has"
+        code: blkid -L nosuchlabel; echo "exit $?"
+        description: "Status 2 and no output. An fstab entry naming a label in this state drops the machine into an emergency shell at boot, which is what `findmnt --verify` exists to catch first."
+        output: |
+          exit 2
+        level: intermediate
+      - title: "Filter several devices by tag"
+        code: blkid -t TYPE=ext4 /srv/images/data.img /srv/images/blank.img; echo "exit $?"
+        description: "`-t` keeps only the devices whose tag matches, so the blank image is absent from the answer rather than reported as empty. Given no device list it searches every block device on the machine."
+        output: |
+          /srv/images/data.img: LABEL="tipsdata" UUID="4f6b2c18-9a3d-4e07-b5c1-2d8e7a904f31" BLOCK_SIZE="1024" TYPE="ext4"
+          exit 0
+        level: intermediate
+      - title: "Restrict which filesystem types are considered"
+        code: blkid -n ext4 /srv/images/data.img; echo "exit $?"
+        description: "`-n` limits the probe to the types you name, and `-n noext4` inverts it. Useful against a device carrying the remains of an older filesystem, where the probe can find more than one signature."
+        output: |
+          /srv/images/data.img: LABEL="tipsdata" UUID="4f6b2c18-9a3d-4e07-b5c1-2d8e7a904f31" BLOCK_SIZE="1024" TYPE="ext4"
+          exit 0
+        level: advanced
+
+  - title: "The cache, and probing past it"
+    intro: "`blkid` keeps what it has seen in `/run/blkid/blkid.tab` and will answer from there. `-c /dev/null` forces a fresh read of the device, and `-p` bypasses the cache entirely and reports what the probe itself found."
+    examples:
+      - title: "Read the device rather than the cache"
+        code: blkid -c /dev/null -o value -s UUID /srv/images/data.img
+        description: "`-c` names a cache file and `/dev/null` is the way to say there is not one. Worth having in any script that has just changed a filesystem, since the cached answer describes the device as it was."
+        output: |
+          4f6b2c18-9a3d-4e07-b5c1-2d8e7a904f31
+        level: intermediate
+      - title: "Change a UUID and read it back"
+        code: |-
+          tune2fs -U 99999999-8888-7777-6666-555555555555 /srv/images/data.img >/dev/null
+          blkid -c /dev/null -o value -s UUID /srv/images/data.img
+        description: "`tune2fs -U` rewrites the identifier in the superblock, which breaks every `/etc/fstab` entry and every bootloader configuration naming the old one. Do the fstab edit first."
+        danger: true
+        output: |
+          99999999-8888-7777-6666-555555555555
+        level: advanced
+      - title: "Probe low level instead of reporting tags"
+        code: blkid -p -s TYPE -o value /srv/images/data.img
+        description: "`-p` skips the cache and probes the device itself, as udev does. It also refuses to run on a mounted filesystem, since the answer could change underneath it."
+        output: |
+          ext4
+        level: advanced
+      - title: "See everything the probe found"
+        code: blkid -p -o udev /srv/images/data.img
+        description: "`-o udev` prints the full set of properties in the form udev stores them, including the size and block counts the ordinary output leaves out. This is where to look when a filesystem is recognised but something about it is wrong."
+        output: |
+          ID_FS_LABEL=tipsdata
+          ID_FS_LABEL_ENC=tipsdata
+          ID_FS_UUID=4f6b2c18-9a3d-4e07-b5c1-2d8e7a904f31
+          ID_FS_UUID_ENC=4f6b2c18-9a3d-4e07-b5c1-2d8e7a904f31
+          ID_FS_VERSION=1.0
+          ID_FS_FSBLOCKSIZE=1024
+          ID_FS_BLOCK_SIZE=1024
+          ID_FS_FSLASTBLOCK=32768
+          ID_FS_FSSIZE=33554432
+          ID_FS_TYPE=ext4
+          ID_FS_USAGE=filesystem
+        level: advanced
+      - title: "Probe a device with nothing on it"
+        code: blkid -p /srv/images/blank.img; echo "exit $?"
+        description: "Status 2 from the probe as well as from the cached form, so neither can tell an empty device from one whose filesystem the probe does not recognise."
+        output: |
+          exit 2
+        level: intermediate
+
+  - title: "Signatures on the device"
+    intro: "What `blkid` reads is a signature written at a known offset. `wipefs` lists those signatures and removes them, which is the honest way to make a device look empty."
+    examples:
+      - title: "List the signatures on a device"
+        code: wipefs /srv/images/data.img
+        description: "A single signature, at offset 0x438, which is where ext2, ext3 and ext4 all keep their magic number. Listing is what `wipefs` does without `-a`, so this is safe to run on anything."
+        output: |
+          DEVICE   OFFSET TYPE UUID                                 LABEL
+          data.img 0x438  ext4 4f6b2c18-9a3d-4e07-b5c1-2d8e7a904f31 tipsdata
+        level: intermediate
+      - title: "Erase the signature and watch blkid lose it"
+        code: |-
+          wipefs -a /srv/images/data.img
+          blkid -c /dev/null /srv/images/data.img; echo "exit $?"
+        description: "The filesystem is unrecognisable after two bytes went, though every block of data is still there. Run it before reusing a disk, and on anything whose old signature is still getting it mounted by accident."
+        danger: true
+        output: |
+          /srv/images/data.img: 2 bytes were erased at offset 0x00000438 (ext4): 53 ef
+          exit 2
+        level: advanced

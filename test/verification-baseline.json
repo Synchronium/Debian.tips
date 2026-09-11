@@ -31,6 +31,14 @@
     "fixtures": 6,
     "unpaired": 0
   },
+  "commands/blkid": {
+    "checked": 23,
+    "byShape": 3,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 1,
+    "unpaired": 0
+  },
   "commands/cat": {
     "checked": 38,
     "byShape": 1,
@@ -111,6 +119,14 @@
     "fixtures": 1,
     "unpaired": 0
   },
+  "commands/dd": {
+    "checked": 21,
+    "byShape": 1,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 1,
+    "unpaired": 0
+  },
   "commands/df": {
     "checked": 24,
     "byShape": 0,
@@ -145,6 +161,14 @@
   },
   "commands/find": {
     "checked": 27,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 1,
+    "unpaired": 0
+  },
+  "commands/fsck": {
+    "checked": 23,
     "byShape": 0,
     "unordered": 0,
     "exempt": 0,
@@ -261,6 +285,22 @@
     "unordered": 0,
     "exempt": 0,
     "fixtures": 2,
+    "unpaired": 0
+  },
+  "commands/mkfs": {
+    "checked": 25,
+    "byShape": 2,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 1,
+    "unpaired": 0
+  },
+  "commands/mount": {
+    "checked": 48,
+    "byShape": 17,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 1,
     "unpaired": 0
   },
   "commands/mv": {

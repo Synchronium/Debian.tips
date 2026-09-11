@@ -6,7 +6,7 @@ category: commands
 tags: [disk, files, sysadmin]
 updated: 2026-08-24
 tier: standard
-related: [find-the-largest-files, sort, ls, find, lsof]
+related: [find-the-largest-files, sort, ls, find, lsof, dd]
 ---
 
 `du` walks a directory tree and reports how much disk each part of it uses. `du -sh somedir` is

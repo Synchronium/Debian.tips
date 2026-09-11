@@ -1,0 +1,277 @@
+command: fsck
+fixtures:
+  - name: "a filesystem to break and repair"
+    note: "`data.img` holds a 32M ext4 labelled `tipsdata` containing `notes.txt` and `backups/site.tar`, and `blank.img` is 16M of zeros. The setup script rebuilds both before every example on this page, so an example can corrupt the filesystem and leave it corrupted. `debugfs -w` is how the damage is made: it writes a specific, named change rather than scribbling over a block with [dd](/commands/dd/), so the same error comes back every run. The same pair backs [mount](/commands/mount/) and [blkid](/commands/blkid/)."
+    from: "ls -l /srv/images"
+    content: |2
+      total 20912
+      -rw-r--r-- 1 root root 16777216 Jun 15 10:00 blank.img
+      -rw-r--r-- 1 root root 33554432 Jun 15 10:00 data.img
+sections:
+  - title: "Checking without changing anything"
+    intro: "`-n` answers no to every question the checker asks, so nothing is written and the report is the whole output. Run this first on anything you care about, and read what it says before letting it repair."
+    examples:
+      - title: "Check a filesystem"
+        code: fsck -n /srv/images/data.img; echo "exit $?"
+        description: "A banner each from `fsck` and from the checker it dispatched to, then one line of answer. `clean` means the filesystem was marked as cleanly unmounted, and the check stopped there without examining anything."
+        output: |
+          fsck from util-linux 2.41.5
+          e2fsck 1.47.2 (1-Jan-2025)
+          tipsdata: clean, 15/8192 files, 6992/32768 blocks
+          exit 0
+        level: basic
+      - title: "Force the check the clean flag skipped"
+        code: fsck -f -n /srv/images/data.img; echo "exit $?"
+        description: "`-f` ignores the clean flag and runs all five passes. This is the command to use when something is wrong and the check above says nothing is, which is the commonest way `fsck` gets dismissed as useless."
+        output: |
+          fsck from util-linux 2.41.5
+          e2fsck 1.47.2 (1-Jan-2025)
+          Pass 1: Checking inodes, blocks, and sizes
+          Pass 2: Checking directory structure
+          Pass 3: Checking directory connectivity
+          Pass 4: Checking reference counts
+          Pass 5: Checking group summary information
+          tipsdata: 15/8192 files (0.0% non-contiguous), 6992/32768 blocks
+          exit 0
+        level: basic
+      - title: "Read the clean flag directly"
+        code: dumpe2fs -h /srv/images/data.img 2>/dev/null | grep -E "^Filesystem state"
+        description: "The flag `fsck` is consulting, without running a check at all. `dumpe2fs -h` prints the superblock's header and sends its banner to standard error, which is what the redirect is dropping."
+        output: |
+          Filesystem state:         clean
+        level: intermediate
+      - title: "See the flag after an unclean unmount"
+        code: |-
+          debugfs -w -R "ssv state 0" /srv/images/data.img >/dev/null 2>&1
+          dumpe2fs -h /srv/images/data.img 2>/dev/null | grep -E "^Filesystem state"
+        description: "`ssv state 0` sets the superblock field a crash would leave behind. A filesystem in this state is checked at the next boot whether or not anything is actually wrong with it."
+        output: |
+          Filesystem state:         not clean
+        level: advanced
+      - title: "Watch the check happen because of that flag"
+        code: |-
+          debugfs -w -R "ssv state 0" /srv/images/data.img >/dev/null 2>&1
+          fsck -n /srv/images/data.img
+        description: "No `-f` this time: the flag alone is enough to make the full check run, and `fsck` says so. This is the delay people meet after a power cut, and on a multi-terabyte filesystem it is a long one."
+        output: |
+          fsck from util-linux 2.41.5
+          e2fsck 1.47.2 (1-Jan-2025)
+          tipsdata was not cleanly unmounted, check forced.
+          Pass 1: Checking inodes, blocks, and sizes
+          Pass 2: Checking directory structure
+          Pass 3: Checking directory connectivity
+          Pass 4: Checking reference counts
+          Pass 5: Checking group summary information
+          tipsdata: 15/8192 files (0.0% non-contiguous), 6992/32768 blocks
+        level: intermediate
+      - title: "Call the checker for the type directly"
+        code: e2fsck -f -n /srv/images/data.img 2>&1 | tail -2; echo "exit $?"
+        description: "`fsck` exists to dispatch by filesystem type and to handle several devices at once; on a single ext4 there is nothing it adds beyond its own banner. The `2>&1` matters here: the banner and the passes go to standard error and the findings to standard output, so a `tail` on one stream alone cuts an unpredictable place."
+        output: |
+          Pass 5: Checking group summary information
+          tipsdata: 15/8192 files (0.0% non-contiguous), 6992/32768 blocks
+          exit 0
+        level: intermediate
+      - title: "See which checker would run"
+        code: fsck -N /srv/images/data.img; echo "exit $?"
+        description: "`-N` prints the command and does not run it. Worth checking on an unfamiliar filesystem type, since a missing `fsck.<type>` helper is reported as though the check itself failed."
+        output: |
+          fsck from util-linux 2.41.5
+          [/usr/sbin/fsck.ext4 (1) -- /srv/images/data.img] fsck.ext4 /srv/images/data.img
+          exit 0
+        level: intermediate
+      - title: "Insist on a filesystem type"
+        code: fsck -t ext4 -f -n /srv/images/data.img 2>&1 | tail -2; echo "exit $?"
+        description: "`-t` skips the probe. Given the wrong type the matching checker runs anyway and reports damage everywhere, which is worth knowing before typing it from memory."
+        output: |
+          Pass 5: Checking group summary information
+          tipsdata: 15/8192 files (0.0% non-contiguous), 6992/32768 blocks
+          exit 0
+        level: intermediate
+
+  - title: "Damage, and what the report looks like"
+    intro: "The examples here corrupt the filesystem first. `debugfs -w -R \"freei /notes.txt\"` marks a file's inode free while the directory entry still points at it, which is one of the states a crash during a delete leaves behind."
+    examples:
+      - title: "Find damage without repairing it"
+        code: |-
+          debugfs -w -R "freei /notes.txt" /srv/images/data.img >/dev/null 2>&1
+          fsck -f -n /srv/images/data.img; echo "exit $?"
+        description: "Every finding refused because of `-n`, and a warning that the filesystem still has errors. Status 4 is the one to act on: it means something is wrong and nothing was done about it."
+        danger: true
+        output: |
+          fsck from util-linux 2.41.5
+          e2fsck 1.47.2 (1-Jan-2025)
+          Pass 1: Checking inodes, blocks, and sizes
+          Pass 2: Checking directory structure
+          Pass 3: Checking directory connectivity
+          Pass 4: Checking reference counts
+          Pass 5: Checking group summary information
+          Inode bitmap differences:  +14
+          Fix? no
+
+          Free inodes count wrong for group #0 (2033, counted=2034).
+          Fix? no
+
+          Free inodes count wrong (8177, counted=8178).
+          Fix? no
+
+
+          tipsdata: ********** WARNING: Filesystem still has errors **********
+
+          tipsdata: 15/8192 files (0.0% non-contiguous), 6992/32768 blocks
+          exit 4
+        level: advanced
+      - title: "Repair it"
+        code: |-
+          debugfs -w -R "freei /notes.txt" /srv/images/data.img >/dev/null 2>&1
+          fsck -f -y /srv/images/data.img; echo "exit $?"
+        description: "`-y` answers yes to everything, which is the only practical choice on a filesystem with thousands of findings. The two counts the read-only check reported are gone, because fixing the bitmap made them right."
+        danger: true
+        output: |
+          fsck from util-linux 2.41.5
+          e2fsck 1.47.2 (1-Jan-2025)
+          Pass 1: Checking inodes, blocks, and sizes
+          Pass 2: Checking directory structure
+          Pass 3: Checking directory connectivity
+          Pass 4: Checking reference counts
+          Pass 5: Checking group summary information
+          Inode bitmap differences:  +14
+          Fix? yes
+
+
+          tipsdata: ***** FILE SYSTEM WAS MODIFIED *****
+          tipsdata: 15/8192 files (0.0% non-contiguous), 6992/32768 blocks
+          exit 1
+        level: advanced
+      - title: "Check again after repairing"
+        code: |-
+          debugfs -w -R "freei /notes.txt" /srv/images/data.img >/dev/null 2>&1
+          fsck -f -y /srv/images/data.img >/dev/null 2>&1; echo "repair exit: $?"
+          fsck -f -n /srv/images/data.img 2>&1 | tail -1; echo "recheck exit: $?"
+        description: "Always run the check a second time. A repair can uncover damage the first pass could not see past, and a second run returning 0 is the only thing that says the filesystem is actually consistent."
+        danger: true
+        output: |
+          repair exit: 1
+          tipsdata: 15/8192 files (0.0% non-contiguous), 6992/32768 blocks
+          recheck exit: 0
+        level: advanced
+      - title: "Watch the clean flag hide the damage"
+        code: |-
+          debugfs -w -R "freei /notes.txt" /srv/images/data.img >/dev/null 2>&1
+          fsck -p /srv/images/data.img; echo "exit $?"
+        description: "The filesystem is damaged and `fsck` says it is clean, because `-p` trusts the flag and the flag was never cleared. This is the case `-f` exists for, and the reason a disk with a real fault can pass a check in under a second."
+        danger: true
+        output: |
+          fsck from util-linux 2.41.5
+          tipsdata: clean, 15/8192 files, 6992/32768 blocks
+          exit 0
+        level: advanced
+
+  - title: "The exit status"
+    intro: "The status is a bitmask, so the values add: 1 for errors corrected, 2 for a reboot needed, 4 for errors left uncorrected, 8 for an operational error, 16 for a usage error. A script testing for zero alone will call a successful repair a failure."
+    examples:
+      - title: "Nothing wrong"
+        code: fsck -f -n /srv/images/data.img >/dev/null 2>&1; echo "exit $?"
+        description: "Zero, and the only status that means the filesystem needs nothing. Everything else is worth reading rather than retrying."
+        output: |
+          exit 0
+        level: intermediate
+      - title: "Errors found and corrected"
+        code: |-
+          debugfs -w -R "freei /notes.txt" /srv/images/data.img >/dev/null 2>&1
+          fsck -f -y /srv/images/data.img >/dev/null 2>&1; echo "exit $?"
+        description: "Status 1: something was wrong and is not any more. A monitoring check that pages on non-zero pages on this, which is how a repaired filesystem gets treated as an outage."
+        danger: true
+        output: |
+          exit 1
+        level: advanced
+      - title: "Errors found and left alone"
+        code: |-
+          debugfs -w -R "freei /notes.txt" /srv/images/data.img >/dev/null 2>&1
+          fsck -f -n /srv/images/data.img >/dev/null 2>&1; echo "exit $?"
+        description: "Status 4, the one that needs a person. It is what `-n` returns on a damaged filesystem, and what an unattended boot check returns before dropping to a maintenance shell."
+        danger: true
+        output: |
+          exit 4
+        level: advanced
+      - title: "The checker could not run at all"
+        code: fsck -M /srv/images/data.img >/dev/null 2>&1; echo "exit $?"
+        description: "Status 8, an operational error rather than a finding about the filesystem. Here the checker wanted to ask a question and had no terminal to ask it on, which is what happens to an interactive `fsck` inside a script."
+        output: |
+          exit 8
+        level: advanced
+
+  - title: "Not on a mounted filesystem"
+    intro: "A checker reads structures the kernel is still writing, so on a mounted filesystem it reports damage that is not there. Repairing on that basis is how a working disk gets destroyed."
+    examples:
+      - title: "See what a check of a mounted filesystem reports"
+        code: |-
+          loop=$(losetup --find --show /srv/images/data.img)
+          mount "$loop" /mnt/data
+          fsck -n "$loop" 2>&1 | tail -3
+        description: "A `Clear?` prompt on a filesystem that is perfectly sound. The kernel has state in memory that the on-disk structures do not reflect yet, so the checker is reading a half-written picture. `-n` is what keeps this harmless."
+        danger: true
+        output: |2
+          Clear? no
+
+          tipsdata: 15/8192 files (0.0% non-contiguous), 6992/32768 blocks
+        level: advanced
+      - title: "Skip it instead"
+        code: |-
+          loop=$(losetup --find --show /srv/images/data.img)
+          mount "$loop" /mnt/data
+          fsck -M "$loop"; echo "exit $?"
+        description: "`-M` leaves a mounted filesystem alone and reports success, so a script can run over several devices without knowing which of them are in use."
+        output: |
+          fsck from util-linux 2.41.5
+          exit 0
+        level: intermediate
+      - title: "Unmount before checking"
+        code: |-
+          loop=$(losetup --find --show /srv/images/data.img)
+          mount "$loop" /mnt/data
+          umount /mnt/data
+          fsck -f -n "$loop" 2>&1 | tail -1; echo "exit $?"
+        description: "The same device, checked properly. For a root filesystem there is no equivalent: it has to be checked from a rescue image or at boot before it is mounted."
+        output: |
+          tipsdata: 15/8192 files (0.0% non-contiguous), 6992/32768 blocks
+          exit 0
+        level: intermediate
+
+  - title: "When the check runs by itself"
+    intro: "Debian checks filesystems at boot in the order `/etc/fstab`'s sixth field gives, and `tune2fs` sets the thresholds that decide whether a check happens at all."
+    examples:
+      - title: "Set the fstab pass order"
+        code: |-
+          printf '/srv/images/data.img /mnt/data ext4 loop 0 2\n' >> /etc/fstab
+          grep data.img /etc/fstab
+        description: "The sixth field: 1 for the root filesystem, 2 for everything else, 0 to never check. Filesystems with the same non-zero number are checked in parallel, so giving two on the same physical disk the same number makes both slower."
+        output: |
+          /srv/images/data.img /mnt/data ext4 loop 0 2
+        level: intermediate
+      - title: "Check after a number of mounts"
+        code: |-
+          tune2fs -c 20 /srv/images/data.img >/dev/null
+          tune2fs -l /srv/images/data.img | grep -E "^(Mount count|Maximum mount count)"
+        description: "`-c` forces a check every twentieth mount. Debian leaves this off by default, on the grounds that a scheduled check on a large filesystem delays a boot by more than it is worth."
+        output: |
+          Mount count:              1
+          Maximum mount count:      20
+        level: advanced
+      - title: "Check after an interval instead"
+        code: |-
+          tune2fs -i 30d /srv/images/data.img >/dev/null
+          tune2fs -l /srv/images/data.img | grep -E "^Check interval"
+        description: "`-i` counts elapsed time rather than mounts, which suits a machine that reboots rarely. The value is stored in seconds and printed both ways."
+        output: |
+          Check interval:           2592000 (1 month)
+        level: advanced
+      - title: "Turn the automatic checks off"
+        code: |-
+          tune2fs -c 0 -i 0 /srv/images/data.img >/dev/null
+          tune2fs -l /srv/images/data.img | grep -E "^(Maximum mount count|Check interval)"
+        description: "Neither threshold set, which is how a Debian filesystem is shipped. A check still happens after an unclean unmount, so this turns off the scheduled ones rather than checking altogether."
+        output: |
+          Maximum mount count:      -1
+          Check interval:           0 (<none>)
+        level: advanced

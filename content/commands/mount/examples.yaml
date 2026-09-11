@@ -1,0 +1,515 @@
+command: mount
+fixtures:
+  - name: "two disk images"
+    note: "a container's real filesystems belong to whoever is running it, so this page brings its own. `data.img` holds a 32M ext4 labelled `tipsdata` with a pinned UUID, containing `notes.txt` and `backups/site.tar`; `blank.img` is 16M of zeros with no filesystem on it at all. Neither is attached to a loop device until an example attaches it, so `losetup --find` always answers `/dev/loop0`."
+    from: "ls -l /srv/images"
+    content: |2
+      total 20912
+      -rw-r--r-- 1 root root 16777216 Jun 15 10:00 blank.img
+      -rw-r--r-- 1 root root 33554432 Jun 15 10:00 data.img
+sections:
+  - title: "Attaching a filesystem"
+    intro: "A filesystem in a file needs a loop device standing in for a disk. `losetup` makes one, or `mount -o loop` makes one and mounts it in a single step. On real hardware the device is `/dev/sda1` or similar and neither step is needed."
+    examples:
+      - title: "Attach a disk image to a loop device"
+        code: losetup --find --show /srv/images/data.img
+        description: "`--find` takes the first unused loop device and `--show` prints which one it took. Without `--show` the command succeeds silently and you are left guessing."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |
+          /dev/loop0
+        level: intermediate
+      - title: "Mount an attached device"
+        code: |-
+          loop=$(losetup --find --show /srv/images/data.img)
+          mount "$loop" /mnt/data
+          ls /mnt/data
+        description: "The directory now shows the filesystem's contents. `lost+found` is not something anyone put there: [mkfs.ext4](/commands/mkfs/) creates it, and [fsck](/commands/fsck/) puts recovered files in it."
+        output: |
+          backups
+          lost+found
+          notes.txt
+        level: basic
+      - title: "Attach and mount in one step"
+        code: |-
+          mount -o loop /srv/images/data.img /mnt/data
+          findmnt /mnt/data
+        description: "`-o loop` sets up the loop device itself, which is the form worth remembering for an ISO or a disk image. The device it chose shows up in the `SOURCE` column."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |2
+          TARGET    SOURCE     FSTYPE OPTIONS
+          /mnt/data /dev/loop0 ext4   rw,relatime
+        level: basic
+      - title: "Create the mount point as you mount"
+        code: |-
+          mount -o loop --mkdir /srv/images/data.img /mnt/archive
+          findmnt -no TARGET /mnt/archive
+          ls -ld /mnt/archive
+        description: "`--mkdir` makes the directory if it is missing, which saves the `mkdir` that otherwise precedes half the `mount` commands anyone types. The mode it gives the new directory comes from the mounted filesystem's root, not from the umask."
+        output: |
+          /mnt/archive
+          drwxr-xr-x 4 root root 1024 Jun 15 10:00 /mnt/archive
+        level: intermediate
+      - title: "Mount by label instead of device"
+        code: |-
+          losetup --find --show /srv/images/data.img >/dev/null
+          mount LABEL=tipsdata /mnt/data
+          findmnt -no SOURCE,TARGET /mnt/data
+        description: "The label is looked up through [blkid](/commands/blkid/), so the device name never appears. It keeps an `/etc/fstab` entry right after a disk is added and everything renumbers."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |
+          /dev/loop0 /mnt/data
+        level: intermediate
+      - title: "Mount by UUID"
+        code: |-
+          losetup --find --show /srv/images/data.img >/dev/null
+          mount UUID=4f6b2c18-9a3d-4e07-b5c1-2d8e7a904f31 /mnt/data
+          findmnt -no SOURCE,TARGET /mnt/data
+        description: "A UUID is generated when the filesystem is made and two of them never collide, whereas nothing stops two disks carrying the label `backup`. It is the identifier to use where being wrong is expensive."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |
+          /dev/loop0 /mnt/data
+        level: intermediate
+      - title: "Say which filesystem type it is"
+        code: |-
+          mount -o loop -t ext4 /srv/images/data.img /mnt/data
+          findmnt -no FSTYPE /mnt/data
+        description: "`-t` skips the probe and insists on a type. Worth giving in a script, where a wrong guess about an unfamiliar device is better refused than acted on."
+        output: |
+          ext4
+        level: intermediate
+      - title: "Keep the loop device after unmounting"
+        code: |-
+          loop=$(losetup --find --show /srv/images/data.img)
+          mount "$loop" /mnt/data
+          umount /mnt/data
+          losetup -j /srv/images/data.img
+        description: "Attached by hand, so `umount` leaves it attached and only `losetup -d` releases it. A script that loops over images and forgets this runs out of loop devices rather than failing anywhere obvious. `-j` asks about one backing file, where `losetup -a` would answer about every loop device on the machine."
+        volatile: "the loop device number depends on what else on this machine has one attached, and the two numbers after it are the backing file's device and inode"
+        compare: shape
+        output: |
+          /dev/loop3: [0053]:460583 (/srv/images/data.img)
+        level: advanced
+      - title: "Detach the loop device with the filesystem"
+        code: |-
+          mount -o loop /srv/images/data.img /mnt/data
+          umount /mnt/data
+          echo "still attached: $(losetup -j /srv/images/data.img | wc -l)"
+        description: "`umount` releases a loop device that `mount -o loop` set up, which is the difference from the example above. The count is of loop devices backed by this one image, so it answers about the page's own disk rather than about everything the machine has attached."
+        output: |
+          still attached: 0
+        level: intermediate
+
+  - title: "Seeing what is mounted"
+    intro: "`findmnt` reads the same table `mount` prints and is easier to ask a question of. `-n` drops the header, `-o` picks columns and `--target` takes a path anywhere inside a filesystem rather than the mount point itself."
+    examples:
+      - title: "Look at one mount"
+        code: |-
+          mount -o loop /srv/images/data.img /mnt/data
+          mount | grep /mnt/data
+        description: "`mount` on its own lists every filesystem including the kernel's own, so a `grep` is nearly always attached to it. Note the source it reports: the image file, rather than the loop device `findmnt` names."
+        output: |
+          /srv/images/data.img on /mnt/data type ext4 (rw,relatime)
+        level: basic
+      - title: "Pick out the columns you want"
+        code: |-
+          mount -o loop /srv/images/data.img /mnt/data
+          findmnt -no SOURCE,FSTYPE,OPTIONS /mnt/data
+        description: "`-n` drops the header and `-o` names the columns, which between them make the output safe to read in a script. The column names are the ones `findmnt` prints with no arguments."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |
+          /dev/loop0 ext4 rw,relatime
+        level: intermediate
+      - title: "Find which filesystem a file is on"
+        code: |-
+          mount -o loop /srv/images/data.img /mnt/data
+          findmnt --target /mnt/data/backups -no SOURCE,TARGET
+        description: "`--target` accepts any path and walks up to the filesystem holding it. This is the question people reach `df` for, and `findmnt` answers it without the size columns in the way."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |
+          /dev/loop0 /mnt/data
+        level: intermediate
+      - title: "See the space as well as the mount"
+        code: |-
+          mount -o loop /srv/images/data.img /mnt/data
+          findmnt -D /mnt/data
+        description: "`-D` adds the columns [df](/commands/df/) would give, so one command answers both what is mounted and how full it is. The size is under the image's 32M because the journal and the inode tables are already spent."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |2
+          SOURCE     FSTYPE  SIZE USED AVAIL USE% TARGET
+          /dev/loop0 ext4   25.2M  68K 22.9M   0% /mnt/data
+        level: intermediate
+      - title: "Ask whether a path is a mount point at all"
+        code: |-
+          mountpoint /mnt/data; echo "exit $?"
+          mount -o loop /srv/images/data.img /mnt/data
+          mountpoint /mnt/data; echo "exit $?"
+        description: "`mountpoint` answers the one question and nothing else. The directory exists in both cases, which is why `ls` cannot tell them apart and a backup script writing to an unmounted target fills the root filesystem instead."
+        output: |
+          /mnt/data is not a mountpoint
+          exit 32
+          /mnt/data is a mountpoint
+          exit 0
+        level: basic
+      - title: "Guard a script on the mount being up"
+        code: |-
+          if mountpoint -q /mnt/data; then echo "backup target is mounted"; else echo "not mounted, refusing to write"; fi
+          mount -o loop /srv/images/data.img /mnt/data
+          if mountpoint -q /mnt/data; then echo "backup target is mounted"; else echo "not mounted, refusing to write"; fi
+        description: "`-q` silences the message and leaves the exit status, which is the form to put at the top of anything that writes to a mounted disk. Two lines of guard against filling the root filesystem with a backup nobody can find."
+        output: |
+          not mounted, refusing to write
+          backup target is mounted
+        level: intermediate
+      - title: "Find the mount by its device"
+        code: |-
+          loop=$(losetup --find --show /srv/images/data.img)
+          mount "$loop" /mnt/data
+          findmnt -S "$loop"
+        description: "`-S` selects by source where a bare path selects by target. Useful in the other direction from usual: you have a device name out of `dmesg` or `lsblk` and want to know where, if anywhere, it ended up."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |2
+          TARGET    SOURCE     FSTYPE OPTIONS
+          /mnt/data /dev/loop0 ext4   rw,relatime
+        level: intermediate
+      - title: "Read the kernel's own copy of the table"
+        code: |-
+          mount -o loop /srv/images/data.img /mnt/data
+          grep /mnt/data /proc/mounts
+        description: "`/proc/mounts` is where both commands get their answer, in the same five fields `/etc/fstab` uses. Worth knowing for a recovery shell with neither `mount` nor `findmnt` on the path."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |
+          /dev/loop0 /mnt/data ext4 rw,relatime 0 0
+        level: advanced
+      - title: "Check the device behind a mount"
+        code: |-
+          loop=$(losetup --find --show /srv/images/data.img)
+          mount "$loop" /mnt/data
+          lsblk "$loop"
+        description: "`lsblk` names the device rather than the filesystem, and its `MOUNTPOINTS` column closes the loop. Give it a device: run bare in a container it lists the host's block devices, which is nothing you can act on."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |2
+          NAME  MAJ:MIN RM SIZE RO TYPE MOUNTPOINTS
+          loop0   7:0    0  32M  0 loop /mnt/data
+        level: intermediate
+      - title: "List the files on a mounted filesystem"
+        code: |-
+          mount -o loop /srv/images/data.img /mnt/data
+          ls -l /mnt/data
+        description: "An ordinary directory listing, which is the point: once mounted there is nothing special about the path. `lost+found` is 12K because `mkfs` preallocates its directory blocks."
+        output: |
+          total 14
+          drwxr-xr-x 2 root root  1024 Jun 15 10:00 backups
+          drwx------ 2 root root 12288 Jun 15 10:00 lost+found
+          -rw-r--r-- 1 root root    26 Jun  1 09:00 notes.txt
+        level: basic
+
+  - title: "Options"
+    intro: "`-o` takes a comma-separated list and no spaces. `findmnt -o OPTIONS` prints what ended up in force, which is not always what was asked for: the kernel adds its own defaults and refuses some combinations outright."
+    examples:
+      - title: "Mount read-only"
+        code: |-
+          mount -o loop,ro /srv/images/data.img /mnt/data
+          touch /mnt/data/new.txt; echo "exit $?"
+        description: "`ro` is enforced by the kernel rather than by permissions, so root is refused as well. The form to use on anything you are inspecting after a failure, where writing to it would destroy the evidence."
+        output: |
+          touch: cannot touch '/mnt/data/new.txt': Read-only file system
+          exit 1
+        level: basic
+      - title: "Refuse to run anything on it"
+        code: |-
+          mount -o loop,noexec /srv/images/data.img /mnt/data
+          cp /bin/true /mnt/data/prog
+          /mnt/data/prog; echo "exit $?"
+        description: "`noexec` stops the kernel executing a file from this filesystem whatever its mode bits say. Status 126 is the shell's code for found but not runnable, which is worth telling apart from 127 for not found at all."
+        output: |
+          bash: line 3: /mnt/data/prog: Permission denied
+          exit 126
+        level: intermediate
+      - title: "Apply the whole untrusted-media set"
+        code: |-
+          mount -o loop,nosuid,nodev,noexec /srv/images/data.img /mnt/data
+          findmnt -no OPTIONS /mnt/data
+        description: "`nosuid` ignores the setuid bit, `nodev` ignores device nodes and `noexec` refuses execution. Together they are what to give a USB stick or a disk image of unknown provenance before looking inside it."
+        output: |
+          rw,nosuid,nodev,noexec,relatime
+        level: intermediate
+      - title: "Change the options without unmounting"
+        code: |-
+          mount -o loop /srv/images/data.img /mnt/data
+          mount -o remount,ro /mnt/data
+          findmnt -no OPTIONS /mnt/data
+        description: "`remount` alters a live mount in place, so open files stay open. A filesystem that goes read-only by itself has been remounted this way by the kernel after an I/O error, and the service on top of it usually notices second."
+        output: |
+          ro,relatime
+        level: intermediate
+      - title: "Add an option to a mount that is already up"
+        code: |-
+          mount -o loop /srv/images/data.img /mnt/data
+          mount -o remount,noexec /mnt/data
+          findmnt -no OPTIONS /mnt/data
+        description: "A remount replaces the option list rather than merging into it, so anything you want kept has to be named again. Here `relatime` survives because the kernel applies it by default, not because it was carried over."
+        output: |
+          rw,noexec,relatime
+        level: advanced
+      - title: "Find the remount that is refused"
+        code: |-
+          mount -o loop,ro /srv/images/data.img /mnt/data
+          mount -o remount,rw /mnt/data
+        description: "`-o loop,ro` marks the loop device itself write-protected, not just the mount, and no remount can undo that from above. Detach and reattach without the `ro` instead."
+        danger: true
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |
+          mount: /mnt/data: cannot remount /dev/loop0 read-write, is write-protected.
+                 dmesg(1) may have more information after failed mount system call.
+        level: advanced
+      - title: "Ask the filesystem to go read-only on error"
+        code: |-
+          mount -o loop,errors=remount-ro /srv/images/data.img /mnt/data
+          findmnt -no OPTIONS /mnt/data
+          grep /mnt/data /proc/mounts
+        description: "An ext4 option rather than a general one, and the setting behind a filesystem that turns read-only by itself after a disk error. The alternatives are `continue`, which carries on over a filesystem it knows is damaged, and `panic`."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |
+          rw,relatime,errors=remount-ro
+          /dev/loop0 /mnt/data ext4 rw,relatime,errors=remount-ro 0 0
+        level: advanced
+      - title: "Write through instead of caching"
+        code: |-
+          mount -o loop,sync /srv/images/data.img /mnt/data
+          findmnt -no OPTIONS /mnt/data
+        description: "`sync` makes every write reach the device before the call returns. It is slow enough to be worth avoiding on anything but removable media, where the alternative is a stick pulled out with half a file still in memory."
+        output: |
+          rw,relatime,sync
+        level: advanced
+      - title: "Stop recording access times"
+        code: |-
+          mount -o loop,noatime /srv/images/data.img /mnt/data
+          findmnt -no OPTIONS /mnt/data
+        description: "`relatime` is the default and already writes an access time at most once a day. `noatime` drops the last of it, which is worth having on a filesystem full of small files being read constantly and worth nothing anywhere else."
+        output: |
+          rw,noatime
+        level: advanced
+      - title: "Tell the mount options from the filesystem options"
+        code: |-
+          mount -o loop /srv/images/data.img /mnt/data
+          findmnt -no FS-OPTIONS /mnt/data
+        description: "`OPTIONS` is everything, `FS-OPTIONS` only what the filesystem driver itself took. The distinction matters when a mount reports `ro` and you need to know whether the kernel set it or the command line asked for it."
+        output: |
+          rw
+        level: advanced
+
+  - title: "Bind mounts and tmpfs"
+    intro: "Not every mount comes from a device. A bind mount makes one directory appear at a second path, and `tmpfs` makes a filesystem out of memory. Both are ordinary entries in the same table."
+    examples:
+      - title: "Make a directory appear somewhere else"
+        code: |-
+          mount -o loop /srv/images/data.img /mnt/data
+          mount --bind /mnt/data/backups /mnt/backup
+          findmnt -no SOURCE,TARGET,FSTYPE /mnt/backup
+          ls /mnt/backup
+        description: "The `SOURCE` column names the device and the subdirectory inside it in brackets. A bind mount is the way to expose one directory to a service that is confined to a different path, without copying anything or following a symlink."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |
+          /dev/loop0[/backups] /mnt/backup ext4
+          site.tar
+        level: intermediate
+      - title: "Make a bind mount read-only"
+        code: |-
+          mount -o loop /srv/images/data.img /mnt/data
+          mount --bind /mnt/data/backups /mnt/backup
+          mount -o remount,bind,ro /mnt/backup
+          findmnt -no TARGET,OPTIONS /mnt/backup
+          touch /mnt/backup/x; echo "exit $?"
+        description: "`--bind -o ro` in one command does not work: the bind is made first and the options are applied to the original mount, so the copy comes up writable. The remount afterwards sets it, and the original at `/mnt/data` stays writable throughout."
+        output: |
+          /mnt/backup ro,relatime
+          touch: cannot touch '/mnt/backup/x': Read-only file system
+          exit 1
+        level: advanced
+      - title: "Mount a filesystem that lives in memory"
+        code: |-
+          mount -t tmpfs -o size=8M,mode=1777 tmpfs /mnt/backup
+          findmnt -no SOURCE,FSTYPE,OPTIONS /mnt/backup
+        description: "`tmpfs` has no device, so the first argument is a name that shows up in the listing and means nothing else. `size=` is a cap rather than an allocation: nothing is taken from memory until something is written."
+        output: |
+          tmpfs tmpfs rw,relatime,size=8192k
+        level: intermediate
+      - title: "See how big a tmpfs really is"
+        code: |-
+          mount -t tmpfs -o size=8M tmpfs /mnt/backup
+          df -h /mnt/backup | tail -1
+        description: "The full 8M is available, with none of the overhead an on-disk filesystem spends on journals and inode tables. Without `size=` a tmpfs defaults to half of RAM, which is rarely what anyone intends."
+        output: |
+          tmpfs           8.0M     0  8.0M   0% /mnt/backup
+        level: intermediate
+      - title: "Move a mount to a different path"
+        code: |-
+          mount -o loop /srv/images/data.img /mnt/data
+          mount --move /mnt/data /mnt/backup
+          findmnt -no TARGET,SOURCE /mnt/backup
+          findmnt /mnt/data; echo "old path: $?"
+        description: "`--move` relocates a live mount without unmounting it, so open files stay open and nothing notices. The old path goes back to being an empty directory."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |
+          /mnt/backup /dev/loop0
+          old path: 1
+        level: advanced
+      - title: "Unmount a tree of mounts together"
+        code: |-
+          mount -o loop /srv/images/data.img /mnt/data
+          mount --bind /mnt/data /mnt/backup
+          umount -R /mnt/backup; echo "exit $?"
+          findmnt /mnt/backup; echo "gone $?"
+        description: "`-R` unmounts everything underneath the path as well as the path itself. A bind mount nested inside another filesystem is the usual reason a plain `umount` reports the target is busy when nothing has a file open."
+        output: |
+          exit 0
+          gone 1
+        level: advanced
+
+  - title: "fstab"
+    intro: "`/etc/fstab` holds the mounts the machine makes at boot, in six fields: what, where, type, options, dump and pass. An entry there also means `mount /mnt/data` works with no other arguments, which is the quickest way to test one before rebooting on it."
+    examples:
+      - title: "Mount using an entry from fstab"
+        code: |-
+          printf '/srv/images/data.img /mnt/data ext4 loop,ro 0 0\n' >> /etc/fstab
+          mount /mnt/data
+          findmnt -no SOURCE,TARGET,OPTIONS /mnt/data
+        description: "The path is the only argument, because everything else came from the file. Always test an entry this way before rebooting: a filesystem that fails to mount at boot drops the machine to an emergency shell."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |
+          /dev/loop0 /mnt/data ro,relatime
+        level: intermediate
+      - title: "Read back the file you just added to"
+        code: |-
+          printf '/srv/images/data.img /mnt/data ext4 loop 0 0\n' >> /etc/fstab
+          cat /etc/fstab
+        description: "Whitespace-separated fields, six of them. The trailing zeros are the dump flag, which nothing modern uses, and the fsck pass order, where 0 means never check, 1 is the root filesystem and 2 is everything else."
+        output: |
+          # /etc/fstab: static file system information.
+          /srv/images/data.img /mnt/data ext4 loop 0 0
+        level: intermediate
+      - title: "Mount everything fstab asks for"
+        code: |-
+          printf '/srv/images/data.img /mnt/data ext4 loop 0 0\n' >> /etc/fstab
+          mount -a
+          findmnt -no TARGET,FSTYPE /mnt/data
+        description: "`mount -a` is what the boot sequence runs, and running it by hand mounts anything in the file that is not already up. It skips entries marked `noauto`, which is how a rarely-used filesystem stays in the file without being mounted."
+        output: |
+          /mnt/data ext4
+        level: intermediate
+      - title: "Check an fstab entry without acting on it"
+        code: |-
+          printf 'LABEL=tipsdata /mnt/data ext4 loop 0 0\n' >> /etc/fstab
+          findmnt --verify --verbose 2>/dev/null
+        description: "`--verify` reads the file and reports what would go wrong, which is the check to run before a reboot you cannot easily undo. Here the label is unreachable at boot, because nothing attaches the loop device carrying it. The per-entry detail goes to standard output and the count of problems to standard error, so one of the two has to be redirected before the order they arrive in is settled."
+        output: |
+          /mnt/data
+             [ ] target exists
+             [ ] userspace options: loop
+             [E] unreachable on boot required source: LABEL=tipsdata
+        level: advanced
+      - title: "See the warning an entry earns without being wrong"
+        code: |-
+          printf '/srv/images/data.img /mnt/data ext4 loop 0 0\n' >> /etc/fstab
+          findmnt --verify 2>/dev/null; echo "exit $?"
+        description: "A `[W]` rather than an `[E]`: this entry works, and `--verify` is pointing out that the source is a file rather than a block device. Worth reading the warnings as well as the errors, since a typo in a path produces one of each depending on whether the path exists."
+        output: |
+          /mnt/data
+             [W] non-bind mount source /srv/images/data.img is a directory or regular file
+          exit 0
+        level: advanced
+
+  - title: "When it will not mount, or will not unmount"
+    intro: "`mount` gives the same message for several different problems, and `umount` gives one that is usually about a process rather than about the filesystem. Both are worth recognising on sight."
+    examples:
+      - title: "Mount something that has no filesystem on it"
+        code: mount -o loop /srv/images/blank.img /mnt/data
+        description: "`blank.img` is 16M of zeros. This is also the message for a filesystem type the kernel has no driver for, for a corrupted superblock and for an option the driver rejected, so it narrows nothing down on its own; [blkid](/commands/blkid/) answering nothing is the quickest way to tell the first case from the rest."
+        volatile: "the loop device number depends on what else on this machine has one attached"
+        compare: shape
+        output: |
+          mount: /mnt/data: wrong fs type, bad option, bad superblock on /dev/loop0, missing codepage or helper program, or other error.
+                 dmesg(1) may have more information after failed mount system call.
+        level: intermediate
+      - title: "Mount onto a directory that is not there"
+        code: mount -o loop /srv/images/data.img /mnt/nowhere
+        description: "`mount` does not create the mount point. A missing directory is worth ruling out first, since the message for it is clear where the one above is not."
+        output: |
+          mount: /mnt/nowhere: mount point does not exist.
+                 dmesg(1) may have more information after failed mount system call.
+        level: basic
+      - title: "Mount the same image twice"
+        code: |-
+          mount -o loop /srv/images/data.img /mnt/data
+          mount -o loop /srv/images/data.img /mnt/data
+        description: "Refused, and the exit status is 1 rather than the 32 the failures above give. Mounting the same filesystem at a second path is allowed; mounting it twice at the same one is not."
+        output: |
+          mount: /mnt/data: /srv/images/data.img is already mounted.
+        level: intermediate
+      - title: "Unmount by device instead of by path"
+        code: |-
+          loop=$(losetup --find --show /srv/images/data.img)
+          mount "$loop" /mnt/data
+          umount "$loop"; echo "exit $?"
+        description: "Either name works, and the device is the one to use when the mount point has been renamed out from under the mount. `umount` takes no `-t`, so there is no way to unmount everything of one type."
+        output: |
+          exit 0
+        level: intermediate
+      - title: "Unmount something that was never mounted"
+        code: umount /mnt/data; echo "exit $?"
+        description: "Status 32 again, the same one a busy target gives, so a script cannot tell the two apart from the status alone. `mountpoint -q` first is the way to make the difference visible."
+        output: |
+          umount: /mnt/data: not mounted.
+          exit 32
+        level: basic
+      - title: "Find out why a umount says the target is busy"
+        code: |-
+          mount -o loop /srv/images/data.img /mnt/data
+          exec 3< /mnt/data/notes.txt
+          umount /mnt/data; echo "exit $?"
+          fuser -mv /mnt/data 2>&1 >/dev/null
+        description: "A single open file descriptor is enough. [`fuser -m`](/commands/fuser/) names what is holding the filesystem, and [`lsof`](/commands/lsof/) will too; `-f` on the `umount` is not the answer and does not apply to a local filesystem at all."
+        output: |2
+          umount: /mnt/data: target is busy.
+          exit 32
+                               USER        PID ACCESS COMMAND
+          /mnt/data:           root      mount /mnt/data
+                               root      f.... bash
+        level: intermediate
+      - title: "Detach a busy filesystem anyway"
+        code: |-
+          mount -o loop /srv/images/data.img /mnt/data
+          exec 3< /mnt/data/notes.txt
+          umount -l /mnt/data; echo "exit $?"
+          findmnt /mnt/data; echo "findmnt exit $?"
+        description: "`-l` takes the filesystem out of the directory tree immediately and cleans it up when the last user lets go. The holder keeps its descriptor and notices nothing, so this frees the mount point without freeing the device."
+        danger: true
+        output: |
+          exit 0
+          findmnt exit 1
+        level: advanced
+      - title: "Unmount with the working directory inside"
+        code: |-
+          mount -o loop /srv/images/data.img /mnt/data
+          cd /mnt/data
+          umount /mnt/data; echo "exit $?"
+        description: "A shell sitting in the directory counts as a user of it, and this is the commonest cause of the message by a long way. `cd` out and try again before looking for anything more interesting."
+        output: |
+          umount: /mnt/data: target is busy.
+          exit 32
+        level: basic
