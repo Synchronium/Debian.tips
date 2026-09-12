@@ -293,7 +293,7 @@ sections:
         level: advanced
 
   - title: "When a service won't start"
-    intro: "A failed unit stays marked failed until it starts cleanly or you clear it, which is what makes failures visible hours later."
+    intro: "A failed unit stays marked failed until it starts cleanly or you clear it, which is what makes failures visible hours later. [A service won't start](/troubleshooting/service-wont-start/) takes the exit codes below apart one at a time."
     examples:
       - title: "Watch a service fail to start"
         code: |-

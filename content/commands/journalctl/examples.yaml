@@ -60,7 +60,7 @@ sections:
         level: intermediate
 
   - title: "Filtering by unit and by program"
-    intro: "The filter you will use most: everything a single service logged, without the rest of the machine's noise."
+    intro: "The filter you will use most: everything a single service logged, without the rest of the machine's noise. Where the service in question is refusing to start, [A service won't start](/troubleshooting/service-wont-start/) is the order to ask these questions in."
     examples:
       - title: "Show one service's log"
         code: journalctl -u backup-sync -n 3 --no-pager -o cat

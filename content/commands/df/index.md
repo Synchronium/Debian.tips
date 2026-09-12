@@ -5,7 +5,7 @@ description: "Tested df examples: reading the output, asking about the filesyste
 category: commands
 tags: [disk, sysadmin, files]
 updated: 2026-08-31
-related: [du, find-the-largest-files, ls, lsof, mount, processes-and-signals]
+related: [du, disk-full, find-the-largest-files, lsof, mount, processes-and-signals]
 tier: light
 ---
 
@@ -25,4 +25,6 @@ without the size columns in the way.
 Space is one. The other is the inode table, which holds one entry per file and is fixed when the
 filesystem is created. Exhaust it and writes fail with `No space left on device` while `df -h`
 still reports gigabytes free. Only `df -i` shows it, and it is a cheaper thing to learn
-before you need it than during.
+before you need it than during. [No space left on device](/troubleshooting/disk-full/) is the
+procedure for both cases, including the third one where `df` and [du](/commands/du/) disagree
+about the same filesystem.

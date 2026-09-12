@@ -6,7 +6,7 @@ category: commands
 tags: [systemd, sysadmin, processes]
 updated: 2026-08-17
 tier: flagship
-related: [journalctl, systemd-services, crontab, kill-whatever-is-using-a-port, exit-codes-and-error-handling]
+related: [journalctl, service-wont-start, systemd-services, crontab, exit-codes-and-error-handling]
 ---
 
 `systemctl` is how you talk to systemd, which has been Debian's init system since jessie. It
