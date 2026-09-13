@@ -139,6 +139,13 @@ cheap to honour while writing and expensive to find later.
   whenever it exists, so creating it silently changes what any later `bash -l` prints. Prefer
   writing inside the working directory, and where the page's subject really is `$HOME`, have the
   setup script normalise it (`rm -rf "$HOME/bin"`) so every example starts from the same state.
+- **A real package's state is a claim that Debian has not patched it.** The image is pinned to
+  `debian:trixie`; the archive it installs from is rewritten by Debian whenever a stable update
+  ships. So a version, an installed size, an `[installed,automatic]` bracket or the absence of a
+  pending upgrade is true until the next point release and then red, on a page nobody edited. Build
+  the state the example teaches (a local repository, `apt-mark auto`, a package installed by the
+  fixture) rather than reading what the image happens to hold, and where the real state is the
+  subject, keep it to something structural like `cowsay-off` depending on `cowsay`.
 
 ### 4b. Declare the sample data, then prove it
 

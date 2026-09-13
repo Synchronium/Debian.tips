@@ -719,6 +719,13 @@ Distilled from the shipped ledger this plan replaces. Each of these cost a batch
   `stat -c %A` say what `size=` and `mode=` did without asking that question.
 - **A shell's `Terminated` notice**, which does not appear under replay, and an asynchronous job
   notice, which bash prefixes with `bash: line N:` when it is not interactive.
+- **The state of a real Debian package**: its version, its `[installed]` bracket, its installed
+  size, or whether an upgrade is pending for it. The image is pinned but the archive it installs
+  from is not, so such a page is claiming that Debian has not patched that package lately. Two
+  pages made that claim and went red on `main` the day a stable update landed. Build the state the
+  example needs, with a local repository or an `apt-mark`, rather than reading what the image
+  happens to hold; `docs/plans/PLAN-DEBIAN-VERSIONS.md` §2.4 has the incident and the standing
+  question behind it.
 
 ### §13.4. Choosing the wrong verification tool
 

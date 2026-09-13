@@ -5,14 +5,16 @@ not, and the one that has not happened yet. Working notes rather than a decision
 an ADR and nothing here has been built.
 
 Started 2026-08-24. §3 is an experiment run that day; every number in this document comes from it
-rather than from reasoning about what probably differs.
+rather than from reasoning about what probably differs. §2.4 was added on 2026-09-13, and comes
+from a live failure rather than an experiment.
 
 ## §1. The short version
 
 Three findings, in the order they change the answer.
 
 1. **The image pin does not protect the site.** Three clocks run independently, and only one of
-   them is pinned. §2.
+   them is pinned. §2. The unpinned one is not a future problem: it has already turned two pages
+   red on `main` without either page being touched. §2.4.
 2. **The differences between releases are small and concentrated.** 96.2% of the site's examples
    reproduce byte for byte on a release two years older, untouched. 14 of 25 pages are identical.
    §3.
@@ -68,6 +70,51 @@ output", which is a question about the pin. It never asks whether the pin is sti
 Closing that gap is cheap: a check comparing the pinned codename against what the archive
 currently calls stable, failing when they diverge. That makes the staleness visible on the day it
 starts rather than whenever somebody happens to notice.
+
+### §2.4. The unpinned clock does not wait for forky
+
+The archive row in §2.1 is already costing the site pages, and the mechanism is a point release
+rather than a new suite. On 2026-09-13 the full replay on `main` went red on three pages that
+day's merges never touched. Two had one cause: Debian published a stable update, `perl
+5.40.1-6+deb13u1` and the packages that came with it, into the suite the pinned image installs
+from.
+
+- `apt-upgrade-vs-full-upgrade` teaches what `upgrade` and `full-upgrade` are each willing to
+  disturb, against a fixture repository built for the purpose. Real pending upgrades show up in
+  exactly the output it is teaching, so the page listed `base-files gzip libext2fs2t64 perl` where
+  it means to list two `tips-` packages.
+- `list-installed-packages` taught the `[installed]` versus `[installed,automatic]` bracket using
+  `perl-modules-5.40`, whose bracket became `[installed,upgradable to: …]`.
+
+Both were repaired structurally rather than re-captured. The first fixture moves Debian's own
+sources aside before `apt-get update`, leaving the local repository that is the page's whole
+subject; the second contrasts `cowsay-off` against a `cowsay` the fixture marks automatic itself.
+The shared rule is worth stating on its own, because honouring it while writing a page is far
+cheaper than finding it later: **a page asserting a real package's state is asserting that Debian
+has not patched it.** Build the state the page needs; do not read the state the image happens to
+be in.
+
+The rest of that class is still out there and no gate can list it. `list-installed-packages` prints
+the installed size of `perl-modules-5.40` a few examples further down, which is true today and
+drifts the same way. Re-capturing it on a guess about the future would be worse than leaving it,
+so it is written down here instead.
+
+**This class is found late by construction.** A pull request replays only the pages its diff
+touches, which is the right trade for the time it saves, but a page nobody edited is not in that
+set. Only `main` replays the whole site, so the first report arrives after the merge and names
+pages the merge had nothing to do with.
+
+Three ways out, none of them chosen yet:
+
+| Option | What it costs |
+|---|---|
+| Pin the archive too, against `snapshot.debian.org` | Makes the pin mean what §2.1 claims. Moving the snapshot becomes a deliberate commit that re-replays the site, which is the point, and the sandbox then stops seeing security updates the reader's machine has. |
+| `apt upgrade` at image build | The image becomes internally consistent, so pending upgrades stop appearing in output. Version strings printed by pages then follow the archive instead, so this moves the drift rather than ending it. |
+| Keep fixing pages as they break | What happens today. Cheap per incident, and each fix leaves a page less dependent on the archive, but the bill lands on `main` after a merge and reads at first glance like the merge broke something. |
+
+Choosing between them is ADR-shaped: it decides what a replay result means, which is a constraint
+on every page rather than a preference. Stage 1 in §7 is the neighbouring check and not the same
+one, since it compares codenames and would stay green through all of this.
 
 ## §3. The experiment
 
@@ -226,6 +273,9 @@ sets the deadline, and nothing else here has one.
 
 Also in scope here: make the sandbox Dockerfile version-portable (§3), since nothing else can be
 attempted until a second image builds at all.
+
+This check would not have caught anything in §2.4. It compares codenames, and a point release
+leaves the codename alone.
 
 ### Stage 2. Mask what is cosmetic
 
@@ -398,3 +448,5 @@ skippable without losing the sentence.
    way that matters, as with `dpkg -S` and the /usr merge?
 5. Do the personas get a document of their own, and does it come before stage 4? §10 suggests it
    should, since stage 4's rendering is the decision they most affect.
+6. Which of §2.4's three answers to point-release drift? It has a live cost rather than a deadline,
+   and it is the one question here that the current target already pays for.
