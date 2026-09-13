@@ -315,11 +315,10 @@ apiece. §13.7 has what they cost and what they taught.
   **Demo**: a process spinning against one that is blocked; resident against virtual size; cache
   and buffers counted as used, which is the misreading `free` invites. These two give the
   `performance` tag its first pages.
-- **`cannot-remove-file-in-use`**. **Needs**: nothing; `lsof` and `fuser` are written.
-  **Demo**: unlinking a file a
-  process holds open, and why the space does not return until it closes. Note gate 1 against §9's
-  port recipe: the operand differs, the method does not, so this earns a page only if the
-  explanation differs.
+
+`cannot-remove-file-in-use` left this list on 2026-09-13, and §13.7 says why: Linux refuses none
+of the removals it was named after. `text-file-busy` was written in its place, covering the one
+refusal in that area the kernel does produce.
 
 ## §6. Command pages
 
@@ -791,3 +790,25 @@ From `service-wont-start` and `disk-full`, the first two written.
   for.
 - **A hub is about the length of a `standard` command page.** Both came in between 1400 and 1900
   words with sixteen and ten checked output blocks, which is a day's work rather than a week's.
+
+### §13.8. Check the error string exists before planning a page around it
+
+`cannot-remove-file-in-use` sat in §5.3 for as long as this plan has existed, and the situation it
+named does not arise. Measured 2026-09-13: `rm` on a file another process holds open exits 0,
+`rmdir` on a directory that is a process's own working directory exits 0, and `rm` on a binary
+that is currently running exits 0. The expectation comes from Windows, where a file in use cannot
+be unlinked, and it survived into a backlog because nobody had run it.
+
+The refusals that do exist nearby each belong somewhere else, which is worth knowing before
+writing any of them up:
+
+- `umount: /srv/u: target is busy.` and `rm: cannot remove '/srv/t/mnt': Device or resource busy`
+  are both about a mountpoint, and `mount` already owns that question with an example titled after
+  the message.
+- `rmdir: failed to remove '/srv/n': Directory not empty` and `Operation not permitted` on an
+  immutable file are one-liners rather than pages.
+- `cp: cannot create regular file '...': Text file busy` is about writing a running executable
+  rather than removing one, and nothing covered it. That became `text-file-busy`.
+
+**A title taken from an error message is only as good as the message.** Reproduce the string in a
+sandbox before the entry goes on a list, not when the page is being written.

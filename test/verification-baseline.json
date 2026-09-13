@@ -894,5 +894,13 @@
     "exempt": 2,
     "fixtures": 0,
     "unpaired": 2
+  },
+  "troubleshooting/text-file-busy": {
+    "checked": 10,
+    "byShape": 2,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
   }
 }

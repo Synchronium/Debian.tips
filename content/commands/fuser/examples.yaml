@@ -16,7 +16,7 @@ fixtures:
       job-0142.json
 sections:
   - title: "What has this open"
-    intro: "`-v` turns the compact answer into a table with a row per process. The `ACCESS` column is five positions, one per kind of use: `f` for an open file, `c` for a working directory, `r` for a root directory, `e` for a running executable and `m` for a mapping. A capital `F` or `R` means the same as the lower-case letter with write access."
+    intro: "`-v` turns the compact answer into a table with a row per process. The `ACCESS` column is five positions, one per kind of use: `f` for an open file, `c` for a working directory, `r` for a root directory, `e` for a running executable and `m` for a mapping. A capital `F` or `R` means the same as the lower-case letter with write access. An `e` is also the answer to [Text file busy](/troubleshooting/text-file-busy/), since a file being executed is the one thing here that cannot be written to."
     examples:
       - title: "Find out what is writing to a log file"
         code: fuser -v /srv/tips/app.log 2>&1 >/dev/null

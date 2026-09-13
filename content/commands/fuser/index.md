@@ -6,7 +6,7 @@ category: commands
 tags: [processes, files, sysadmin]
 updated: 2026-09-11
 tier: light
-related: [lsof, kill, ps, processes-and-signals, kill-whatever-is-using-a-port]
+related: [lsof, kill, text-file-busy, processes-and-signals, kill-whatever-is-using-a-port]
 ---
 
 `fuser` names the processes using a file, a directory or a socket. It answers a narrower question
