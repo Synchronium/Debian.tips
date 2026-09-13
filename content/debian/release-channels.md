@@ -104,7 +104,7 @@ Security support is the reason to think twice about running testing on a server.
 unstable first and migrate to testing on the normal schedule, so testing can sit exposed for days
 after a fix exists. Stable gets it directly.
 
-## Backports, and why nothing installs from them by accident
+## Backports, and why they never install by accident
 
 Adding backports does not change any version you already have. Debian assigns the suite a
 priority of 100, below the default 500, so packages there are visible but never chosen:

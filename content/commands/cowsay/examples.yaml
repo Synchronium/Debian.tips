@@ -478,7 +478,7 @@ sections:
               ~~   ~~
       - title: Use a much larger one
         code: cowsay -f stegosaurus 'Legacy code'
-        description: Cowfiles vary enormously in size. Check one before putting it in a login banner or a CI log, because nothing constrains the height and the balloon sits above whatever it is.
+        description: Cowfiles vary enormously in size. Check one before putting it in a login banner or a CI log, because no limit constrains the height and the balloon sits above whatever it is.
         level: intermediate
         output: |2
            _____________
@@ -755,7 +755,7 @@ sections:
            -----------------
       - title: Pass -n a message argument
         code: cowsay -n 'why is this the usage message'
-        description: '`-n` applies only to standard input, and giving it a message is treated as a usage error rather than reported as one. Nothing tells you which option it objected to.'
+        description: '`-n` applies only to standard input, and giving it a message is treated as a usage error rather than reported as one. It does not say which option it objected to.'
         level: intermediate
         output: |2
           cow{say,think} version 3.03, (c) 1999 Tony Monroe

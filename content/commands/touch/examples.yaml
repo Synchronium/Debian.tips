@@ -128,7 +128,7 @@ sections:
         level: intermediate
       - title: "Fail to set the change time"
         code: touch -d "2020-01-01" site/index.html && ls -l site/index.html && ls -lc site/index.html
-        description: "`ls -lc` reads the change time where a plain `ls -l` reads the modification time. The modification time went back to 2020 and the change time went to now, because altering the inode is itself a change. Nothing sets it, and that is why an audit tool reads it."
+        description: "`ls -lc` reads the change time where a plain `ls -l` reads the modification time. The modification time went back to 2020 and the change time went to now, because altering the inode is itself a change. No command sets it directly, which is why an audit tool reads it."
         volatile: "the change time is the moment you ran it"
         compare: shape
         output: |

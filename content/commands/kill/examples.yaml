@@ -204,7 +204,7 @@ sections:
         level: intermediate
       - title: "Match against the whole command line"
         code: "pgrep -c -u user -f 'tips-worker 3600'"
-        description: "`-f` matches the pattern against the full command line rather than the process name. Nothing else separates two copies of one program running with different arguments."
+        description: "`-f` matches the pattern against the full command line rather than the process name. No other option separates two copies of one program running with different arguments."
         output: |2
           2
         level: intermediate

@@ -94,7 +94,7 @@ sections:
         tags: [beginner]
       - title: "Ask for a directory that is already there"
         code: mkdir -p site; echo "exit $?"
-        description: "Nothing is printed and nothing changes. This has nothing to do with parents, and it is why the flag turns up in scripts that create a directory they may already have."
+        description: "Nothing is printed and the directory is left as it was. This has nothing to do with parents, and it is why the flag turns up in scripts that create a directory they may already have."
         output: |
           exit 0
         level: basic

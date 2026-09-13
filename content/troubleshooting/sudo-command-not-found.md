@@ -46,7 +46,7 @@ Package: sudo
 Priority: optional
 ```
 
-Nothing depends on it and nothing guarantees it. A minimal install, a container image or a
+No package depends on it and no rule guarantees it. A minimal install, a container image or a
 cloud image built from one will often not have it.
 
 ## Which of the two problems you have

@@ -91,7 +91,7 @@ sections:
         level: basic
       - title: "See what an empty answer looks like"
         code: fuser -v /etc/passwd 2>&1 >/dev/null; echo "exit $?"
-        description: "Nothing holds it, so there is no table and no header either: `fuser` prints the heading only when it has a row to put under it."
+        description: "No process holds it, so there is no table and no header either: `fuser` prints the heading only when it has a row to put under it."
         output: |
           exit 1
         level: basic
@@ -191,7 +191,7 @@ sections:
           fuser -kv /srv/cache/site.tar 2>&1 >/dev/null
           sleep 1
           fuser -s /srv/cache/site.tar; echo "still held: $?"
-        description: "`-v` alongside `-k` reports what is being killed as it goes, which is the closest this command comes to telling you what it did. The status of 1 afterwards confirms nothing holds the file any more."
+        description: "`-v` alongside `-k` reports what is being killed as it goes, which is the closest this command comes to telling you what it did. The status of 1 afterwards confirms no process holds the file any more."
         danger: true
         output: |2
                                USER        PID ACCESS COMMAND

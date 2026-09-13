@@ -283,7 +283,7 @@ sections:
     examples:
       - title: "Remove an account and keep its files"
         code: deluser tips-dev; id tips-dev; stat -c '%A %U %n' /home/tips-dev
-        description: "The default. The home directory survives with no owner, which [stat](/commands/stat/) reports as `UNKNOWN` and `ls -l` shows as a bare number: nothing owns uid 1001 any more, and the next account created will inherit both the number and the files."
+        description: "The default. The home directory survives with no owner, which [stat](/commands/stat/) reports as `UNKNOWN` and `ls -l` shows as a bare number: no account owns uid 1001 any more, and the next account created will inherit both the number and the files."
         danger: true
         output: |2
           id: 'tips-dev': no such user
@@ -298,7 +298,7 @@ sections:
         level: basic
       - title: "Confirm the account's own group went with it"
         code: "userdel tips-dev; getent group tips-dev; echo \"group gone: $?\""
-        description: "A user-private group is removed with its account, so nothing has to be tidied up afterwards. A group with other members in it is left alone."
+        description: "A user-private group is removed with its account, so no tidying up is left to do. A group with other members in it is left alone."
         output: |2
           group gone: 2
         level: intermediate
@@ -310,7 +310,7 @@ sections:
         level: intermediate
       - title: "Watch deluser refuse a name that is not there"
         code: deluser tips-build
-        description: "Non-zero exit and nothing changed, which is what a script wants to see."
+        description: "Non-zero exit and no change made, which is what a script wants to see."
         output: |2
           fatal: The user `tips-build' does not exist.
         level: basic

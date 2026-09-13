@@ -151,7 +151,7 @@ sections:
           Conf cowsay-off (3.03+dfsg2-8 Debian:13.6/stable [all])
       - title: See which packages are no longer needed
         code: apt autoremove -s
-        description: Lists packages installed automatically as dependencies that nothing requires any more. Worth reading before running the real thing.
+        description: Lists packages installed automatically as dependencies that no installed package requires any more. Worth reading before running the real thing.
         level: intermediate
         volatile: "the point release in `Debian:13.6` and the `Not Upgrading` count move as the archive does"
         compare: shape
@@ -217,7 +217,7 @@ sections:
         code: sudo apt purge -y bash-completion
         description: Acts on a package already in the `rc` state, where the programs are gone but the configuration is not. This is the fix for having run `remove` when you wanted `purge`.
         level: intermediate
-      - title: Remove packages nothing needs any more
+      - title: Remove packages no other package needs
         code: sudo apt autoremove
         description: Deletes packages pulled in as dependencies that are now unreferenced. Read `apt autoremove -s` first - it occasionally proposes something you installed deliberately.
         level: intermediate
@@ -274,7 +274,7 @@ sections:
           Canceled hold on ca-certificates.
       - title: Mark a package as automatically installed
         code: sudo apt-mark auto cowsay
-        description: Tells apt you didn't ask for this one directly, making it eligible for `autoremove` once nothing depends on it.
+        description: Tells apt you didn't ask for this one directly, making it eligible for `autoremove` once no other package depends on it.
         level: advanced
         output: |2
           cowsay set to automatically installed.

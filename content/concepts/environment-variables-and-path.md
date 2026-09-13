@@ -121,7 +121,7 @@ reaches `/usr/bin/echo` from an interactive shell. And `/usr/bin/echo` comes bef
 because `/usr/bin` comes first in `PATH`, not because one is more real than the other.
 
 Position therefore decides which copy of a name you get. Prepending a directory shadows the system
-version; appending it provides a fallback for names nothing else supplies:
+version; appending it provides a fallback for names no earlier entry supplies:
 
 ```bash
 mkdir -p ~/bin

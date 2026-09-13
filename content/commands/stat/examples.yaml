@@ -295,7 +295,7 @@ sections:
         tags: [files, scripting]
       - title: "Describe a link whose target is gone"
         code: ln -s gone.css site/broken.css; stat -c "%N %F" site/broken.css
-        description: "The link is a perfectly good file and `stat` reads it without complaint. Nothing checks that a symlink's target exists, at the moment it is made or ever after."
+        description: "The link is a perfectly good file and `stat` reads it without complaint. A symlink's target is never checked, at the moment it is made or ever after."
         output: |
           'site/broken.css' -> 'gone.css' symbolic link
         level: intermediate
@@ -393,7 +393,7 @@ sections:
     examples:
       - title: "Put a size into a variable"
         code: size=$(stat -c %s site/index.html); echo "index.html is $size bytes"
-        description: "The field comes back with no whitespace around it, so nothing has to be trimmed before it is used."
+        description: "The field comes back with no whitespace around it, so no trimming is needed before it is used."
         output: |
           index.html is 36 bytes
         level: basic

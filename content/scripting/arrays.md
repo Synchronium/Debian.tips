@@ -37,7 +37,7 @@ echo $hosts[0]
 deb1[0]
 ```
 
-Nothing there is an error, so nothing warns you.
+Nothing there is an error, so no warning appears.
 
 ## `"${hosts[@]}"` and `"${hosts[*]}"` are different lists
 

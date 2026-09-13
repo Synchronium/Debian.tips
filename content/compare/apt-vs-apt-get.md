@@ -101,7 +101,7 @@ warning refers to is a change in output formatting between Debian releases, whic
 script and not to you.
 
 **In a script, a cron job, a systemd unit or a Dockerfile, use `apt-get`** (and `apt-cache` for
-queries). Not because `apt` will break today, but because nothing promises it won't, and the
+queries). Not because `apt` will break today, but because no one promises it won't, and the
 failure mode is a script that parses output fine for two years and then silently matches nothing
 after an upgrade. Pass `-y` and set `DEBIAN_FRONTEND=noninteractive` while you are there.
 

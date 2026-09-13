@@ -9,8 +9,8 @@ tier: light
 related: [ls, cp, mv, rm, file-permissions-explained]
 ---
 
-`ln -s` makes a symbolic link: a small file holding a path as text. Nothing checks that path when
-the link is made or afterwards, so a symlink can point at something that does not exist, and a
+`ln -s` makes a symbolic link: a small file holding a path as text. That path is never checked,
+at the moment the link is made or afterwards, so a symlink can point at something that does not exist, and a
 relative target is read from the directory holding the link rather than from wherever you were
 standing when you typed it. That single rule is behind most broken links.
 

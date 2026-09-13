@@ -61,7 +61,7 @@ sections:
           0
         level: advanced
 
-  - title: "Nothing asks, and nothing comes back"
+  - title: "No prompt, and no way back"
     examples:
       - title: "Ask before every file"
         code: rm -i notes.txt < /dev/null; echo; ls notes.txt

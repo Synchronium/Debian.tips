@@ -108,7 +108,7 @@ sections:
         tags: [sysadmin]
       - title: "Name the directory and the dotfiles come too"
         code: touch site/.htaccess && chown user:user site/.htaccess && chown -R deploy site && stat -c '%U %n' site/.htaccess site/index.html
-        description: "`chown -R deploy site` walks the directory itself, so nothing depends on what the shell decided to expand."
+        description: "`chown -R deploy site` walks the directory itself, so the result does not depend on what the shell expanded."
         output: |
           deploy site/.htaccess
           deploy site/index.html
@@ -122,7 +122,7 @@ sections:
         tags: [sysadmin]
       - title: "Copy the ownership from another file"
         code: chown deploy notes.txt && chown --reference=notes.txt site/index.html && ls -l site/index.html
-        description: "`--reference` takes both columns from the file you name, so nothing has to be spelled out. Useful when restoring a file from a backup beside one that was left alone."
+        description: "`--reference` takes both columns from the file you name, so neither has to be spelled out. Useful when restoring a file from a backup beside one that was left alone."
         output: |
           -rw-r--r-- 1 deploy user 36 Jun  1 09:00 site/index.html
         level: advanced

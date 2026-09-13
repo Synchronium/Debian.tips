@@ -116,7 +116,7 @@ here = ./bin
 cat: ./bin/settings.conf: No such file or directory
 ```
 
-`$0` is the link, so `dirname` gives the directory the link is in. Nothing has resolved anything.
+`$0` is the link, so `dirname` gives the directory the link is in. The link itself was never resolved.
 
 ## The line that works
 

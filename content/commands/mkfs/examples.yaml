@@ -228,7 +228,7 @@ sections:
           loop=$(losetup --find --show /srv/images/data.img)
           mount "$loop" /mnt/data
           ls -A /mnt/data
-        description: "`data.img` held `notes.txt` and a backups directory, and now holds the empty directory `mkfs` makes. It was unmounted, so nothing objected. Run [blkid](/commands/blkid/) on the target first: a label you recognise is the cheapest check there is."
+        description: "`data.img` held `notes.txt` and a backups directory, and now holds the empty directory `mkfs` makes. It was unmounted, so the format went ahead without complaint. Run [blkid](/commands/blkid/) on the target first: a label you recognise is the cheapest check there is."
         danger: true
         output: |
           /srv/images/data.img: LABEL="data" TYPE="ext4"

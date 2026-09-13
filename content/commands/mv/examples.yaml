@@ -192,7 +192,7 @@ sections:
         tags: [permissions]
       - title: "Replace a file in one step"
         code: cp site/index.html tmp.html && sed -i 's/deb1/deb2/' tmp.html && mv tmp.html site/index.html && cat site/index.html
-        description: "A rename within one filesystem is atomic. Nothing ever reads a half-written `index.html`. Editing the file in place with `sed -i` gives no such guarantee. Use this shape for anything another process might be reading."
+        description: "A rename within one filesystem is atomic. No reader ever sees a half-written `index.html`. Editing the file in place with `sed -i` gives no such guarantee. Use this shape for anything another process might be reading."
         output: |
           <!doctype html>
           <title>deb2</title>

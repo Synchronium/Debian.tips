@@ -108,7 +108,7 @@ done < paths.list
 
 `IFS=` for that one command stops `read` from trimming leading and trailing whitespace, and `-r`
 stops it treating a backslash as an escape character. The first line lost its indentation and
-the second lost its backslashes entirely. Nothing warned, and the data is simply wrong.
+the second lost its backslashes entirely. No warning appeared, and the data is simply wrong.
 
 > [!WARNING]
 > A `while read` loop on the wrong side of a pipe runs in a subshell, so anything it assigns is

@@ -17,7 +17,7 @@ which cd; echo "exit: $?"
 exit: 1
 ```
 
-Nothing printed, and a failure status. `cd` works perfectly well, so the answer is wrong in any
+No output, and a failure status. `cd` works perfectly well, so the answer is wrong in any
 useful sense, and a script that tests for a command this way will refuse to run on a system where
 everything it needs is present.
 

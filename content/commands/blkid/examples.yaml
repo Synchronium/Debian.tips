@@ -59,13 +59,13 @@ sections:
         level: basic
       - title: "Get the label"
         code: blkid -o value -s LABEL /srv/images/data.img
-        description: "A label is chosen by whoever made the filesystem and nothing stops two disks sharing one, so it is the friendlier identifier and the less reliable one."
+        description: "A label is chosen by whoever made the filesystem and two disks may share one, so it is the friendlier identifier and the less reliable one."
         output: |
           tipsdata
         level: basic
       - title: "Get the filesystem type"
         code: blkid -o value -s TYPE /srv/images/data.img
-        description: "The answer `mount -t` wants, and the one to branch on in a script that handles more than one filesystem. An empty answer with status 2 means nothing recognised it."
+        description: "The answer `mount -t` wants, and the one to branch on in a script that handles more than one filesystem. An empty answer with status 2 means no filesystem was recognised."
         output: |
           ext4
         level: basic
@@ -122,7 +122,7 @@ sections:
           /dev/loop0
           exit 0
         level: intermediate
-      - title: "Search for a label nothing has"
+      - title: "Search for a label no device has"
         code: blkid -L nosuchlabel; echo "exit $?"
         description: "Status 2 and no output. An fstab entry naming a label in this state drops the machine into an emergency shell at boot, which is what `findmnt --verify` exists to catch first."
         output: |

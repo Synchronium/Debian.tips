@@ -67,7 +67,7 @@ sections:
           losetup --find --show /srv/images/data.img >/dev/null
           mount UUID=4f6b2c18-9a3d-4e07-b5c1-2d8e7a904f31 /mnt/data
           findmnt -no SOURCE,TARGET /mnt/data
-        description: "A UUID is generated when the filesystem is made and two of them never collide, whereas nothing stops two disks carrying the label `backup`. It is the identifier to use where being wrong is expensive."
+        description: "A UUID is generated when the filesystem is made and two of them never collide, whereas two disks may both carry the label `backup`. It is the identifier to use where being wrong is expensive."
         volatile: "the loop device number depends on what else on this machine has one attached"
         compare: shape
         output: |
@@ -363,7 +363,7 @@ sections:
           mount --move /mnt/data /mnt/backup
           findmnt -no TARGET,SOURCE /mnt/backup
           findmnt /mnt/data; echo "old path: $?"
-        description: "`--move` relocates a live mount without unmounting it, so open files stay open and nothing notices. The old path goes back to being an empty directory."
+        description: "`--move` relocates a live mount without unmounting it, so open files stay open and no process notices. The old path goes back to being an empty directory."
         volatile: "the loop device number depends on what else on this machine has one attached"
         compare: shape
         output: |
@@ -376,7 +376,7 @@ sections:
           mount --bind /mnt/data /mnt/backup
           umount -R /mnt/backup; echo "exit $?"
           findmnt /mnt/backup; echo "gone $?"
-        description: "`-R` unmounts everything underneath the path as well as the path itself. A bind mount nested inside another filesystem is the usual reason a plain `umount` reports the target is busy when nothing has a file open."
+        description: "`-R` unmounts everything underneath the path as well as the path itself. A bind mount nested inside another filesystem is the usual reason a plain `umount` reports the target is busy when no process has a file open."
         output: |
           exit 0
           gone 1
@@ -418,7 +418,7 @@ sections:
         code: |-
           printf 'LABEL=tipsdata /mnt/data ext4 loop 0 0\n' >> /etc/fstab
           findmnt --verify --verbose 2>/dev/null
-        description: "`--verify` reads the file and reports what would go wrong, which is the check to run before a reboot you cannot easily undo. Here the label is unreachable at boot, because nothing attaches the loop device carrying it. The per-entry detail goes to standard output and the count of problems to standard error, so one of the two has to be redirected before the order they arrive in is settled."
+        description: "`--verify` reads the file and reports what would go wrong, which is the check to run before a reboot you cannot easily undo. Here the label is unreachable at boot, because no unit attaches the loop device carrying it. The per-entry detail goes to standard output and the count of problems to standard error, so one of the two has to be redirected before the order they arrive in is settled."
         output: |
           /mnt/data
              [ ] target exists
