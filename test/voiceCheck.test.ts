@@ -154,6 +154,36 @@ describe("voice-check scoping", () => {
     expect(findings).toHaveLength(1);
     expect(findings[0]?.rule.severity).toBe(SEVERITY.fail);
   });
+
+  /* The exclusions are the whole rule. `nothing` appears in this corpus hundreds of times and
+   * most of those are ordinary English, so a pattern that lost one of these carve-outs would
+   * report the sentences that are working and be switched off within a week. Each line below is
+   * a shape the corpus really contains. */
+  it("reports an absence acting, and leaves the ordinary uses alone", () => {
+    const caught = [
+      "Nothing checks that path when the link is made.",
+      "A pipe nothing writes to blocks the reader.",
+      "The file is orphaned and nothing points back at it.",
+      "An empty answer means nothing recognised the device.",
+    ];
+    const spared = [
+      "Nothing is printed and the exit status is non-zero.",
+      "Nothing else is printed, so there is no header.",
+      "The whole file, in order, with nothing added.",
+      "The status is 1 when nothing matched.",
+      "It prints nothing but the header.",
+      "This has nothing to do with parents.",
+      "Two things happen, and they look nothing alike.",
+    ];
+
+    const idsFor = (line: string) =>
+      checkFile(write("page.md", `${line}\n`))
+        .map((finding) => finding.rule.id)
+        .filter((id) => id === "absence-as-actor");
+
+    expect(caught.filter((line) => idsFor(line).length === 0)).toEqual([]);
+    expect(spared.filter((line) => idsFor(line).length > 0)).toEqual([]);
+  });
 });
 
 /* The hook is handed any path the session just wrote, so it decides scope on its own. Naming a

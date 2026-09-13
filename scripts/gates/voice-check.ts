@@ -127,6 +127,34 @@ const RULES: readonly Rule[] = [
       "voice.md §4: names something as two parts, then points at a part instead of naming it. Say which one you mean.",
   },
   {
+    id: "absence-as-actor",
+    severity: SEVERITY.report,
+    // `nothing` as the subject of an active verb, where naming the actor or negating the verb is
+    // shorter and says the same thing: "nothing checks it" against "it is not checked", "nothing
+    // holds the file" against "no process holds it".
+    //
+    // Three exclusions, each of which is ordinary English that shares only the word.
+    //
+    // The copula, because `nothing is printed` is a passive with no actor to name and reads
+    // perfectly: it is 71 of the corpus's hits and none of them is the fault. `else` sits inside
+    // the optional group rather than outside it, so `nothing else is printed` is excluded too.
+    //
+    // `with nothing added`, `with nothing captured`: an absolute construction rather than a
+    // clause, so there is no verb to negate.
+    //
+    // `matches` and `happens`, which describe a search or an event coming back empty and have no
+    // shorter form. `nothing matched` is what a page says about `grep`.
+    //
+    // The object shape the guide also names, `frees nothing` and `prints nothing`, has no rule
+    // here. It was measured at roughly a third precision, because `means nothing`, `nothing but`
+    // and `does nothing at all` are all ordinary, and a check wrong twice in three findings
+    // teaches its reader to skip it.
+    pattern:
+      /(?<!with )\bnothing (?:(?:can|could|will|would|may|might|must|should|does|did|do|ever|then|else|now|still|really|actually) )?(?!is\b|was\b|are\b|were\b|be\b|been\b|being\b|match|happen)[a-z]+(?:s|ed)\b/gi,
+    budget: 30,
+    message: "voice.md §4: an absence as the subject of a verb. Name the actor, or negate the verb.",
+  },
+  {
     id: "adverb-of-obviousness",
     severity: SEVERITY.report,
     pattern: /\b(?:plainly|clearly|obviously|of course)\b/gi,
