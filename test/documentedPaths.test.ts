@@ -5,7 +5,7 @@ import { ROOT } from "../src/paths.js";
 
 /* The tools and the documentation print repository paths at people: "see
  * .claude/skills/cross-link-pages/SKILL.md", "re-capture with scripts/authoring/adopt-real-output.ts".
- * Nothing else checks those, so a rename leaves a message confidently naming a file that no
+ * No other test checks those, so a rename leaves a message confidently naming a file that no
  * longer exists, and the message is read precisely when someone is already stuck. */
 
 /** Paths that appear inside the tools and the documentation, excluding the ones that are

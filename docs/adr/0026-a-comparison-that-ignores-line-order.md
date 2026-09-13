@@ -107,5 +107,5 @@ Revisit if a prose page needs it, which means extending the `verify:` directive 
 this field. The directive is built from `COMPARISON` on purpose, so a mode added there is parsed
 everywhere, and an axis that is not a mode has to be spelled separately in both places.
 
-Revisit if `unordered:` starts appearing where a `sort` was available. Nothing detects that. It
+Revisit if `unordered:` starts appearing where a `sort` was available. No check detects that. It
 would look like a page marking a listing it could have piped somewhere.

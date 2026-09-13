@@ -95,7 +95,7 @@ them, or when you are on a machine somebody else administers and it is already t
 
 Worth knowing for the same reason: `ip addr` replaces `ifconfig` and `ip route` replaces `route`,
 from the same two packages and with the same history. If `netstat` is missing on a machine, those
-two are missing as well, and reaching for `apt install net-tools` to get an interface listing is
+two are missing as well, and installing `net-tools` to get an interface listing is
 how people end up maintaining a habit rather than a system.
 
 [The `ss` page](/commands/ss/) covers the filter syntax properly, and the recipe for

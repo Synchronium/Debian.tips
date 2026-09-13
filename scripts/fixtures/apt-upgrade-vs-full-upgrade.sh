@@ -48,7 +48,7 @@ build_package() {
     echo "Version: $version"
     echo "Section: utils"
     echo "Priority: optional"
-    # Architecture: all throughout, so nothing this page prints names a machine's architecture;
+    # Architecture: all throughout, so no output on this page names a machine's architecture;
     # see test/architecture.test.ts.
     echo "Architecture: all"
     echo "Maintainer: Example <$KEY_EMAIL>"

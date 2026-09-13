@@ -15,7 +15,7 @@ import { CONTENT_DIR, commandsDir, fixtureScript, proseSlug } from "../../src/pa
  *
  *  Cached because `pageId` asks per page and a run asks it for every page it measured, so without
  *  this every content directory is walked once per page. Held for the life of the process, which
- *  is safe here because nothing changes `content/` while a tool runs: the replay reads the tree at
+ *  is safe here because `content/` does not change while a tool runs: the replay reads the tree at
  *  the start and then spends its time inside containers. Anything that did edit `content/`
  *  mid-process would need this invalidated. */
 let index: Map<string, Category[]> | undefined;

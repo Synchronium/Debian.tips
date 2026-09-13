@@ -17,7 +17,7 @@
 # Note for anyone extending this page: cowsay-off must stay absent. It adds three cowfiles to
 # /usr/share/cowsay/cows, so `cowsay -l` lists 50 rather than 47 whenever it is installed, and
 # this page documents both the list and the count. The image does not ship it, and no example
-# here installs it, so nothing has to be undone; an example that installed it would have to.
+# here installs it, so no example has to undo it; one that installed it would have to.
 
 mk_access_log
 

@@ -111,7 +111,7 @@ single-quoted trap left: 0
 ```
 
 `early.sh` registered `rm -f ` with nothing after it, and ran that faithfully on exit. Nothing
-errors and nothing warns, so the script looks correct until somebody checks `/tmp`. Move the trap
+errors and no warning appears, so the script looks correct until somebody checks `/tmp`. Move the trap
 below the assignment and the double-quoted version happens to work, which is worse: it now
 depends on line order, and the next person to add a second temp file will put it in the wrong
 place.

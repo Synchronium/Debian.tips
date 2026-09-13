@@ -12,7 +12,7 @@ the header, and the content backlog has an eighth category in it.
 An eighth link is not a cosmetic problem. The header wraps to a second line, and
 `--header-height` in `styles/site.css` is a hand-measured constant that every anchor jump on the
 site depends on: the TOC links, the example permalinks, and the sticky TOC's own offset. When the
-header grows, every one of those lands underneath it. Nothing catches that, and nothing can, so
+header grows, every one of those lands underneath it. No test catches that, and none can, so
 the failure arrives as a reader clicking a TOC entry and seeing the wrong thing.
 
 Adding a category should be a content decision rather than a layout one. A nav that has to be

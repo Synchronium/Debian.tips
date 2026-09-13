@@ -122,7 +122,7 @@ sections:
     examples:
       - title: "Ask for a directory that is not there"
         code: cd /nosuchdir; echo "exit $?"
-        description: "The complaint names the path and the status is 1. Nothing moved."
+        description: "The complaint names the path and the status is 1. The working directory did not change."
         output: |
           bash: line 1: cd: /nosuchdir: No such file or directory
           exit 1

@@ -29,7 +29,7 @@ where a key lives and, more importantly, in what that key is allowed to vouch fo
 
 ## A repository can offer any package it likes
 
-A repository is not a source of *its own* packages. It is a source of *packages*. Nothing stops
+A repository is not a source of *its own* packages. It is a source of *packages*. No rule stops
 a repository publishing a package called `curl`, or `openssh-server`, or `sudo`, and if its
 version number is higher than Debian's, `apt` will prefer it. Adding one repository with one
 `apt install` line grants that vendor the ability to replace any piece of software on the
@@ -53,7 +53,7 @@ curl:
 
 Read those two lines together. `Installed:` is Debian's `curl`, the one running now.
 `Candidate:` is the version `apt` would move to, and it is the vendor's, from a repository that
-was added to install something else entirely. Nothing was installed and nothing warned; the next
+was added to install something else entirely. Nothing was installed and no warning appeared; the next
 `apt upgrade` would take it.
 
 That is not a flaw in `apt`; it is what a repository is. `apt-key add` was removed because it

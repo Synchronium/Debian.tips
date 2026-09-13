@@ -24,7 +24,7 @@ fixtures:
       Rebuild before deploying.
 sections:
   - title: "Making a symbolic link"
-    intro: "`ln -s target linkname`, in that order. The target is written into the link as text and nothing verifies it."
+    intro: "`ln -s target linkname`, in that order. The target is written into the link as text and never verified."
     examples:
       - title: "Create a symlink"
         code: ln -s style.css site/newest.css && ls -l site/newest.css
@@ -137,7 +137,7 @@ sections:
         level: intermediate
       - title: "Remove one name"
         code: ln notes.txt copy.txt && rm notes.txt && stat -c "%h %n" copy.txt && cat copy.txt
-        description: "The count drops to 1 and the data stays. Removing a name is not removing a file: the kernel frees the data when the last name goes and nothing has it open."
+        description: "The count drops to 1 and the data stays. Removing a name is not removing a file: the kernel frees the data when the last name goes and no process has it open."
         output: |
           1 copy.txt
           Rebuild before deploying.

@@ -3,7 +3,7 @@
 #
 # Nothing to create. The page's reproduction takes a real fcntl lock on the real
 # /var/lib/dpkg/lock-frontend from a backgrounded perl, inside a single fence, so the lock is
-# held and released within the one example. Nothing persists between examples and no fixture
+# held and released within the one example. No state persists between examples and no fixture
 # file is involved.
 #
 # The perl holder sleeps 3s, deliberately under the harness's 5s per-example timeout: it

@@ -156,7 +156,7 @@ sections:
         tags: [scripting]
       - title: "Watch a slash-separated date come back wrong"
         code: date -d "01/06/2026" +%F
-        description: "Read as 6 January, because `date` takes month first when the parts are separated by slashes. Nothing warns, and the two readings only differ for a fortnight in each month, so this survives testing and fails in production."
+        description: "Read as 6 January, because `date` takes month first when the parts are separated by slashes. No warning appears, and the two readings only differ for a fortnight in each month, so this survives testing and fails in production."
         danger: true
         output: |
           2026-01-06

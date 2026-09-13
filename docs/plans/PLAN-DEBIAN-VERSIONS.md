@@ -21,7 +21,7 @@ Three findings, in the order they change the answer.
    differences are a version number inside a `User-Agent` header. §5.
 
 The recommendation in §7 is per-example rather than per-page, staged so that the first stage is
-worth doing on its own even if nothing else follows.
+worth doing on its own even if none of the rest follows.
 
 ## §2. What actually happens when forky is released
 
@@ -35,7 +35,7 @@ No build fails, and no page changes. The site simply stops being about the relea
 | The archive metadata the image fetches at run time | **no** | `deb.debian.org`, rewritten by Debian |
 | The claim that this is current Debian stable | **not encoded anywhere** | the homepage, `about.md`, `release-channels` |
 
-The first is pinned, so the replay keeps passing. The third is prose nothing checks. The second
+The first is pinned, so the replay keeps passing. The third is prose no gate checks. The second
 changes underneath a pinned image without anyone touching this repository.
 
 ### §2.2. The suite label is a dated, unavoidable breakage
@@ -186,7 +186,7 @@ design here has to be proportionate to it.
 - Cost scales as pages × releases. Today that is 56 × 2. The content plan's backlog is ~170 pages;
   at four supported releases that is ~680 page-versions, each needing its own replay. The full
   replay is already about four and a half minutes for 56 pages.
-- Every duplicated page is a place for the two copies to drift in ways nothing detects, because
+- Every duplicated page is a place for the two copies to drift in ways no gate detects, because
   they are separate files and no gate compares them.
 
 The framing of the alternative as a base page plus diffs is the right instinct, and it points at

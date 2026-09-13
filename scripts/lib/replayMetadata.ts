@@ -2,7 +2,7 @@
 // the page exempts, and the directives its setup script declares, including the sandbox those
 // directives select. The flavour lives here rather than beside the code that starts a container
 // because a page declaring a directive and the sandbox that satisfies it are one decision, and
-// splitting them across two files is how a directive ends up naming a flavour nothing starts.
+// splitting them across two files is how a directive ends up naming a flavour no sandbox starts.
 import { readFileSync } from "node:fs";
 import { readSkipEntries } from "../../src/content/replaySkips.js";
 

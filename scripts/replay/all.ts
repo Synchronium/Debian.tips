@@ -73,7 +73,7 @@ function refuseAmbiguousSlugs(): void {
  *  name matching no page and refuse, rather than reporting "nothing to replay" over a typo.
  *
  *  `--changed` falls back to everything when git cannot answer: a diff that failed to compute is
- *  not evidence that nothing needs checking. */
+ *  not evidence that no page needs checking. */
 function selectPages(request: ReplayRequest, everyPage: string[]): string[] {
   if (!request.onlyChanged) {
     if (!request.pages.length) return everyPage;

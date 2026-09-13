@@ -197,7 +197,7 @@ sections:
         code: find projects -type f -amin -120
         description: >-
           `-amin`/`-atime` test access time instead of modification time,
-          useful for finding files nothing has *read* in a while, as opposed to
+          useful for finding files no process has *read* in a while, as opposed to
           files nobody has *written* to. Many systems mount filesystems with
           `noatime` for performance, which makes this test a no-op there.
         level: advanced

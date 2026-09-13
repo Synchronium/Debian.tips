@@ -18,7 +18,7 @@ export const CONTENT_DIR = join(ROOT, "content");
 export const DIST_DIR = join(ROOT, "dist");
 export const PUBLIC_DIR = join(ROOT, "public");
 /** Not exported: the directory holds one file, and `SITE_CSS_SOURCE` below is what every caller
- *  actually wants. An exported name nothing imports is one more thing to keep true. */
+ *  actually wants. An exported name no module imports is one more thing to keep true. */
 const STYLES_DIR = join(ROOT, "styles");
 
 /** The site's whole stylesheet. One file by design, so this names it rather than leaving three
@@ -131,7 +131,7 @@ export const REPLAY_TIMINGS_FILE = join(ROOT, "scripts", "replay-timings.json");
 /** The CI workflow, which is also where the number of replay shards is declared.
  *
  *  Read by `scripts/maintain/check-shard-count.ts`, which compares that count against the recorded timings.
- *  **Nothing fails when the two come apart.** That script is not in `npm run check` and is not a
+ *  **No gate fails when the two come apart.** That script is not in `npm run check` and is not a
  *  gate anywhere: a count that no longer suits the figures costs wall clock and never coverage, so
  *  it is reported to a human by `.github/workflows/record-timings.yml` after each recording, and
  *  the matrix is edited by hand. Its own header carries the reasoning.

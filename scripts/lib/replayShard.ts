@@ -147,7 +147,7 @@ export const WORTH_A_RUNNER = 0.05;
  *
  *  This is what `.github/workflows/ci.yml` is held to, and it moves as pages are added. That is
  *  the reason the workflow states its count and no measurements: the curve is here, computed from
- *  the recorded file, rather than written out beside the matrix where nothing checks it. */
+ *  the recorded file, rather than written out beside the matrix where it is never checked. */
 export function justifiedShardCount(names: string[], timings: Record<string, number>): number {
   for (let total = 1; total < names.length; total++) {
     const now = slowestShardSeconds(names, timings, total);
@@ -161,7 +161,7 @@ export function justifiedShardCount(names: string[], timings: Record<string, num
 const WASTED_WAIT = 0.05;
 
 /** How many runners past the justified count may sit there earning nothing before that is
- *  reported. A high bar. Nothing waits on them.
+ *  reported. A high bar. No job waits on them.
  *
  *  The heaviest page sets the floor, so it decides the count, and its replay time varies from one
  *  run to the next. Set this narrower than that variation and every recording asks for the matrix
@@ -177,7 +177,7 @@ export type ShardCountVerdict = (typeof SHARD_COUNT)[keyof typeof SHARD_COUNT];
  *  **Too few costs wall clock.** Deploy waits on the slowest shard (ADR-0003), and the cost falls
  *  on every push.
  *
- *  **Too many costs runner-minutes.** Nothing waits on those. An extra shard takes a share of the
+ *  **Too many costs runner-minutes.** No job waits on those. An extra shard takes a share of the
  *  pages and finishes early; a run is never slower for having one.
  *
  *  A runner that has stopped earning is therefore not doing harm. One threshold for both

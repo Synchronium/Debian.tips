@@ -45,7 +45,7 @@ cat: latest.css: No such file or directory
 
 The data has not gone anywhere. `rm` removed a name, and a file's contents are freed when the last
 name is gone, so `style.css.bak` still holds them. The symlink was never attached to the data at
-all: it holds a path, that path no longer resolves, and nothing warned anybody when it stopped.
+all: it holds a path, that path no longer resolves, and nobody was warned when it stopped.
 
 ## Ordinary tools break both, in opposite directions
 

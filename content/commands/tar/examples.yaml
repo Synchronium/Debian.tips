@@ -327,7 +327,7 @@ sections:
         code: tar -uvf plain.tar site/index.html
         description: >-
           `-u` (`--update`) is like `-r` but skips files whose in-archive
-          copy is already up to date. No output here means nothing needed
+          copy is already up to date. No output here means no file needed
           updating.
         level: advanced
       - title: "Update a whole directory tree, not just one file"

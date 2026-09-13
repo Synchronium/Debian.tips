@@ -32,7 +32,7 @@ describe("whether a container may be swept", () => {
     expect(isAbandoned(containerFor("wget", 999), nobodyAlive, 1)).toBe(true);
   });
 
-  /* Nothing has been started when the sweep runs, so a container in our own name is the residue of
+  /* No container has been started when the sweep runs, so one in our own name is the residue of
    * an earlier run the kernel has since given our pid to. Left in place it takes the name the next
    * page is about to ask for, and that page reports as unreplayable until someone removes it. */
   it("removes one carrying our own pid, whatever the liveness check says", () => {

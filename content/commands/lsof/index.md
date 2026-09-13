@@ -20,7 +20,7 @@ libraries. A useful invocation narrows: to one path, one process name, one user,
 
 Narrowing has a trap in it. `-c`, `-u`, `-p`, `-i` and `-d` combine with OR, so
 `lsof -c nginx -u www-data` lists everything nginx has open *plus* everything `www-data` has open.
-`-a` switches the combination to AND, and nothing makes it the default. A command that reads as two
+`-a` switches the combination to AND, and it is never the default. A command that reads as two
 conditions is answering a looser question until the `-a` is in it.
 
 The `FD` column carries most of the detail. A number is a file descriptor, followed by the mode the
@@ -45,7 +45,7 @@ a `-i` with both is easier to read as well as faster.
 
 What `lsof` can see depends on who runs it. Open files are read through `/proc`, where an ordinary
 account may read only its own processes, so the same command without `sudo` gives a shorter answer
-rather than an error. That is worth knowing before concluding that nothing holds a file.
+rather than an error. That is worth knowing before concluding that no process holds a file.
 
 Debian ships `lsof` in a package of its own, so a minimal install may not have it.
 [fuser](/commands/fuser/) comes from `psmisc` and answers a narrower version of the same question in

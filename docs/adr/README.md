@@ -101,7 +101,7 @@ command shown. These records keep that claim honest.
 
 Copy the shape of any existing record: a `Status` / `Recorded` / `Enforced by` header, then
 **Context**, **Decision**, **Consequences**, **Revisit when**. Number it sequentially, add it to
-the table above, and say what enforces it. If nothing does, say that too: it is useful
+the table above, and say what enforces it. If no gate does, say that too: it is useful
 information about how much the decision is worth.
 
 `Status` is `Accepted` unless there is something to say (`Accepted, pending an upstream release`;

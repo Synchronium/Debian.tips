@@ -48,7 +48,7 @@ chmod 755 /usr/local/bin/tips-supervisor
 
 # Ignores TERM, so the page can show the one case where -9 is the answer rather than a habit.
 #
-# It waits on a fifo nothing writes to, rather than looping over `sleep`, because it forks
+# It waits on a fifo with no writer, rather than looping over `sleep`, because it forks
 # nothing: a `sleep` loop puts a process on the system that appears and disappears several times
 # a second, and any example counting processes then depends on when it ran. Opening the fifo
 # read-write is what makes `read` block rather than see an immediate EOF.
@@ -63,7 +63,7 @@ EOF
 chmod 755 /usr/local/bin/tips-stubborn
 
 # Handles TERM rather than ignoring it, so the page can show that handling it makes no difference
-# to a process that is stopped. Nothing runs until CONT, so a queued TERM waits whether it would
+# to a process that is stopped. No code runs until CONT, so a queued TERM waits whether it would
 # reach this handler or the kernel's default action. Only KILL gets through, being applied without
 # the process running at all.
 cat > /usr/local/bin/tips-graceful <<'EOF'

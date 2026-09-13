@@ -3,7 +3,7 @@
 // Command pages carry their examples as structured YAML, so a tool can read the command and
 // its claimed output straight off the file. Prose pages state the same kind of claim in
 // Markdown, as a ```bash fence followed by the output it produced, and until this existed
-// nothing checked any of them.
+// no gate checked any of them.
 //
 // The pairing rule is deliberately strict: an output fence counts as belonging to a command
 // only when it opens on the line immediately after that command's fence closes. Pairing on
@@ -43,7 +43,7 @@ export interface UnpairedBlock {
   output: string;
   /** 1-based line of the opening fence. */
   line: number;
-  /** Text after the `skip` keyword on the directive above it: why nothing reproduces this. */
+  /** Text after the `skip` keyword on the directive above it: why this cannot be reproduced. */
   note: string;
 }
 

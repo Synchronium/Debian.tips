@@ -13,7 +13,7 @@
 // times and wrong as a habit, which only a whole-corpus count can judge. `advisory` is a prompt
 // to look at a line, never a verdict, because the guide says a few of each are correct.
 //
-// Exit status: 0 when nothing failed, and 1 on a `fail` finding. Under --hook that becomes 2,
+// Exit status: 0 when no rule failed, and 1 on a `fail` finding. Under --hook that becomes 2,
 // which is the status Claude Code feeds back to whoever wrote the line rather than to the human
 // watching the session.
 import { readFileSync, readdirSync, statSync } from "node:fs";
@@ -125,6 +125,48 @@ const RULES: readonly Rule[] = [
     budget: 2,
     message:
       "voice.md §4: names something as two parts, then points at a part instead of naming it. Say which one you mean.",
+  },
+  {
+    id: "absence-as-actor",
+    severity: SEVERITY.report,
+    // `nothing` as the subject of an active verb, where naming the actor or negating the verb is
+    // shorter and says the same thing. voice.md §4 carries the worked examples: quoting a pair of
+    // them here would put the construction into a file this very rule reads, which is the reason
+    // voice.md is the one document exempt from the checker.
+    //
+    // Three exclusions, each of which is ordinary English that shares only the word.
+    //
+    // The copula, because `nothing is printed` is a passive with no actor to name and reads
+    // perfectly: it is 71 of the corpus's hits and none of them is the fault. `else` sits inside
+    // the optional group rather than outside it, so `nothing else is printed` is excluded too.
+    //
+    // `with nothing added`, `with nothing captured`: an absolute construction rather than a
+    // clause, so there is no verb to negate.
+    //
+    // `matches` and `happens`, which describe a search or an event coming back empty and have no
+    // shorter form. `nothing matched` is what a page says about `grep`.
+    //
+    // `unless` and `this`, which end in an s and are not verbs. There is no general form of this
+    // one, so the two the corpus contains are named and the rest would arrive as findings.
+    //
+    // The object shape the guide also names, `frees nothing` and `prints nothing`, has no rule
+    // here. It was measured at roughly a third precision, because `means nothing`, `nothing but`
+    // and `does nothing at all` are all ordinary, and a check wrong twice in three findings
+    // teaches its reader to skip it.
+    //
+    // What the pattern still cannot see, and what the budget therefore holds room for. A verb in
+    // front turns the word into an object while the shape here stays the same, so a sentence
+    // about a glob matching no files reads to this rule as an absence doing the expanding. And a
+    // participle can be an adjective rather than a verb, which is what an ADR means by recording
+    // that no automated thing enforces it. Both need to know which word is the subject, which is
+    // grammar rather than spelling. Examples of each are in the commit that swept the corpus,
+    // deliberately not here: a comment is prose this rule reads.
+    pattern:
+      /(?<!with )\bnothing (?:(?:can|could|will|would|may|might|must|should|does|did|do|ever|then|else|now|still|really|actually) )?(?!is\b|was\b|are\b|were\b|be\b|been\b|being\b|match|happen|unless\b|this\b)[a-z]+(?:s|ed)\b/gi,
+    // Set from a swept corpus rather than chosen: ten findings survive the sweep and every one is
+    // a false positive of the two kinds above. The margin is for the next page, not for them.
+    budget: 15,
+    message: "voice.md §4: an absence as the subject of a verb. Name the actor, or negate the verb.",
   },
   {
     id: "adverb-of-obviousness",

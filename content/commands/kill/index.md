@@ -39,7 +39,7 @@ reaches a whole pipeline rather than a single process.
 ## Why -9 is a last resort
 
 `kill -9` sends `SIGKILL`, and the kernel removes the process without delivering anything to it.
-Nothing runs on the way out: no flush, no lock file removed, no child signalled. A database that
+No cleanup runs on the way out: no flush, no lock file removed, no child signalled. A database that
 was mid-write is a database that stays mid-write.
 
 `TERM` first, then. `-9` is for the program that has already been asked and has not gone, which

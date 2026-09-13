@@ -4,7 +4,7 @@
 # verify: --user
 #
 # Replayed as `user`, because every difference the page draws is between an unprivileged account
-# reaching for root four ways. Run as root there is nothing to reach for: `sudo` and `su` both
+# becoming root four ways. Run as root there is nothing to become: `sudo` and `su` both
 # start from the identity the page is asking them to change.
 
 # The page prints the working directory each form leaves you in, and the harness's own directory

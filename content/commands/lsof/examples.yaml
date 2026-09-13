@@ -174,7 +174,7 @@ sections:
     examples:
       - title: "See the whole picture for one process"
         code: lsof -a -c tips-job -d ^mem
-        description: "The three standard descriptors are there as 0, 1 and 2, pointing at `/dev/null` because nothing attached a terminal. `cwd` and `txt` answer where a process thinks it is and which binary it is really running."
+        description: "The three standard descriptors are there as 0, 1 and 2, pointing at `/dev/null` because no terminal was attached. `cwd` and `txt` answer where a process thinks it is and which binary it is really running."
         volatile: "the pid, the device number, the inodes and the Python version are this machine's"
         compare: shape
         output: |

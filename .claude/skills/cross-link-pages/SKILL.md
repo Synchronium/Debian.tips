@@ -1,11 +1,11 @@
 ---
 name: cross-link-pages
-description: Audit and repair the cross-linking between debian.tips content pages: orphaned pages nothing links to, pages that link nowhere, and weakly-connected ones. Use after writing or renaming a page, after a batch of pages, or when asked to check cross-links, find orphans, or fix the related: graph. Not for broken links, which npm run check already catches.
+description: Audit and repair the cross-linking between debian.tips content pages: orphaned pages no other page links to, pages that link nowhere, and weakly-connected ones. Use after writing or renaming a page, after a batch of pages, or when asked to check cross-links, find orphans, or fix the related: graph. Not for broken links, which npm run check already catches.
 ---
 
 # Cross-link debian.tips pages
 
-A new page arrives orphaned. Nothing links to it, because nothing knew it was coming, and
+A new page arrives orphaned. No page links to it, because none of them knew it was coming, and
 `npm run check` is perfectly happy, because every link that exists resolves. Discoverability is
 the one part of a page nothing in the build has an opinion about, so it needs its own pass.
 

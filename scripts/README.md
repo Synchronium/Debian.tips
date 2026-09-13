@@ -31,7 +31,7 @@ Checks that pass or fail. Each is wired into `npm run check`, `npm run <name>`, 
 
 | | |
 | --- | --- |
-| `link-audit.ts` | Which pages nothing links to. `src/linkcheck.ts` checks the links that exist resolve; ADR-0015 is why they are two gates. |
+| `link-audit.ts` | Which pages no other page links to. `src/linkcheck.ts` checks the links that exist resolve; ADR-0015 is why they are two gates. |
 | `voice-check.ts` | Prose against `.claude/reference/voice.md`. Also runs per file, from a hook. |
 | `browser-check.ts` | Search and narrow-screen layout, in a real browser against a served build. |
 | `pa11y-urls.ts` | Writes the URL list `pa11y-ci` reads. Never run `pa11y-ci` without it. |

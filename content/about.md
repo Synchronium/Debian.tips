@@ -5,7 +5,7 @@ description: "Every command example on debian.tips is run for real in a disposab
 
 Most command references are written from memory. Someone remembers roughly what `tar -tvf`
 prints, types something plausible, and it sits there for years. The command changes, the
-distribution changes, the output drifts, and nobody notices because nothing ever checks.
+distribution changes, the output drifts, and nobody notices because the claim is never checked.
 
 This site does it the other way round. Every example is run inside a throwaway Debian
 container, and the output on the page is pasted from that run. Then it is run again, on

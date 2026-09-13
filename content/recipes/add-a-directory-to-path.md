@@ -12,7 +12,7 @@ related: [environment-variables-and-path, your-first-script, sh-vs-bash-vs-dash]
 `command not found`, and [which](/commands/which/) cannot see it either. Exporting `PATH` in the terminal fixes it until you close the terminal.
 
 **Solution:** on Debian, if the directory is `~/.local/bin` or `~/bin`, create it and log in
-again. Nothing needs editing.
+again. No file needs editing.
 
 ```bash
 mkdir -p ~/.local/bin

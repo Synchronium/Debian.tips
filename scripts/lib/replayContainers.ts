@@ -64,7 +64,7 @@ export function processAlive(pid: number): boolean {
  *  run, and the next thing to notice is usually a port still being held. Sweeping at the start
  *  rather than trying harder at the end also covers a crash and a `kill -9`, which no handler can.
  *
- *  Nothing has been started when this runs, so a container in our own name is the residue of an
+ *  No container has been started when this runs, so one in our own name is the residue of an
  *  earlier run the kernel has since given our pid to, never one we are using. Left in place it
  *  takes the name that page is about to ask for, `docker run` exits 125, and the page reports as
  *  unreplayable for as long as the container is there. */

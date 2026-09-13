@@ -32,4 +32,4 @@ actually needs a person.
 What it repairs it does not always return. A file whose directory entry is gone is reconnected into
 `lost+found` under its inode number rather than its name, so the recovery is of the data and not of
 knowing what the data was. That directory is made by [mkfs](/commands/mkfs/) when the filesystem is,
-which is why it exists on a filesystem nothing has ever gone wrong with.
+which is why it exists on a filesystem that has never had a problem.

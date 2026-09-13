@@ -51,7 +51,7 @@ because a page reads better with it.
   50–150) + `examples.yaml` (flagship/standard 50–100 examples, light 25–50), sections ordered
   basic → advanced, `command:` field matching the directory name.
 
-  **The example count is a guide and not a floor, and nothing enforces it.** A page reaching the
+  **The example count is a guide and not a floor, and no gate enforces it.** A page reaching the
   bottom of its range by pointing the same command at a second name has padded rather than
   covered: the `man` page carried five `whatis` examples teaching two things.
 
@@ -306,7 +306,7 @@ page itself ("nothing re-runs its examples") rather than only in a counter on `/
 deliberate, and it is one more reason the setup script is part of writing the page rather than a
 follow-up.
 
-A new page arrives orphaned: its own `related:` list points outward, and nothing points back at
+A new page arrives orphaned: its own `related:` list points outward, and no page points back at
 it. `npm run check` now fails on that, and the `cross-link-pages` skill is the pass that fixes it:
 the useful link is usually an inline one on a sentence in an existing page that already raises the
 question this page answers, not another `related:` entry.

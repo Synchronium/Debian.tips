@@ -93,7 +93,7 @@ a	b
 -e a	b
 ```
 
-Nothing errors. The script keeps going with `-e ` glued to the front of a string, which is how
+No error appears. The script keeps going with `-e ` glued to the front of a string, which is how
 this ends up in a log file three weeks later. `printf` behaves the same in both and is the fix.
 
 **`source` is spelled `.`**:

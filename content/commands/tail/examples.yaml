@@ -384,7 +384,7 @@ sections:
         level: advanced
       - title: "Watch what a follow prints with nothing writing to the file"
         code: 'timeout 1 tail -f livelog.txt; echo "exit: $?"'
-        description: "`livelog.txt` is empty and nothing appends to it, so `tail -f` prints nothing and keeps waiting. `timeout` ends it after a second, and 124 is `timeout`'s way of saying it had to."
+        description: "`livelog.txt` is empty and no process appends to it, so `tail -f` prints nothing and keeps waiting. `timeout` ends it after a second, and 124 is `timeout`'s way of saying it had to."
         output: |2
           exit: 124
         level: advanced

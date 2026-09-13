@@ -149,7 +149,7 @@ case "$cmd" in
     ;;
   # Where a published image is pulled from, for the same reason: the workflow has to push the
   # repository this pulls from, and a name spelled out in both places agrees right up until one of
-  # them is edited. Publishing under a name nothing looks for fails no build and shows no error.
+  # them is edited. Publishing under a name no run looks for fails no build and shows no error.
   # It refuses when there is no registry rather than printing an empty name, because a caller
   # asking this needs one, and an empty answer would be pushed to as `:hash`.
   registry)

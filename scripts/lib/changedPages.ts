@@ -60,9 +60,9 @@ export function pagesTouchedBy(files: readonly string[]): string[] | "all" {
 /** Every path the branch has changed against `base`, committed or not.
  *
  *  Uncommitted work is included so that running this locally over a page being written replays
- *  that page, rather than reporting that nothing changed. Throws if git cannot answer, which the
+ *  that page, rather than reporting no change. Throws if git cannot answer, which the
  *  caller turns into replaying everything: a diff that cannot be computed is not evidence that
- *  nothing needs checking. */
+ *  no page needs checking. */
 export function changedFiles(base: string): string[] {
   const git = (...args: string[]): string[] =>
     execFileSync("git", args, { encoding: "utf-8" })

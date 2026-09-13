@@ -242,7 +242,7 @@ sections:
     examples:
       - title: "A shell script that will not run"
         code: sh deploy.sh
-        description: "The script is ordinary shell, and `set -e` is rejected anyway. Nothing looks wrong with the file in any editor that opens it."
+        description: "The script is ordinary shell, and `set -e` is rejected anyway. The file looks correct in any editor that opens it."
         output: |
           deploy.sh: 2: set: Illegal option -
         level: basic

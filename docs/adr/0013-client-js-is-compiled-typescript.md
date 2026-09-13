@@ -9,7 +9,7 @@
 The site's client-side behaviour is small: set the theme before first paint, wire copy buttons, open
 the search dialog. It was previously hand-written ES5 living inside a string literal in a template.
 
-Two things were wrong with that. Nothing checked it: Prettier globbed `*.ts` and `tsconfig`
+Two things were wrong with that. No gate checked it: Prettier globbed `*.ts` and `tsconfig`
 included `*.ts`, so a file extracted from the literal was failing a format check nobody ran. And it
 was written in ES5 not by choice but because **there was nowhere to compile it**.
 

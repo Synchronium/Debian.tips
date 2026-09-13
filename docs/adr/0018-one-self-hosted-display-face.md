@@ -6,7 +6,7 @@
 
 ## Context
 
-The site was set in one family, `system-ui`, at seven sizes close enough together that nothing led.
+The site was set in one family, `system-ui`, at seven sizes close enough together that no size led.
 Hierarchy came from bordered panels instead, so a page arrived as a stack of similar boxes and
 read as a hobby project. A reference site has three kinds of text in it: the title of a page, the
 prose explaining it, and the things a reader will type. A design that cannot tell them apart is

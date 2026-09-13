@@ -81,7 +81,7 @@ commits the result once CI is green. A workflow of its own rather than a job in 
 recorder that gates nothing cannot hold back a deploy that does.
 ADR-0023 has the reasoning, including why the commit does not start CI again. The upshot for
 anyone writing pages is that adding one no longer accrues a debt: `--record-timings` is still
-there for recording by hand, but nothing needs it. It refuses to run under `--shard`, `--changed`
+there for recording by hand, but no gate needs it. It refuses to run under `--shard`, `--changed`
 or named pages, because a partial recording would drop every page it did not run.
 
 `npm run shards` answers the question the recorder cannot. The figures decide how many shards are worth running, and that
@@ -221,7 +221,7 @@ Where an arch-dependent package is genuinely the right example, narrow the outpu
 be documented at all, since its output carries download sizes, speeds, the architecture, and dpkg's
 carriage-return progress lines.
 
-Bare fences that pair with nothing are output blocks nothing reproduces, and since ADR-0021 each
+Bare fences that pair with nothing are output blocks no command reproduces, and since ADR-0021 each
 has to say why with a `verify: skip` note, exactly as a skipped pair does. They count as exempt and
 the page states them at its foot, so the reader is told a block exists rather than left to compare
 the page's figure against what is in front of them. A config snippet is a different thing and takes

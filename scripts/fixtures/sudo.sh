@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Fixtures for content/commands/sudo/examples.yaml. Must match its `fixtures:` block.
 #
-# Replayed as the unprivileged `user`, because the page is about a normal account reaching for
+# Replayed as the unprivileged `user`, because the page is about a normal account asking for
 # a privilege it does not have. As root every example succeeds without sudo doing anything, the
 # refusals cannot happen, and `sudo whoami` answers a question nobody asked.
 # verify: --user

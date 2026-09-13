@@ -124,6 +124,21 @@ counts those, so the budget is only for the positional form. What the rule leave
 used honestly: `half-finished` and its family, the quantity sense, and a thing that really is two,
 like a key pair's public and private halves or the master and slave of a pty.
 
+**An absence as the actor.** Making "nothing" the subject of a verb where naming the actor or
+negating the verb is shorter and plainer: "nothing checks it" for "it is not checked", "nothing
+holds the file" for "no process holds it", "nothing refuses a write" for "the kernel does not
+refuse a write". It reads as a sentence that wanted a subject and had none to hand, and it
+collects: three pages written in one sitting carried twenty-one of them, against a corpus rate of
+half that. The object position is the same habit facing the other way, "frees nothing" for "frees
+no space at all", though there the honest uses outnumber the tell and no rule counts them.
+
+What this leaves alone is the word used plainly. "nothing but", "has nothing to do with" and "look
+nothing alike" are fixed phrases. The passive "nothing is printed" has no actor to name and is how
+half the corpus describes a quiet command. "Four megabytes used by nothing `du` can find" and
+"points at nothing, and never at half a file" both mean the absence exactly. `npm run voice`
+counts the subject form against a budget and cannot see any of these distinctions, so a finding is
+a line to read rather than a line to change.
+
 **Also:** em dashes, `X, not Y` antithesis and symmetry generally, parenthetical asides that answer
 a question mid-sentence, and "actually".
 
