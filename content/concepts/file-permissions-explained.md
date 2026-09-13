@@ -5,7 +5,7 @@ description: "The rwx/owner-group-other model, numeric vs symbolic chmod, umask,
 category: concepts
 tags: [permissions, beginner, sysadmin]
 updated: 2026-08-22
-related: [chmod, find, exit-codes-and-error-handling]
+related: [chmod, find, permission-denied, exit-codes-and-error-handling]
 ---
 
 A file's mode is nine bits: read, write and execute, for the owner, the group and everyone else.
@@ -145,7 +145,8 @@ setgid in place. If you intend to strip it, say so explicitly.
   directories and the setuid/setgid bits.
 - **"If I own the file, I can always read it."** Not if a directory somewhere in the path
   lacks the execute bit for you. Permission checks happen at every level of the path, not just
-  on the final file.
+  on the final file. [Permission denied](/troubleshooting/permission-denied/) works through that
+  case and the other reasons a denial has nothing to do with the file it names.
 - **"A permission-denied error and a missing-file error look the same to a script."** They
   don't have to. See
   [Exit codes and error handling](/concepts/exit-codes-and-error-handling/) for how to tell

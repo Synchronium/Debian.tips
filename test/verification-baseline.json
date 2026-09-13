@@ -871,6 +871,14 @@
     "fixtures": 0,
     "unpaired": 1
   },
+  "troubleshooting/permission-denied": {
+    "checked": 14,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
   "troubleshooting/repository-is-not-signed": {
     "checked": 4,
     "byShape": 2,

@@ -5,7 +5,7 @@ description: "Why 2>/dev/null is the wrong fix for find's permission denied erro
 category: recipes
 tags: [search, files, permissions, sysadmin]
 updated: 2026-08-29
-related: [find, file-permissions-explained, pipes-and-redirection]
+related: [find, file-permissions-explained, permission-denied, pipes-and-redirection]
 ---
 
 **Problem:** a search through a tree you do not own buries the two results you wanted under
@@ -91,4 +91,5 @@ changing while you read them.
 Where the search is for a file you own, `find ~ -name '*.conf'` has neither problem and finishes
 in a fraction of the time. [File permissions explained](/concepts/file-permissions-explained/)
 covers what makes a directory unreadable in the first place, which is `r` for listing its names
-and `x` for descending into it.
+and `x` for descending into it. Where it is one command rather than a search being refused,
+[Permission denied](/troubleshooting/permission-denied/) is how to find out which check said no.

@@ -68,7 +68,7 @@ not in `docs/adr/`.
 
 ## §2. Where the site is now
 
-112 pages, counted 2026-09-12. `src/content/verificationStats.ts` is what the about page renders
+114 pages, counted 2026-09-13. `src/content/verificationStats.ts` is what the about page renders
 from, so its figures are the ones the site publishes about itself.
 
 | Category | Pages | State |
@@ -78,7 +78,7 @@ from, so its figures are the ones the site publishes about itself.
 | `scripting` | 14 | Complete since 2026-08-29, ending in a capstone that uses the thirteen lessons before it. §11 is the only thing that would extend it. |
 | `recipes` | 11 | §9 holds the backlog, led by the ones that tie several written pages together. |
 | `debian` | 7 | Bounded to the explainer shape by ADR-0006. Errors go to `troubleshooting`, comparisons to `compare`. |
-| `troubleshooting` | 6 | Still the smallest category and the one §3 argues should become one of the largest. §5 is the plan for it, and §5.1's first two hubs are written. |
+| `troubleshooting` | 8 | Still the smallest category and the one §3 argues should become one of the largest. §5 is the plan for it, and §5.1 is now written out. |
 | `compare` | 9 | Nine of twenty candidates. The eleven parked or waiting are unparked by §8. |
 
 Every page replays: there is no page whose documented outputs nothing re-runs.
@@ -92,9 +92,9 @@ Unix work". It is weak at "I am stuck, and I need to work out what to do next".
 
 The components are present. A reader facing a service that will not start has `systemctl`,
 `journalctl`, `ss`, `ps`, exit codes and file permissions available to them, on seven pages, and
-nothing that assembles those into a diagnosis. Six troubleshooting pages against fifty-eight
-command pages is out of proportion to how people arrive, and two of the six were written on
-2026-09-12 against exactly that complaint.
+nothing that assembles those into a diagnosis. Eight troubleshooting pages against fifty-eight
+command pages is out of proportion to how people arrive, and four of the eight were written in two
+days against exactly that complaint.
 
 So the question this plan is built on is **what situations can a Debian user arrive in where this
 site cannot get them unstuck**, rather than what Linux knowledge is missing from the taxonomy. The
@@ -265,20 +265,21 @@ message is unambiguous, high-intent, and not well served by sites that write aro
 
 ### §5.1. Services, permissions and disk
 
-`service-wont-start` and `disk-full` are written, both without §4.1 and both on one setup script
-apiece. §13.7 has what they cost and what they taught.
+All three are written, none of them needed §4.1, and each runs on one setup script. §13.7 has what
+they cost and what they taught.
 
-- **`permission-denied`**. **Needs**: `stat`, `id`, `getent` (§6.1). **Demo**: read, write
-  and execute refused in turn; a parent directory without `x` so traversal fails while the file
-  itself is readable; wrong owner; right owner and wrong group; the case where `sudo` does not help
-  because the operation is not the one being refused; and the case where the mode is correct and
-  something else is refusing. Replays as the unprivileged `user`, since root is never refused.
-- **`disk-full`**, titled for `No space left on device`. **Needs**: §4.1 only; `du`, `df`, `find`
-  and `lsof` are all written. **Demo**: bytes exhausted; inodes exhausted while `df` reports space free; one directory
-  holding most of it; one file holding most of it; a deleted file a process still holds open, which
-  is the case that makes `df` and `du` disagree. `scripts/fixtures/df.sh` already mounts tmpfs with
-  `size=` and `nr_inodes=` pinned and already exhausts an inode table, so most of this is buildable
-  on an idiom that exists.
+- **`permission-denied`** is titled for the error string and replays as the unprivileged `user`,
+  since root is refused none of it. Eight branches: the mode against `id`; the class that matched
+  being the only one checked; a parent directory without `x`, where `namei -l` names the component
+  that refused; a group the account is not in, and the group a running shell has not picked up;
+  the write where `sudo` is defeated by the shell's own redirection; execute refused by a missing
+  bit and then by a `noexec` mount; `EPERM` and `EROFS` as refusals worded differently; and
+  `sudo -u` to ask the question as the account that will run the thing. The `noexec` branch is
+  what makes it the first page to declare `--user` and `--privileged` together.
+- **`disk-full`**, titled for `No space left on device`. Bytes exhausted, inodes exhausted while
+  `df` reports space free, one directory and then one file holding most of it, and the deleted file
+  a process still holds open, which is what makes `df` and `du` disagree.
+- **`service-wont-start`**, on the systemd sandbox, branching on the exit code in the status block.
 
 ### §5.2. Package management errors
 
@@ -778,7 +779,7 @@ treat one as a measurement to re-take rather than a failure to work around.
 
 ### §13.7. What a diagnostic hub costs
 
-From `service-wont-start` and `disk-full`, the first two written.
+From `service-wont-start`, `disk-full` and `permission-denied`, the first three written.
 
 - **Give every branch its own object and the page needs no new harness.** Seven differently broken
   units, or two tmpfs mounts and two processes holding files, all built by one setup script that
@@ -800,8 +801,23 @@ From `service-wont-start` and `disk-full`, the first two written.
   a traceback through several standard-library files into the journal, and the page then teaches
   reading Python rather than reading systemd. One caught line reads like the daemon it stands in
   for.
-- **A hub is about the length of a `standard` command page.** Both came in between 1400 and 1900
-  words with sixteen and ten checked output blocks, which is a day's work rather than a week's.
+- **A page about a denial replays as `user`, and its setup script does too.** The harness runs the
+  script as whatever account the examples use, so a fixture that has to build root-owned objects
+  goes through the image's passwordless sudo. `--user` and `--privileged` combine, which is what
+  lets one page own both a mode and a mount.
+- **Unmount before `rm -rf` in a setup script that mounts anything.** The tree comes down to
+  "Device or resource busy" at the mount point and leaves half the fixtures standing, and the
+  script runs before every example, so the second one onwards sees the half.
+- **A shell diagnostic can be documented in the form a reader sees.** `normalise.ts` strips
+  `bash: line N:`, which is the harness's own artifact, so the page writes `bash: ./x: Permission
+  denied` and still matches. A page needing the script name in the message instead writes the
+  command to a file and runs that.
+- **The image has no `getfacl`**, so "the mode is right and something else is refusing" is a
+  `noexec` mount rather than an ACL. Adding `acl` to the image would put every page's replay on
+  the line for one branch.
+- **A hub is about the length of a `standard` command page.** All three came in between 1400 and
+  1900 words with ten to sixteen checked output blocks, which is a day's work rather than a
+  week's.
 
 ### §13.8. Check the error string exists before planning a page around it
 

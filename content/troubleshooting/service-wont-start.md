@@ -178,7 +178,9 @@ drwx------ root /srv/tips/reports
 
 Mode 700 owned by root, against a service running as `tipssvc`. Every directory along the path
 needs `x` for that user, not just the last one, which is the case
-[file permissions](/concepts/file-permissions-explained/) covers in full. `Failed at step` is the
+[file permissions](/concepts/file-permissions-explained/) covers in full and
+[Permission denied](/troubleshooting/permission-denied/) has the tools for, including how to ask
+the question as the service's own account rather than as yourself. `Failed at step` is the
 phrase to search for generally: systemd names the step it was on, so `NAMESPACE` points at
 `ProtectSystem=` or `PrivateTmp=`, and `USER` points at a `User=` that does not exist.
 

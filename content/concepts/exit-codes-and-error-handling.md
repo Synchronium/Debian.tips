@@ -64,7 +64,9 @@ exit=126
 
 `127` means the shell couldn't find the command at all. `126` means it found it but couldn't
 execute it, commonly a missing execute bit (see
-[File permissions explained](/concepts/file-permissions-explained/)). Signals add another
+[File permissions explained](/concepts/file-permissions-explained/), or
+[Permission denied](/troubleshooting/permission-denied/) for the cases where the bit is set and
+the file still will not run). Signals add another
 pattern: a process killed by signal *N* exits with `128 + N`. `kill -TERM` on a running command
 produces exit status `143` (128 + 15); Ctrl-C, which sends `SIGINT` (signal 2), produces `130`.
 Recognising these numbers tells you whether a script died from its own logic or was killed from

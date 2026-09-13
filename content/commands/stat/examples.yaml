@@ -184,7 +184,7 @@ sections:
         tags: [files, scripting]
       - title: "Look at something behind a directory you cannot enter"
         code: mkdir -p locked/inner; touch locked/inner/secret.txt; chmod 000 locked; stat locked/inner/secret.txt; chmod 755 locked
-        description: "Reading a file's record needs search permission on every directory in the path, and `locked` has none. The final `chmod` puts it back so the rest of the page is unaffected."
+        description: "Reading a file's record needs search permission on every directory in the path, and `locked` has none. The final `chmod` puts it back so the rest of the page is unaffected. When it is somebody else's directory, [Permission denied](/troubleshooting/permission-denied/) has `namei -l`, which names the component that refused."
         output: |
           stat: cannot statx 'locked/inner/secret.txt': Permission denied
         level: advanced
