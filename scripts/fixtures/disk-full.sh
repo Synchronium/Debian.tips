@@ -39,7 +39,7 @@ dd if=/dev/zero of=/srv/disk/var/lib/tips/index.db bs=256K count=1 status=none
 printf 'notes\n' > /srv/disk/home/user/notes.txt
 
 # The inode table is what runs out here, not the space. Thirty-one small files against
-# `nr_inodes=32` leaves room for nothing, so a `touch` in an example fails while `df -h` still
+# `nr_inodes=32` leaves no inode free, so a `touch` in an example fails while `df -h` still
 # reports megabytes free, which is the case that makes the ordinary answer useless.
 for n in $(seq 1 31); do
   printf 'x' > "/srv/small/message-$n.eml"
@@ -80,7 +80,7 @@ setsid /usr/local/bin/tips-spool >/dev/null 2>&1 &
 setsid /usr/local/bin/tips-logger >/dev/null 2>&1 &
 
 # Waited for by the open files rather than by `pgrep`. A killed process left as a zombie under
-# this sandbox's pid 1 still answers to its own name while holding nothing at all, so a wait
+# this sandbox's pid 1 still answers to its own name without holding any file, so a wait
 # written against the process table would return before the blocks were allocated.
 for _ in $(seq 1 50); do
   lsof +L1 /srv/disk 2>/dev/null | grep -q 'spool\.tmp (deleted)' &&

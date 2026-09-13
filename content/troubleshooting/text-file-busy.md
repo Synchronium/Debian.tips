@@ -17,7 +17,7 @@ cp /srv/tips/releases/tips-agent /srv/tips/bin/tips-agent
 cp: cannot create regular file '/srv/tips/bin/tips-agent': Text file busy
 ```
 
-`ETXTBSY`, errno 26, and "text" here means the machine code rather than anything readable. A
+`ETXTBSY`, errno 26. The "text" is machine code rather than anything readable: a
 running process has its executable mapped into memory and pages of it are read from the file on
 demand, so writing into that file would change the instructions under a process already part-way
 through them. The kernel refuses instead.
@@ -47,7 +47,7 @@ fuser -v /srv/tips/bin/tips-agent
 
 The `e` in the `ACCESS` column is the answer: this process is *executing* the file, which is the
 only access that produces `ETXTBSY`. A process that merely has the file open shows `f`, and one
-that has it open for writing shows `F`, and neither of those stops you writing to it.
+that has it open for writing shows `F`. Neither of those stops you writing to it.
 
 Where the program is running several times over, every copy has to go before the file can be
 written, and `fuser` lists them all.
@@ -67,9 +67,9 @@ new build installed
 ```
 
 That is the fix most people arrive at, and it has a hole in it. Between the `rm` and the `cp` there
-is a window, however brief, in which the path does not exist: anything that tries to start the
-program then gets "No such file or directory", and on a large binary over a slow filesystem the
-window is long enough to hit. A `cp` that fails halfway leaves a truncated file that will not run
+is a window, however brief, in which the path does not exist, so anything trying to start the
+program gets "No such file or directory". On a large binary over a slow filesystem that window is
+long enough to hit. A `cp` that fails halfway leaves a truncated file that will not run
 at all.
 
 Writing the new build beside the old one and renaming it over the top closes both:
@@ -88,7 +88,7 @@ points at the old inode or the new one, never at nothing and never at half a fil
 same reason `sed -i` and any editor worth using write a temporary file and rename it.
 
 The rename has to be on the same filesystem as the target. Across one, `mv` falls back to copying
-and deleting, and the window comes back.
+and deleting, so the window comes back.
 
 `install` does the whole thing for you, which is why packages use it:
 
@@ -102,7 +102,7 @@ new build installed
 
 ## The running process keeps the build it started with
 
-Replacing the file changes what starts next. It does nothing to what is already running:
+Replacing the file changes what starts next. It does not touch what is already running:
 
 ```bash
 pid=$(pgrep -x tips-agent)
@@ -117,7 +117,7 @@ readlink /proc/$pid/exe
 ```
 
 `(deleted)` on a path that plainly exists is the old inode, kept alive by the process still mapped
-to it, with nothing left pointing at it from any directory. The blocks it occupies do not come back
+to it, with no directory entry left pointing at it. The blocks it occupies do not come back
 until the process exits, which is the same accounting behind
 [No space left on device](/troubleshooting/disk-full/).
 
@@ -141,7 +141,7 @@ exit status: 126
 
 The upload is still in progress and the kernel will not run a program somebody is in the middle of
 writing. A deployment that copies straight to the path it then starts hits this whenever the two
-overlap, and it is the same rename that fixes it. Exit status 126 means found and not executable,
+overlap, and the same rename fixes it. Exit status 126 means found and not executable,
 which is worth telling apart from 127, meaning not found.
 
 ## Shell scripts get no such protection
@@ -159,7 +159,7 @@ fuser -v /srv/tips/bin/tips-job
                      root        540 f.... tips-job
 ```
 
-`f` rather than `e`, and nothing refuses a write:
+`f` rather than `e`, and the kernel does not refuse a write:
 
 ```bash
 cp /srv/tips/releases/tips-agent /srv/tips/bin/tips-job

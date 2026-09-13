@@ -1,7 +1,7 @@
 ---
 title: "No space left on device"
 tagline: "Which filesystem, what filled it, and what is safe to remove"
-description: "A write failed for want of space. Find which filesystem is full, whether it ran out of blocks or inodes, and why deleting the big file often frees nothing."
+description: "A write failed for want of space. Find which filesystem is full, whether it ran out of blocks or inodes, and why deleting the big file often frees no space."
 category: troubleshooting
 tags: [disk, sysadmin, files]
 updated: 2026-09-12
@@ -30,7 +30,7 @@ running out, so the first attempt at a fix has often made the problem slightly w
 
 [df](/commands/df/) takes a path and answers about the filesystem that path is on, which is the
 form worth using. A Debian system with a separate `/var` or `/home` can have one filesystem full
-and gigabytes free elsewhere, and a bare `df -h` gives you every filesystem on the machine to read
+and gigabytes free elsewhere. A bare `df -h` hands you every filesystem on the machine to read
 through at the moment you least want to.
 
 ```bash
@@ -64,8 +64,8 @@ tmpfs              32    32     0  100% /srv/small
 ```
 
 Two per cent used, and not a single file can be created. `df -i` is worth running whenever the
-space figures look healthy and the error says otherwise, because the message is identical and
-nothing else distinguishes the two.
+space figures look healthy and the error says otherwise: the two cases print the same message, and
+no other part of it tells them apart.
 
 An ext4 filesystem's inode count is fixed when [mkfs](/commands/mkfs/) makes it, so the repair is
 to delete files rather than to add space. Growing the filesystem does not add inodes.
@@ -124,8 +124,8 @@ tmpfs            20M   19M  1.8M  92% /srv/disk
 ```
 
 Four megabytes are being used by nothing `du` can find. `du` adds up the files it can reach by
-name, while `df` asks the filesystem how many blocks are allocated, and a file that has been
-deleted while a process still has it open is allocated and unreachable. The blocks come back when
+name, while `df` asks the filesystem how many blocks are allocated. A file that a process still
+has open after it was deleted is allocated and unreachable at the same time. The blocks come back when
 the process closes it or exits, and not before.
 
 [lsof](/commands/lsof/) lists those files, with `-a` to combine the two conditions rather than
@@ -155,13 +155,13 @@ used after: 15M
 ```
 
 This is the usual reason a disk stays full after somebody has deleted several gigabytes of logs.
-The files are gone and the space is not, and it stays that way until the service that had them
-open is restarted.
+The files are gone and the space is not. It stays that way until the service that had them open
+is restarted.
 
 ## Deleting a log a service is holding
 
 Same mechanism, met from the other side. `rm` on a log file a running service has open removes the
-name and frees nothing at all:
+name without freeing a single block:
 
 ```bash
 rm /srv/disk/var/log/tips/app.log
@@ -191,28 +191,27 @@ needs the service stopped.
 > [!WARNING]
 > A service that opens its log with `O_APPEND`, which is most of them, carries on appending after a
 > truncation and the file grows from zero. One that tracks its own offset instead writes at the
-> offset it had, and the file comes back as a sparse file reporting its old size. `logrotate` with
-> `copytruncate` exists for exactly this, and a service that supports reopening its log on `SIGHUP`
-> should be sent one rather than truncated under.
+> offset it had, so the file comes back as a sparse file reporting its old size. `logrotate` with
+> `copytruncate` exists for exactly this. A service that can reopen its log on `SIGHUP` should be
+> sent one rather than truncated under.
 
 ## What is safe to remove on Debian
 
 In the order worth trying, once you know which filesystem is full:
 
 - **The apt cache.** `apt clean` empties `/var/cache/apt/archives`, which holds every `.deb`
-  downloaded since the last clean. On a long-lived server this is often gigabytes, and nothing
-  needs it: apt downloads a package again if it ever wants it back.
+  downloaded since the last clean. On a long-lived server this is often gigabytes that
+  no longer belong to anything: apt downloads a package again if it ever wants it back.
 - **The journal.** `journalctl --disk-usage` reports what it is holding, and
   `journalctl --vacuum-size=200M` or `--vacuum-time=7d` trims it. Setting `SystemMaxUse=` in
   `/etc/systemd/journald.conf` stops it recurring, which the vacuum on its own does not.
-- **Old kernels.** `apt autoremove --purge` removes the ones Debian has already marked, and `/boot`
-  being small and separate is the usual reason a machine hits this first. Never delete a kernel
+- **Old kernels.** `apt autoremove --purge` removes the ones Debian has already marked. `/boot`
+  being small and separate is the usual reason a machine hits this filesystem first. Never delete a kernel
   package's files by hand.
-- **Rotated logs.** `/var/log/*.gz` and `*.1` are yesterday's, and deleting them is safe. Deleting
+- **Rotated logs.** `/var/log/*.gz` and `*.1` are yesterday's, so deleting them is safe. Deleting
   the live log is the case above.
 
 What not to do is `rm -rf /var/log/*`, which takes the files services are writing to along with the
 rotated ones and leaves you with the deleted-and-held problem across every service at once. And
 before deleting anything large, check that the space is not already accounted for by something
-still running: `lsof -a +L1 /` answers that in one line, and it is quicker than finding out
-afterwards.
+still running: `lsof -a +L1 /` answers that in one line.

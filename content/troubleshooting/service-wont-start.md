@@ -1,7 +1,7 @@
 ---
 title: "A service won't start"
 tagline: "Status, then journal, then the exit code"
-description: "A service will not come up, and systemctl gave you either a job failure or nothing at all. Read the status, read the journal, then branch on the code."
+description: "A service will not come up, and systemctl either reported a job failure or stayed silent. Read the status, read the journal, then branch on the code."
 category: troubleshooting
 tags: [systemd, sysadmin, processes]
 updated: 2026-09-12
@@ -17,7 +17,7 @@ Job for tips-worker.service failed because the control process exited with error
 See "systemctl status tips-worker.service" and "journalctl -xeu tips-worker.service" for details.
 ```
 
-or it says nothing at all, returns zero, and the service is dead anyway.
+or it stays silent, returns zero, and leaves the service dead.
 
 ## Why a silent start still leaves the service dead
 
@@ -41,8 +41,8 @@ asynchronously, so `is-active` asked immediately after `start` can still answer 
 
 Units declaring `Type=notify`, `Type=oneshot` or `Type=forking` do report the failure to
 `systemctl start`, because in each of those systemd has agreed to wait for something before calling
-the job done. That is the whole difference between the two openings above, and it says nothing
-about which service is more broken.
+the job done. That is the whole difference between the two openings above, and it does not tell you
+which service is more broken.
 
 ## Read the status block first
 
@@ -72,8 +72,7 @@ Sep 12 19:35:42 deb1 systemd[1]: tips-api.service: Failed with result 'exit-code
 
 Three lines carry the diagnosis. `Loaded:` says whether systemd found a unit file and what it
 thinks of it. `Active:` says the current state and, in brackets, why it left the last one.
-`Process:` gives the exit code, and that code is what tells you which of the branches below you are
-in:
+`Process:` gives the exit code, which decides which of the branches below you are in:
 
 | Code | What refused | Where to look |
 | --- | --- | --- |
@@ -98,7 +97,7 @@ Unit tips-typo.service could not be found.
 
 Either the name is wrong or the package that ships the unit is not installed. Tab completion after
 `systemctl start` lists the real names, and `systemctl list-unit-files 'tips-*'` narrows a guess.
-A unit that lives in a user session rather than the system one answers here too, and wants
+A unit that lives in a user session rather than the system one answers here too, so it wants
 `systemctl --user`.
 
 ## The unit that is masked
@@ -113,11 +112,11 @@ Failed to start tips-legacy.service: Unit tips-legacy.service is masked.
      Loaded: masked (Reason: Unit tips-legacy.service is masked.)
 ```
 
-Masking symlinks the unit to `/dev/null`, which is stronger than disabling it: nothing can start it,
-including another unit that depends on it. `systemctl unmask tips-legacy.service` reverses it.
+Masking symlinks the unit to `/dev/null`, which is stronger than disabling it: it cannot be started
+at all, not even by another unit that depends on it. `systemctl unmask tips-legacy.service` reverses it.
 
-Somebody masked it deliberately, and that somebody is often a package's maintainer script or the
-image a container was built from rather than a person, so find out why before undoing it.
+Somebody masked it deliberately, often a package's maintainer script or the image a container was
+built from rather than a person, so find out why before undoing it.
 `systemctl list-unit-files --state=masked` shows what else on the machine is in the same state.
 
 ## The program that ran and exited
@@ -131,8 +130,8 @@ See "systemctl status tips-worker.service" and "journalctl -xeu tips-worker.serv
 ```
 
 `status=1/FAILURE` means the program started, decided it could not continue and said so. Whatever
-it printed on the way out went to the journal, and `-o cat` strips the timestamps and unit prefixes
-so the program's own words are all that is left:
+it printed on the way out went to the journal. `-o cat` strips the timestamps and unit prefixes, so
+the program's own words are all that is left:
 
 ```bash
 systemctl start tips-worker.service 2>/dev/null
@@ -229,8 +228,8 @@ nothing is listening on 9102
 ```
 
 systemd is telling the truth: the process it started is alive. `active` is a claim about a process,
-never about whether that process is doing its job, so a daemon that read the wrong config and bound
-nothing, or bound `127.0.0.1` when the client is on another host, is `active (running)` throughout.
+never about whether that process is doing its job, so a daemon that read the wrong config and never bound
+a socket, or bound `127.0.0.1` when the client is on another host, is `active (running)` throughout.
 
 Check the socket rather than the unit whenever the complaint is that something cannot connect.
 `ss -ltnp` with no filter lists every listener on the machine, which answers "is it bound to the
@@ -253,7 +252,7 @@ Description=Tips API
 ExecStart=/usr/local/bin/tips-api
 ```
 
-A mistyped directive is not an error to systemd. It is ignored, and the unit runs with the default
+A mistyped directive is not an error to systemd. It is ignored, so the unit runs with the default
 you were trying to override, which is a much quieter failure than a syntax error would be:
 
 ```bash
@@ -271,7 +270,7 @@ no effect.
 
 ## The daemon-reload answer, and where it stopped applying
 
-The standard reply to a unit change that did nothing is that you forgot `systemctl daemon-reload`.
+The standard reply to a unit change that had no effect is that you forgot `systemctl daemon-reload`.
 On Debian 13 that is out of date: systemd 257 notices a changed unit file by itself, and acts on
 the new contents without being asked.
 
@@ -283,7 +282,7 @@ systemctl show -p ExecStart --value tips-api.service | grep -o "path=[^ ]*"
 path=/usr/bin/tips-api
 ```
 
-No reload was run there, and a unit file created from nothing behaves the same way. Running
+No reload was run there, and a unit file created from scratch behaves the same way. Running
 `daemon-reload` is still harmless and still correct on Debian 12 and earlier, so keep it in a
 provisioning script that has to work on both. What it will not do is restart anything: a running
 service keeps the settings it started with until `systemctl restart` gives it the new ones.

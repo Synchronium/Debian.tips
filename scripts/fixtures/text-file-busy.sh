@@ -3,13 +3,13 @@
 #
 # verify: --systemd
 #
-# The page kills nothing, but this script does: every example may have renamed, deleted or
+# The page never kills a process; this script does. Every example may have renamed, deleted or
 # replaced the files below, so all of it is rebuilt before the next one runs. Under the default
-# sandbox pid 1 is the `sleep` holding the container open and reaps nothing, so each rebuild would
-# leave another process named `tips-agent` in the table and `pgrep -x` would stop naming one pid.
-# systemd as pid 1 reaps them.
+# sandbox pid 1 is the `sleep` holding the container open, which never reaps a dead child, so each
+# rebuild would leave another process named `tips-agent` in the table and `pgrep -x` would stop
+# naming one pid. systemd as pid 1 reaps them.
 #
-# Nothing here prints a size or a checksum. Both binaries are copies of a program from the image,
+# No example here prints a size or a checksum. Both binaries are copies of a program from the image,
 # and how large that program is depends on the architecture it was built for, which no page may
 # print. Builds are told apart with `cmp` instead.
 

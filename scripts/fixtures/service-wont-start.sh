@@ -83,11 +83,10 @@ WorkingDirectory=/srv/tips/reports
 ExecStart=/usr/local/bin/tips-report
 EOF
 
-# The port holder, and the unit that wants the same port. Started at the end of this script, so
-# `tips-listener` has something to collide with in every example.
-# The bind failure is caught and reported in one line, the way a daemon written for the job would
-# report it. Letting Python raise instead puts a traceback through several standard-library files
-# into the journal, and the page would be teaching the reader to read Python rather than systemd.
+# The program behind both the port holder and the unit that wants the same port. Its bind failure
+# is caught and reported in one line, the way a daemon written for the job would report it.
+# Letting Python raise instead puts a traceback through several standard-library files into the
+# journal, so the page would be teaching the reader to read Python rather than systemd.
 cat > /usr/local/bin/tips-serve <<'EOF'
 #!/usr/bin/python3
 import http.server
@@ -105,6 +104,8 @@ with server as httpd:
     httpd.serve_forever()
 EOF
 chmod 755 /usr/local/bin/tips-serve
+# The holder is started at the end of this script, so `tips-listener` has a port to collide with
+# in every example.
 cat > /etc/systemd/system/tips-gateway.service <<'EOF'
 [Unit]
 Description=Tips gateway
@@ -121,7 +122,7 @@ Type=notify
 ExecStart=/usr/local/bin/tips-serve 9101
 EOF
 
-# Starts, stays up, and listens on nothing. The unit the page ends on, because `systemctl` calls
+# Starts, stays up, and never binds a socket. The unit the page ends on, because `systemctl` calls
 # it active and the reader's own client still cannot connect.
 cat > /usr/local/bin/tips-quiet <<'EOF'
 #!/bin/sh
