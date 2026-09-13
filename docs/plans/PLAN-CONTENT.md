@@ -708,6 +708,11 @@ Distilled from the shipped ledger this plan replaces. Each of these cost a batch
   ADR-0027 and `test/timestampDrift.test.ts` hold fixture dates clear of it.
 - **`df` with no arguments**, which reports the host's overlay filesystem. Mount tmpfs with `size=`
   and `nr_inodes=` pinned and measure that instead.
+- **Any listing of what the whole machine is doing**, which the page does not own and cannot
+  reset. `systemctl list-units --failed` passed here and failed on a runner, where `getty@tty1` has
+  been failing since boot; `losetup -a` and `df` with no arguments are the same defect. Narrow to
+  the page's own objects, with a `'tips-*'` pattern or a path, and the column widths stop moving
+  too.
 - **A tmpfs option list.** `inode64` appears in it only when the running kernel disagrees with its
   own `CONFIG_TMPFS_INODE64`, so `findmnt -no OPTIONS` on a tmpfs is a claim about how somebody
   built their kernel. It passed on the devcontainer and failed on a runner. The `SIZE` column and

@@ -295,15 +295,19 @@ the failed list worth reading at all:
 ```bash
 systemctl start tips-api.service tips-worker.service 2>/dev/null
 sleep 1
-systemctl list-units --failed --no-pager --no-legend
+systemctl list-units --failed 'tips-*' --no-pager --no-legend
 ```
 ```
 ● tips-api.service    loaded failed failed Tips API
 ● tips-worker.service loaded failed failed Tips worker
 ```
 
-This is the first command to run on a machine that is misbehaving in a way nobody has pinned down
-yet. `systemctl reset-failed` clears an entry once you have dealt with it:
+Drop the pattern and you get every failed unit on the machine, which is the first command to run
+when something is misbehaving and nobody has pinned down what. Keep the pattern when you already
+know which service you are chasing and would rather not read past a `getty` that has been failing
+since boot.
+
+`systemctl reset-failed` clears an entry once you have dealt with it:
 
 ```bash
 systemctl start tips-worker.service 2>/dev/null
