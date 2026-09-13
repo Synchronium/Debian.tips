@@ -263,7 +263,7 @@ sections:
         level: intermediate
       - title: "Keep the job listed but shield it from HUP"
         code: sleep 300 >/dev/null 2>&1 & disown -h %1; jobs
-        description: "`-h` is the middle option: the job stays in the table, so `fg` and `jobs` still work on it, but the shell will not send it `HUP` when it exits. Reach for this when you want the job back later and are only worried about the disconnection."
+        description: "`-h` is the middle option: the job stays in the table, so `fg` and `jobs` still work on it, but the shell will not send it `HUP` when it exits. Use this when you want the job back later and are only worried about the disconnection."
         output: |2
           [1]+  Running                 sleep 300 > /dev/null 2>&1 &
         level: advanced

@@ -3,7 +3,8 @@
 #
 # The `time` package, which is the page's own subject: `/usr/bin/time` is not on a Debian system
 # unless somebody installed it, and typing `time` at a prompt reaches bash's keyword instead. The
-# page says so and then shows both, so the program has to be here for the second half to run.
+# page says so and then shows both, so the program has to be here for the `/usr/bin/time`
+# examples to run.
 #
 # Installed here rather than by an example, because an example that installed it would be
 # demonstrating its absence and then removing the evidence for every block after that one. What

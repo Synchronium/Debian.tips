@@ -370,7 +370,7 @@ sections:
         level: basic
       - title: "Read everything about one account at once"
         code: id tips-dev
-        description: "The uid, the primary group and every supplementary group, in one line. This is the command to reach for when a permission problem does not make sense."
+        description: "The uid, the primary group and every supplementary group, in one line. This is the command to grab when a permission problem does not make sense."
         output: |2
           uid=1001(tips-dev) gid=1001(tips-dev) groups=1001(tips-dev),100(users)
         level: basic

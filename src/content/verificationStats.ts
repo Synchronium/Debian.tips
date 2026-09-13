@@ -57,7 +57,7 @@ export interface VerificationStats {
 }
 
 /** Pluralises a count of pages for `setupScriptGap`, and returns nothing at all for zero so the
- *  caller can drop that half of the sentence rather than announce it. */
+ *  caller can drop the clause rather than announce a zero. */
 function pagesWithout(count: number, noun: string): string {
   if (count === 0) return "";
   return `${count} ${noun}${count === 1 ? "" : "s"}`;

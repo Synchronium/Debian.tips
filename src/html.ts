@@ -18,7 +18,7 @@ export function escapeHtml(s: string): string {
  *  text reach a page unescaped. */
 export class Raw {
   constructor(public readonly value: string) {}
-  /** So a `Raw` can be written or concatenated without reaching for `.value`. `render` below
+  /** So a `Raw` can be written or concatenated without unwrapping `.value`. `render` below
    *  checks `instanceof Raw` before it stringifies anything, so this never becomes the path by
    *  which content skips escaping. */
   toString(): string {

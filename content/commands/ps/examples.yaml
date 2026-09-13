@@ -13,7 +13,7 @@ sections:
     examples:
       - title: "List every process, BSD style"
         code: ps aux | head -4
-        description: "The listing people reach for most. `a` drops the same-user restriction, `u` asks for the user-oriented columns, and `x` includes processes with no controlling terminal, which is most daemons."
+        description: "The listing people use most. `a` drops the same-user restriction, `u` asks for the user-oriented columns, and `x` includes processes with no controlling terminal, which is most daemons."
         volatile: "the PIDs, start times and CPU and memory figures are specific to your machine, as is which process follows `cron`"
         compare: shape
         output: |2

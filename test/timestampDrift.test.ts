@@ -146,7 +146,7 @@ describe("a fixed timestamp a page displays", () => {
     // The scan is pattern matching against shell, so it can quietly stop matching and leave the
     // checks above passing over an empty list. Only the setup scripts are counted: an example
     // fixing its own date and then displaying it is a thing a page may do rather than a thing any
-    // page currently does, so a floor on that half would be asserting on one page's wording.
+    // page currently does, so a floor on those would be asserting on one page's wording.
     expect(fixtureTimestamps(now).length).toBeGreaterThan(20);
   });
 });
