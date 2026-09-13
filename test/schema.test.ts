@@ -234,7 +234,7 @@ describe("examplesFileSchema", () => {
   });
 
   /* Both relaxations are opt-in per example and both require `volatile:`, so a page cannot
-   * loosen how it is checked without saying so above the output. Nothing else enforces that, and
+   * loosen how it is checked without saying so above the output. No other test enforces that, and
    * the rule is easy to leave out when a third axis is added. */
   const withExample = (example: Record<string, unknown>) => ({
     command: "ss",

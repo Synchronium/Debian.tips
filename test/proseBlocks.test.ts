@@ -99,7 +99,7 @@ describe("fence info strings", () => {
   it("pairs a command fence that carries more than the language", () => {
     // `/^```(\S*)\s*$/` did not recognise this line as a fence at all, so it was read as
     // content and every open/close pairing after it on the page inverted. The page still
-    // rendered, the replay reported "1 block not checkable", and nothing failed, so verification
+    // rendered, the replay reported "1 block not checkable", and no gate failed, so verification
     // lost silently, which is the one thing this harness exists to prevent.
     const page = parseProsePage('```bash title="one"\necho hi\n```\n```\nhi\n```\n');
     expect(page.unpaired).toHaveLength(0);

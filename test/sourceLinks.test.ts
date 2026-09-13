@@ -10,7 +10,7 @@ import { CONTENT_DIR, FIXTURE_DIR, ROOT } from "../src/paths.js";
 
 /* Every page now links into the repository at the files that produced it, and neither gate
  * can see those links: `src/linkcheck.ts` walks `dist/` and resolves internal paths, and
- * `scripts/gates/link-audit.ts` builds a graph of pages. Nothing fetches github.com, and nothing
+ * `scripts/gates/link-audit.ts` builds a graph of pages. No test fetches github.com, and none
  * should, so a renamed setup script or a page moved between categories would put a dead link
  * on every page it appears on, silently, on a site whose whole argument is that the claims are
  * checked. This is the gate that stands in for the one a link checker cannot run. */

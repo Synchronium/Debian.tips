@@ -3,7 +3,7 @@
 #
 # Stands up something to find: a listener the page then identifies and kills.
 #
-# Port 9000 rather than 8080, which is what the curl and wget mock server uses. Nothing forces
+# Port 9000 rather than 8080, which is what the curl and wget mock server uses. No constraint forces
 # the choice now that each page has its own container, but a page whose whole subject is killing
 # whatever holds a port is the last place to reuse a number another fixture is known by.
 #

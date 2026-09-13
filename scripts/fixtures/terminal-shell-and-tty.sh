@@ -17,5 +17,5 @@
 # pty before the next starts. Background a second `script` and it takes pts/1, at which point the
 # number depends on ordering.
 #
-# `stty size` reports `0 0`, because nothing sets a window size on that pty. No block can depend
+# `stty size` reports `0 0`, because the pty is never given a window size. No block can depend
 # on the terminal's width. `tput cols` fails for the same reason.

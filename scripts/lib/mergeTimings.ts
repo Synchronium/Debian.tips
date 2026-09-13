@@ -28,7 +28,7 @@ import { UNTIMED_SECONDS } from "./replayShard.js";
  *
  *  **`MOVED_MULTIPLE` governs the quickest**, and removes a dead end. A page costing most of a
  *  minute is noticed after moving a fifth; a page costing a second would have to grow tenfold to
- *  reach the flat bar, and nothing justifies that difference. These pages wait on a container
+ *  reach the flat bar, and no property of the page justifies that difference. These pages wait on a container
  *  starting instead of on a network, so they move with how loaded the runner is. Growing by half
  *  again as much as itself and shrinking back on the next run is ordinary here. Quadrupling is
  *  not.

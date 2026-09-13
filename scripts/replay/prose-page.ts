@@ -72,7 +72,7 @@ export function replayProsePage(options: ProseReplayOptions): ReplayResult {
   const runnable = pairs.filter((pair) => pair.comparison !== COMPARISON.skip);
   const skipped = pairs.filter((pair) => pair.comparison === COMPARISON.skip);
 
-  // Unpaired blocks are held to the same rule as pairs: nothing compares them, so a mask there
+  // Unpaired blocks are held to the same rule as pairs: no comparison runs on them, so a mask there
   // cannot weaken a comparison, but it would render to the reader as a literal `<TIMESTAMP>` in
   // something presented as real output.
   refuseMaskTokens(

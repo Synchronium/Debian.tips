@@ -428,7 +428,7 @@ describe("lineOrderIgnored", () => {
   });
 
   it("sorts a header in with the rows rather than pinning it", () => {
-    // Nothing guesses which line is a header, because `ss -ltnH` prints none at all. The cost is
+    // No rule guesses which line is a header, because `ss -ltnH` prints none at all. The cost is
     // that a header printed in the middle of the rows would still match.
     expect(lineOrderIgnored("State Recv-Q\nLISTEN 0")).toBe(lineOrderIgnored("LISTEN 0\nState Recv-Q"));
   });

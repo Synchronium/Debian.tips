@@ -7,7 +7,7 @@
 # time would be both slow and racy.
 #
 # A second copy runs on 8443 with --tls, serving the same endpoints behind a self-signed
-# certificate. The `-k` examples need a certificate nothing trusts: against a real HTTPS
+# certificate. The `-k` examples need a certificate no trust store carries: against a real HTTPS
 # host with a valid certificate they print 200 whether or not the flag is there, which
 # demonstrates nothing about the flag they are named after.
 #

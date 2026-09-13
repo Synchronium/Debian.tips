@@ -13,7 +13,7 @@
 // times and wrong as a habit, which only a whole-corpus count can judge. `advisory` is a prompt
 // to look at a line, never a verdict, because the guide says a few of each are correct.
 //
-// Exit status: 0 when nothing failed, and 1 on a `fail` finding. Under --hook that becomes 2,
+// Exit status: 0 when no rule failed, and 1 on a `fail` finding. Under --hook that becomes 2,
 // which is the status Claude Code feeds back to whoever wrote the line rather than to the human
 // watching the session.
 import { readFileSync, readdirSync, statSync } from "node:fs";
@@ -130,8 +130,9 @@ const RULES: readonly Rule[] = [
     id: "absence-as-actor",
     severity: SEVERITY.report,
     // `nothing` as the subject of an active verb, where naming the actor or negating the verb is
-    // shorter and says the same thing: "nothing checks it" against "it is not checked", "nothing
-    // holds the file" against "no process holds it".
+    // shorter and says the same thing. voice.md §4 carries the worked examples: quoting a pair of
+    // them here would put the construction into a file this very rule reads, which is the reason
+    // voice.md is the one document exempt from the checker.
     //
     // Three exclusions, each of which is ordinary English that shares only the word.
     //

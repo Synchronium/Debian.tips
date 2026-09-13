@@ -23,7 +23,7 @@ export interface PageVerification extends PageChecks {
    *
    *  Several are legitimate and always will be: the error message a troubleshooting page opens
    *  on, a config file a page tells you to write. The count is here because it going *up* is how
-   *  a broken pair announces itself, and nothing else fails when one breaks. Command pages state
+   *  a broken pair announces itself, and no other test fails when one breaks. Command pages state
    *  their examples as YAML rather than fences, so theirs is always zero. */
   unpaired: number;
 }

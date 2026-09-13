@@ -228,7 +228,7 @@ decision gets a new record with the old one marked `Superseded by ADR-00NN`, kee
 where the next person can find it; a record that is merely wrong or unclear is edited in place.
 `docs/adr/README.md` has the distinction.
 
-**A change that makes a decision nothing covers should come with a proposed ADR, proposed rather
+**A change that makes a decision no record covers should come with a proposed ADR, proposed rather
 than merged.** Say what you'd write and let the user decide before adding it, the same way a new tag
 gets asked about rather than added. The test is whether someone would otherwise re-litigate the
 choice, or undo it by accident without knowing it was a choice: a new gate, a new category, a
@@ -237,5 +237,5 @@ inside an existing decision is not an ADR, and neither is a preference nobody co
 accident.
 
 Keep the shape of the existing records (Context, Decision, Consequences, Revisit when) and name
-what **enforces** it. If nothing does, write that: `docs/adr/README.md` explains why the empty
+what **enforces** it. If no gate does, write that: `docs/adr/README.md` explains why the empty
 field is worth having rather than hiding.

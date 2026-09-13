@@ -10,7 +10,7 @@
 //
 // This is the opposite question to the one `src/linkcheck.ts` answers. Linkcheck asks
 // whether every link that exists resolves; this asks whether the links that should exist
-// do. A page nothing links to still builds, still validates and still appears on its
+// do. A page no other page links to still builds, still validates and still appears on its
 // category listing, so nothing else in `npm run check` has any opinion about it.
 //
 // Three things are reported:
