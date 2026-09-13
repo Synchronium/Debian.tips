@@ -39,7 +39,7 @@ in the harness, in `scripts/lib/replayShard.ts`:
 That is a real rule, and it decides the shape of two directories: it is why the recorded timings
 live under `scripts/` but are read through `src/content/replayTimings.ts`, and why `replayShard.ts`
 re-exports `readTimings` rather than letting anything in `src/` reach into `scripts/` for it. But
-nothing stated it, nothing enforced it, and nothing explained to someone opening `src/content/` why
+no document stated it, no test enforced it, and no comment explained to someone opening `src/content/` why
 a directory named for the content holds four modules about replaying it.
 
 ## Decision
@@ -79,7 +79,7 @@ and the paragraph in `.claude/reference/architecture.md` are the whole of the re
 
 ## Revisit when
 
-Something in `src/` genuinely needs an answer only the harness can give. Today nothing does: every
+Something in `src/` genuinely needs an answer only the harness can give. Today none of it does: every
 figure the build states about verification is counted from files that are checked into the
 repository, never from a run. If that changed, say for a template wanting the *result* of the last
 replay rather than its duration, the fix is to have the harness write a file and the build read it,

@@ -108,4 +108,4 @@ The repository moves, is mirrored, or gains a second branch worth linking to. `b
 
 Also revisit if a page ever needs to name a file that is not derivable from its category and slug.
 The test is cheap because the paths are derived; an escape hatch in frontmatter would move the
-failure back to where nothing checks it.
+failure back to where it is not checked.

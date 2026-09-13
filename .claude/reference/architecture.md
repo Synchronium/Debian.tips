@@ -136,7 +136,7 @@ links resolve to a real `id` in the target page. Part of `npm run check`, not `n
 `scripts/gates/link-audit.ts` asks the question linkcheck doesn't: not whether the links that exist
 resolve, but whether the ones that should exist do. It builds a graph from `related:` frontmatter
 plus every root-relative link in prose, example descriptions, section intros and fixture notes,
-then reports pages nothing links to (**orphaned**), pages linking to fewer than two others
+then reports pages no other page links to (**orphaned**), pages linking to fewer than two others
 (**thin**), and pages reachable from exactly one (**weakly linked**). The first two fail the
 build; the third prints as a count unless you pass `--verbose`, since the gate runs this on every
 push and an advisory list nobody reads is worse than no list.

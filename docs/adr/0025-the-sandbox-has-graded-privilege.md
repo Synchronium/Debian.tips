@@ -88,7 +88,7 @@ not survive being checked.
 into the container, and a page that only wants to mount a `tmpfs` has no business with it. That is
 the difference the split is actually about.
 
-**Nothing stops a page asking for more than it needs.** The directive is a claim by the page's
+**No check stops a page asking for more than it needs.** The directive is a claim by the page's
 author, and no gate can tell a page that mounts something from one that asked to and did not. The
 check runs in the other direction only, refusing a sandbox that is too weak.
 

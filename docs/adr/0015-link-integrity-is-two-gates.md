@@ -30,7 +30,7 @@ target page.
 `scripts/gates/link-audit.ts` builds a graph from `related:` frontmatter plus every root-relative link in
 prose, example descriptions, section intros and fixture notes, then reports:
 
-- **orphaned**: nothing links here. Fails the build.
+- **orphaned**: no page links here. Fails the build.
 - **thin**: links to fewer than two other pages. Fails the build.
 - **weakly linked**: reachable from exactly one other page. Advisory, printed as a count unless
   `--verbose`.

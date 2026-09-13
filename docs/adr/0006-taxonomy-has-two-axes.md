@@ -19,7 +19,7 @@ subcategory forces a choice that has no right answer.
 
 **`category` is the page's shape**: how it is written and how a reader consumes it.
 **`tags` are the page's subject**: many-to-many, with a listing page per tag. There is no third
-axis. `src/content/schema.ts` is where the categories are defined, and nothing else lists them.
+axis. `src/content/schema.ts` is where the categories are defined, and no other document lists them.
 
 Each category has a one-line test, phrased as what the reader arrived with, so filing a page does
 not need deliberation:

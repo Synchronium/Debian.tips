@@ -57,7 +57,7 @@ answers why it is slow.
 ### §1.4. Decisions this plan implies, which nothing currently records
 
 Each of these is a proposed ADR rather than a settled one. CLAUDE.md says a change making a
-decision nothing covers comes with a proposal for the user to accept, so they are written here and
+decision no record covers comes with a proposal for the user to accept, so they are written here and
 not in `docs/adr/`.
 
 1. **Scenario-aware verification** (§4.1). A page declares which of several named states an example
@@ -237,7 +237,7 @@ was tested against.
 
 At the next release transition the whole corpus stays green, because the harness keeps testing
 against the pin, while the claims drift from what a reader on the new stable sees. The build passes
-throughout and nothing surfaces the gap.
+throughout and no gate surfaces the gap.
 
 Stamping the release on the page converts that into a visible fact. It does not decide the larger
 question in `docs/plans/PLAN-DEBIAN-VERSIONS.md`, which is whether the site pins a release, tracks
@@ -489,7 +489,7 @@ would otherwise have to teach twice.
 - **P2 Locales and character encodings**. **Demo**: `LC_ALL=C` changing what `sort` answers, which
   is the case people meet without knowing why.
 - **P2 Standard streams and buffering**. **Demo**: `grep` on a live stream showing nothing until
-  `--line-buffered`. Small, and it explains a class of confusion nothing else covers.
+  `--line-buffered`. Small, and it explains a class of confusion no other page covers.
 - **P3 File timestamps: atime, mtime, ctime**, and why there is no creation time. `stat` is
   written and links here.
 - **P3 How Linux boots**: firmware, GRUB, initramfs, systemd, login. Orientation, and a candidate
@@ -775,8 +775,8 @@ From `service-wont-start` and `disk-full`, the first two written.
 
 - **Give every branch its own object and the page needs no new harness.** Seven differently broken
   units, or two tmpfs mounts and two processes holding files, all built by one setup script that
-  runs before every example. Nothing contends, so nothing depends on the order the page visits its
-  branches in. §4.1 records what this leaves for scenario support to do.
+  runs before every example. No two branches contend, so the page cannot depend on the order it
+  visits them in. §4.1 records what this leaves for scenario support to do.
 - **`systemctl start` reports success before the program has run.** A `Type=simple` unit is up as
   far as systemd is concerned once it has been forked, so a missing binary or an immediate crash
   arrives after the command has already exited zero. Anything reading `is-active` or `status`
@@ -813,7 +813,7 @@ writing any of them up:
 - `rmdir: failed to remove '/srv/n': Directory not empty` and `Operation not permitted` on an
   immutable file are one-liners rather than pages.
 - `cp: cannot create regular file '...': Text file busy` is about writing a running executable
-  rather than removing one, and nothing covered it. That became `text-file-busy`.
+  rather than removing one, and no page covered it. That became `text-file-busy`.
 
 **A title taken from an error message is only as good as the message.** Reproduce the string in a
 sandbox before the entry goes on a list, not when the page is being written.

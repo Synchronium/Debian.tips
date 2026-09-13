@@ -30,7 +30,7 @@ whichever machine ran the recording, which for this project is an arm64 devconta
 
 **A comment restated the data.** The workflow carried a table of slowest-shard times at four shard
 counts, to justify choosing seven. That table is `shardPages` evaluated over
-`replay-timings.json`, written out by hand. Nothing checked it, so it aged every time a page was
+`replay-timings.json`, written out by hand. No gate checked it, so it aged every time a page was
 added, and it was found stale only when somebody happened to recompute it. It is exactly the
 comment CLAUDE.md rules out: a measurement that will move.
 
@@ -95,7 +95,7 @@ bare slug, which is how the replay names a page but not how anything is stored h
 **Nobody waits for a timing run.** Adding pages no longer accrues a debt that falls due as a red
 test every third page.
 
-**And nothing caps how many pages may go untimed.** `test/replayTimings.test.ts` kept such a cap
+**And no cap limits how many pages may go untimed.** `test/replayTimings.test.ts` kept such a cap
 until 2026-08-29, re-read as "how many pages arrive in one push" rather than "how long a
 maintainer may put off recording". Both readings were wrong, and the second was worse: the cap
 ran inside `check`, so exceeding it made CI's conclusion a failure, and this workflow records only
@@ -149,7 +149,7 @@ abandoned rather than retried: the next push measures the site again. A job that
 to deliver an advisory figure would be a worse trade than a figure that is occasionally one run
 older.
 
-**Nothing here can fail a build.** The recorder gates nothing and nothing waits for it, so every
+**No part of this can fail a build.** The recorder gates no build and no job waits for it, so every
 way it can go red leaves both the CI badge and the deploy alone. That is what lets it speak up
 loudly, which is the behaviour every check in it wants: a hole in the parts, an overlap, a curve
 the shard count no longer sits on. A recorder that could turn a green build red would have to be
@@ -178,7 +178,7 @@ flips on a second of jitter is asking a question with no stable answer.
 
 Revisit if the matrix is left disagreeing with the figures for long. The report was kept out of
 the gates on the grounds that a wrong count costs only wall clock; if it turns out that nobody
-acts on a red nothing blocks, that reasoning was wrong about people rather than about builds, and
+acts on a red that blocks no deploy, that reasoning was wrong about people rather than about builds, and
 the answer is a job that opens an issue the way `drift.yml` does.
 
 Revisit if `replay-timings.json` ever gains a reader that is not advisory. A file CI writes must

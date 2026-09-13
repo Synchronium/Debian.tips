@@ -45,7 +45,7 @@ way a block goes unreproduced, it says why in the page source, and the page's fo
 **A block that is not output does not use a bare fence.** The rule above only makes sense for
 things presented as output. A `.sources` stanza the reader is told to write is not output, and
 routing it through the exemption mechanism would have made the footer claim something new and
-false: that the page documents an output nothing reproduces. Those carry a language tag (` ```ini `
+false: that the page documents an output no command reproduces. Those carry a language tag (` ```ini `
 for the deb822 stanzas on `/debian/release-channels/`), which takes them out of the unpaired set
 because the parser only ever considered bare fences.
 
@@ -81,5 +81,5 @@ these until they were returned.
 ## Revisit when
 
 A page wants a third state: an output block that is genuinely uncheckable and also not worth
-counting as an exemption. Nothing needs one today, and inventing it before something does would
+counting as an exemption. No page needs one today, and inventing it before something does would
 give an author a way to opt out of both figures at once, which is what this record exists to close.

@@ -156,7 +156,7 @@ sandbox and is not true now. The risk that replaced it is a page belonging to no
 partition problem rather than a contamination one, and `test/replayShard.test.ts` holds it.
 
 The count moved from four to five and then to seven, both on 2026-08-26, and the second move
-corrected a mistake in the first. Five was chosen on the argument that nothing waits on the replay
+corrected a mistake in the first. Five was chosen on the argument that no job waits on the replay
 job, so a runner buying seconds was not worth spending. That is wrong: ADR-0003 gates deploy on
 this workflow's conclusion, which makes the slowest shard part of the time between a push and the
 site being live. With that understood, the count should sit wherever the curve stops moving.
