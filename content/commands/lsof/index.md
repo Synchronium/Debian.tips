@@ -6,7 +6,7 @@ category: commands
 tags: [processes, files, disk, networking, sysadmin]
 updated: 2026-09-11
 tier: flagship
-related: [fuser, ps, kill, ss, df, du]
+related: [fuser, ps, kill, ss, disk-full, du]
 ---
 
 `lsof` lists open files. That word covers more than it sounds like: a regular file, a directory, a

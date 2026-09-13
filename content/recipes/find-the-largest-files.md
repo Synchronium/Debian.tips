@@ -5,7 +5,7 @@ description: "Locate what is eating your disk space, from a whole filesystem dow
 category: recipes
 tags: [disk, files, one-liners]
 updated: 2026-08-24
-related: [du, find, tar, sort, head]
+related: [du, disk-full, find, sort, head]
 ---
 
 **Problem:** Disk space is running low and you need to find out what's using it.

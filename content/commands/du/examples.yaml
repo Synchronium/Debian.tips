@@ -157,7 +157,7 @@ sections:
         tags: [disk]
       - title: "Stop at the first level down"
         code: du -h --max-depth=1 projects | sort -h
-        description: "`projects/src/vendor` is gone; `projects/src` still counts it. This is the usual first command to run on a full disk, because it names the subtree to look in next."
+        description: "`projects/src/vendor` is gone; `projects/src` still counts it. This is the usual first command to run on a full disk, because it names the subtree to look in next, and [No space left on device](/troubleshooting/disk-full/) is where it fits in the wider procedure."
         output: |2
           4.0K	projects/empty-dir
           8.0K	projects/.hidden

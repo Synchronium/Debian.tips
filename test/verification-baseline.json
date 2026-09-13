@@ -855,6 +855,14 @@
     "fixtures": 0,
     "unpaired": 1
   },
+  "troubleshooting/disk-full": {
+    "checked": 10,
+    "byShape": 1,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
   "troubleshooting/packages-kept-back": {
     "checked": 5,
     "byShape": 0,
@@ -871,6 +879,14 @@
     "fixtures": 0,
     "unpaired": 3
   },
+  "troubleshooting/service-wont-start": {
+    "checked": 16,
+    "byShape": 2,
+    "unordered": 0,
+    "exempt": 1,
+    "fixtures": 0,
+    "unpaired": 1
+  },
   "troubleshooting/sudo-command-not-found": {
     "checked": 8,
     "byShape": 0,
@@ -878,5 +894,13 @@
     "exempt": 2,
     "fixtures": 0,
     "unpaired": 2
+  },
+  "troubleshooting/text-file-busy": {
+    "checked": 10,
+    "byShape": 2,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
   }
 }

@@ -68,7 +68,7 @@ not in `docs/adr/`.
 
 ## §2. Where the site is now
 
-110 pages, counted 2026-09-11. `src/content/verificationStats.ts` is what the about page renders
+112 pages, counted 2026-09-12. `src/content/verificationStats.ts` is what the about page renders
 from, so its figures are the ones the site publishes about itself.
 
 | Category | Pages | State |
@@ -78,7 +78,7 @@ from, so its figures are the ones the site publishes about itself.
 | `scripting` | 14 | Complete since 2026-08-29, ending in a capstone that uses the thirteen lessons before it. §11 is the only thing that would extend it. |
 | `recipes` | 11 | §9 holds the backlog, led by the ones that tie several written pages together. |
 | `debian` | 7 | Bounded to the explainer shape by ADR-0006. Errors go to `troubleshooting`, comparisons to `compare`. |
-| `troubleshooting` | 4 | The smallest category and the one §3 argues should become one of the largest. §5 is the plan for it. |
+| `troubleshooting` | 6 | Still the smallest category and the one §3 argues should become one of the largest. §5 is the plan for it, and §5.1's first two hubs are written. |
 | `compare` | 9 | Nine of twenty candidates. The eleven parked or waiting are unparked by §8. |
 
 Every page replays: there is no page whose documented outputs nothing re-runs.
@@ -92,8 +92,9 @@ Unix work". It is weak at "I am stuck, and I need to work out what to do next".
 
 The components are present. A reader facing a service that will not start has `systemctl`,
 `journalctl`, `ss`, `ps`, exit codes and file permissions available to them, on seven pages, and
-nothing that assembles those into a diagnosis. Four troubleshooting pages against fifty-one command
-pages is out of proportion to how people arrive.
+nothing that assembles those into a diagnosis. Six troubleshooting pages against fifty-eight
+command pages is out of proportion to how people arrive, and two of the six were written on
+2026-09-12 against exactly that complaint.
 
 So the question this plan is built on is **what situations can a Debian user arrive in where this
 site cannot get them unstuck**, rather than what Linux knowledge is missing from the taxonomy. The
@@ -162,7 +163,22 @@ after it may claim, so a page written before them may need revisiting.
 
 ### §4.1. Scenario-aware verification
 
-**Needs**: nothing. **Blocks**: every hub in §5.
+**Needs**: nothing. **Blocks**: §5.2, and nothing else that has been tried.
+
+**Narrowed 2026-09-12, against two hubs that shipped without it.** The claim below that an
+eight-branch page must build and tear down its states inside its own visible examples holds only
+where the branches contend for one object. Give each branch an object of its own and one setup
+script builds them all: `service-wont-start` has a unit per failure, seven of them, and
+`disk-full` has two tmpfs mounts and two processes holding files. Both replayed on the first
+attempt, 16/16 and 10/10.
+
+The cost is a per-example rebuild of the whole set, and it is affordable. Five rebuilds of
+`scripts/fixtures/systemctl.sh` measured 1.03s in a `--systemd` sandbox, so roughly 200ms each,
+against the harness's 5s per-example budget and the 93ms a full loop-device teardown costs.
+
+What survives is the state that cannot coexist with its siblings, which is §5.2's half-configured
+dpkg and the apt sources a page has to rewrite. Design the mechanism against those rather than
+against the general case, and check a hub can be built the cheap way before building it.
 
 A diagnostic page branches; the replay is linear. One setup script per page runs before every
 example, and the restore between examples empties only the page's working directory, so anything an
@@ -238,8 +254,9 @@ The category the site is thinnest in, and the one §3.1 argues should become one
 Each page teaches a method of working out which case you are in, rather than documenting a command.
 
 Every page here is `troubleshooting`, and each is a hub: expect six to eight branches, each with an
-independently reproducible state under §4.1. Where the reader arrives with a goal rather than an
-error, the page belongs in §9 instead.
+independently reproducible state. Give every branch an object of its own, which is what lets one
+setup script hold all of them at once and keeps §4.1 out of the way. Where the reader arrives with
+a goal rather than an error, the page belongs in §9 instead.
 
 **Titles are the error string wherever one exists.** A reader pasting `Could not get lock
 /var/lib/dpkg/lock-frontend` into a search box is in one specific situation, and the existing page
@@ -248,14 +265,10 @@ message is unambiguous, high-intent, and not well served by sites that write aro
 
 ### §5.1. Services, permissions and disk
 
-- **`service-wont-start`**. **Needs**: §4.1; `systemctl`, `journalctl`, `ss`, `id` (§6.1).
-  **Demo**: a unit that does not exist, one that is masked, one whose `ExecStart` binary is
-  missing, one that exits non-zero immediately, one refused by permissions on its working
-  directory, one whose port is already held, and one that starts and is not listening. The method
-  is `systemctl status`, then `journalctl -u`, then the branch. Deliberately broken units are
-  cheap to build in a container, so this is the best match on the site between reader value and
-  what the harness can show.
-- **`permission-denied`**. **Needs**: §4.1; `stat`, `id`, `getent` (§6.1). **Demo**: read, write
+`service-wont-start` and `disk-full` are written, both without §4.1 and both on one setup script
+apiece. §13.7 has what they cost and what they taught.
+
+- **`permission-denied`**. **Needs**: `stat`, `id`, `getent` (§6.1). **Demo**: read, write
   and execute refused in turn; a parent directory without `x` so traversal fails while the file
   itself is readable; wrong owner; right owner and wrong group; the case where `sudo` does not help
   because the operation is not the one being refused; and the case where the mode is correct and
@@ -302,11 +315,10 @@ message is unambiguous, high-intent, and not well served by sites that write aro
   **Demo**: a process spinning against one that is blocked; resident against virtual size; cache
   and buffers counted as used, which is the misreading `free` invites. These two give the
   `performance` tag its first pages.
-- **`cannot-remove-file-in-use`**. **Needs**: §4.1 only; `lsof` and `fuser` are written.
-  **Demo**: unlinking a file a
-  process holds open, and why the space does not return until it closes. Note gate 1 against §9's
-  port recipe: the operand differs, the method does not, so this earns a page only if the
-  explanation differs.
+
+`cannot-remove-file-in-use` left this list on 2026-09-13, and §13.7 says why: Linux refuses none
+of the removals it was named after. `text-file-busy` was written in its place, covering the one
+refusal in that area the kernel does produce.
 
 ## §6. Command pages
 
@@ -522,8 +534,10 @@ piece.
 
 The reader arrives with a goal. Where they arrive with an error, the page belongs in §5.
 
-- **P1 Free up disk space when the root filesystem is full** (+838). **Needs**: §5.1's `disk-full`.
-  Ties `du`, `df`, `journalctl` and apt cleanup together. The goal-shaped counterpart to the hub.
+- **P1 Free up disk space when the root filesystem is full** (+838). **Needs**: nothing;
+  `disk-full` is written and this is its goal-shaped counterpart. Ties `du`, `df`, `journalctl` and
+  apt cleanup together, and should send the stuck reader to the hub rather than repeat its
+  branches.
 - **P1 Work out why an ssh key is not accepted** (+746). **Demo**: permissions on `~/.ssh` and
   `authorized_keys`, reading `ssh -v`, and the server-side setting. Needs an sshd in the container,
   which the `ssh` page's fixture may already stand up.
@@ -694,6 +708,11 @@ Distilled from the shipped ledger this plan replaces. Each of these cost a batch
   ADR-0027 and `test/timestampDrift.test.ts` hold fixture dates clear of it.
 - **`df` with no arguments**, which reports the host's overlay filesystem. Mount tmpfs with `size=`
   and `nr_inodes=` pinned and measure that instead.
+- **Any listing of what the whole machine is doing**, which the page does not own and cannot
+  reset. `systemctl list-units --failed` passed here and failed on a runner, where `getty@tty1` has
+  been failing since boot; `losetup -a` and `df` with no arguments are the same defect. Narrow to
+  the page's own objects, with a `'tips-*'` pattern or a path, and the column widths stop moving
+  too.
 - **A tmpfs option list.** `inode64` appears in it only when the running kernel disagrees with its
   own `CONFIG_TMPFS_INODE64`, so `findmnt -no OPTIONS` on a tmpfs is a claim about how somebody
   built their kernel. It passed on the devcontainer and failed on a runner. The `SIZE` column and
@@ -749,3 +768,52 @@ Distilled from the shipped ledger this plan replaces. Each of these cost a batch
 count in `.github/workflows/ci.yml` has been re-measured once. Both are the corpus growing rather
 than a page misbehaving, and `npm run shards` is what reports the second. Expect more of these, and
 treat one as a measurement to re-take rather than a failure to work around.
+
+### §13.7. What a diagnostic hub costs
+
+From `service-wont-start` and `disk-full`, the first two written.
+
+- **Give every branch its own object and the page needs no new harness.** Seven differently broken
+  units, or two tmpfs mounts and two processes holding files, all built by one setup script that
+  runs before every example. Nothing contends, so nothing depends on the order the page visits its
+  branches in. §4.1 records what this leaves for scenario support to do.
+- **`systemctl start` reports success before the program has run.** A `Type=simple` unit is up as
+  far as systemd is concerned once it has been forked, so a missing binary or an immediate crash
+  arrives after the command has already exited zero. Anything reading `is-active` or `status`
+  straight afterwards has to sleep first, and the same asynchrony is why a status block read with
+  no delay says `activating`. `Type=notify`, `oneshot` and `forking` do report the failure, which
+  is the contrast the page opens on.
+- **systemd 257 picks up a changed unit file on its own**, so the standard "you forgot
+  `daemon-reload`" answer is out of date on Debian 13. Checked five times on an edit and three on a
+  unit created from nothing. Worth knowing before writing anything that repeats the old advice.
+- **`lsof` combines its selections with OR.** `lsof +L1 /srv/disk` lists everything open under that
+  path, not the deleted files among them; `-a` is what intersects the two. A page showing the
+  unnarrowed form documents a filter it never applied.
+- **Have a fixture's helper catch its own errors.** A Python service that lets `OSError` escape puts
+  a traceback through several standard-library files into the journal, and the page then teaches
+  reading Python rather than reading systemd. One caught line reads like the daemon it stands in
+  for.
+- **A hub is about the length of a `standard` command page.** Both came in between 1400 and 1900
+  words with sixteen and ten checked output blocks, which is a day's work rather than a week's.
+
+### §13.8. Check the error string exists before planning a page around it
+
+`cannot-remove-file-in-use` sat in §5.3 for as long as this plan has existed, and the situation it
+named does not arise. Measured 2026-09-13: `rm` on a file another process holds open exits 0,
+`rmdir` on a directory that is a process's own working directory exits 0, and `rm` on a binary
+that is currently running exits 0. The expectation comes from Windows, where a file in use cannot
+be unlinked, and it survived into a backlog because nobody had run it.
+
+The refusals that do exist nearby each belong somewhere else, which is worth knowing before
+writing any of them up:
+
+- `umount: /srv/u: target is busy.` and `rm: cannot remove '/srv/t/mnt': Device or resource busy`
+  are both about a mountpoint, and `mount` already owns that question with an example titled after
+  the message.
+- `rmdir: failed to remove '/srv/n': Directory not empty` and `Operation not permitted` on an
+  immutable file are one-liners rather than pages.
+- `cp: cannot create regular file '...': Text file busy` is about writing a running executable
+  rather than removing one, and nothing covered it. That became `text-file-busy`.
+
+**A title taken from an error message is only as good as the message.** Reproduce the string in a
+sandbox before the entry goes on a list, not when the page is being written.
