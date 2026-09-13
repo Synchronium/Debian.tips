@@ -200,19 +200,29 @@ the next place to look:
 ```bash
 stat -c "%A %U %n" /srv/tips/scratch/run.sh
 /srv/tips/scratch/run.sh
-findmnt -no TARGET,OPTIONS /srv/tips/scratch
+findmnt -no TARGET,VFS-OPTIONS /srv/tips/scratch
 ```
 ```
 -rwxr-xr-x user /srv/tips/scratch/run.sh
 bash: /srv/tips/scratch/run.sh: Permission denied
-/srv/tips/scratch rw,noexec,relatime,size=1024k
+/srv/tips/scratch rw,noexec,relatime
 ```
 
 Mode `755`, owned by the account running it, and refused. A filesystem mounted `noexec` refuses
 every execution on it whatever the modes say. Hardened systems mount `/tmp`, `/dev/shm` and often
 `/home` that way, which is where a downloaded installer tends to land. `bash script.sh` still runs
-it, because the program being executed is `bash`, from somewhere else, reading the script as
-data.
+the same file, because the program being executed is then `bash`, which lives somewhere else, and
+the script is only data it reads.
+
+`VFS-OPTIONS` rather than the more obvious `OPTIONS` because a [mount](/commands/mount/) carries
+two sets of options and only one of them can refuse you anything. The first set is handled by the layer of the kernel
+that sits above every filesystem, so the same four work anywhere: `ro`, `noexec`, `nosuid` and
+`nodev`. The second belongs to the filesystem driver and tunes how that filesystem behaves rather
+than who may do what, `size=` on a tmpfs or the journal mode on ext4. `findmnt -o OPTIONS` prints
+both sets run together as one comma-separated list, so the shorter column is the one that answers
+the question you asked. Read all four whenever something is refused for a reason the modes do not
+explain: `nosuid` is why a setuid program stops elevating, and `ro` is why a write fails on a
+filesystem you own outright.
 
 ## When the refusal is worded differently
 

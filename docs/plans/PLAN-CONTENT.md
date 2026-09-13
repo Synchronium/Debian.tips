@@ -715,9 +715,12 @@ Distilled from the shipped ledger this plan replaces. Each of these cost a batch
   the page's own objects, with a `'tips-*'` pattern or a path, and the column widths stop moving
   too.
 - **A tmpfs option list.** `inode64` appears in it only when the running kernel disagrees with its
-  own `CONFIG_TMPFS_INODE64`, so `findmnt -no OPTIONS` on a tmpfs is a claim about how somebody
-  built their kernel. It passed on the devcontainer and failed on a runner. The `SIZE` column and
-  `stat -c %A` say what `size=` and `mode=` did without asking that question.
+  own `CONFIG_TMPFS_INODE64`, so any `OPTIONS` column on a tmpfs is a claim about how somebody
+  built their kernel. It passed on the devcontainer and failed on a runner, twice, the second time
+  on a page whose subject was `noexec` rather than the mount. Use the column that holds the claim:
+  `VFS-OPTIONS` is the kernel's own flags and cannot contain `inode64` (proven by mounting with
+  `-o inode64` and watching the column not move), `FS-OPTIONS` is where the filesystem's own go,
+  and `SIZE` with `stat -c %A` covers `size=` and `mode=`.
 - **A shell's `Terminated` notice**, which does not appear under replay, and an asynchronous job
   notice, which bash prefixes with `bash: line N:` when it is not interactive.
 - **The state of a real Debian package**: its version, its `[installed]` bracket, its installed
