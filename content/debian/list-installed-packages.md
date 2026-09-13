@@ -100,13 +100,12 @@ all. The bracket at the end of each line says whether the package was asked for 
 arrived as a dependency:
 
 ```bash
-apt list --installed 'cowsay*' 'perl-modules*' 2>/dev/null | sort
+apt list --installed 'cowsay*' 2>/dev/null | sort
 ```
 ```
 Listing...
 cowsay-off/stable,now 3.03+dfsg2-8 all [installed]
-cowsay/stable,now 3.03+dfsg2-8 all [installed]
-perl-modules-5.40/stable,now 5.40.1-6 all [installed,automatic]
+cowsay/stable,now 3.03+dfsg2-8 all [installed,automatic]
 ```
 
 `automatic` is apt's own bookkeeping, kept in `/var/lib/apt/extended_states` and not in dpkg's
@@ -140,8 +139,8 @@ apt-utils
 bzip2
 ca-certificates
 coreutils
-cowsay
 cowsay-off
+cron
 ```
 
 It is also what `autoremove` consults, so a package appearing here that you never asked for is

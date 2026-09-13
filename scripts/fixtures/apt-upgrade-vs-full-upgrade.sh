@@ -112,8 +112,18 @@ Signed-By: /etc/apt/keyrings/upgrades.asc
 EOF
 chmod 644 /etc/apt/sources.list.d/upgrades.sources
 
-# Snapshot comments are an artifact of the container image, not something a reader has.
-sed -i '/^# http:\/\/snapshot\.debian\.org/d' /etc/apt/sources.list.d/debian.sources
+# Debian's own archive is switched off for this page, and every example depends on that. The
+# three commands compared here print what is upgradable, so a security update published to stable
+# puts real packages into output meant to hold two: this page passed for a week and then named
+# `base-files gzip libext2fs2t64 perl` on the morning perl 5.40.1-6+deb13u1 reached stable.
+#
+# The repository on 127.0.0.1:8083 above is the page's whole subject and the packages installed
+# below come from it, depending on nothing outside it, so hiding the real archive costs the page
+# nothing. Moved rather than deleted, since this script runs again before every example and the
+# second run has to find the same state as the first.
+if [ -f /etc/apt/sources.list.d/debian.sources ]; then
+  mv /etc/apt/sources.list.d/debian.sources /etc/apt/debian.sources.disabled
+fi
 
 # Always rebuilt here rather than once per page: this page's own source is what creates the
 # pending upgrade, so a stale list is the difference between the demonstration and no

@@ -27,6 +27,17 @@ if ! dpkg -s cowsay-off >/dev/null 2>&1; then
   apt-get install -y cowsay-off >/dev/null 2>&1
 fi
 
+# Marked automatic so the page has a dependency to contrast with a package somebody asked for.
+# `cowsay-off` really does `Depends: cowsay`, so this is the state a machine reaches by installing
+# cowsay-off on its own; the image happens to have installed cowsay first, which leaves it marked
+# manual.
+#
+# The alternative was to point the example at a package the image already had marked automatic,
+# and the one it used was `perl-modules-5.40`. That broke the day perl 5.40.1-6+deb13u1 reached
+# stable: the bracket the page is teaching turned into `[installed,upgradable to: ...]`. A page
+# asserting a real package's bracket is asserting that Debian has not patched it lately.
+apt-mark auto cowsay >/dev/null 2>&1
+
 # bash-completion removed but not purged, so the page has a row that is neither installed nor
 # absent to show. `all` again, for the same reason.
 if ! dpkg -l bash-completion 2>/dev/null | grep -q '^rc'; then

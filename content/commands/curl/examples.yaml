@@ -368,8 +368,9 @@ sections:
       - title: "Watch the full TLS handshake and request"
         code: curl -kv https://127.0.0.1:8443/page.html -o /dev/null 2>&1 | grep -E "^[*>]" | head -22
         description: "`-v` (`--verbose`) prints the connection, the TLS handshake, the certificate the server presented and every header sent. The first thing to try when a request behaves unexpectedly. Lines starting `*` are curl's own commentary and `>` is what it sent."
-        volatile: "the certificate dates are when the test server generated its key, and the cipher suite depends on your curl and OpenSSL versions"
+        volatile: "the certificate dates are when the test server generated its key, the cipher suite depends on your curl and OpenSSL versions, and the handshake lines are reported in whatever order the library hands them over"
         compare: shape
+        unordered: true
         output: |2
           * ALPN: curl offers h2,http/1.1
           * TLSv1.3 (OUT), TLS handshake, Client hello (1):
