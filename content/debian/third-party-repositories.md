@@ -209,7 +209,9 @@ supply the one thing I asked for".
 - **"A repository I added for one tool can only affect that tool."** The `curl` example above is
   exactly that happening. Without pinning, it can affect anything.
 - **"`apt update` succeeded, so the repository is fine."** It means the signature matched the key
-  you supplied. Whether that key belongs to who you think is a question `apt` cannot answer.
+  you supplied. Whether that key belongs to who you think is a question `apt` cannot answer. An
+  exit status of 0 does not even mean every repository was reached, which
+  [apt update failed](/troubleshooting/apt-update-failed/) demonstrates.
 
 ## Go deeper
 

@@ -68,7 +68,7 @@ not in `docs/adr/`.
 
 ## §2. Where the site is now
 
-114 pages, counted 2026-09-13. `src/content/verificationStats.ts` is what the about page renders
+115 pages, counted 2026-09-13. `src/content/verificationStats.ts` is what the about page renders
 from, so its figures are the ones the site publishes about itself.
 
 | Category | Pages | State |
@@ -78,7 +78,7 @@ from, so its figures are the ones the site publishes about itself.
 | `scripting` | 14 | Complete since 2026-08-29, ending in a capstone that uses the thirteen lessons before it. §11 is the only thing that would extend it. |
 | `recipes` | 11 | §9 holds the backlog, led by the ones that tie several written pages together. |
 | `debian` | 7 | Bounded to the explainer shape by ADR-0006. Errors go to `troubleshooting`, comparisons to `compare`. |
-| `troubleshooting` | 8 | Still the smallest category and the one §3 argues should become one of the largest. §5 is the plan for it, and §5.1 is now written out. |
+| `troubleshooting` | 9 | Still the smallest category and the one §3 argues should become one of the largest. §5 is the plan for it, §5.1 is written out, and §5.2 has started. |
 | `compare` | 9 | Nine of twenty candidates. The eleven parked or waiting are unparked by §8. |
 
 Every page replays: there is no page whose documented outputs nothing re-runs.
@@ -92,8 +92,8 @@ Unix work". It is weak at "I am stuck, and I need to work out what to do next".
 
 The components are present. A reader facing a service that will not start has `systemctl`,
 `journalctl`, `ss`, `ps`, exit codes and file permissions available to them, on seven pages, and
-nothing that assembles those into a diagnosis. Eight troubleshooting pages against fifty-eight
-command pages is out of proportion to how people arrive, and four of the eight were written in two
+nothing that assembles those into a diagnosis. Nine troubleshooting pages against fifty-eight
+command pages is out of proportion to how people arrive, and four of the nine were written in two
 days against exactly that complaint.
 
 So the question this plan is built on is **what situations can a Debian user arrive in where this
@@ -163,7 +163,8 @@ after it may claim, so a page written before them may need revisiting.
 
 ### §4.1. Scenario-aware verification
 
-**Needs**: nothing. **Blocks**: §5.2, and nothing else that has been tried.
+**Needs**: nothing. **Blocks**: `dpkg-error-processing-package` in §5.2, and nothing else that has
+been tried.
 
 **Narrowed 2026-09-12, against two hubs that shipped without it.** The claim below that an
 eight-branch page must build and tear down its states inside its own visible examples holds only
@@ -176,9 +177,15 @@ The cost is a per-example rebuild of the whole set, and it is affordable. Five r
 `scripts/fixtures/systemctl.sh` measured 1.03s in a `--systemd` sandbox, so roughly 200ms each,
 against the harness's 5s per-example budget and the 93ms a full loop-device teardown costs.
 
-What survives is the state that cannot coexist with its siblings, which is §5.2's half-configured
-dpkg and the apt sources a page has to rewrite. Design the mechanism against those rather than
-against the general case, and check a hub can be built the cheap way before building it.
+**Narrowed again 2026-09-13, by `apt-update-failed`.** Apt sources were the other state expected to
+need this, and they do not: a setup script that writes `sources.list.d` from scratch every run
+leaves an example free to add a broken source, because the next example's restore takes it away
+again. The rule that falls out is that a state needs the mechanism only when it cannot be rebuilt
+from nothing, rather than when two branches happen to write to the same place.
+
+What survives is §5.2's half-configured dpkg, which no rebuild undoes. Design the mechanism against
+that rather than against the general case, and check a hub can be built the cheap way before
+building it.
 
 A diagnostic page branches; the replay is linear. One setup script per page runs before every
 example, and the restore between examples empties only the page's working directory, so anything an
@@ -283,13 +290,19 @@ they cost and what they taught.
 
 ### §5.2. Package management errors
 
+**`apt-update-failed` is written, and it did not need §4.1.** Its branches were expected to contend
+over one set of apt sources, and they do not. The setup script rewrites `sources.list.d` from
+scratch, so an example that adds a broken source is the only example that sees it: the per-example
+restore re-runs the fixture, which is the cheap mechanism §4.1 describes without the schema field.
+That leaves the half-configured dpkg under `dpkg-error-processing-package` as the one state in this
+cluster still asking for the mechanism. Try each of the others the cheap way first.
+
 - **`package-installation-failed`**. **Needs**: §4.1. **Demo**: an unsatisfiable dependency, a held
   package, an interrupted dpkg needing `--configure -a`, a conflict, and what `apt install -f`
   does. Every state is constructible against a fixture repository.
-- **`apt-update-failed`**. **Needs**: §4.1. **Demo**: an unsigned repository, a suite that does not
-  exist, an unreachable host against the local HTTP mock, a stale list, and the partial failure
-  where one source fails and the rest succeed. The last is the branch readers most often get wrong,
-  because apt reports it and carries on.
+- **`apt-update-failed`**. Written 2026-09-13, 10/10. The unsigned branch went to a link rather than
+  an example: `/troubleshooting/repository-is-not-signed/` is a whole page on it, and a second
+  source with the same URI and suite is merged by apt as a duplicate rather than reported.
 - **`repository-does-not-have-a-release-file`**. **Needs**: nothing beyond §4.1. **Demo**: a
   codename that never existed, and one that has been archived.
 - **`dpkg-error-processing-package`**. **Needs**: §4.1. **Demo**: a failing `postinst`, and
@@ -723,6 +736,12 @@ Distilled from the shipped ledger this plan replaces. Each of these cost a batch
   and `SIZE` with `stat -c %A` covers `size=` and `mode=`.
 - **A shell's `Terminated` notice**, which does not appear under replay, and an asynchronous job
   notice, which bash prefixes with `bash: line N:` when it is not interactive.
+- **`apt-get update` with its two streams merged.** The `Hit:`/`Get:`/`Err:` transcript goes to
+  standard output and every `W:` and `E:` line to standard error, and the buffers flush
+  independently, so `2>&1` on one command gave three different line orders in ten runs. Each stream
+  is stable on its own: capture `2>/dev/null` or `2>&1 >/dev/null` and say which one the example is
+  reading. A page can make that the lesson, since a script logging only stdout keeps the transcript
+  and discards the diagnosis.
 - **The state of a real Debian package**: its version, its `[installed]` bracket, its installed
   size, or whether an upgrade is pending for it. The image is pinned but the archive it installs
   from is not, so such a page is claiming that Debian has not patched that package lately. Two
@@ -782,7 +801,7 @@ treat one as a measurement to re-take rather than a failure to work around.
 
 ### §13.7. What a diagnostic hub costs
 
-From `service-wont-start`, `disk-full` and `permission-denied`, the first three written.
+From `service-wont-start`, `disk-full`, `permission-denied` and `apt-update-failed`.
 
 - **Give every branch its own object and the page needs no new harness.** Seven differently broken
   units, or two tmpfs mounts and two processes holding files, all built by one setup script that
@@ -818,9 +837,19 @@ From `service-wont-start`, `disk-full` and `permission-denied`, the first three 
 - **The image has no `getfacl`**, so "the mode is right and something else is refusing" is a
   `noexec` mount rather than an ACL. Adding `acl` to the image would put every page's replay on
   the line for one branch.
-- **A hub is about the length of a `standard` command page.** All three came in between 1400 and
+- **A hub is about the length of a `standard` command page.** All four came in between 1400 and
   1900 words with ten to sixteen checked output blocks, which is a day's work rather than a
   week's.
+- **apt queues its fetches per host, so one source's refused connection fails the others sharing
+  that hostname**, with the errors naming the wrong port. A page wanting a working repository and a
+  broken one at once gives them separate names, which `/etc/hosts` aliases for `127.0.0.1` supply
+  and which also keeps a demonstration URL off an IP address. `Acquire::Queue-Mode "access"` is the
+  trap in the other direction: it makes the interleaving deterministic by putting every source in
+  one queue, where the refused connection then fails all of them.
+- **`Acquire::Retries::Delay "false"` is what makes a broken apt source affordable.** apt tries a
+  source three times with a backoff, seven seconds on a refused connection against the harness's
+  five-second limit. Turning off the delay changes no line of the output; turning off the retries
+  would, since the three `Ign:` lines above an `Err:` are those attempts and a reader sees them.
 
 ### §13.8. Check the error string exists before planning a page around it
 

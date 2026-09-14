@@ -847,6 +847,14 @@
     "fixtures": 0,
     "unpaired": 0
   },
+  "troubleshooting/apt-update-failed": {
+    "checked": 10,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 1,
+    "fixtures": 0,
+    "unpaired": 1
+  },
   "troubleshooting/could-not-get-lock-dpkg-frontend": {
     "checked": 2,
     "byShape": 1,

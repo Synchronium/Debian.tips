@@ -5,7 +5,7 @@ description: "apt cannot verify a repository's signature: the NO_PUBKEY and Miss
 category: troubleshooting
 tags: [apt, debian, security, sysadmin]
 updated: 2026-08-22
-related: [third-party-repositories, apt, apt-essentials, release-channels]
+related: [third-party-repositories, apt, apt-essentials, release-channels, apt-update-failed]
 ---
 
 apt refuses to use a repository whose signature it cannot check:
@@ -143,4 +143,6 @@ advice may be equally old.
   into "this repository may use this key".
 - When a repository suddenly stops verifying on a machine that was working, suspect a rotated
   key before suspecting a compromise, then verify the new fingerprint against the vendor's
-  published one over HTTPS. See [`apt`](/commands/apt/) for the update workflow itself.
+  published one over HTTPS. See [`apt`](/commands/apt/) for the update workflow itself, and
+  [apt update failed](/troubleshooting/apt-update-failed/) for the update failures that have
+  nothing to do with signatures.
