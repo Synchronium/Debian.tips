@@ -5,7 +5,7 @@ description: "apt update reports a failure, exits 0 and carries on with an index
 category: troubleshooting
 tags: [apt, debian, sysadmin]
 updated: 2026-09-13
-related: [apt, repository-is-not-signed, could-not-get-lock-dpkg-frontend, third-party-repositories]
+related: [apt, repository-is-not-signed, repository-does-not-have-a-release-file, could-not-get-lock-dpkg-frontend, third-party-repositories]
 ---
 
 `apt update` names a repository it could not fetch, then finishes:
@@ -147,6 +147,8 @@ in a source is a directory name on the repository, so a codename with a typo in 
 was retired, or a vendor who publishes for `stable` while your source says `bookworm` all arrive
 here. Check what the repository actually publishes by fetching `dists/` in a browser or with
 [`curl`](/commands/curl/) before editing the file.
+[The repository does not have a Release file](/troubleshooting/repository-does-not-have-a-release-file/)
+takes this one further, including the case where the suite was real and has since been archived.
 
 Note what apt did with the rest of the machine: nothing. One source in this class takes the whole
 update down, including the repositories that were fine.

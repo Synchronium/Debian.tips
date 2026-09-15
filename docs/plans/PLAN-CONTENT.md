@@ -68,7 +68,7 @@ not in `docs/adr/`.
 
 ## §2. Where the site is now
 
-115 pages, counted 2026-09-13. `src/content/verificationStats.ts` is what the about page renders
+116 pages, counted 2026-09-15. `src/content/verificationStats.ts` is what the about page renders
 from, so its figures are the ones the site publishes about itself.
 
 | Category | Pages | State |
@@ -78,7 +78,7 @@ from, so its figures are the ones the site publishes about itself.
 | `scripting` | 14 | Complete since 2026-08-29, ending in a capstone that uses the thirteen lessons before it. §11 is the only thing that would extend it. |
 | `recipes` | 11 | §9 holds the backlog, led by the ones that tie several written pages together. |
 | `debian` | 7 | Bounded to the explainer shape by ADR-0006. Errors go to `troubleshooting`, comparisons to `compare`. |
-| `troubleshooting` | 9 | Still the smallest category and the one §3 argues should become one of the largest. §5 is the plan for it, §5.1 is written out, and §5.2 has started. |
+| `troubleshooting` | 10 | Still the smallest category and the one §3 argues should become one of the largest. §5 is the plan for it, §5.1 is written out, and §5.2 is half written. |
 | `compare` | 9 | Nine of twenty candidates. The eleven parked or waiting are unparked by §8. |
 
 Every page replays: there is no page whose documented outputs nothing re-runs.
@@ -92,8 +92,8 @@ Unix work". It is weak at "I am stuck, and I need to work out what to do next".
 
 The components are present. A reader facing a service that will not start has `systemctl`,
 `journalctl`, `ss`, `ps`, exit codes and file permissions available to them, on seven pages, and
-nothing that assembles those into a diagnosis. Nine troubleshooting pages against fifty-eight
-command pages is out of proportion to how people arrive, and four of the nine were written in two
+nothing that assembles those into a diagnosis. Ten troubleshooting pages against fifty-eight
+command pages is out of proportion to how people arrive, and four of the ten were written in two
 days against exactly that complaint.
 
 So the question this plan is built on is **what situations can a Debian user arrive in where this
@@ -290,12 +290,14 @@ they cost and what they taught.
 
 ### §5.2. Package management errors
 
-**`apt-update-failed` is written, and it did not need §4.1.** Its branches were expected to contend
+**Two of the five are written, and neither needed §4.1.** Its branches were expected to contend
 over one set of apt sources, and they do not. The setup script rewrites `sources.list.d` from
 scratch, so an example that adds a broken source is the only example that sees it: the per-example
 restore re-runs the fixture, which is the cheap mechanism §4.1 describes without the schema field.
-That leaves the half-configured dpkg under `dpkg-error-processing-package` as the one state in this
-cluster still asking for the mechanism. Try each of the others the cheap way first.
+`repository-does-not-have-a-release-file` then did the same across three repositories at once, so
+the pattern holds where a page needs several servers rather than several sources. That leaves the
+half-configured dpkg under `dpkg-error-processing-package` as the one state in this cluster still
+asking for the mechanism. Try each of the others the cheap way first.
 
 - **`package-installation-failed`**. **Needs**: §4.1. **Demo**: an unsatisfiable dependency, a held
   package, an interrupted dpkg needing `--configure -a`, a conflict, and what `apt install -f`
@@ -303,8 +305,10 @@ cluster still asking for the mechanism. Try each of the others the cheap way fir
 - **`apt-update-failed`**. Written 2026-09-13, 10/10. The unsigned branch went to a link rather than
   an example: `/troubleshooting/repository-is-not-signed/` is a whole page on it, and a second
   source with the same URI and suite is merged by apt as a duplicate rather than reported.
-- **`repository-does-not-have-a-release-file`**. **Needs**: nothing beyond §4.1. **Demo**: a
-  codename that never existed, and one that has been archived.
+- **`repository-does-not-have-a-release-file`**. Written 2026-09-15, 8/8. The typo case went to a
+  link, since `apt-update-failed` already shows it; what earns the page is the pair the hub does
+  not cover, an archived release behind `archive.debian.org` with a `Valid-Until` that has passed,
+  and a flat repository answering the same 404 while being perfectly healthy.
 - **`dpkg-error-processing-package`**. **Needs**: §4.1. **Demo**: a failing `postinst`, and
   recovery from the half-configured state it leaves.
 - **`unmet-dependencies`**. **Needs**: §4.1. **Demo**: what apt is reporting, and why the
