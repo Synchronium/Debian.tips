@@ -68,7 +68,7 @@ not in `docs/adr/`.
 
 ## §2. Where the site is now
 
-116 pages, counted 2026-09-15. `src/content/verificationStats.ts` is what the about page renders
+118 pages, counted 2026-09-15. `src/content/verificationStats.ts` is what the about page renders
 from, so its figures are the ones the site publishes about itself.
 
 | Category | Pages | State |
@@ -78,7 +78,7 @@ from, so its figures are the ones the site publishes about itself.
 | `scripting` | 14 | Complete since 2026-08-29, ending in a capstone that uses the thirteen lessons before it. §11 is the only thing that would extend it. |
 | `recipes` | 11 | §9 holds the backlog, led by the ones that tie several written pages together. |
 | `debian` | 7 | Bounded to the explainer shape by ADR-0006. Errors go to `troubleshooting`, comparisons to `compare`. |
-| `troubleshooting` | 10 | Still the smallest category and the one §3 argues should become one of the largest. §5 is the plan for it, §5.1 is written out, and §5.2 is half written. |
+| `troubleshooting` | 12 | No longer the smallest category. §5 is the plan for it, §5.1 is written out, and §5.2 has one entry left. |
 | `compare` | 9 | Nine of twenty candidates. The eleven parked or waiting are unparked by §8. |
 
 Every page replays: there is no page whose documented outputs nothing re-runs.
@@ -92,9 +92,9 @@ Unix work". It is weak at "I am stuck, and I need to work out what to do next".
 
 The components are present. A reader facing a service that will not start has `systemctl`,
 `journalctl`, `ss`, `ps`, exit codes and file permissions available to them, on seven pages, and
-nothing that assembles those into a diagnosis. Ten troubleshooting pages against fifty-eight
-command pages is out of proportion to how people arrive, and four of the ten were written in two
-days against exactly that complaint.
+nothing that assembles those into a diagnosis. Twelve troubleshooting pages against fifty-eight
+command pages is closer to how people arrive than the four this plan started from, and §5 is what
+closed most of the gap.
 
 So the question this plan is built on is **what situations can a Debian user arrive in where this
 site cannot get them unstuck**, rather than what Linux knowledge is missing from the taxonomy. The
@@ -290,7 +290,7 @@ they cost and what they taught.
 
 ### §5.2. Package management errors
 
-**Two of the five are written, and neither needed §4.1.** Its branches were expected to contend
+**Four of the five are written, and none of them needed §4.1.** Its branches were expected to contend
 over one set of apt sources, and they do not. The setup script rewrites `sources.list.d` from
 scratch, so an example that adds a broken source is the only example that sees it: the per-example
 restore re-runs the fixture, which is the cheap mechanism §4.1 describes without the schema field.
@@ -299,9 +299,13 @@ the pattern holds where a page needs several servers rather than several sources
 half-configured dpkg under `dpkg-error-processing-package` as the one state in this cluster still
 asking for the mechanism. Try each of the others the cheap way first.
 
-- **`package-installation-failed`**. **Needs**: §4.1. **Demo**: an unsatisfiable dependency, a held
-  package, an interrupted dpkg needing `--configure -a`, a conflict, and what `apt install -f`
-  does. Every state is constructible against a fixture repository.
+- **`package-installation-failed`**. Written 2026-09-15, 6/6. Scoped by subtraction to the
+  failures between finding a package and handing it to dpkg: a name in no index, a pool the index
+  has outrun, and a download whose size and hashes do not match. The dependency half of its
+  original demo list went to `unmet-dependencies`, the interrupted dpkg stayed with
+  `dpkg-error-processing-package`, and what was left is a coherent page rather than the cluster hub
+  this entry expected. Its title is the one in §5 that is not an error string, because two compete
+  (`Unable to locate package` and `Unable to fetch some archives`) and neither covers the page.
 - **`apt-update-failed`**. Written 2026-09-13, 10/10. The unsigned branch went to a link rather than
   an example: `/troubleshooting/repository-is-not-signed/` is a whole page on it, and a second
   source with the same URI and suite is merged by apt as a duplicate rather than reported.
@@ -311,8 +315,11 @@ asking for the mechanism. Try each of the others the cheap way first.
   and a flat repository answering the same 404 while being perfectly healthy.
 - **`dpkg-error-processing-package`**. **Needs**: §4.1. **Demo**: a failing `postinst`, and
   recovery from the half-configured state it leaves.
-- **`unmet-dependencies`**. **Needs**: §4.1. **Demo**: what apt is reporting, and why the
-  suggested fix is sometimes wrong.
+- **`unmet-dependencies`**. Written 2026-09-15, 9/9. Built around apt's three wordings, which
+  turn out to be the whole diagnosis: `not installable` (no usable candidate exists),
+  `not going to be installed` (one exists and apt decided against it) and `but N is to be
+  installed` (the wrong version is going in). A hold produces the third while `apt-cache policy`
+  still reports a healthy candidate, so the page sends the reader to `apt-mark showhold`.
 
 ### §5.3. Environment, resources and open files
 
@@ -844,6 +851,16 @@ From `service-wont-start`, `disk-full`, `permission-denied` and `apt-update-fail
 - **A hub is about the length of a `standard` command page.** All four came in between 1400 and
   1900 words with ten to sixteen checked output blocks, which is a day's work rather than a
   week's.
+- **apt 3.0's solver explanation names the machine's architecture on every line**, as
+  `tips-app:arm64=1.0-1 is selected for install`, so it can never be documented. It is confined to
+  standard error, below `E: Unable to correct problems`; the classic `The following packages have
+  unmet dependencies:` block is on standard output and carries no architecture at all. Read the two
+  streams separately and quote standard output, which is what a page about a dependency refusal
+  wanted anyway.
+- **A `.deb` built by `dpkg-deb` is not byte-reproducible**, because it records file mtimes, so the
+  hashes and the size an index records for it differ between containers. Measured on one fixture
+  built twice: 772 bytes here, 788 on the next run. A page quoting a mismatch message compares that
+  line by shape.
 - **apt queues its fetches per host, so one source's refused connection fails the others sharing
   that hostname**, with the errors naming the wrong port. A page wanting a working repository and a
   broken one at once gives them separate names, which `/etc/hosts` aliases for `127.0.0.1` supply

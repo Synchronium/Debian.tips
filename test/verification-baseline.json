@@ -871,6 +871,14 @@
     "fixtures": 0,
     "unpaired": 0
   },
+  "troubleshooting/package-installation-failed": {
+    "checked": 6,
+    "byShape": 1,
+    "unordered": 0,
+    "exempt": 1,
+    "fixtures": 0,
+    "unpaired": 1
+  },
   "troubleshooting/packages-kept-back": {
     "checked": 5,
     "byShape": 0,
@@ -926,5 +934,13 @@
     "exempt": 0,
     "fixtures": 0,
     "unpaired": 0
+  },
+  "troubleshooting/unmet-dependencies": {
+    "checked": 9,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 1,
+    "fixtures": 0,
+    "unpaired": 1
   }
 }
