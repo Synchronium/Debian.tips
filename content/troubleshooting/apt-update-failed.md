@@ -5,7 +5,7 @@ description: "apt update reports a failure, exits 0 and carries on with an index
 category: troubleshooting
 tags: [apt, debian, sysadmin]
 updated: 2026-09-13
-related: [apt, repository-is-not-signed, could-not-get-lock-dpkg-frontend, third-party-repositories]
+related: [apt, repository-is-not-signed, repository-does-not-have-a-release-file, could-not-get-lock-dpkg-frontend, third-party-repositories, package-installation-failed]
 ---
 
 `apt update` names a repository it could not fetch, then finishes:
@@ -147,6 +147,8 @@ in a source is a directory name on the repository, so a codename with a typo in 
 was retired, or a vendor who publishes for `stable` while your source says `bookworm` all arrive
 here. Check what the repository actually publishes by fetching `dists/` in a browser or with
 [`curl`](/commands/curl/) before editing the file.
+[The repository does not have a Release file](/troubleshooting/repository-does-not-have-a-release-file/)
+takes this one further, including the case where the suite was real and has since been archived.
 
 Note what apt did with the rest of the machine: nothing. One source in this class takes the whole
 update down, including the repositories that were fine.
@@ -206,6 +208,8 @@ E: Unable to fetch some archives, maybe run apt-get update or try with --fix-mis
 The suggestion at the end of that message is worth resisting. Running `apt-get update` again is
 what produced the state you are in, and `--fix-missing` tells apt to skip the packages it could not
 download rather than to find them.
+[Package installation failed](/troubleshooting/package-installation-failed/) has the rest of the
+download failures, including the one where the index is current and the archive has moved.
 
 ## Making the failure stop a script
 

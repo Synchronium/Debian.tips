@@ -5,7 +5,7 @@ description: "What stable, testing, unstable and backports each mean, why the su
 category: debian
 tags: [debian, apt, sysadmin]
 updated: 2026-08-22
-related: [apt-essentials, third-party-repositories, systemd-services]
+related: [apt-essentials, third-party-repositories, systemd-services, repository-does-not-have-a-release-file]
 ---
 
 Debian runs several repositories in parallel, and a package moves between them as it earns
@@ -35,7 +35,10 @@ week's security patch.
 even for unstable.
 
 Only the codename is permanent. `sid` is unstable forever, but `trixie` is stable *today* and
-was testing until it was released, and will be oldstable when Debian 14 arrives:
+was testing until it was released, and will be oldstable when Debian 14 arrives. A codename
+eventually stops being served from the mirrors altogether, which is
+[the repository does not have a Release file](/troubleshooting/repository-does-not-have-a-release-file/)
+arriving on a machine nobody upgraded:
 
 ```bash
 head -7 /etc/os-release
