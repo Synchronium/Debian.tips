@@ -69,11 +69,10 @@ A different failure entirely: the package was found, its dependencies resolved, 
 404'd. The index and the pool disagree, which means the index on this machine describes a version
 of the archive that no longer exists.
 
-That happens for one boring reason most of the time, which is that the index is old. A repository
-that publishes a new version moves the old `.deb` out of the pool, and a machine whose last
-successful `apt update` predates the move asks for a file that has been replaced. So the first of
-the two suggestions in that message is usually right, and the fix is `apt update` followed by the
-same install.
+Most of the time the reason is dull: the index is old. A repository that publishes a new version
+moves the old `.deb` out of the pool, and a machine whose last successful `apt update` predates the
+move asks for a file that has been replaced. So the first of the two suggestions in that message is
+usually right: run `apt update`, then the same install again.
 
 It also happens in the other direction, on a mirror that is mid-sync and publishing an index newer
 than the files beside it. There the fix is waiting, or using a different mirror.
@@ -109,9 +108,8 @@ sudo apt-get update >/dev/null 2>&1; echo "update exit: $?"
 update exit: 0
 ```
 
-`apt-get clean` empties `/var/cache/apt/archives/`. Nothing on the machine depends on what is in
-there; it is a cache of `.deb` files already installed or partly downloaded, so emptying it costs a
-re-download and nothing else.
+`apt-get clean` empties `/var/cache/apt/archives/`. It holds `.deb` files that were already
+installed or only partly downloaded, so emptying it costs a re-download and nothing else.
 
 ## Why --fix-missing rarely helps
 
@@ -125,15 +123,15 @@ E: Internal Error, ordering was unable to handle the media swap
 The message apt suggests it with is more encouraging than the option deserves. `--fix-missing`
 tells apt to carry on without the packages it could not download, which makes sense when you asked
 for twenty packages and one mirror was briefly unavailable. When the package you asked for is the
-one that is missing, there is nothing left to carry on with, and the error you get for your trouble
-is the one above.
+one that is missing, there is nothing left to carry on with, and apt fails with that internal error
+instead.
 
-Reach for it when a large `apt upgrade` failed on one file and you want the rest of it, and not as
-a second attempt at an install that just failed.
+Use it when a large `apt upgrade` failed on one file and you want the rest of it, and not as a
+second attempt at an install that just failed.
 
 ## When it is neither
 
-Two failures in this area come from outside apt's own bookkeeping. A machine that has run out of
+Some failures in this area come from outside apt's own bookkeeping. A machine that has run out of
 space fails partway through with a message naming the filesystem rather than the package, and
 [no space left on device](/troubleshooting/disk-full/) is the page for that, including the case
 where `df` reports free space and the install still fails. A failure that happens *after* the

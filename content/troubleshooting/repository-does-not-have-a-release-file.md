@@ -14,9 +14,9 @@ E: The repository 'http://packages.example.com/debian stable Release' does not h
 N: Updating from such a repository can't be done securely, and is therefore disabled by default.
 ```
 
-Unlike most apt failures this one stops the update outright, and unlike most it says almost nothing
-about the cause. The repository answered. It served a 404 for one particular file, and the three
-reasons it might have done that need three different fixes.
+Most apt failures let the update finish. This one stops it, and says almost nothing about why. The
+repository answered: it served a 404 for one particular file, and the three reasons it might have
+done that need three different fixes.
 
 ## What apt asked for, and where
 
@@ -36,7 +36,7 @@ is allowed to publish only the older pair, a `Release` file with a detached `Rel
 it, so apt falls back rather than giving up. `Err:2` is that fallback also coming back 404, at
 which point there is nothing left to try.
 
-The URL apt built is worth being able to reconstruct, because it is the whole diagnosis:
+The URL apt built is worth being able to reconstruct:
 
 ```ini
 URIs:   http://deb.tips-mirror.example:8086
@@ -69,8 +69,8 @@ curl -s -o /dev/null -w '%{http_code}\n' http://deb.tips-mirror.example:8086/dis
 200
 ```
 
-One request each, and the answer tells you which of the three cases you are in. A `404` for your
-suite and a `200` for another one means the repository is healthy and your suite is not there:
+The answer places you in one of the three cases. A `404` for your suite and a `200` for another
+one means the repository is healthy and your suite is not there:
 either it never was, or it has been retired. Fetching `dists/` in a browser will usually list what
 is, since most repositories leave directory indexes on.
 
@@ -84,10 +84,10 @@ roles, and why a source may say either.
 Debian keeps a release on the mirror network while it is supported. When support ends the release
 does not vanish, it moves: the files leave `deb.debian.org` and reappear on `archive.debian.org`,
 which exists to serve exactly this. A machine still pointing at the mirror asks for a directory
-that has been taken away, which is the error above, and it happens to every unattended machine
-running a release that has aged out.
+that has been taken away. It happens to every unattended machine running a release that has aged
+out.
 
-Pointing the source at the archive is the first half of the fix:
+Pointing the source at the archive gets part of the way there:
 
 <!-- verify: shape the interval since the Release file expired grows with every run -->
 ```bash
@@ -111,7 +111,7 @@ so nobody can serve you a frozen copy of an old index to hide a security update 
 archived release it has passed by definition, because the release stopped being updated before the
 date went by.
 
-Telling apt not to apply the check to that one repository is the second half:
+Then tell apt not to apply the check to that one repository:
 
 ```bash
 sudo tee /etc/apt/sources.list.d/tips.sources >/dev/null <<'EOF'
@@ -137,9 +137,9 @@ global form, `Acquire::Check-Valid-Until "false";` in an `apt.conf` fragment, tu
 for every repository including the ones still getting security updates.
 
 > [!WARNING]
-> An archived release receives no security updates, and that is what being archived means. Reaching
-> it again restores your ability to install packages; it does not restore support. Treat this as
-> what you do while you plan the upgrade, rather than instead of it.
+> Being archived means the release receives no security updates. Reaching it again restores your
+> ability to install packages, but it does not restore support. Do this while you plan the upgrade,
+> not instead of it.
 
 ## A repository with no dists directory at all
 
@@ -207,8 +207,7 @@ A message beginning `Skipping acquire of configured file` and ending `doesn't ha
 is the neighbouring mistake: apt read the Release file, so the suite is there, and the component
 named beside it is not. `main`, `contrib` and `non-free-firmware` are Debian's; a vendor
 repository often has exactly one and calls it something else. That one is a warning rather than an
-error, so the update exits 0 and the packages are quietly missing, which is a worse failure to have
-than this page's.
+error, so the update exits 0 and the packages are quietly missing.
 
 For a source you are writing from scratch rather than repairing,
 [adding a third-party repository safely](/debian/third-party-repositories/) has the stanza with

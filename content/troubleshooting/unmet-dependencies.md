@@ -15,12 +15,12 @@ The following packages have unmet dependencies:
 E: Unable to correct problems, you have held broken packages.
 ```
 
-Nothing has been installed and nothing is broken. apt was asked for a set of packages, could not
-find an arrangement of versions that satisfies all of their requirements at once, and stopped
-before touching anything.
+apt was asked for a set of packages, could not find an arrangement of versions that satisfies all
+of their requirements at once, and stopped before touching anything. No package was installed or
+removed.
 
-The list is the useful part, and the phrase at the end of each line is the part people skip. There
-are three of them, they mean different things, and the fix follows from which one you have.
+Read the list underneath that message, and in particular the phrase at the end of each line. There
+are three of those, they mean different things, and the fix follows from which one you have.
 
 ## The refusal, in full
 
@@ -66,7 +66,7 @@ you cannot otherwise account for, and it is on standard error along with this li
 | `but it is not going to be installed` | A version exists and apt has decided against it | What else you asked for |
 | `but N is to be installed` | Version `N` is going in and it is the wrong one | A hold, a pin, or a second repository |
 
-The first rules out everything the other two are about, so it is the one to check for first.
+The first rules out everything the other two are about, so check for it before the others.
 
 ```bash
 sudo apt-get install -y tips-editor 2>/dev/null | tail -2
@@ -166,7 +166,7 @@ The following packages have unmet dependencies:
 depends on `tips-alpha` as well and those two declare a conflict. No arrangement satisfies both, so
 the dependency that loses is reported as though it were missing. When a package named as not
 installable is one you can see in the archive, a conflict elsewhere in the same request is the
-thing to look for, and the solver explanation on standard error is what names the other side of it.
+thing to look for, and the solver explanation on standard error names the other side of it.
 
 ## Before you let apt fix it
 
@@ -186,6 +186,6 @@ The following packages have unmet dependencies:
  tips-app : Depends: tips-lib (>= 2.0) but 1.0-1 is to be installed
 ```
 
-A refusal at simulation time is the cheapest one to have. See [`apt`](/commands/apt/) for the rest
-of what `-s` is good for, and [packages kept back](/troubleshooting/packages-kept-back/) for the
-neighbouring case, where apt has an arrangement it is willing to make and declines to make it.
+See [`apt`](/commands/apt/) for the rest of what `-s` is good for, and
+[packages kept back](/troubleshooting/packages-kept-back/) for the neighbouring case, where apt has
+an arrangement it is willing to make and declines to make it.
