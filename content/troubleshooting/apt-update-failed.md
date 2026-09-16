@@ -4,7 +4,7 @@ tagline: "Which source failed, and why apt still exited 0"
 description: "apt update reports a failure, exits 0 and carries on with an index fetched days ago. How to read the transcript and find the repository that broke."
 category: troubleshooting
 tags: [apt, debian, sysadmin]
-updated: 2026-09-13
+updated: 2026-09-16
 related: [apt, repository-is-not-signed, repository-does-not-have-a-release-file, could-not-get-lock-dpkg-frontend, third-party-repositories, package-installation-failed]
 ---
 
@@ -63,6 +63,11 @@ it, and the indented lines beneath that are the reason, here a refused connectio
 
 `Hit:2` is the other repository, and it means its index was already current, so nothing was
 downloaded for it. `Get:` in that position means an index that had changed and was fetched.
+
+The order of those lines is not fixed, and neither are the numbers. apt opens one connection per
+host and runs them at once, numbering each fetch as it first reports, so the repository that
+answered quickest is `1` on one run and `2` on the next. Read a transcript by prefix and URI rather
+than by position.
 
 ## Which prefix means what
 

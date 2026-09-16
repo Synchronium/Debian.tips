@@ -866,7 +866,19 @@ From `service-wont-start`, `disk-full`, `permission-denied` and `apt-update-fail
   broken one at once gives them separate names, which `/etc/hosts` aliases for `127.0.0.1` supply
   and which also keeps a demonstration URL off an IP address. `Acquire::Queue-Mode "access"` is the
   trap in the other direction: it makes the interleaving deterministic by putting every source in
-  one queue, where the refused connection then fails all of them.
+  one queue, where the refused connection then fails all of them. Put the working source in front
+  of the broken one in that single queue and it survives, at the cost of the broken one's reason
+  lines reporting `[IP: 127.0.0.1 8084]`, the port the shared connection last used. Both faults
+  were measured on `apt-update-failed`'s fixture, 2026-09-16.
+- **Two repositories fetched at once report in whichever order they finish, and the number beside
+  the prefix moves with them.** apt hands a fetch its number when it first reports, so `Ign:1` and
+  `Hit:2` swap over on a run where the working repository answers before the refused connection
+  fails. It is rare and not rare enough: one run in twelve locally, and the CI run that found it.
+  Neither queue mode above can fix it without costing the page a line it teaches, so the fixture
+  makes the working repository answer its index two seconds late, and the page tells the reader the
+  order means nothing. Where a fixture wins a race by waiting, the margin belongs in the fixture's
+  comment as a measurement: 0.75s still flipped one run in ten under four times as many spinning
+  processes as the container had cores.
 - **`Acquire::Retries::Delay "false"` is what makes a broken apt source affordable.** apt tries a
   source three times with a backoff, seven seconds on a refused connection against the harness's
   five-second limit. Turning off the delay changes no line of the output; turning off the retries

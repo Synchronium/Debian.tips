@@ -37,9 +37,12 @@ rm -f /etc/apt/preferences.d/*
 # The script warning is apt's "not a stable CLI interface" line, printed whenever stdout is not a
 # terminal, which in this harness is always. A reader running these at a prompt never sees it.
 #
-# Not Acquire::Queue-Mode: serialising the fetches would make the interleaving deterministic, and
-# it does it by putting every source in one queue, where a refused connection fails the sources
-# behind it too. The page would then show a working repository reported as unreachable.
+# Not Acquire::Queue-Mode "access", which is the other way to make the order deterministic and
+# costs the page a line it teaches. It puts every source in one queue on one connection, so a
+# source behind the refused one is reported unreachable when it is serving, and a source in front
+# of it survives while the refused one's reason lines report the port that connection last used.
+# Both were measured against this fixture. Sharing one hostname between the two repositories has
+# the same second fault, which is why they have a name each.
 cat > /etc/apt/apt.conf.d/99-replay-update-failed <<'EOF'
 Acquire::Retries::Delay "false";
 APT::Cmd::Disable-Script-Warning "1";
@@ -103,11 +106,58 @@ if [ ! -f "$VENDOR_REPO/dists/stable/InRelease" ]; then
   build_repo "$LEGACY_REPO" tips-monitor "Demonstration package from the repository that goes away"
 fi
 
-# The vendor repository stays up for the whole run. A silent bind failure would leave apt finding
-# no repository at all, which reads on the page as drift rather than as a broken fixture, so this
-# is a hard failure.
+# The vendor repository answers its index slowly, which is what gives the transcript one order.
+#
+# apt gives each host a fetch queue and runs the queues at once, so two repositories report in
+# whichever order they finish. A refused connection finishes in microseconds and an HTTP round
+# trip does not, so the failing source usually reports first. Usually: one run in twelve here, and
+# one on a CI runner, put `Hit:1` at the top of a page that documents `Ign:1` there. Neither the
+# line order nor the numbers are apt's to promise, since the number is handed out as each fetch
+# reports rather than fixed when the source is read.
+#
+# Two seconds against a refused connection is the margin, measured: at 0.75s a container with
+# four times as many spinning processes as it had cores still flipped one run in ten, and the
+# whole point of the delay is that no plausible amount of contention reaches it. The page says
+# out loud that the order varies, so nobody is being taught a sequence their machine disagrees
+# with; the delay only decides which of the true orders this page shows.
+#
+# It waits on one file, the index every example fetches, and only while the marker exists. Both
+# narrowings are about the 5-second cap on an example: an unscoped delay would be paid twice by
+# the example that adds a second suite, and paid again by the seeding update below, which runs
+# before every example on the page and does not care what order it sees.
+SLOW_MARKER=/run/tips-vendor-slow
+rm -f "$SLOW_MARKER"
+cat > /opt/tips-vendor-server.py <<'PY'
+import functools
+import http.server
+import os
+import sys
+import time
+
+INDEX = "/dists/stable/InRelease"
+DELAY_SECONDS = 2
+MARKER = "/run/tips-vendor-slow"
+
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def send_head(self):
+        if self.path == INDEX and os.path.exists(MARKER):
+            time.sleep(DELAY_SECONDS)
+        return super().send_head()
+
+    def log_message(self, *args):
+        pass
+
+
+port, directory = int(sys.argv[1]), sys.argv[2]
+handler = functools.partial(Handler, directory=directory)
+http.server.HTTPServer(("127.0.0.1", port), handler).serve_forever()
+PY
+
+# A silent bind failure would leave apt finding no repository at all, which reads on the page as
+# drift rather than as a broken fixture, so this is a hard failure.
 if ! curl -sf http://127.0.0.1:8084/dists/stable/InRelease >/dev/null 2>&1; then
-  ( python3 -m http.server 8084 --directory "$VENDOR_REPO" --bind 127.0.0.1 >/dev/null 2>&1 & )
+  ( python3 /opt/tips-vendor-server.py 8084 "$VENDOR_REPO" >/dev/null 2>&1 & )
   for _ in $(seq 1 50); do
     curl -sf http://127.0.0.1:8084/dists/stable/InRelease >/dev/null 2>&1 && break
     sleep 0.1
@@ -164,3 +214,6 @@ if ! apt-cache policy tips-monitor 2>/dev/null | grep -q '1.0-1'; then
   echo "apt-update-failed: no list left behind for the legacy repository" >&2
   exit 1
 fi
+
+# Everything above this line is the fixture fetching its own index, and the example is next.
+touch "$SLOW_MARKER"
