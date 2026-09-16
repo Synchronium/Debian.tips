@@ -5,7 +5,7 @@ description: "apt-get upgrade refuses to install new packages, so an upgrade tha
 category: troubleshooting
 tags: [apt, debian, sysadmin, beginner]
 updated: 2026-08-22
-related: [apt, apt-vs-apt-get, apt-essentials, release-channels]
+related: [apt, apt-vs-apt-get, apt-essentials, release-channels, unmet-dependencies]
 ---
 
 `apt-get upgrade` can finish successfully and still leave a package on its old version:
@@ -97,7 +97,9 @@ grant. Use it when upgrading between Debian releases, where it is the correct to
 The message is the same, so check these when the dependency explanation doesn't fit.
 
 **The package is held.** A hold is a deliberate "never upgrade this", and it produces the
-identical message. Ask which packages are held:
+identical message. The same hold refusing a dependency rather than an upgrade reports itself
+completely differently, as [unmet dependencies](/troubleshooting/unmet-dependencies/). Ask which
+packages are held:
 
 ```bash
 apt-mark showhold

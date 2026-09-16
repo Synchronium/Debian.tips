@@ -60,6 +60,10 @@ versions. In a script, in a Dockerfile, in a systemd unit or in cron, use `apt-g
 `DEBIAN_FRONTEND=noninteractive`, and check the exit status; see
 [Exit codes and error handling](/concepts/exit-codes-and-error-handling/).
 
+An install that stops before dpkg runs has either failed to resolve, which is
+[unmet dependencies](/troubleshooting/unmet-dependencies/), or failed to fetch, which is
+[package installation failed](/troubleshooting/package-installation-failed/).
+
 Scripts also have to cope with not being the only thing installing packages: on a machine
 running automatic updates, apt can fail outright because something else holds the dpkg lock.
 [Could not get lock /var/lib/dpkg/lock-frontend](/troubleshooting/could-not-get-lock-dpkg-frontend/)
