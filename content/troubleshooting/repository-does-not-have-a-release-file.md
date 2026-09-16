@@ -33,8 +33,8 @@ Reading package lists...
 Two fetches for what is one file to apt. `InRelease` is the modern form, the index with its
 signature wrapped around it, and apt tries that first. `Ign` there is not a failure: a repository
 is allowed to publish only the older pair, a `Release` file with a detached `Release.gpg` beside
-it, so apt falls back rather than giving up. `Err:2` is that fallback also coming back 404, at
-which point there is nothing left to try.
+it, so apt falls back rather than giving up. `Err:2` is that fallback also coming back with a 404
+error, at which point there is nothing left to try.
 
 The URL apt built is worth being able to reconstruct:
 
@@ -75,7 +75,7 @@ either it never was, or it has been retired. Fetching `dists/` in a browser will
 is, since most repositories leave directory indexes on.
 
 A typo is the cheap explanation and worth ruling out first. `bookwork` for `bookworm`, or a
-codename where the vendor publishes by role, are both this error and neither is interesting.
+codename where the vendor publishes by role, are both instances of this error.
 [Debian's release channels](/debian/release-channels/) has which names are codenames and which are
 roles, and why a source may say either.
 
@@ -105,7 +105,7 @@ E: Release file for http://archive.tips-mirror.example:8087/dists/buster/InRelea
 exit: 100
 ```
 
-A different error, and progress: apt found the Release file this time and refused it. Every Release
+A different error: apt found the Release file this time and refused it. Every Release
 file carries a `Valid-Until` date, and apt will not act on one that has passed. That check is there
 so nobody can serve you a frozen copy of an old index to hide a security update from you, and on an
 archived release it has passed by definition, because the release stopped being updated before the
@@ -132,7 +132,7 @@ tips-tool:
   Candidate: 1.0-1
 ```
 
-`Check-Valid-Until: no` belongs in the stanza for the archived repository and nowhere else. The
+`Check-Valid-Until: no` belongs in the stanza for the archived repository only. The
 global form, `Acquire::Check-Valid-Until "false";` in an `apt.conf` fragment, turns the check off
 for every repository including the ones still getting security updates.
 
@@ -145,7 +145,7 @@ for every repository including the ones still getting security updates.
 
 Some vendors publish a **flat** repository: the packages and one `Packages` index sitting together
 in a single directory, with no `dists/`, no suites and no components. It is a legitimate layout,
-and a stanza written in the ordinary shape asks it for a path it has never had:
+but a stanza written in the ordinary shape asks it for a path that doesn't exist:
 
 ```bash
 sudo tee /etc/apt/sources.list.d/tips.sources >/dev/null <<'EOF'
@@ -174,7 +174,7 @@ dists/stable/Release: 404
 Packages at the root: 200
 ```
 
-An index at the root and nothing under `dists/` is a flat repository. The stanza for one names the
+An index at the root with nothing under `dists/` is a flat repository. The stanza for one names the
 directory as the suite, with a trailing slash and no components at all:
 
 ```bash

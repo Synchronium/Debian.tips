@@ -38,7 +38,7 @@ Only the codename is permanent. `sid` is unstable forever, but `trixie` is stabl
 was testing until it was released, and will be oldstable when Debian 14 arrives. A codename
 eventually stops being served from the mirrors altogether, which is
 [the repository does not have a Release file](/troubleshooting/repository-does-not-have-a-release-file/)
-arriving on a machine nobody upgraded:
+arriving on a machine that hasn't been upgraded by anybody:
 
 ```bash
 head -7 /etc/os-release

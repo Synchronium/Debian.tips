@@ -20,7 +20,7 @@ of their requirements at once, and stopped before touching anything. No package 
 removed.
 
 Read the list underneath that message, and in particular the phrase at the end of each line. There
-are three of those, they mean different things, and the fix follows from which one you have.
+are three of those, and each means a different thing. The fix depends on which one you have.
 
 ## The refusal, in full
 
@@ -45,7 +45,7 @@ The following packages have unmet dependencies:
 The paragraph above the list is generic and is printed whatever the cause. `tips-app` wants
 `tips-lib` at 2.0 or newer, and version 1.0-1 is what is going to be there instead.
 
-apt splits its answer across the two streams, and everything quoted above is standard output:
+apt splits its answer across the two streams, but everything quoted above goes to standard output:
 
 ```bash
 sudo apt-get install -y tips-app 2>&1 >/dev/null | head -1
@@ -56,15 +56,15 @@ E: Unable to correct problems, you have held broken packages.
 
 Below that line, apt 3.0 prints a second and much longer explanation from its new solver, walking
 the decisions it made until two of them contradicted each other. It is worth reading on a failure
-you cannot otherwise account for, and it is on standard error along with this line.
+you cannot otherwise account for. It is printed to standard error along with this line.
 
-## Which of the three wordings you have
+## The three wording options
 
 | Ends with | Means | Look at |
 | --- | --- | --- |
 | `but it is not installable` | No usable version exists anywhere apt can see | Your sources, or the package's name |
-| `but it is not going to be installed` | A version exists and apt has decided against it | What else you asked for |
-| `but N is to be installed` | Version `N` is going in and it is the wrong one | A hold, a pin, or a second repository |
+| `but it is not going to be installed` | A version exists, but apt has decided against it | What else you asked for |
+| `but N is to be installed` | Version `N` is going in instead, even though it's the wrong one | A hold, a pin, or a second repository |
 
 The first rules out everything the other two are about, so check for it before the others.
 
@@ -77,7 +77,7 @@ The following packages have unmet dependencies:
 ```
 
 `tips-spell` is not a package this machine has heard of. [`apt-cache policy`](/commands/apt-cache/)
-answers that in one line:
+answers that with one line:
 
 ```bash
 apt-cache policy tips-spell
@@ -95,9 +95,10 @@ release, or a repository that should be supplying it is not configured or not re
 that failed quietly leaves exactly this, which
 [apt update failed](/troubleshooting/apt-update-failed/) covers.
 
-## When the version is there and apt will not take it
+## When the version is there, but apt will not take it
 
-The opening failure is the third wording, so a version of `tips-lib` exists. Check which:
+The opening failure is the third wording, meaning a version of `tips-lib` exists, but not the one
+you're interested in. Check which:
 
 ```bash
 apt-cache policy tips-lib
@@ -118,7 +119,7 @@ tips-lib:
 like nothing is wrong, and it is why this case takes so long to work out: whatever is stopping the
 upgrade does not appear here.
 
-A hold is the usual answer, and it has its own command:
+A hold is the common reason, which can be checked with its own command:
 
 ```bash
 apt-mark showhold
@@ -176,7 +177,7 @@ downloaded `.deb`. They do not help here, because nothing has been installed yet
 
 Where they do apply, read the plan before agreeing to it. The way apt fixes a broken dependency is
 often to remove the package that has it, which resolves the complaint and loses the software you
-were installing. `-s` prints that plan and changes nothing:
+were installing. `-s` prints that plan without doing anything else:
 
 ```bash
 sudo apt-get install -s tips-app 2>/dev/null | tail -2
@@ -188,4 +189,4 @@ The following packages have unmet dependencies:
 
 See [`apt`](/commands/apt/) for the rest of what `-s` is good for, and
 [packages kept back](/troubleshooting/packages-kept-back/) for the neighbouring case, where apt has
-an arrangement it is willing to make and declines to make it.
+an arrangement it is willing to make but declines to make it.

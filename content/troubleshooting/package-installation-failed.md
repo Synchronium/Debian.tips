@@ -8,10 +8,10 @@ updated: 2026-09-15
 related: [apt, unmet-dependencies, apt-update-failed, apt-cache, disk-full]
 ---
 
-An `apt install` that stops without installing anything fails in one of three places, and they are
-worth separating before reaching for a fix. apt has to find the package in an index, download the
-`.deb`, and hand it to dpkg. This page is about the first two. A refusal that names dependencies
-happens earlier still, before any of this, and is
+An `apt install` that stops without installing anything fails in one of three places, which are
+worth investigating separately before jumping to a fix. apt has to find the package in an index,
+download the `.deb`, and hand it to dpkg. This page is about the first two. A refusal that names
+dependencies happens earlier still, before any of this, and is
 [unmet dependencies](/troubleshooting/unmet-dependencies/).
 
 <!-- verify: skip the reader's own package name; both failures are reproduced below against a real repository -->
@@ -28,10 +28,10 @@ sudo apt-get install -y tips-editor 2>&1 >/dev/null
 E: Unable to locate package tips-editor
 ```
 
-No repository apt knows about lists a package by that name. That is a statement about the indexes
-on this machine rather than about the package, so it has three ordinary causes: the name is
-misspelled, the index is missing because `apt update` has not run or did not finish, or the
-repository that carries it is not configured.
+None of the repositories apt knows about lists a package by that name. That is a statement about
+the indexes on this machine rather than about the package, so it has three ordinary causes: the
+name is misspelled, the index is missing because `apt update` has not run or did not finish, or the
+repository that carries it has not been configured.
 
 Listing what the configured repositories do offer settles the first:
 
@@ -69,13 +69,13 @@ A different failure entirely: the package was found, its dependencies resolved, 
 404'd. The index and the pool disagree, which means the index on this machine describes a version
 of the archive that no longer exists.
 
-Most of the time the reason is dull: the index is old. A repository that publishes a new version
+Most of the time it's simply because the index is old. A repository that publishes a new version
 moves the old `.deb` out of the pool, and a machine whose last successful `apt update` predates the
 move asks for a file that has been replaced. So the first of the two suggestions in that message is
 usually right: run `apt update`, then the same install again.
 
 It also happens in the other direction, on a mirror that is mid-sync and publishing an index newer
-than the files beside it. There the fix is waiting, or using a different mirror.
+than the files beside it. There the fix is to wait a while, or to use a different mirror.
 
 ## The file arrived and was not the file
 
@@ -95,7 +95,7 @@ to tell a mirror operator what you were served.
 The causes are the same disagreement as the 404, seen from the other side, plus one more that the
 message does not mention: something between you and the repository is serving a cached copy. A
 transparent HTTP proxy, a corporate cache, or a local `apt-cacher-ng` holding a file from before
-the archive moved on will all produce this, and none of them is fixed by `apt update`.
+the archive moved on will all produce this, and none of them are fixed by `apt update`.
 
 Clearing what apt has already downloaded is the first step, since a partial or bad file in the
 cache is retried rather than refetched:
@@ -109,7 +109,8 @@ update exit: 0
 ```
 
 `apt-get clean` empties `/var/cache/apt/archives/`. It holds `.deb` files that were already
-installed or only partly downloaded, so emptying it costs a re-download and nothing else.
+installed or only partly downloaded, so emptying it is cheap because anything required again can
+be re-downloaded.
 
 ## Why --fix-missing rarely helps
 
