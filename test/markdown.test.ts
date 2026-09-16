@@ -40,6 +40,39 @@ describe("renderMarkdown", () => {
     expect(html).toContain("<blockquote>");
   });
 
+  it("wraps a table in a focusable scroll container", async () => {
+    const { html } = await renderMarkdown("| A | B |\n| --- | --- |\n| 1 | 2 |\n");
+    expect(html).toContain('<div class="table-scroll" tabindex="0">');
+    expect(html).toMatch(/<div class="table-scroll" tabindex="0"><table>/);
+  });
+
+  /* The wrapping plugin walks the children it has just replaced, so without its guard the
+     wrapper's own table is wrapped again and again until the build dies with "Maximum call
+     stack size exceeded". One table, one wrapper. */
+  it("wraps each table exactly once", async () => {
+    const { html } = await renderMarkdown("| A | B |\n| --- | --- |\n| 1 | 2 |\n");
+    expect(html.match(/table-scroll/g)).toHaveLength(1);
+    expect(html.match(/<table>/g)).toHaveLength(1);
+  });
+
+  it("wraps every table on a page, not just the first", async () => {
+    const table = "| A | B |\n| --- | --- |\n| 1 | 2 |\n";
+    const { html } = await renderMarkdown(`${table}\ntext between them\n\n${table}`);
+    expect(html.match(/table-scroll/g)).toHaveLength(2);
+  });
+
+  it("keeps the table a table rather than restyling it as a block", async () => {
+    const { html } = await renderMarkdown("| A | B |\n| --- | --- |\n| 1 | 2 |\n");
+    expect(html).toContain("<thead>");
+    expect(html).toContain("<tbody>");
+    expect(html).toContain("<th>A</th>");
+  });
+
+  it("adds no wrapper to a page with no table", async () => {
+    const { html } = await renderMarkdown("Just a paragraph.\n");
+    expect(html).not.toContain("table-scroll");
+  });
+
   it("highlights fenced code blocks with Shiki dual-theme output", async () => {
     const { html } = await renderMarkdown('```bash\necho "hi"\n```\n');
     expect(html).toContain("shiki");
