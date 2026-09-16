@@ -1316,6 +1316,87 @@ section + section {
 }
 
 /* ==========================================================================
+   11b. Tables
+   ========================================================================== */
+
+/* The scroll container src/content/markdown.ts wraps every table in. The border and the
+   rounding live here rather than on the table, because a scrolled table has to keep its edge
+   still while its contents move under it. */
+.table-scroll {
+  overflow-x: auto;
+  margin-top: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+}
+.table-scroll:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* `collapse` rather than `separate`, so the header's underline is one line across the whole
+   width instead of one segment per cell with a hairline gap at every column boundary. */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-s);
+  line-height: 1.6;
+}
+
+/* The header is the callout label's treatment, for the same reason: it names what is below it
+   without competing with it for attention. `--bg-inset` separates the band from the rows, and
+   `--border` under it is the one line on the table that is meant to be seen, because it divides
+   the labels from the data rather than one row from the next. */
+thead th {
+  background: var(--bg-inset);
+  padding: var(--space-3) var(--space-4);
+  text-align: start;
+  vertical-align: bottom;
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+/* Three columns or more get a floor, so a phone scrolls the container instead of squeezing the
+   prose columns to one word a line. A two-column table wraps into a narrow screen perfectly well
+   and is left to do it, which is why this is not set on every table. */
+table:has(th:nth-child(3)) {
+  min-width: 30rem;
+}
+
+td {
+  padding: var(--space-3) var(--space-4);
+  vertical-align: top;
+}
+
+/* `--rule` between rows and nothing under the last one: the container's own border closes the
+   table, and a second line inside it reads as an empty row. */
+tbody tr + tr td {
+  border-top: 1px solid var(--rule);
+}
+
+/* A table's first column is the one being looked up, so it carries the weight and resists
+   wrapping where it can. The cap is what stops a long literal starving the columns that
+   explain it. */
+tbody td:first-child {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* Code in a cell sits on the row rather than in a chip of its own: at this size the fill is
+   three separate boxes per row, and the monospace face already does the distinguishing. */
+td code,
+th code {
+  background: none;
+  padding: 0;
+  font-size: 0.95em;
+}
+
+/* ==========================================================================
    12. Code blocks & Shiki dual-theme activation
    ========================================================================== */
 

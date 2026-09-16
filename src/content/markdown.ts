@@ -177,6 +177,46 @@ function calloutsPlugin() {
   };
 }
 
+/* Every table gets a scroll container of its own.
+ *
+ * A table is the one block of prose that cannot be made narrower: cells wrap, but a row of
+ * monospaced literals has a width below which it will not go, and a page whose body scrolls
+ * sideways fails `npm run browser` at 320px (ADR-0022). Wrapping here rather than styling the
+ * table as a block keeps it a real table, so `width: 100%` still fills the column and the header
+ * band still spans it.
+ *
+ * `tabindex` makes the container reachable from the keyboard, which a scrollable box has to be
+ * for anyone who cannot swipe it. No `role="region"`: that one demands an accessible name, and
+ * there is nothing on a markdown table to name it with. */
+function isTableScroll(node: any): boolean {
+  return (
+    node.type === "element" &&
+    node.tagName === "div" &&
+    Array.isArray(node.properties?.className) &&
+    node.properties.className.includes("table-scroll")
+  );
+}
+
+function tableScrollPlugin() {
+  return (tree: any): void => {
+    walk(tree, (node: any) => {
+      // `walk` descends into the children this visitor just replaced, so without this the
+      // wrapper's own table is wrapped again, and again, until the stack runs out.
+      if (isTableScroll(node) || !Array.isArray(node.children)) return;
+      node.children = node.children.map((child: any) =>
+        child.type === "element" && child.tagName === "table"
+          ? {
+              type: "element",
+              tagName: "div",
+              properties: { className: ["table-scroll"], tabindex: 0 },
+              children: [child],
+            }
+          : child,
+      );
+    });
+  };
+}
+
 function collectHeadings(tree: any): TocEntry[] {
   const toc: TocEntry[] = [];
   walk(tree, (n) => {
@@ -243,6 +283,7 @@ const pageProcessor = unified()
   .use(rehypeSlug)
   .use(rehypeAutolinkHeadings, { behavior: "wrap", properties: { className: ["heading-link"] } })
   .use(calloutsPlugin)
+  .use(tableScrollPlugin)
   .use(rehypeStringify, { allowDangerousHtml: true })
   .freeze();
 
