@@ -93,11 +93,23 @@ honest ("is about to finish" for "will likely finish"). The instinct being resis
 makes a sentence pleasing to have written. **The goal is plainness, not length**: padding an
 epigram out to avoid sounding neat is this rule misfiring.
 
-**`, and` where the second clause is a consequence.** "arrives as two items, `last` and
+Epigrams are the conspicuous form and not the common one, so a pass that looks only for them will
+call a page clean. The everyday form is grammatical ellipsis: a dropped relative pronoun ("a path
+it has never had" for "a path that does not exist"), a gerund where an infinitive reads better
+("the fix is waiting, or using a different mirror"), an appositive smuggling in a judgement ("A
+different error, and progress:"), a colon standing in for the clause that would explain the link
+("the reason is dull: the index is old"). Each saves a word and costs the reader a second pass.
+
+**`, and` where the clauses are not equals.** "arrives as two items, `last` and
 `week.log`, and the command runs against two names that do not exist" flattens a causal chain into
-a list. `, so` states the relationship the sentence actually has. This one is frequent enough to
-be worth a pass of its own: leave the `, and` that joins genuine equals, and change the ones
-joining a cause to its effect.
+a list. `, so` states the relationship the sentence actually has. A contrast is the same fault
+facing the other way, and it is the easier one to miss once you are hunting for the first: "a
+version exists and apt has decided against it", "an arrangement it is willing to make and declines
+to make it", "apt splits its answer across the two streams, and everything quoted above is standard
+output". Those want `but`. This is frequent enough to be worth a pass of its own, and a pass
+looking only for consequences finds about half of what is there: leave the `, and` that joins
+genuine equals, and change the ones joining a cause to its effect, or a claim to its
+qualification.
 
 **Clefts.** "X is what Y", "what X does is Y", "it is X that Y". Occasionally the right emphasis,
 more often a way of making a plain fact sound consequential.
@@ -123,6 +135,14 @@ example there is nothing on screen to map it to. Name the part instead, which is
 counts those, so the budget is only for the positional form. What the rule leaves alone is the word
 used honestly: `half-finished` and its family, the quantity sense, and a thing that really is two,
 like a key pair's public and private halves or the master and slave of a pty.
+
+**Negation carried on the wrong word.** "No repository apt knows about lists a package by that
+name" asks the reader to hold a negative through eight words before learning what it denies, and
+"None of the repositories apt knows about lists" does not. The family shares that shape: "and
+nowhere else" for "only", "a machine nobody upgraded" for "a machine that has not been upgraded",
+"neither is interesting" for a judgement better cut than compressed. It is next door to the tell
+below and not the same one: there the complaint is that an absence has been made the subject, here
+that a real subject has been made to carry a negative it does not need.
 
 **An absence as the actor.** Making "nothing" the subject of a verb where naming the actor or
 negating the verb is shorter and plainer: "nothing checks it" for "it is not checked", "nothing
@@ -250,7 +270,8 @@ rather than prose.
 a manufactured misconception, a section that comments on itself, are invisible to it, and the one
 rule that was tried both ways proves the boundary: `, and` joining a consequence matched hundreds
 of lines across the corpus with almost no true positives, because whether a clause follows from the
-one before it is a question about meaning. Those still need the page read.
+one before it is a question about meaning. The contrastive form is no more tractable, and neither
+is the ellipsis above. Those still need the page read.
 
 ## 10. Before editing a page
 
