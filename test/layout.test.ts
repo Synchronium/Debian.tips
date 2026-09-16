@@ -51,7 +51,7 @@ describe("layout", () => {
     // and both would fail at runtime with the theme names undefined.
     // The IIFE wrapper is what `clientScript` adds, so it is what separates the two compiled
     // client scripts from the analytics snippet a production build also inlines.
-    const scripts = [...render().matchAll(/<script>(.*?)<\/script>/gs)]
+    const scripts = [...render().matchAll(/<script>(.*?)<\/script>/gis)]
       .map((match) => match[1] ?? "")
       .filter((script) => script.startsWith("(()=>"));
     expect(scripts).toHaveLength(2);

@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
 
+# Both jobs only ever read the repository: deploying, recording timings and publishing the sandbox
+# image are separate workflows precisely so the token that runs untrusted-adjacent work (every
+# page's examples, in a container) cannot write anything. Without this block that token defaults to
+# whatever the repository's default is, which is a setting outside this file.
+permissions: { contents: read }
+
 jobs:
   check:
     runs-on: ubuntu-latest
