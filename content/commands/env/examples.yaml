@@ -1,0 +1,461 @@
+command: env
+fixtures:
+  - name: "the working directory"
+    note: "three files, so the shell has a pattern to expand and `wc` has something to count"
+    from: ls
+    content: |
+      accents.txt
+      notes.txt
+      report.txt
+  - name: "accents.txt"
+    note: "the `é` is one character and two bytes, so `wc -m` answers twice"
+    content: |
+      héllo
+  - name: "~/tools/greet"
+    note: "a command that is not on `PATH`: Debian's stock `~/.profile` adds `~/bin` and `~/.local/bin`, and no other directory under your home"
+    from: "cat ~/tools/greet"
+    content: |
+      #!/bin/sh
+      echo "hello from greet"
+sections:
+  - title: "Reading the environment"
+    intro: "`printenv` prints values, `env` with no command prints the `NAME=value` pairs themselves, and neither sees a variable the shell has not exported. Plain `env` on a desktop machine runs to dozens of lines, several of them belonging to the session manager, so everything below asks for what it wants by name."
+    examples:
+      - title: "Print one variable"
+        code: printenv HOME
+        description: "The value and nothing else, with no name and no quoting around it, so it drops straight into a script."
+        output: |
+          /home/user
+        level: basic
+        tags: [beginner]
+      - title: "Print several variables at once"
+        code: printenv HOME PATH
+        description: "One line per name, in the order asked for. The values are not labelled, so a script reading this counts lines instead of matching names."
+        output: |
+          /home/user
+          /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games
+        level: basic
+      - title: "Print a variable with its name attached"
+        code: env | grep '^PATH='
+        description: "`env` prints the `NAME=value` form the environment is stored in. With no command after it, it prints every variable, and the `grep` narrows that to the one line in question."
+        output: |
+          PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games
+        level: basic
+      - title: "Read PATH as the list it is"
+        code: printenv PATH | tr ':' '\n'
+        description: "Search order, first directory at the top. This is the first thing to look at when a program you can see is reported as not found, and [which vs type vs command -v](/compare/which-vs-type-vs-command/) is the next."
+        output: |
+          /usr/local/sbin
+          /usr/local/bin
+          /usr/sbin
+          /usr/bin
+          /sbin
+          /bin
+          /usr/games
+        level: basic
+        tags: [beginner]
+      - title: "Find out whether a variable is set"
+        code: |-
+          printenv EDITOR; echo "exit: $?"
+        description: "Exit status 1 and no output when the name is not in the environment. `if printenv EDITOR >/dev/null; then` is the test that falls out of it."
+        output: |
+          exit: 1
+        level: intermediate
+        tags: [scripting]
+      - title: "Tell an empty variable from a missing one"
+        code: |-
+          export TIPS_EMPTY=
+          printenv TIPS_MISSING; echo "missing: $?"
+          printenv TIPS_EMPTY; echo "empty: $?"
+        description: "A variable set to nothing is in the environment, so `printenv` prints its empty value and exits 0. `echo \"$VAR\"` prints an empty line for both cases and cannot tell you which you have."
+        output: |
+          missing: 1
+
+          empty: 0
+        level: intermediate
+        tags: [scripting]
+      - title: "See a value the shell has not rewritten"
+        code: |-
+          export PATTERN='*.txt'
+          echo $PATTERN
+          printenv PATTERN
+        description: "Unquoted, `echo $PATTERN` hands the shell a pattern and the working directory answers it. `printenv` is a separate process that never sees the pattern as one, so it prints what was stored."
+        output: |
+          accents.txt notes.txt report.txt
+          *.txt
+        level: intermediate
+        tags: [scripting]
+      - title: "Keep the spaces inside a value"
+        code: |-
+          export MESSAGE='two  spaces'
+          echo $MESSAGE
+          printenv MESSAGE
+        description: "The same fault with no wildcard in sight: unquoted, the shell splits the value into words and `echo` rejoins them with one space each. Quoting the expansion fixes `echo`, and `printenv` never had the problem."
+        output: |
+          two spaces
+          two  spaces
+        level: intermediate
+        tags: [scripting]
+      - title: "A variable the shell kept to itself"
+        code: |-
+          GREETING=hello
+          printenv GREETING
+          echo "exit: $?"
+        description: "An assignment with no `export` makes a shell variable, which belongs to the shell and is not in the block handed to anything it starts. `printenv` is one of those things."
+        output: |
+          exit: 1
+        level: basic
+        tags: [beginner, scripting]
+      - title: "Export it, and it appears"
+        code: |-
+          GREETING=hello
+          export GREETING
+          printenv GREETING
+        description: "`export` moves an existing variable into the environment. `export GREETING=hello` does both steps at once and is what you would normally write."
+        output: |
+          hello
+        level: basic
+        tags: [beginner, scripting]
+      - title: "Separate the values with NUL instead of newline"
+        code: |-
+          export TIPS_A=1 TIPS_B=2
+          printenv -0 TIPS_A TIPS_B | od -c
+        description: "`-0` is for values that may contain a newline of their own, where line-separated output is ambiguous. `xargs -0` and `sort -z` read this form."
+        output: |
+          0000000   1  \0   2  \0
+          0000004
+        level: advanced
+        tags: [scripting]
+      - title: "A value with a newline in it, printed plainly"
+        code: |-
+          env -i "TIPS_NOTE=first line
+          second line" TIPS_AFTER=1 env
+        description: "Three lines out of two variables, and nothing in the output says which of the three starts a new one. This is the case `-0` above exists for."
+        output: |
+          TIPS_NOTE=first line
+          second line
+          TIPS_AFTER=1
+        level: advanced
+  - title: "Running one command with the environment changed"
+    intro: "`env NAME=value command` sets the variable in the copy the command receives and nowhere else. The examples run `sh -c` instead of `echo`, for the reason the third one shows."
+    examples:
+      - title: "Set a variable for one command"
+        code: env GREETING=hello sh -c 'echo $GREETING'
+        description: "`env` sets `GREETING`, execs `sh`, and takes no further part. The shell you typed this in is unchanged."
+        output: |
+          hello
+        level: basic
+        tags: [beginner]
+      - title: "The shell does this without env"
+        code: |-
+          GREETING=hello sh -c 'echo $GREETING'
+          printenv GREETING; echo "after: $?"
+        description: "An assignment in front of a command is shell syntax with the same effect, and it is shorter. `env` is for the places this cannot reach: after `sudo`, on a shebang line, and anywhere a variable has to be removed rather than set."
+        output: |
+          hello
+          after: 1
+        level: basic
+        tags: [scripting]
+      - title: "Why the new value does not reach echo"
+        code: env GREETING=hello echo "[$GREETING]"
+        description: "The shell expands `$GREETING` while building the command line, long before `env` runs and sets anything. Quoting does not help, since the expansion is the problem; `sh -c` does, because the inner shell expands it after `env` has finished."
+        output: |
+          []
+        level: intermediate
+        tags: [scripting]
+      - title: "Set two variables at once"
+        code: env EDITOR=nano PAGER=cat sh -c 'echo $EDITOR $PAGER'
+        description: "Assignments are read until the first argument that is not one, and that argument is the command. So a command whose own name contains an `=` cannot be run this way."
+        output: |
+          nano cat
+        level: basic
+      - title: "The last assignment to a name wins"
+        code: env GREETING=hello GREETING=goodbye sh -c 'echo $GREETING'
+        description: "No warning about the first one. Worth knowing when the assignments come from a generated command line or from `$@`."
+        output: |
+          goodbye
+        level: advanced
+      - title: "A value that contains an equals sign"
+        code: env URL=host=deb1 sh -c 'echo $URL'
+        description: "Only the first `=` separates the name from the value, so no quoting is needed here. A name cannot contain one at all."
+        output: |
+          host=deb1
+        level: intermediate
+      - title: "Run a command in another time zone"
+        code: |-
+          env TZ=Asia/Tokyo date -d '2026-06-01 09:00 UTC' +'%F %T %Z'
+          date -d '2026-06-01 09:00 UTC' +'%F %T %Z'
+        description: "`TZ` is read by the C library underneath [date](/commands/date/), which is why setting it for one command works at all. The second line is the same instant on the machine's own zone."
+        output: |
+          2026-06-01 18:00:00 JST
+          2026-06-01 09:00:00 UTC
+        level: intermediate
+        tags: [sysadmin]
+      - title: "Change what the tools count as a character"
+        code: |-
+          env LC_ALL=C wc -m < accents.txt
+          env LC_ALL=C.UTF-8 wc -m < accents.txt
+        description: "`wc -m` counts characters, and `LC_ALL` decides which bytes make one. The same file is seven bytes and six characters. `LC_ALL=C` is worth setting deliberately in a script whose output another program parses."
+        output: |
+          7
+          6
+        level: advanced
+        tags: [scripting]
+      - title: "The variable is gone once the command ends"
+        code: |-
+          env TIPS_TOKEN=secret true
+          printenv TIPS_TOKEN
+          echo "exit: $?"
+        description: "The environment travels downward only. There is no arrangement by which a child hands a variable back, which is why an installer tells you to source its script instead of running it."
+        output: |
+          exit: 1
+        level: basic
+        tags: [scripting]
+  - title: "Taking variables away"
+    intro: "`-u` removes one name, `-i` starts from nothing at all. Between them they answer most of \"it works when I type it and not from cron\", by letting you run the command the way cron will."
+    examples:
+      - title: "Remove one variable"
+        code: env -u HOME sh -c 'echo [${HOME-unset}]'
+        description: "`-u` unsets the name rather than setting it empty, and the two are different: `${HOME-unset}` supplies the default only for a name that is genuinely absent."
+        output: |
+          [unset]
+        level: intermediate
+        tags: [scripting]
+      - title: "Start from an empty environment"
+        code: env -i env | wc -l
+        description: "Not one variable. `-i` discards everything before the assignments on the same line are applied, so order on the command line does not matter."
+        output: |
+          0
+        level: intermediate
+      - title: "Start from nothing plus what you name"
+        code: env -i TIPS_A=1 TIPS_B=2 env
+        description: "The whole environment the command will receive, short enough to read in one go. This is the form to reach for when a program behaves differently for two people."
+        output: |
+          TIPS_A=1
+          TIPS_B=2
+        level: intermediate
+      - title: "A bare dash means the same as -i"
+        code: env - TIPS_A=1 env
+        description: "Older scripts use this spelling and `env --help` still documents it. Prefer `-i`, which says what it does."
+        output: |
+          TIPS_A=1
+        level: advanced
+      - title: "printenv with no arguments"
+        code: env -i TIPS_A=1 printenv
+        description: "Given no names, `printenv` prints the pairs, so it is `env` with none of the rest of `env`. Given names it prints values, and that is the form to remember."
+        output: |
+          TIPS_A=1
+        level: intermediate
+      - title: "What a shell does when PATH is missing"
+        code: env -i sh -c 'echo $PATH'
+        description: "`sh` is dash on Debian, and it supplies a compiled-in default when it finds no `PATH` at all. So an empty environment does not mean an empty `PATH`, and a script that fails from cron is usually failing on a `PATH` that is short instead of absent."
+        output: |
+          /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+        level: advanced
+        tags: [scripting]
+      - title: "bash's fallback PATH ends in the current directory"
+        code: env -i bash -c 'echo $PATH'
+        description: "The trailing `.` is bash's compiled-in default, reached only when nothing supplied a `PATH`. It means a file called `ls` in whatever directory the script happens to be sitting in, worth knowing before you run anything out of an unpacked archive this way."
+        output: |
+          /usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin:.
+        level: advanced
+        tags: [security, scripting]
+      - title: "An empty PATH stops env finding the command"
+        code: |-
+          env -i PATH= sh -c 'echo hello'
+          echo "exit: $?"
+        description: "`env` searches `PATH` for the command like any other program would, so the failure here is `env` reporting that it never got as far as `sh`. Give it `/bin/sh` and it runs."
+        output: |
+          env: 'sh': No such file or directory
+          exit: 127
+        level: advanced
+      - title: "Reproduce what a cron job is given"
+        code: env -i /bin/sh -c 'echo PATH=$PATH; echo HOME=[${HOME-unset}]'
+        description: "Run the failing command this way and it fails at your own prompt, and that is the diagnosis. [crontab](/commands/crontab/) can set both, and a `PATH=` line at the top of a crontab is usually the fix."
+        output: |
+          PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+          HOME=[unset]
+        level: intermediate
+        tags: [cron, scripting]
+  - title: "PATH, and what env can run"
+    intro: "`env` looks the command up on `PATH` the way the shell does, then replaces itself with it using `execvp`. A program on disk is all it can run, and the exit status says which part of that step failed."
+    examples:
+      - title: "A command that is not on PATH"
+        code: |-
+          command -v greet || echo "greet: not on PATH"
+        description: "`~/tools/greet` is executable and runnable by full path. The shell will not find it by name, because `~/tools` is not one of the directories in `PATH`."
+        output: |
+          greet: not on PATH
+        level: basic
+        tags: [beginner]
+      - title: "Put a directory on PATH for one command"
+        code: env PATH="$HOME/tools:$PATH" greet
+        description: "Prepending, so `~/tools` is searched first. The change lasts for this command only, which makes it the safe way to test a directory before [adding it permanently](/recipes/add-a-directory-to-path/)."
+        output: |
+          hello from greet
+        level: intermediate
+      - title: "Ask the child shell where it found the command"
+        code: env PATH="$HOME/tools:$PATH" sh -c 'command -v greet'
+        description: "`command -v` is a builtin, so `env` cannot run it and a shell has to. The answer is the file the `PATH` change made reachable."
+        output: |
+          /home/user/tools/greet
+        level: intermediate
+      - title: "Give sudo a PATH it would otherwise ignore"
+        code: sudo env PATH="$HOME/tools:$PATH" greet
+        description: "[sudo](/commands/sudo/) replaces your `PATH` with the `secure_path` compiled into it, so `sudo greet` fails however well `greet` works for you. `$HOME` is expanded by your own shell here, before sudo runs. Decide that you trust the directory first: this hands root a search path you control."
+        output: |
+          hello from greet
+        level: advanced
+        tags: [security, sysadmin]
+      - title: "env cannot run a shell builtin"
+        code: |-
+          env cd /tmp
+          echo "exit: $?"
+        description: "`cd` is part of the shell and there is no program of that name to exec. Aliases and shell functions are refused for the same reason."
+        output: |
+          env: 'cd': No such file or directory
+          exit: 127
+        level: intermediate
+      - title: "127 when the command is not found"
+        code: |-
+          env nosuchcommand
+          echo "exit: $?"
+        description: "The status a shell uses for the same failure, so a caller checking for 127 gets the same answer whether or not `env` was in the way."
+        output: |
+          env: 'nosuchcommand': No such file or directory
+          exit: 127
+        level: intermediate
+        tags: [scripting]
+      - title: "126 when it is found and cannot be run"
+        code: |-
+          env /etc/hostname
+          echo "exit: $?"
+        description: "The file exists and is not executable. Splitting this from 127 lets a script tell a typo in a name from a missing execute bit."
+        output: |
+          env: '/etc/hostname': Permission denied
+          exit: 126
+        level: advanced
+        tags: [scripting, permissions]
+      - title: "125 when env itself fails"
+        code: |-
+          env --nosuchoption true
+          echo "exit: $?"
+        description: "125 is reserved for `env`'s own failures, so they stay distinguishable from anything the command could have returned. A missing `-C` directory reports it too."
+        output: |
+          env: unrecognized option '--nosuchoption'
+          Try 'env --help' for more information.
+          exit: 125
+        level: advanced
+        tags: [scripting]
+      - title: "Otherwise, the command's own exit status"
+        code: |-
+          env false
+          echo "exit: $?"
+        description: "`env` replaces itself with the command instead of waiting on it, so there is no process left to substitute a status of its own. [Exit codes](/concepts/exit-codes-and-error-handling/) covers what a caller does with this."
+        output: |
+          exit: 1
+        level: basic
+        tags: [scripting]
+  - title: "env on a shebang line"
+    intro: "`#!/usr/bin/env python3` is the reason most people have `env` in a file they wrote. The kernel runs the interpreter named on that line with the script as an argument, and naming `env` instead of the interpreter means the interpreter is looked up on `PATH`."
+    examples:
+      - title: "Find the interpreter on PATH"
+        code: |-
+          printf '#!/usr/bin/env bash\necho "$0 ran under $(command -v bash)"\n' > build
+          chmod +x build
+          ./build
+        description: "`#!/usr/bin/bash` would name one path and fail everywhere the interpreter lives somewhere else, which for anything installed by a version manager or a virtualenv is normal."
+        output: |
+          ./build ran under /usr/bin/bash
+        level: basic
+        tags: [scripting]
+      - title: "Two words after env do not work"
+        code: |-
+          printf '#!/usr/bin/env bash -e\necho reached\n' > build
+          chmod +x build
+          ./build
+          echo "exit: $?"
+        description: "The kernel passes everything after the interpreter as one argument, so `env` is asked for a program called `bash -e`. The advice in the second line is `env`'s own."
+        output: |
+          env: 'bash -e': No such file or directory
+          env: use -[v]S to pass options in shebang lines
+          exit: 127
+        level: intermediate
+        tags: [scripting]
+      - title: "Split that argument with -S"
+        code: |-
+          printf '#!/usr/bin/env -S bash -e\nfalse\necho reached\n' > build
+          chmod +x build
+          ./build
+          echo "exit: $?"
+        description: "`-S` splits the string it is given into separate arguments, and that is the only reason it exists. `-e` is in force here, so the script stops at `false` and never reaches the `echo`."
+        output: |
+          exit: 1
+        level: advanced
+        tags: [scripting]
+      - title: "Set a variable on the shebang line"
+        code: |-
+          printf '#!/usr/bin/env -S LC_ALL=C awk -f\nBEGIN { print "awk ran with LC_ALL=" ENVIRON["LC_ALL"] }\n' > summarise
+          chmod +x summarise
+          ./summarise
+        description: "Assignments work inside `-S` exactly as they do on a command line, so a script can pin its own locale without a wrapper. [awk](/commands/awk/) reads the result out of `ENVIRON`."
+        output: |
+          awk ran with LC_ALL=C
+        level: advanced
+        tags: [scripting]
+      - title: "The interpreter is only found if PATH has it"
+        code: |-
+          printf '#!/usr/bin/env mylang\nthe body\n' > check
+          chmod +x check
+          ./check
+          echo "exit: $?"
+        description: "The cost of the shebang that searches: the script runs under whatever `mylang` the caller's `PATH` reaches first, and under nothing at all when it reaches none. A cron job or a systemd unit is exactly where that shows up."
+        output: |
+          env: 'mylang': No such file or directory
+          exit: 127
+        level: advanced
+        tags: [scripting, cron]
+      - title: "The same script, with the interpreter on PATH"
+        code: |-
+          printf '#!/bin/sh\necho "mylang got: $1"\n' > "$HOME/tools/mylang"
+          chmod +x "$HOME/tools/mylang"
+          printf '#!/usr/bin/env mylang\nthe body\n' > check
+          chmod +x check
+          env PATH="$HOME/tools:$PATH" ./check
+        description: "The interpreter receives the script's path as its first argument, which is how it knows what to read. The kernel decides from the shebang line alone and never from the body below it."
+        output: |
+          mylang got: ./check
+        level: advanced
+        tags: [scripting]
+  - title: "Options that change how the command is started"
+    intro: "Beyond the environment itself, `env` can set the working directory, the name the command sees itself by, and what it does with signals, all for that one command."
+    examples:
+      - title: "Run the command somewhere else"
+        code: env -C /usr/share/doc pwd
+        description: "`-C` changes directory before the exec, so the calling shell stays where it was. `cd somewhere && command` in a subshell is the portable spelling of this."
+        output: |
+          /usr/share/doc
+        level: intermediate
+      - title: "Change the name the command sees itself by"
+        code: env -a deploy-tool sh -c 'echo $0'
+        description: "`-a` sets argument zero: the name a program prints in its own usage message, and the one [ps](/commands/ps/) reports. Busybox-style programs choose their behaviour from it."
+        output: |
+          deploy-tool
+        level: advanced
+      - title: "Watch what env decided"
+        code: env --debug TIPS_TOKEN=secret id -un
+        description: "Every step, in order, then the command's own output. Useful when a shebang line or a generated command is not doing what it reads as."
+        output: |
+          setenv:   TIPS_TOKEN=secret
+          executing: id
+             arg[0]= 'id'
+             arg[1]= '-un'
+          user
+        level: advanced
+      - title: "Start a command with a signal ignored"
+        code: env --ignore-signal=INT sh -c 'kill -INT $$; echo still here'
+        description: "A disposition rather than a handler, so it survives into anything the command starts. `--block-signal` delays delivery instead, and `--default-signal` puts one back for a command started from a shell that had ignored it."
+        output: |
+          still here
+        level: advanced
+        tags: [processes]

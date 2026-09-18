@@ -353,7 +353,7 @@ sections:
         tags: [systemd]
       - title: "Reproduce cron's exact environment for debugging"
         code: env -i HOME=$HOME LOGNAME=$LOGNAME PATH=/usr/bin:/bin SHELL=/bin/sh /usr/local/bin/mytool
-        description: "`env -i` clears the environment before setting just the handful of variables cron itself provides, so you can run the failing command by hand under the same conditions instead of guessing."
+        description: "[`env -i`](/commands/env/) clears the environment before setting just the handful of variables cron itself provides, so you can run the failing command by hand under the same conditions instead of guessing."
         level: advanced
         tags: [beginner]
       - title: "Check whether cron.allow or cron.deny is blocking a user"

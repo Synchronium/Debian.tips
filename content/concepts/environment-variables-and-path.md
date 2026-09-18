@@ -5,7 +5,7 @@ description: "Why a program you can see and execute is still not found, how the 
 category: concepts
 tags: [environment, scripting, terminal]
 updated: 2026-08-23
-related: [sudo-command-not-found, variables-and-quoting, pipes-and-redirection, file-permissions-explained]
+related: [env, sudo-command-not-found, variables-and-quoting, pipes-and-redirection, file-permissions-explained]
 ---
 
 A script can be present, executable, and owned by you, and the shell will still refuse to run it
@@ -206,8 +206,9 @@ sudo printenv PATH
 
 A binary in `~/bin` or `/opt/something/bin` is invisible to `sudo` however well it works for you,
 which produces the confusing pairing of a command that runs fine and then reports
-`command not found` the moment you put `sudo` in front of it. Give the full path, or use
-`sudo env "PATH=$PATH" thecommand` when you have decided that is acceptable.
+`command not found` the moment you put `sudo` in front of it. Give the full path, or hand sudo a
+search path of your own with [env](/commands/env/), as `sudo env "PATH=$PATH" thecommand`, once
+you have decided that is acceptable.
 [sudo: command not found](/troubleshooting/sudo-command-not-found/) covers the diagnosis in more
 detail.
 
@@ -232,6 +233,8 @@ you want the current directory, `./thing` says so explicitly.
 
 ## Go deeper
 
+- [env and printenv](/commands/env/) for reading one variable, and for running a single command
+  with the environment changed
 - [variables and quoting](/scripting/variables-and-quoting/) for shell variables in scripts
 - [sudo: command not found](/troubleshooting/sudo-command-not-found/) for the `secure_path` case
 - [pipes and redirection](/concepts/pipes-and-redirection/) for the other thing a process

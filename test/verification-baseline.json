@@ -159,6 +159,14 @@
     "fixtures": 3,
     "unpaired": 0
   },
+  "commands/env": {
+    "checked": 49,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 3,
+    "unpaired": 0
+  },
   "commands/find": {
     "checked": 27,
     "byShape": 0,

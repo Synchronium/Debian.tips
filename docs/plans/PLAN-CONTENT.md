@@ -484,9 +484,11 @@ Most of this group waits on a fixture. What is written is `curl`, `wget`, `ssh` 
 
 ### §6.9. Shell and environment
 
-- **`env` and `printenv`** (`standard`). **Needs**: nothing. **Demo**: running a command with a
-  modified environment, and the difference between a shell variable and an exported one. Blocks
-  two hubs in §5.3.
+- **`env` and `printenv`**. Written 2026-09-18, 49/49. One page at `/commands/env/`, because
+  `printenv` is `env` with the rest of `env` taken away and a reader asking about either has the
+  same question. `export` stayed out despite the slug `src/config.ts` reserved for it: it is a
+  shell builtin, and the concept page and the scripting course already teach it. Both of §5.3's
+  remaining hubs are unblocked.
 - **`alias`** (`light`). **Demo**: why an alias is invisible to a script.
 - **`history`** (`light`). **Demo**: expansion, and where the file is written.
 - **`apt-mark`** (`light`). **Demo**: hold, unhold, and manual against automatic. Feeds §5.2 and
@@ -726,6 +728,10 @@ Distilled from the shipped ledger this plan replaces. Each of these cost a batch
 - **The replay's working directory**, which is named after the page. No example prints `pwd` from
   it. A fixture that needs a stable path builds one under `/srv`.
 - **`$HOME`**, for the same reason.
+- **A whole environment.** `env` and `printenv` with no arguments print `PWD`, and `SHLVL` and `_`
+  differ between a plain `sandbox.sh exec` and a replay, so the rule above is broken without anyone
+  typing `pwd`. A page about the environment asks for the variables it wants by name, and shows a
+  complete one only where `-i` built it.
 - **An architecture**, including a number that encodes one, and including the multiarch triplet in
   a shared library's path. That last one rules out any unnarrowed `lsof`: a process's `mem` rows
   are its libraries, and every one of them sits under `/usr/lib/<triplet>/`.
