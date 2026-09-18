@@ -5,7 +5,7 @@ description: "On Debian, sudo is often simply not installed, and your user is no
 category: troubleshooting
 tags: [debian, permissions, sysadmin, beginner]
 updated: 2026-08-22
-related: [file-permissions-explained, apt, apt-essentials, could-not-get-lock-dpkg-frontend]
+related: [command-not-found, file-permissions-explained, apt, apt-essentials, could-not-get-lock-dpkg-frontend]
 ---
 
 On a fresh Debian install, [`sudo`](/commands/sudo/) is frequently not there at all:
@@ -23,7 +23,8 @@ newbie is not in the sudoers file.
 ```
 
 Both are Debian doing what it was told during installation. The fix takes about a minute, but it
-needs a root shell.
+needs a root shell. For any other name the shell cannot find, where the answer is a `PATH` rather
+than a packaging decision, [command not found](/troubleshooting/command-not-found/) is the page.
 
 ## Why this happens on Debian and not on Ubuntu
 

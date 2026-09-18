@@ -202,7 +202,7 @@ sections:
         tags: [permissions]
 
   - title: "Environment and PATH inside cron"
-    intro: "cron runs jobs with a deliberately minimal environment - not the one your interactive shell has."
+    intro: "cron runs jobs with a deliberately minimal environment, and not the one your interactive shell has. [Works in the shell, fails in cron](/troubleshooting/script-works-in-shell-but-not-cron/) diagnoses a job that failed on exactly that."
     examples:
       - title: "See how thin cron's PATH really is"
         code: "* * * * * env > /tmp/cron-env.txt"

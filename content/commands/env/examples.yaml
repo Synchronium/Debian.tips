@@ -283,7 +283,7 @@ sections:
       - title: "A command that is not on PATH"
         code: |-
           command -v greet || echo "greet: not on PATH"
-        description: "`~/tools/greet` is executable and runnable by full path. The shell will not find it by name, because `~/tools` is not one of the directories in `PATH`."
+        description: "`~/tools/greet` is executable and runnable by full path. The shell will not find it by name, because `~/tools` is not one of the directories in `PATH`. [command not found](/troubleshooting/command-not-found/) triages the rest of the reasons for that message."
         output: |
           greet: not on PATH
         level: basic

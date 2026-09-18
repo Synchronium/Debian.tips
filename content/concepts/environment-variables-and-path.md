@@ -23,6 +23,8 @@ bash: hello: command not found
 
 Nothing is wrong with the file. `command not found` is the shell reporting that it looked in the
 directories it searches and `~/bin` was not among them.
+[command not found](/troubleshooting/command-not-found/) triages the other reasons it says that,
+including the ones where `PATH` is correct.
 
 ## The environment is a copy, made at exec time
 
@@ -179,6 +181,8 @@ question again, answered by
   Units get a minimal environment and need `Environment=` or `EnvironmentFile=` set explicitly.
 - [cron](/commands/crontab/) is the same story and catches more people, because a job that works
   when you type it fails at 03:00 with no `PATH` worth the name.
+  [Works in the shell, fails in cron](/troubleshooting/script-works-in-shell-but-not-cron/) has
+  the five variables a job really gets, captured from one.
 
 Log out and back in after editing any of them. Sourcing the file only fixes the shell you are
 sitting in.
