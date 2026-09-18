@@ -159,6 +159,14 @@
     "fixtures": 3,
     "unpaired": 0
   },
+  "commands/env": {
+    "checked": 49,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 3,
+    "unpaired": 0
+  },
   "commands/find": {
     "checked": 27,
     "byShape": 0,
@@ -855,6 +863,14 @@
     "fixtures": 0,
     "unpaired": 1
   },
+  "troubleshooting/command-not-found": {
+    "checked": 15,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
+  },
   "troubleshooting/could-not-get-lock-dpkg-frontend": {
     "checked": 2,
     "byShape": 1,
@@ -910,6 +926,14 @@
     "exempt": 3,
     "fixtures": 0,
     "unpaired": 3
+  },
+  "troubleshooting/script-works-in-shell-but-not-cron": {
+    "checked": 12,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 0,
+    "unpaired": 0
   },
   "troubleshooting/service-wont-start": {
     "checked": 16,

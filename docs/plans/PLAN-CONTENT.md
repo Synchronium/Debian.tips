@@ -323,18 +323,22 @@ asking for the mechanism. Try each of the others the cheap way first.
 
 ### §5.3. Environment, resources and open files
 
-- **`command-not-found`**. **Needs**: `env` or `printenv` (§6.9). **Demo**: not installed;
-  installed and not on `PATH`; present and not executable; found by the shell's hash table after a
-  move; shadowed by an alias or a function; and a name that is a builtin. **Keep
-  `sudo-command-not-found` standalone and link to it from the not-installed branch.** That page is
-  not an instance of this pattern: its subject is Debian's installer leaving `sudo` uninstalled and
-  the first user outside the `sudo` group when a root password is set, which is a packaging
-  decision rather than a `PATH` story. Folding it in would lose the explanation and give up the
-  more specific query.
-- **`script-works-in-shell-but-not-cron`**. **Needs**: `crontab` (written), `env` (§6.9).
-  **Demo**: `PATH` differing under cron, the working directory differing, `SHELL` differing, output
-  going nowhere because nothing is attached, and an exit status nobody is reading. Really a page
-  about process environments, and it ties the environment concept page to the scripting course.
+- **`command-not-found`**. Written 2026-09-18, 15/15. Eight branches, all 127: nothing of that
+  name installed, installed and off `PATH`, the hash table pointing at a file that has moved, a
+  function or alias that exists only in the interactive shell, sudo's `secure_path`, a builtin
+  handed to something that is not a shell, a shebang naming an interpreter that is not there, and
+  `PATH` replaced instead of extended. The alias branch became a function branch: a non-interactive
+  shell does not expand aliases at all, so the case cannot be replayed and is stated in prose
+  instead. `sudo-command-not-found` stayed standalone, as planned, and now links here: its subject
+  is Debian's installer leaving `sudo` uninstalled and the first user outside the `sudo` group when
+  a root password is set, which is a packaging decision rather than a `PATH` story.
+- **`script-works-in-shell-but-not-cron`**. Written 2026-09-18, 12/12, and nothing exempt. The
+  page's evidence is a real cron job's environment, captured by the fixture once per container;
+  everything after that is the same environment rebuilt with `env -i`, which reproduces the
+  captured failure byte for byte and costs nothing to replay. §13.7 has what the wait costs and
+  why it is paid once. Branches: the `PATH`, the working directory, dash instead of bash, output
+  mailed to a machine with no MTA, and a 127 nobody reads, plus the three failures that produce
+  the same symptom with `PATH` in perfect order.
 - **`why-is-this-process-using-so-much-cpu`** and
   **`why-is-this-process-using-so-much-memory`**. **Needs**: `top`, `free`, `ps` (written).
   **Demo**: a process spinning against one that is blocked; resident against virtual size; cache
@@ -484,9 +488,11 @@ Most of this group waits on a fixture. What is written is `curl`, `wget`, `ssh` 
 
 ### §6.9. Shell and environment
 
-- **`env` and `printenv`** (`standard`). **Needs**: nothing. **Demo**: running a command with a
-  modified environment, and the difference between a shell variable and an exported one. Blocks
-  two hubs in §5.3.
+- **`env` and `printenv`**. Written 2026-09-18, 49/49. One page at `/commands/env/`, because
+  `printenv` is `env` with the rest of `env` taken away and a reader asking about either has the
+  same question. `export` stayed out despite the slug `src/config.ts` reserved for it: it is a
+  shell builtin, and the concept page and the scripting course already teach it. Both of §5.3's
+  remaining hubs are unblocked.
 - **`alias`** (`light`). **Demo**: why an alias is invisible to a script.
 - **`history`** (`light`). **Demo**: expansion, and where the file is written.
 - **`apt-mark`** (`light`). **Demo**: hold, unhold, and manual against automatic. Feeds §5.2 and
@@ -726,6 +732,10 @@ Distilled from the shipped ledger this plan replaces. Each of these cost a batch
 - **The replay's working directory**, which is named after the page. No example prints `pwd` from
   it. A fixture that needs a stable path builds one under `/srv`.
 - **`$HOME`**, for the same reason.
+- **A whole environment.** `env` and `printenv` with no arguments print `PWD`, and `SHLVL` and `_`
+  differ between a plain `sandbox.sh exec` and a replay, so the rule above is broken without anyone
+  typing `pwd`. A page about the environment asks for the variables it wants by name, and shows a
+  complete one only where `-i` built it.
 - **An architecture**, including a number that encodes one, and including the multiarch triplet in
   a shared library's path. That last one rules out any unnarrowed `lsof`: a process's `mem` rows
   are its libraries, and every one of them sits under `/usr/lib/<triplet>/`.
@@ -848,6 +858,18 @@ From `service-wont-start`, `disk-full`, `permission-denied` and `apt-update-fail
 - **The image has no `getfacl`**, so "the mode is right and something else is refusing" is a
   `noexec` mount rather than an ACL. Adding `acl` to the image would put every page's replay on
   the line for one branch.
+- **A page about cron has to wait for cron, once.** A job starts on a minute boundary and nothing
+  moves that, so a fixture that wants a real cron job's output waits out the rest of the current
+  minute: 27s and 53s on two runs, against a five-second cap on any one example. Guard the capture
+  behind a marker file outside the working directory and the whole page pays it once per container
+  rather than once per example, which put `script-works-in-shell-but-not-cron` at 37s, inside the
+  range `apt` and `service-wont-start` already occupy. Have the capture job write its marker last,
+  so a wait on it cannot see a half-finished capture, and install a crontab afterwards whose
+  schedule will not arrive during a replay, or cron appends to the captured files behind an example
+  that is reading them.
+- **`env -i` reproduces cron exactly, which is what keeps such a page checkable.** Rebuilding the
+  five variables by hand gave output identical to the captured job's, so every branch after the
+  capture replays in milliseconds and none of them needed an exemption.
 - **A hub is about the length of a `standard` command page.** All four came in between 1400 and
   1900 words with ten to sixteen checked output blocks, which is a day's work rather than a
   week's.

@@ -80,7 +80,7 @@ sections:
         level: basic
       - title: "Watch a variable fail to arrive"
         code: FOO=bar sudo printenv FOO; echo "exit=$?"
-        description: "Nothing is printed and `printenv` exits 1, because `FOO` was removed on the way through. A script that sets a variable and then calls `sudo` expecting the command to see it will get no error, just different behaviour."
+        description: "Nothing is printed and [`printenv`](/commands/env/) exits 1, because `FOO` was removed on the way through. A script that sets a variable and then calls `sudo` expecting the command to see it will get no error, just different behaviour. `sudo env FOO=bar ...` sets it on the far side of the reset, which is the way through that survives."
         output: |2
           exit=1
         level: intermediate
