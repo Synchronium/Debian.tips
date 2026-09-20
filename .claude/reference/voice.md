@@ -111,6 +111,12 @@ looking only for consequences finds about half of what is there: leave the `, an
 genuine equals, and change the ones joining a cause to its effect, or a claim to its
 qualification.
 
+That pass is the one most often skipped, because nothing fails without it and the sentences read
+acceptably to the person who wrote them. A review of three pages written in one sitting returned
+eight of these and five of the ellipsis above, both from an author who had read this section that
+morning. Neither has a spelling `npm run voice` can find, so a page gets them only from somebody
+reading it whole and cold.
+
 **Clefts.** "X is what Y", "what X does is Y", "it is X that Y". Occasionally the right emphasis,
 more often a way of making a plain fact sound consequential.
 
@@ -127,6 +133,22 @@ them on a page is a house style rather than six observations. Say what the thing
 number where it does some work or leave it out. `npm run voice` counts these against a budget,
 being one of the few tells in this section with a spelling.
 
+**The epigram where the mechanism goes.** A sentence with the cadence of a conclusion, standing in
+for the explanation the reader came for: "answers a question nobody asked", "the second search is
+honest", "reported it to an empty room", "one transposition, and it would have survived". The test
+is to delete it. If no fact goes with it and the paragraph is now missing something, the sentence
+was holding a place rather than filling one.
+
+It matters more here than the other tells for two reasons. A reader who cannot follow a sentence
+has no way to tell whether it was wrong or merely compressed, and whether the claims are true is
+the whole of what this site sells. And the shape is invisible to the replay, which checks output
+blocks and figures while a phrase that merely sounds conclusive passes untouched: that is how
+`#!/usr/bin/env python3` came to be described here as surviving a typo it does nothing about, and
+the sentence read well enough that the error reached review rather than being caught in writing.
+Ask what a reader would need in order to reconstruct the claim, and write that. Extra words are
+allowed; §1 gives permission not to pad, which is not permission to leave out the step that makes
+a claim follow.
+
 **The positional half.** Setting something up as two parts and then pointing at one of them by
 position: "`CONT` is the other half", "The other half of the question", "This half of `-p`". The
 reader has to carry the mapping to use the sentence, and where the antecedent is in a different
@@ -135,6 +157,11 @@ example there is nothing on screen to map it to. Name the part instead, which is
 counts those, so the budget is only for the positional form. What the rule leaves alone is the word
 used honestly: `half-finished` and its family, the quantity sense, and a thing that really is two,
 like a key pair's public and private halves or the master and slave of a pty.
+
+The same habit points at an example rather than a part: "for the reason the third one shows",
+"the case `-0` above exists for", "every other case on this page". A page is read in fragments,
+linked to from the middle and scrolled past, so a reference that depends on where the reader is in
+it costs them a trip. Name the thing. Nothing counts these either.
 
 **Negation carried on the wrong word.** "No repository apt knows about lists a package by that
 name" asks the reader to hold a negative through eight words before learning what it denies, and

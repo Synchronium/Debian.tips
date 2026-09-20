@@ -92,7 +92,9 @@ const RULES: readonly Rule[] = [
   {
     id: "reach-for",
     severity: SEVERITY.report,
-    pattern: /\breach(?:es|ing)? for\b/gi,
+    // `reached for` included: the past participle is the form that slips through a page written
+    // in one sitting, and it reads as the same tic to anyone meeting three of them.
+    pattern: /\breach(?:es|ing|ed)? for\b/gi,
     budget: 6,
     message: "voice.md §5: fine a few times, a verbal tic in bulk.",
   },

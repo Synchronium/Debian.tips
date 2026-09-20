@@ -19,7 +19,7 @@ report written
 status: 0
 ```
 
-The crontab entry is the one you meant, and the job is still not doing its work:
+The crontab entry is the one you meant, but the job is still not doing its work:
 
 ```bash
 crontab -l
@@ -57,7 +57,7 @@ printenv PATH
 /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games
 ```
 
-`/usr/local/bin` is where a machine's own scripts live, and it is on your list and not on cron's.
+`/usr/local/bin` is where a machine's own scripts live, and it is on your list but not on cron's.
 So is `/usr/sbin`, which is where a good deal of what a maintenance job wants lives, and so is
 `~/.local/bin`, where `pip install --user` and `pipx` put things.
 
@@ -75,7 +75,7 @@ echo "status: $?"
 status: 127
 ```
 
-That is the answer: the script is found, and a command on line 2 of it is not. Here is what the
+That is the answer: the script is found, but a command on line 2 of it is not. Here is what the
 real cron job wrote, for comparison:
 
 ```bash
@@ -93,7 +93,7 @@ cases where `PATH` is not the reason.
 
 ## Where the failure went
 
-You did not see that message because cron mails a job's output to the owner of the crontab, and on
+You did not see that message because cron mails a job's output to the owner of the crontab, but on
 a machine with no mail transfer agent installed there is nowhere for it to go:
 
 ```bash
@@ -103,7 +103,7 @@ ls -A /var/mail | wc -l
 0
 ```
 
-The job ran, failed, and reported it to an empty room. `run.log` above exists because the job that
+The job ran, failed, and sent the message to a mailbox nothing on this machine creates. `run.log` above exists because the job that
 wrote it was scheduled with its output redirected, which is the habit worth having:
 
 ```bash
@@ -113,7 +113,7 @@ wrote it was scheduled with its output redirected, which is the habit worth havi
 `2>&1` after the redirect rather than before it, or the error messages stay on the stream you were
 trying to capture. Debian's cron also logs the fact that it started a job to syslog, which says
 nothing about how the job got on; `journalctl -t CRON` is where that lands on a systemd machine.
-Setting `MAILTO` at the top of the crontab is the other route, and it needs an MTA that works:
+Setting `MAILTO` at the top of the crontab is the other route, but it needs an MTA that works:
 
 ```bash
 MAILTO=ops@example.com
@@ -139,7 +139,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ```
 
 Write the list out; `PATH=$PATH:/usr/local/bin` does not work there, because a crontab is not a
-script and no shell expands the variable. The same goes for any other assignment at the top of the
+script so there's no shell to expand the variable. The same goes for any other assignment at the top of the
 file: they are literal `NAME=value` lines, read by cron itself.
 
 ## /bin/sh is dash, not bash
@@ -155,7 +155,7 @@ env -i HOME=/home/user PATH=/usr/bin:/bin /bin/sh -c 'readlink /proc/$$/exe'
 
 A script whose first line says `#!/bin/bash` is safe, since the kernel honours the shebang and cron
 never gets a say. A script with no shebang at all, or one run as `sh script.sh` from the crontab
-line, is handed to dash, and every bash-only construction in it stops working:
+line, is handed to dash, so every bash-only construction in it stops working:
 
 ```bash
 printf '#!/bin/sh\nif [[ -f /etc/hostname ]]; then echo yes; fi\n' > check
@@ -168,8 +168,8 @@ echo "status: $?"
 status: 0
 ```
 
-Two things went wrong there. `[[` is a bash keyword and dash has never had it, and the script
-exited 0 anyway, because a failing command inside an `if` is a condition that came out false rather
+Two things went wrong there: `[[` is a bash keyword that dash doesn't have, and the script exited
+0 anyway, because a failing command inside an `if` is a condition that came out false rather
 than an error. [sh vs bash vs dash](/compare/sh-vs-bash-vs-dash/) has the rest of the constructions
 that differ, and `checkbashisms` from the `devscripts` package finds them in a file.
 
@@ -210,7 +210,7 @@ and [cron vs systemd timers](/compare/cron-vs-systemd-timers/) covers the second
 
 Three failures produce the same symptom with `PATH` in perfect order, and each has its own tell.
 
-A `%` in the command is a newline to cron, and everything after the first one becomes standard
+A `%` in the command is a newline to cron, so everything after the first one becomes standard
 input for the job. `date +%F` in a crontab runs `date +` and feeds it an `F`, so escape every one
 as `\%`:
 
