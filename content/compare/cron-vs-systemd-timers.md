@@ -109,6 +109,8 @@ when you write it rather than the following Monday.
 A user crontab job runs with `PATH=/usr/bin:/bin`. A systemd service gets systemd's own default,
 which includes `/usr/local/sbin` and `/usr/local/bin`. A script that works at your prompt and
 fails under cron is usually this, and neither tool warns you.
+[Works in the shell, fails in cron](/troubleshooting/script-works-in-shell-but-not-cron/) has the
+whole of that environment captured from a running job, and how to reproduce it at your prompt.
 
 ## What Debian itself does
 

@@ -23,7 +23,9 @@ echo "Hello, $(whoami)"
 ```
 
 `#!/usr/bin/env bash` finds `bash` on your `PATH` rather than hardcoding `/bin/bash`, more
-portable across systems where bash lives somewhere else.
+portable across systems where bash lives somewhere else. Only one word fits after it, so a
+shebang that wants an option or a variable needs `-S`, which [env](/commands/env/) covers along
+with the rest of what that line can do.
 
 It says `bash` rather than `sh` deliberately. On Debian `/bin/sh` is dash, not bash, and a
 script that asks for `sh` and then uses bash syntax fails in ways that are hard to read; see

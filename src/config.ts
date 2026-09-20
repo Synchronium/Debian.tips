@@ -252,7 +252,7 @@ export const COMMAND_GROUPS: { title: string; commands: string[] }[] = [
   { title: "Users & permissions", commands: ["chmod", "chown", "sudo", "managing-users"] },
   {
     title: "Shell & automation",
-    commands: ["which", "xargs", "watch", "crontab", "date", "env-export", "history", "alias"],
+    commands: ["which", "xargs", "watch", "crontab", "date", "env", "history", "alias"],
   },
 ];
 export const COMMAND_GROUP_FALLBACK = "More commands";

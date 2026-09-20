@@ -9,7 +9,8 @@ related: [environment-variables-and-path, your-first-script, sh-vs-bash-vs-dash]
 ---
 
 **Problem:** a script you wrote is in a directory of your own, and running it by name gets you
-`command not found`, and [which](/commands/which/) cannot see it either. Exporting `PATH` in the terminal fixes it until you close the terminal.
+[`command not found`](/troubleshooting/command-not-found/), and [which](/commands/which/) cannot
+see it either. Exporting `PATH` in the terminal fixes it until you close the terminal.
 
 **Solution:** on Debian, if the directory is `~/.local/bin` or `~/bin`, create it and log in
 again. No file needs editing.
@@ -113,7 +114,9 @@ deploy: not on PATH
 ```
 
 Neither does `cron`, which gives a job a `PATH` of `/usr/bin:/bin` and nothing else, nor a systemd
-unit, which starts with no user environment at all. Both want a full path to the program, or a
+unit, which starts with no user environment at all.
+[Works in the shell, fails in cron](/troubleshooting/script-works-in-shell-but-not-cron/) is that
+failure end to end, from the captured environment to the fix. Both want a full path to the program, or a
 `PATH=` line of their own in the crontab or the unit file.
 [Environment variables and PATH](/concepts/environment-variables-and-path/) has the whole model:
 which file each kind of shell reads, and why the answer differs for `~/.bashrc`.
