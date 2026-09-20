@@ -103,8 +103,9 @@ ls -A /var/mail | wc -l
 0
 ```
 
-The job ran, failed, and sent the message to a mailbox nothing on this machine creates. `run.log` above exists because the job that
-wrote it was scheduled with its output redirected, which is the habit worth having:
+The job ran, failed, and tried to report it to a mailbox that does not exist. `run.log` exists
+because the job that wrote it was scheduled with its output redirected, which is the habit worth
+having:
 
 ```bash
 30 3 * * * /usr/local/bin/tips-nightly >> /var/log/tips-nightly.log 2>&1
