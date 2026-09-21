@@ -641,24 +641,24 @@ sections:
     examples:
       - title: "See how little disk a sparse file actually uses"
         code: |-
-          truncate -s 100M sparse.img
-          dd if=/dev/urandom of=sparse.img bs=1 count=16 seek=50000000 conv=notrunc status=none
+          truncate -s 10M sparse.img
+          dd if=/dev/urandom of=sparse.img bs=1 count=16 seek=5000000 conv=notrunc status=none
           du -h --apparent-size sparse.img
           du -h sparse.img
         description: >-
-          `truncate` creates a 100M file that's almost entirely a hole; the
+          `truncate` creates a 10M file that's almost entirely a hole; the
           16-byte `dd` write near the middle is the only real data in it.
           `--apparent-size` reports the logical size, plain `du` reports what's
           actually allocated on disk.
         output: |2
-          100M	sparse.img
+          10M	sparse.img
           4.0K	sparse.img
         level: intermediate
         tags: [disk]
       - title: "Archive it without and with sparse-file support"
         code: |-
-          truncate -s 100M sparse.img
-          dd if=/dev/urandom of=sparse.img bs=1 count=16 seek=50000000 conv=notrunc status=none
+          truncate -s 10M sparse.img
+          dd if=/dev/urandom of=sparse.img bs=1 count=16 seek=5000000 conv=notrunc status=none
           tar -cf nosparse.tar sparse.img
           du -h --apparent-size nosparse.tar
           tar -cSf sparse.tar sparse.img
@@ -667,10 +667,11 @@ sections:
           Without `-S` (`--sparse`), `tar` reads and stores every byte,
           holes included, so the archive balloons to the file's full logical
           size. `-S` detects the holes and stores only the real data plus
-          their offsets. Skipping `-S` on a VM disk image or a preallocated
-          database file can turn a 10K archive into a 100M one.
+          their offsets. On a VM disk image or a preallocated database file,
+          that is the difference between an archive the size of the data and
+          one the size of the disk.
         output: |2
-          101M	nosparse.tar
+          11M	nosparse.tar
           10K	sparse.tar
         level: advanced
         tags: [disk]
