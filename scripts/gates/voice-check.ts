@@ -412,12 +412,13 @@ export function wrappedParagraphs(
       starts.push({ at: text.length, line: part.line });
       text += part.text.trim();
     }
-    const captured = starts;
     blocks.push({
       text,
+      // `starts` is built fresh each time through and never reassigned, so the closure keeps this
+      // block's offsets rather than the next one's.
       lineAt: (index) => {
-        let line = captured[0]?.line ?? 1;
-        for (const start of captured) if (start.at <= index) line = start.line;
+        let line = starts[0]?.line ?? 1;
+        for (const start of starts) if (start.at <= index) line = start.line;
         return line;
       },
     });
@@ -573,7 +574,9 @@ function main(): void {
     const target = hookTarget();
     targets = target !== null && inScope(target) ? [target] : [];
   } else {
-    targets = named.length ? named.map((path) => join(ROOT, relative(ROOT, path))) : corpusFiles();
+    // Absolute, because `checkFile` reports each finding against the path relative to the root and
+    // a name typed at the shell is relative to the working directory.
+    targets = named.length ? named.map((path) => resolve(path)) : corpusFiles();
   }
 
   if (targets.length === 0) process.exit(0);

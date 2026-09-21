@@ -31,6 +31,13 @@ function main(): void {
     );
     process.exit(2);
   }
+  // The usage line means either/or, so the mix is refused rather than resolved. Taking one and
+  // dropping the other is the quiet no-op the titles are matched whole to avoid: whichever way it
+  // was read, the caller asked for something other than what they would have got.
+  if (titles.includes(ADOPT_ALL) && titles.length > 1) {
+    console.error(`${ADOPT_ALL} adopts every example on the page, so it takes no titles beside it.`);
+    process.exit(2);
+  }
 
   // Capturing as root for a page that replays as `user` would bake "root root" into every
   // `ls -l` on it, so the mode is read from the same directive the replay reads.

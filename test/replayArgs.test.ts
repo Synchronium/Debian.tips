@@ -61,6 +61,13 @@ describe("what a replay refuses", () => {
     expect(refusal("--shard=5/4")).toContain("out of range");
   });
 
+  // Keeping the first silently is a green run over a set of pages nobody chose, which is the one
+  // outcome every other refusal here exists to prevent.
+  it("the same value flag twice, rather than taking either", () => {
+    expect(refusal("--shard=1/4", "--shard=3/4")).toContain("more than once");
+    expect(refusal("--timings-out=a.json", "--timings-out=b.json")).toContain("more than once");
+  });
+
   it("a shard that is not two numbers", () => {
     expect(refusal("--shard=half")).toContain("<index>/<total>");
   });

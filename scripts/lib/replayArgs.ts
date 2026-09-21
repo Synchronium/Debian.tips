@@ -31,9 +31,9 @@ export interface ReplayRequest {
 }
 
 export function parseReplayArgs(args: string[]): ReplayRequest {
+  const known: readonly string[] = FLAGS;
   const unknown = args.filter(
-    (arg) =>
-      arg.startsWith("-") && !FLAGS.includes(arg as never) && !VALUE_FLAGS.some((f) => arg.startsWith(f)),
+    (arg) => arg.startsWith("-") && !known.includes(arg) && !VALUE_FLAGS.some((f) => arg.startsWith(f)),
   );
   if (unknown.length) {
     throw new ArgumentError(
@@ -41,8 +41,18 @@ export function parseReplayArgs(args: string[]): ReplayRequest {
     );
   }
 
-  const valueOf = (flag: string): string | undefined =>
-    args.find((arg) => arg.startsWith(flag))?.slice(flag.length);
+  /** The value given to a flag, refusing a second one rather than taking either.
+   *
+   *  Silently keeping the first means `--shard=1/4 --shard=3/4` runs shard 1 and reports a clean
+   *  exit, which is this file's own definition of the thing worth refusing: a green run over a set
+   *  of pages nobody chose. */
+  const valueOf = (flag: string): string | undefined => {
+    const given = args.filter((arg) => arg.startsWith(flag));
+    if (given.length > 1) {
+      throw new ArgumentError(`replay: ${flag} given more than once (${given.join(" ")}); pick one.`);
+    }
+    return given[0]?.slice(flag.length);
+  };
 
   const onlyChanged = args.includes("--changed");
   const recordTimings = args.includes("--record-timings");
