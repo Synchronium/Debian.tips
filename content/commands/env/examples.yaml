@@ -255,7 +255,7 @@ sections:
         tags: [scripting]
       - title: "bash's fallback PATH ends in the current directory"
         code: env -i bash -c 'echo $PATH'
-        description: "The trailing `.` is bash's compiled-in default, reached only when nothing supplied a `PATH`. It means a file called `ls` in whatever directory the script happens to be sitting in, worth knowing before you run anything out of an unpacked archive this way."
+        description: "The trailing `.` is bash's compiled-in default, reached only when no `PATH` was supplied. It means a file called `ls` in whatever directory the script happens to be sitting in, worth knowing before you run anything out of an unpacked archive this way."
         output: |
           /usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin:.
         level: advanced

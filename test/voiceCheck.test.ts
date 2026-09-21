@@ -2,7 +2,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
-import { SEVERITY, checkFile, inScope, proseBlocks, proseLines } from "../scripts/gates/voice-check.js";
+import { SEVERITY, checkFile, inScope, wrappedParagraphs, proseLines } from "../scripts/gates/voice-check.js";
 import { EXAMPLES_FILE, ROOT } from "../src/paths.js";
 
 /* The property worth a test is what the checker refuses to look at. `output:` and `fixtures:`
@@ -174,6 +174,11 @@ describe("voice-check scoping", () => {
       "It prints nothing but the header.",
       "This has nothing to do with parents.",
       "Two things happen, and they look nothing alike.",
+      // The perfect passive, which is the copula exclusion with a different auxiliary in front
+      // of the participle and still no actor the sentence could name.
+      "The fix does not apply, because nothing has been installed yet.",
+      // A gerund in front takes the word as its object, so the verb after it has its own subject.
+      "An exemption matching nothing reads as though it exempts something.",
     ];
 
     const idsFor = (line: string) =>
@@ -262,7 +267,7 @@ describe("voice-check reads paragraphs rather than lines", () => {
       { line: 1, text: '        title: "Something ending in and"' },
       { line: 2, text: '        description: "nothing follows it here."' },
     ];
-    const blocks = proseBlocks(EXAMPLES_FILE, lines);
+    const blocks = wrappedParagraphs(EXAMPLES_FILE, lines);
     expect(blocks).toHaveLength(2);
   });
 });

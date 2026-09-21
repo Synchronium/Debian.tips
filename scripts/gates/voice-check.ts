@@ -141,11 +141,16 @@ const RULES: readonly Rule[] = [
     // them here would put the construction into a file this very rule reads, which is the reason
     // voice.md is the one document exempt from the checker.
     //
-    // Three exclusions, each of which is ordinary English that shares only the word.
+    // The exclusions, each of which is ordinary English that shares only the word.
     //
     // The copula, because `nothing is printed` is a passive with no actor to name and reads
     // perfectly: it is 71 of the corpus's hits and none of them is the fault. `else` sits inside
     // the optional group rather than outside it, so `nothing else is printed` is excluded too.
+    //
+    // The perfect passive (`has been`, `have been`, `had been`) for the same reason: a different
+    // auxiliary in front of the same participle, still with no actor the sentence could name. Only
+    // the passive form goes. A bare `has` stays matched, since an absence that possesses something
+    // is the construction rather than a passive.
     //
     // `with nothing added`, `with nothing captured`: an absolute construction rather than a
     // clause, so there is no verb to negate.
@@ -161,17 +166,26 @@ const RULES: readonly Rule[] = [
     // and `does nothing at all` are all ordinary, and a check wrong twice in three findings
     // teaches its reader to skip it.
     //
-    // What the pattern still cannot see, and what the budget therefore holds room for. A verb in
-    // front turns the word into an object while the shape here stays the same, so a sentence
-    // about a glob matching no files reads to this rule as an absence doing the expanding. And a
-    // participle can be an adjective rather than a verb, which is what an ADR means by recording
+    // A verb in front turns the word into an object while the shape here stays the same, so a
+    // sentence about a glob matching no files would read to this rule as an absence doing the
+    // expanding. The `ing` lookbehind covers the part of that a spelling can decide: a gerund
+    // immediately in front takes the word as its object, which leaves it no room to be a subject.
+    //
+    // **A finite verb in front is not the same case**, which is why the lookbehind asks for the
+    // gerund and not for any word ending in `s`. A verb of meaning or showing takes a clause, and
+    // the absence is then the subject of that clause and the fault being looked for.
+    // `test/voiceCheck.test.ts` holds such a line, and the wider lookbehind silences it.
+    //
+    // What the pattern therefore cannot see, and what the budget holds room for: that case, and a
+    // participle used as an adjective rather than a verb, which is what an ADR means by recording
     // that no automated thing enforces it. Both need to know which word is the subject, which is
-    // grammar rather than spelling. Examples of each are in the commit that swept the corpus,
-    // deliberately not here: a comment is prose this rule reads.
+    // grammar rather than spelling. Examples are in the commit that swept the corpus, deliberately
+    // not here: a comment is prose this rule reads.
     pattern:
-      /(?<!with )\bnothing (?:(?:can|could|will|would|may|might|must|should|does|did|do|ever|then|else|now|still|really|actually) )?(?!is\b|was\b|are\b|were\b|be\b|been\b|being\b|match|happen|unless\b|this\b)[a-z]+(?:s|ed)\b/gi,
-    // Set from a swept corpus rather than chosen: ten findings survive the sweep and every one is
-    // a false positive of the two kinds above. The margin is for the next page, not for them.
+      /(?<!with )(?<![a-z]+ing )\bnothing (?:(?:can|could|will|would|may|might|must|should|does|did|do|ever|then|else|now|still|really|actually) )?(?!is\b|was\b|are\b|were\b|be\b|been\b|being\b|ha(?:s|ve|d) been\b|match|happen|unless\b|this\b)[a-z]+(?:s|ed)\b/gi,
+    // Set from a swept corpus rather than chosen: ten findings survive the sweep, and every one is
+    // a participle or a finite verb the rule cannot tell from the real construction. The margin is
+    // for the next page, not for them.
     budget: 15,
     message: "voice.md §4: an absence as the subject of a verb. Name the actor, or negate the verb.",
   },
@@ -199,15 +213,17 @@ const RULES: readonly Rule[] = [
     // because a person really can be the missing actor, and the corpus quotes a reader saying one
     // of them in the taxonomy tables. Both are what the budget is for.
     //
-    // What it cannot see, and what the budget holds room for: this file is read a line at a time,
-    // so a paragraph wrapped between the word and its exclusion reads here as an unexcluded hit.
+    // The exclusions are matched against the whole paragraph, so one wrapped away from the word it
+    // excludes still fires. That is `wrappedParagraphs` below, and it is the reason this rule can
+    // afford to state its exclusions as a plain word list.
     pattern:
       /\band (?:nothing|nobody|no[ -]one)\b(?! (?:else|more|but|you|that|which|they|we|is|was|are|were|be|been|being|to|about|for|happens|matches)\b)/gi,
-    // Set from a swept corpus rather than chosen, as the rule above was. Three findings survive
-    // the sweep: a reader quoted saying one of these in the taxonomy table, which appears both in
-    // an ADR and in the comment the ADR was written from, and a line of this checker's own test
-    // data. The margin is for the next page.
-    budget: 5,
+    // Set from a swept corpus rather than chosen, as the rule above was. Four findings survive the
+    // sweep: a reader quoted saying one of these in the taxonomy table, which appears both in an
+    // ADR and in the comment the ADR was written from; this file's own description of the wrapped
+    // phrase the paragraph matching fixed; and one setup script pairing the two clauses on
+    // purpose. The margin is for the next page.
+    budget: 6,
     message: "voice.md §4: an absence bolted onto the end of a sentence. Name the actor, or negate the verb.",
   },
   {
@@ -355,6 +371,10 @@ export function proseLines(path: string, source: string): { line: number; text: 
 
 /** Consecutive prose lines joined into the paragraph they were wrapped from.
  *
+ *  `src/content/proseBlocks.ts` asks a different question about different files: it pairs a prose
+ *  page's command fence to the output fence below it, and the replay reads it to decide what a
+ *  page claims. This one is about hard wrapping, and no file outside this one reads it.
+ *
  *  **A rule matched line by line is wrong in both directions.** Prose here is hard-wrapped at
  *  around 100 columns, and a wrap falls wherever the column ran out rather than anywhere
  *  meaningful, so a construction the guide describes is as likely to straddle two lines as to sit
@@ -374,7 +394,7 @@ export function proseLines(path: string, source: string): { line: number; text: 
  *  continuation lines, which is the wrapped prose this exists for.
  *
  *  Offsets carry the line each character came from, so a finding still reports where to look. */
-export function proseBlocks(
+export function wrappedParagraphs(
   path: string,
   lines: { line: number; text: string }[],
 ): { text: string; lineAt: (index: number) => number }[] {
@@ -391,12 +411,13 @@ export function proseBlocks(
       starts.push({ at: text.length, line: part.line });
       text += part.text.trim();
     }
-    const captured = starts;
     blocks.push({
       text,
+      // `starts` is built fresh on each call and never reassigned, so the closure keeps this
+      // block's offsets and not the next one's.
       lineAt: (index) => {
-        let line = captured[0]?.line ?? 1;
-        for (const start of captured) if (start.at <= index) line = start.line;
+        let line = starts[0]?.line ?? 1;
+        for (const start of starts) if (start.at <= index) line = start.line;
         return line;
       },
     });
@@ -433,7 +454,7 @@ export function checkFile(absolute: string): Finding[] {
     }
   }
 
-  for (const block of proseBlocks(file, lines)) {
+  for (const block of wrappedParagraphs(file, lines)) {
     for (const rule of RULES) {
       if (rule.anchored) continue;
       for (const match of block.text.matchAll(rule.pattern)) {
@@ -552,7 +573,9 @@ function main(): void {
     const target = hookTarget();
     targets = target !== null && inScope(target) ? [target] : [];
   } else {
-    targets = named.length ? named.map((path) => join(ROOT, relative(ROOT, path))) : corpusFiles();
+    // Resolved against the working directory, which is where a name typed at the shell is
+    // relative to. `checkFile` takes an absolute path and reports the finding against the root.
+    targets = named.length ? named.map((path) => resolve(path)) : corpusFiles();
   }
 
   if (targets.length === 0) process.exit(0);

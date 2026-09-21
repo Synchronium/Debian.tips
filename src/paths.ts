@@ -7,12 +7,24 @@
 //
 // Site *configuration* does not belong here (see `src/config.ts`) and neither does the content
 // contract (see `src/content/schema.ts`). This file answers "where", nothing else.
-import { join } from "node:path";
+import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { COMMANDS_CATEGORY } from "./content/schema.js";
 
 /** The repository root. This file lives in `src/`, so the root is one level up. */
 export const ROOT = fileURLToPath(new URL("..", import.meta.url));
+
+/** An absolute path as this repository spells it: root-relative, forward slashes on every
+ *  platform.
+ *
+ *  Here rather than in either caller because both are publishing the result. A page's source links
+ *  are URL fragments as well as filesystem paths (`blobUrl` in `src/config.ts`), and the loader's
+ *  slug-collision message names a file it wants the reader to go and rename. A path built over a
+ *  synthetic tree resolves outside the root and comes back with leading `..`, which is the honest
+ *  answer: the caller tested a file that is not in this repository. */
+export function repoPath(absolute: string): string {
+  return relative(ROOT, absolute).split(sep).join("/");
+}
 
 export const CONTENT_DIR = join(ROOT, "content");
 export const DIST_DIR = join(ROOT, "dist");

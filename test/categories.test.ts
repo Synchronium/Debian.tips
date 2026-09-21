@@ -52,8 +52,15 @@ describe("category configuration", () => {
 /* `COMMAND_GROUPS` decides which section of `/commands/` a page appears under, and a slug that
  * matches nothing falls silently into the "More commands" catch-all. Silently is the problem:
  * the page builds, links, replays and reads correctly, and is simply filed in the wrong place on
- * the site's primary index. A group naming a slug no page has is the same defect from the other
- * side, and looks identical. */
+ * the site's primary index.
+ *
+ * A group naming a slug no page has is deliberately not checked. `src/config.ts` says the table
+ * doubles as a rough roadmap of intended coverage, so a slug waiting for its page is the table
+ * being used as designed, not a defect.
+ *
+ * A slug named twice is a defect, and it is the one this table's shape invites: moving a page
+ * between groups means a deletion in one list and an addition in another, and doing only the
+ * addition leaves the page rendered in both sections. */
 describe("command page grouping", () => {
   it("files every command page under a real group, not the catch-all", () => {
     const grouped = new Set(COMMAND_GROUPS.flatMap((group) => group.commands));
@@ -63,5 +70,22 @@ describe("command page grouping", () => {
 
     expect(pages.length).toBeGreaterThan(0);
     expect(pages.filter((slug) => !grouped.has(slug))).toEqual([]);
+  });
+
+  /* `groupedCommands` in src/templates/listing.ts resolves each group's slugs against the same
+   * page map, so a slug in two groups renders a row in each. It then collects what it rendered
+   * into a set, which a repeat enters once, so the catch-all stays empty and the page appears
+   * twice with nothing on the listing to say so. */
+  it("names each command in one group only", () => {
+    const listed = COMMAND_GROUPS.flatMap((group) => group.commands);
+    const seen = new Set<string>();
+    const repeated = listed.filter((slug) => {
+      const already = seen.has(slug);
+      seen.add(slug);
+      return already;
+    });
+
+    expect(listed.length).toBeGreaterThan(0);
+    expect(repeated).toEqual([]);
   });
 });
