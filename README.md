@@ -45,11 +45,12 @@ scripts/fixtures/   A setup script per page, creating the sample files its examp
 styles/site.css     Full design system (single stylesheet, hashed on build)
 public/             Static assets copied as-is into dist/ (favicon, robots.txt, CNAME)
 test/               Vitest unit + build-pipeline tests, with fixture content
+docs/adr/           Why things are the way they are, one record per decision
 ```
 
-The two are not independent: `scripts/` imports the content contract from `src/content/`, so the
-generator and the harness cannot disagree about what a page claims. The dependency runs one way
-only, and `docs/adr/0028-src-content-is-the-shared-contract.md` is why.
+`src/` and `scripts/` are not independent: `scripts/` imports the content contract from
+`src/content/`, so the generator and the harness cannot disagree about what a page claims. The
+dependency runs one way only, and `docs/adr/0028-src-content-is-the-shared-contract.md` is why.
 
 ## Writing content
 
