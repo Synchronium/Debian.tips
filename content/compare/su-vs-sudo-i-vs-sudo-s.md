@@ -83,7 +83,7 @@ to authenticate. What you get for the extra process is a slightly worse audit re
 
 `sudo` logs each invocation with the command it was asked to run, so a machine's history shows
 `apt update` as a line of its own. A root shell, however you reached it, logs the session and
-nothing inside it: the record says you became root at half past two and says nothing about the
+not the commands inside it: the record says you became root at half past two and says nothing about the
 next forty minutes.
 
 That granularity is why distributions moved to `sudo <command>` in the first place. It is also why

@@ -305,8 +305,8 @@ systemctl list-units --failed 'tips-*' --no-pager --no-legend
 ```
 
 Drop the pattern and you get every failed unit on the machine, which is the first command to run
-when something is misbehaving and nobody has pinned down what. Keep the pattern when you already
-know which service you are chasing and would rather not read past a `getty` that has been failing
+when something is misbehaving and you have not yet pinned down what. Keep the pattern when you
+already know which service you are chasing and would rather not read past a `getty` that has been failing
 since boot.
 
 `systemctl reset-failed` clears an entry once you have dealt with it:

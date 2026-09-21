@@ -2,7 +2,7 @@
 
 Notes on what this site should do about Debian releases: the one it targets now, the ones it does
 not, and the one that has not happened yet. Working notes rather than a decision. Nothing here is
-an ADR and nothing here has been built.
+an ADR, and none of it has been built.
 
 Started 2026-08-24. §3 is an experiment run that day; every number in this document comes from it
 rather than from reasoning about what probably differs. §2.4 was added on 2026-09-13, and comes

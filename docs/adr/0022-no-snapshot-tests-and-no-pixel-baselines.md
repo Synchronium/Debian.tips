@@ -68,7 +68,7 @@ readable by the person who followed a link from a page, and the answer to "what 
 protect?" is in the file rather than in a stored artefact.
 
 The gap left open is worth naming: a refactor of the templates can change markup nobody asserted,
-and nothing will say so. The Prettier incident behind ADR-0012 was exactly that shape, and it was
+and no gate will say so. The Prettier incident behind ADR-0012 was exactly that shape, and it was
 found by reading a diff. This record accepts that class of change being caught by review, on the
 grounds that a snapshot suite would have presented it as a wall of red files and been re-recorded.
 

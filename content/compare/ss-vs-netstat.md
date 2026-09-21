@@ -99,5 +99,5 @@ two are missing as well, and installing `net-tools` to get an interface listing 
 how people end up maintaining a habit rather than a system.
 
 [The `ss` page](/commands/ss/) covers the filter syntax properly, and the recipe for
-[finding what is holding a port](/recipes/kill-whatever-is-using-a-port/) is where `-p` earns its
-place.
+[finding what is holding a port](/recipes/kill-whatever-is-using-a-port/) is where `-p` does the
+most work.

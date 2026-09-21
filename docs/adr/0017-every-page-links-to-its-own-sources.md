@@ -63,8 +63,7 @@ sanctioned way to turn a path into a link. The footer used to spell the URL out;
 `src/linkcheck.ts` resolves internal links against `dist/`, and `scripts/gates/link-audit.ts` reasons
 about the page graph. Neither fetches anything, and neither should: a build that depends on
 github.com being up fails for reasons unrelated to the change. So a renamed setup script, or a
-page moved between categories, would put a dead link on every page carrying it, and nothing
-would notice.
+page moved between categories, would put a dead link on every page carrying it, unnoticed.
 
 `test/sourceLinks.test.ts` stands in for the check a link checker cannot run: it asserts every
 generated path resolves in the working tree, that the paths are repository-relative with forward

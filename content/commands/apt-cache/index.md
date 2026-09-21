@@ -16,7 +16,7 @@ it can describe is software this machine has never had.
 ## Which version you would get
 
 `apt-cache policy <package>` prints what is installed now and what `apt install` would fetch. If
-those two lines differ, an upgrade is available and nobody has applied it. A candidate of
+those two lines differ, an upgrade is available and has not been applied. A candidate of
 `(none)` means apt has the name and no version to go with it, which is the failure behind
 "Package has no installation candidate".
 

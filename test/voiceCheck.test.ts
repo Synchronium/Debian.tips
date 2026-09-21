@@ -2,8 +2,8 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
-import { SEVERITY, checkFile, inScope, proseLines } from "../scripts/gates/voice-check.js";
-import { ROOT } from "../src/paths.js";
+import { SEVERITY, checkFile, inScope, proseBlocks, proseLines } from "../scripts/gates/voice-check.js";
+import { EXAMPLES_FILE, ROOT } from "../src/paths.js";
 
 /* The property worth a test is what the checker refuses to look at. `output:` and `fixtures:`
  * hold what a command really printed, so a finding there would invite editing captured text to
@@ -220,5 +220,49 @@ describe("voice-check scope", () => {
   it("resolves a relative path before deciding", () => {
     expect(inScope(join(ROOT, "content/commands/ls/index.md"))).toBe(true);
     expect(inScope(relative(process.cwd(), join(ROOT, "content/commands/ls/index.md")))).toBe(true);
+  });
+});
+
+/* Prose here is hard-wrapped, so a construction the guide describes lands across two lines as
+ * often as on one. Matching a line at a time got that wrong twice over, and both directions cost
+ * something real: a tell that wrapped was invisible, and an exclusion that wrapped stopped firing
+ * and counted an honest phrase against a budget. */
+describe("voice-check reads paragraphs rather than lines", () => {
+  it("sees a construction split by a hard wrap", () => {
+    const path = write("wrapped.md", "The check runs on every push, and\nnothing reports what it found.\n");
+    const ids = checkFile(path).map((finding) => finding.rule.id);
+    expect(ids).toContain("and-nothing");
+  });
+
+  it("honours an exclusion whose word wrapped to the next line", () => {
+    const path = write(
+      "excluded.md",
+      "It takes the two flags it documents and nothing\nelse, which is why the third is an error.\n",
+    );
+    const ids = checkFile(path).map((finding) => finding.rule.id);
+    expect(ids).not.toContain("and-nothing");
+  });
+
+  it("reports the line the match started on, not the line the paragraph did", () => {
+    const path = write(
+      "located.md",
+      "A first line that is entirely ordinary.\nA second line, and\nnothing reports what it found.\n",
+    );
+    const finding = checkFile(path).find((f) => f.rule.id === "and-nothing");
+    expect(finding?.line).toBe(2);
+  });
+
+  it("does not join across a blank line, a code fence or a gap in the file", () => {
+    const path = write("split.md", "A paragraph ending in and\n\nnothing following it.\n");
+    expect(checkFile(path).map((f) => f.rule.id)).not.toContain("and-nothing");
+  });
+
+  it("keeps two fields in an examples.yaml apart", () => {
+    const lines = [
+      { line: 1, text: '        title: "Something ending in and"' },
+      { line: 2, text: '        description: "nothing follows it here."' },
+    ];
+    const blocks = proseBlocks(EXAMPLES_FILE, lines);
+    expect(blocks).toHaveLength(2);
   });
 });

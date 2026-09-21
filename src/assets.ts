@@ -87,8 +87,8 @@ function writeMinified(
  *  inlined by `src/templates/layout.ts` instead.
  *
  *  The value is the name it is served under, which `src/client/interaction.ts` imports by path.
- *  Not content-hashed, unlike the stylesheet, because that import names the URL and nothing
- *  rewrites it. */
+ *  Not content-hashed, unlike the stylesheet, because that import names the URL and no
+ *  step rewrites it. */
 const FETCHED_CLIENT_SCRIPTS = { "search.ts": "search.js" } as const;
 
 export function copyPublic(distDir: string): void {

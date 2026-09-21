@@ -395,7 +395,7 @@ sections:
         level: advanced
       - title: "Ask for connected Unix sockets rather than listening ones"
         code: ss -x
-        description: "Without `-l` the Unix family behaves like any other: this asks for connections and nothing here has one. The listener from the previous examples is still there, and `-l` or `-a` is what includes it."
+        description: "Without `-l` the Unix family behaves like any other: this asks for connections, of which there are none here. The listener from the previous examples is still there, and `-l` or `-a` is what includes it."
         output: |2
           Netid State Recv-Q Send-Q Local Address:Port Peer Address:Port
         level: intermediate

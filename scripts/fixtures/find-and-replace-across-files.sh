@@ -7,7 +7,7 @@
 #              `grep -l` still lists the file once
 #   db.conf    one match, the ordinary case
 #   notes.txt  no match at all, which is what makes `grep -rl` worth using: the recipe's claim
-#              is that an untouched file stays untouched, and nothing here would show that if
+#              is that an untouched file stays untouched, which this tree could not show if
 #              every file matched
 #   the name with a space  the whole reason for `-Z` and `xargs -0`. The page documents the
 #              unquoted pipeline failing on this file by name, so removing the space would leave

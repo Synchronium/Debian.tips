@@ -4,7 +4,7 @@ import { loadContent } from "../src/content/loader.js";
 import { fillStats, verificationStats, type VerificationStats } from "../src/content/verificationStats.js";
 
 /* Every number on /about/ comes from here, on a page whose whole argument is that its numbers
- * are counted rather than typed. Two of them were wrong and nothing could see it: outputs on a
+ * are counted rather than typed. Two of them were wrong and no gate could see it: outputs on a
  * command page with no setup script were counted as "re-run on every push" when the replay skips
  * that page entirely, and exemptions were counted by reading every line of every .skip file in
  * the repository, so an entry naming an example that no longer existed silently reduced the

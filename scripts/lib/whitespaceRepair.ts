@@ -5,7 +5,7 @@
 // formatting repair from making a wrong example pass. It is deliberately narrower than the
 // replay's `normalise`: masks and stripped artifacts exist to let two runs of the same command
 // agree, whereas a difference here that indentation cannot explain means the page and the
-// command disagree about something, and nothing in this tool can know which of them is right.
+// command disagree about something, and this tool cannot know which of them is right.
 // So anything it cannot account for is reported and left alone.
 
 /** What a documented block and a fresh capture turned out to be to each other. */

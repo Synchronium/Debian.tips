@@ -126,8 +126,8 @@ describe("renderInline", () => {
   });
 
   it("drops raw HTML tags rather than passing them through", async () => {
-    // The tags go, their text content stays, so nothing is injected and nothing
-    // vanishes so quietly that a mangled field would look fine in review.
+    // The tags go, their text content stays, so a script cannot be injected and a
+    // mangled field cannot vanish quietly enough to look fine in review.
     expect(await renderInline("Set <script>alert(1)</script> here.", "ctx")).toBe("Set alert(1) here.");
   });
 
