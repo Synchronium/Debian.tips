@@ -20,8 +20,8 @@
     "shards": "tsx scripts/maintain/check-shard-count.ts",
     "check": "NODE_ENV=production npm run check:gate",
     "check:gate": "npm run format:check && tsc --noEmit && tsc -p tsconfig.client.json && tsc -p tsconfig.browser-check.json && vitest run && tsx src/build.ts && pagefind --site dist && tsx src/linkcheck.ts && tsx scripts/gates/link-audit.ts",
-    "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.ts\" \"test/**/*.ts\" \"styles/**/*.css\"",
-    "format:check": "prettier --check \"src/**/*.ts\" \"scripts/**/*.ts\" \"test/**/*.ts\" \"styles/**/*.css\""
+    "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.ts\" \"test/**/*.ts\" \"styles/**/*.css\" vitest.config.ts",
+    "format:check": "prettier --check \"src/**/*.ts\" \"scripts/**/*.ts\" \"test/**/*.ts\" \"styles/**/*.css\" vitest.config.ts"
   },
   "devDependencies": {
     "@fontsource/source-serif-4": "^5.3.0",
