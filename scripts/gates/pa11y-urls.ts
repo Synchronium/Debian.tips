@@ -33,7 +33,7 @@ export class Pa11yUrlsError extends Error {}
  *  Throws rather than returning a short list, and that is the whole reason this check exists here:
  *  **pa11y-ci cannot fail on a list that is too short.** Given no URLs at all it prints "Running
  *  Pa11y on 0 URLs / 0/0 URLs passed" and exits 0, with or without a config file. So every way the
- *  list can come out short ends in a green tick over nothing, and nothing downstream will say so.
+ *  list can come out short ends in a green tick over nothing, and no later step will say so.
  *
  *  Completeness is asserted against the categories rather than a count, so the check describes
  *  what the list is for: one page per template, and a category listing is a template. A number

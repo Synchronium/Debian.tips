@@ -231,7 +231,7 @@ mechanism would have the page reporting one.
 The first page through this, `apt-essentials`, had **four broken output blocks out of four**: two
 silently abridged (`dpkg -l` prints a five-line header; one fence ran three commands and showed
 only the third's output), and two drifted (`13.5` → `13.6`, `deb13u3` → `deb13u4`). It had been
-wrong for months and nothing could have told us.
+wrong for months, with no gate able to tell us.
 
 ## The local HTTP server
 

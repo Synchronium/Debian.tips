@@ -12,7 +12,7 @@
 pointing at a heading that was retitled. Ordinary link checking.
 
 **Do the links that *should* exist, exist?** A new page arrives orphaned by construction: its own
-`related:` list points outward, and nothing on the site knows it is there. Every link on it
+`related:` list points outward, and no other page on the site knows it is there. Every link on it
 resolves. A link checker is perfectly happy. The page is unreachable by anything except search, and
 until this existed nothing in the repository noticed.
 

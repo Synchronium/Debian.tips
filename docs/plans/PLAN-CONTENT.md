@@ -332,7 +332,7 @@ asking for the mechanism. Try each of the others the cheap way first.
   instead. `sudo-command-not-found` stayed standalone, as planned, and now links here: its subject
   is Debian's installer leaving `sudo` uninstalled and the first user outside the `sudo` group when
   a root password is set, which is a packaging decision rather than a `PATH` story.
-- **`script-works-in-shell-but-not-cron`**. Written 2026-09-18, 12/12, and nothing exempt. The
+- **`script-works-in-shell-but-not-cron`**. Written 2026-09-18, 12/12, with nothing exempt. The
   page's evidence is a real cron job's environment, captured by the fixture once per container;
   everything after that is the same environment rebuilt with `env -i`, which reproduces the
   captured failure byte for byte and costs nothing to replay. §13.7 has what the wait costs and
@@ -858,8 +858,8 @@ From `service-wont-start`, `disk-full`, `permission-denied` and `apt-update-fail
 - **The image has no `getfacl`**, so "the mode is right and something else is refusing" is a
   `noexec` mount rather than an ACL. Adding `acl` to the image would put every page's replay on
   the line for one branch.
-- **A page about cron has to wait for cron, once.** A job starts on a minute boundary and nothing
-  moves that, so a fixture that wants a real cron job's output waits out the rest of the current
+- **A page about cron has to wait for cron, once.** A job starts on a minute boundary and
+  cannot be hurried, so a fixture that wants a real cron job's output waits out the rest of the current
   minute: 27s and 53s on two runs, against a five-second cap on any one example. Guard the capture
   behind a marker file outside the working directory and the whole page pays it once per container
   rather than once per example, which put `script-works-in-shell-but-not-cron` at 37s, inside the

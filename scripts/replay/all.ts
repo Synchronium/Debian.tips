@@ -61,7 +61,7 @@ function refuseAmbiguousSlugs(): void {
   const ambiguous = ambiguousSlugs();
   if (!ambiguous.length) return;
   console.error("replay: a setup script names a slug and no category, so these have one each and");
-  console.error("  name two pages, and nothing can say which page the script belongs to:");
+  console.error("  name two pages, so the script cannot be attributed to either:");
   console.error(`    ${ambiguous.join(", ")}`);
   console.error("  Rename one page of each pair, or drop the script.");
   process.exit(2);

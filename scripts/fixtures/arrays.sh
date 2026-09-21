@@ -12,5 +12,5 @@
 printf 'quarterly revenue up\n' > report.txt
 printf 'ask alice about the report\n' > "notes 2026.txt"
 
-# Nothing else matching *.txt, and nothing matching *.csv: the page states that an unmatched glob
+# Nothing else matching *.txt, with no *.csv either: the page states that an unmatched glob
 # expands to itself, and a stray CSV here would make that claim false rather than merely unproven.

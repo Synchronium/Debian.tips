@@ -133,7 +133,7 @@ Docker${howLong(sources.replaySeconds)}:
 ${checksSentence(checks, sources)}`
     : html`<p>
 This page has no setup script yet, so nothing re-runs its examples: they were checked by hand
-when it was written and nothing has checked them since. Adding
+when it was written and have not been checked since. Adding
 <code>scripts/fixtures/${slug}.sh</code> is what would put it in the batch.
 </p>`
 }

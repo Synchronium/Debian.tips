@@ -22,7 +22,7 @@ describe("classifyRepair: what may be rewritten", () => {
 
   it("leaves a block alone when a line was added", () => {
     // Indentation cannot account for a line that was not there, so this is the page and the
-    // command disagreeing, and nothing here can know which one is wrong.
+    // command disagreeing, and this tool cannot know which one is wrong.
     expect(classifyRepair("40 report.txt\n49 total", "40 report.txt")).toBe(REPAIR.substance);
   });
 

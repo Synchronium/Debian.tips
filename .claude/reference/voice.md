@@ -153,8 +153,8 @@ a claim follow.
 position: "`CONT` is the other half", "The other half of the question", "This half of `-p`". The
 reader has to carry the mapping to use the sentence, and where the antecedent is in a different
 example there is nothing on screen to map it to. Name the part instead, which is usually shorter:
-"`CONT` is what undoes `STOP`". Saying first, second or both is a fair substitute and nothing
-counts those, so the budget is only for the positional form. What the rule leaves alone is the word
+"`CONT` is what undoes `STOP`". Saying first, second or both is a fair substitute, uncounted by any
+rule here, so the budget is only for the positional form. What the rule leaves alone is the word
 used honestly: `half-finished` and its family, the quantity sense, and a thing that really is two,
 like a key pair's public and private halves or the master and slave of a pty.
 
@@ -185,6 +185,13 @@ half the corpus describes a quiet command. "Four megabytes used by nothing `du` 
 "points at nothing, and never at half a file" both mean the absence exactly. `npm run voice`
 counts the subject form against a budget and cannot see any of these distinctions, so a finding is
 a line to read rather than a line to change.
+
+The conjunction form is counted separately and on a much tighter budget: a sentence that has
+finished its work, then has a clause bolted on saying the failure goes unreported. It reads as a
+flourish rather than as a fact, and it collects faster than the plain form because it is a habit
+of building paragraphs rather than of building sentences. A sweep of the corpus found twenty-five
+and left three, all of them a reader quoted speaking. `nobody` and `no one` sit in the same rule,
+since the shape does not change when the missing actor is a person.
 
 **Also:** em dashes, `X, not Y` antithesis and symmetry generally, parenthetical asides that answer
 a question mid-sentence, and "actually".
@@ -285,6 +292,12 @@ Those are failures, and the corpus sits at zero, so a finding is something newly
 counts the phrases that are fine a few times and wrong as a habit, against a budget, which only a
 whole-corpus pass can judge. A `PostToolUse` hook runs it on each file as it is written, so a
 banned construction comes back in the same turn it was typed.
+
+It reads a paragraph at a time rather than a line at a time, joining the lines a hard wrap
+separated. That matters because the wrap falls wherever the column ran out: a construction is as
+likely to straddle two lines as to sit on one, and while the checker read lines it could see
+neither a tell that wrapped nor an exclusion that wrapped, counting the honest phrase and missing
+the fault. Turning it on found a phrase §5 bans outright that had been in the corpus unseen.
 
 **Over the whole of what this document claims**, which means `content/`, `docs/`, `.claude/`,
 `README.md`, `CLAUDE.md`, and the comments in `src/`, `scripts/` and `test/`. In a source file it

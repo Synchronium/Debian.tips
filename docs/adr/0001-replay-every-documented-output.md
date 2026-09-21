@@ -7,15 +7,15 @@
 ## Context
 
 A tips site is worth reading only if the commands on it work. Output written from memory is the
-failure mode, and it is a quiet one: plausible output reads exactly like real output, and nothing
-in a normal toolchain can tell them apart. Schema validation, `tsc`, the tests and the link check
+failure mode, and it is a quiet one: plausible output reads exactly like real output, and a
+normal toolchain cannot tell them apart. Schema validation, `tsc`, the tests and the link check
 will all pass a page whose output no command has ever produced.
 
 This is not hypothetical here. The first prose page put through the replay, `apt-essentials`, had
 **four broken output blocks out of four**: two silently abridged (a `dpkg -l` whose five-line
 header had been trimmed away; a fence running three commands but showing only the third's output)
 and two simply drifted with the distribution (`13.5` to `13.6`, `deb13u3` to `deb13u4`). It had
-been wrong for months and nothing in the repository could have said so.
+been wrong for months without the repository being able to say so.
 
 Drift also means a page that was true when written does not stay true. A check that runs once, at
 authoring time, does not solve this problem.

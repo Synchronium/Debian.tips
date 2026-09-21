@@ -30,7 +30,7 @@ CI runs two kinds of job in parallel:
   matrix of shards, one runner each, taking a share of the pages balanced by recorded timings.
   `scripts/lib/replayShard.ts` decides which pages, and `test/replayShard.test.ts` holds the one
   property that must never break: every page lands in exactly one shard. Whether the count still
-  suits the recorded timings is `npm run shards`, which `record-timings.yml` runs and nothing
+  suits the recorded timings is `npm run shards`, which `record-timings.yml` runs and no job
   gates on. The count is not written down here for that reason.
 
 There was a third job, `replay-shuffled`, which replayed the whole site again in a seeded random

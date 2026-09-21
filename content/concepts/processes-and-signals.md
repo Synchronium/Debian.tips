@@ -171,7 +171,7 @@ program can refuse. One situation still defeats it.
 uninterruptible sleep. A process enters it while waiting on the kernel for something it cannot be
 interrupted out of. In practice that means disk or network I/O: a hung NFS mount, a failing
 drive, a device that stopped answering. The signal is recorded and delivered the moment the wait
-ends, so the process dies as soon as the I/O completes or the mount comes back. Nothing will
+ends, so the process dies as soon as the I/O completes or the mount comes back. You cannot
 speed that up. Check for it with `ps -o stat` rather than guessing.
 
 ## Signals and exit status

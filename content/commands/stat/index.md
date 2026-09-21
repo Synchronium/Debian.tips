@@ -22,7 +22,7 @@ so it is the better one to read and the worse one to parse.
 The three timestamps are separate things and get confused for each other. Access is when the
 contents were last read, modification is when they were last written, and change is when the inode
 was last altered, so a rename or a `chmod` moves the change time while leaving the modification
-time alone. [touch](/commands/touch/) can set the first two, and nothing can set the third.
+time alone. [touch](/commands/touch/) can set the first two; the third cannot be set at all.
 
 One default is the reverse of what most commands do: given a symlink, `stat` describes the link
 itself rather than the file at the end of it. `-L` follows it.

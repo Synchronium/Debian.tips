@@ -37,6 +37,10 @@ interface Rule {
   readonly message: string;
   /** `report` rules only: how many uses across the corpus stop being a few and become a habit. */
   readonly budget?: number;
+  /** Matched line by line rather than against the joined paragraph, for a pattern that anchors
+   *  on `^` and means the start of a caption. Everything else reads the paragraph, so that a
+   *  construction split by a hard wrap is still seen. */
+  readonly anchored?: boolean;
 }
 
 // Word boundaries matter more here than anywhere else in these patterns. Written as bare
@@ -101,6 +105,7 @@ const RULES: readonly Rule[] = [
   {
     id: "numeral-led-opener",
     severity: SEVERITY.report,
+    anchored: true,
     // Anchored to the start of a caption, which is the only place the shape is a tell: a count
     // in the middle of a sentence is usually the fact the sentence is about. A prose page's
     // paragraph openers are out of reach here, since a wrapped line beginning with a numeral
@@ -169,6 +174,41 @@ const RULES: readonly Rule[] = [
     // a false positive of the two kinds above. The margin is for the next page, not for them.
     budget: 15,
     message: "voice.md §4: an absence as the subject of a verb. Name the actor, or negate the verb.",
+  },
+  {
+    id: "and-nothing",
+    severity: SEVERITY.report,
+    // The conjunction form of the tell above, and the one that collects: a sentence finishes its
+    // work, then has a clause bolted on saying that the failure goes unreported. Separate from
+    // `absence-as-actor` rather than a case of it, because that rule's pattern wants a verb
+    // ending in `s` or `ed`, while this shape usually puts a modal and a bare infinitive after
+    // the word, which slips past it. A lower budget too: as an appended clause this is a habit of
+    // paragraph-building rather than of sentence-building, so a corpus collects many more of them
+    // before anyone notices one. No example is quoted here, for the reason the rule above gives.
+    //
+    // The exclusions are the honest uses, each of which shares only the word.
+    //
+    // `else`, `more` and `but` are the quantity sense. A pronoun or relative after it (`nothing
+    // you send`, `nothing that walks a filesystem`) makes the word the head of a noun phrase
+    // rather than an actor. The copula is a passive with no actor to name, which voice.md §4
+    // already protects, and `happens` and `matches` describe an event or a search coming back
+    // empty and have no shorter form.
+    //
+    // `nobody` and `no one` are the same shape with a person in the gap, so they are alternatives
+    // here rather than a rule of their own. They carry more honest uses than `nothing` does,
+    // because a person really can be the missing actor, and the corpus quotes a reader saying one
+    // of them in the taxonomy tables. Both are what the budget is for.
+    //
+    // What it cannot see, and what the budget holds room for: this file is read a line at a time,
+    // so a paragraph wrapped between the word and its exclusion reads here as an unexcluded hit.
+    pattern:
+      /\band (?:nothing|nobody|no[ -]one)\b(?! (?:else|more|but|you|that|which|they|we|is|was|are|were|be|been|being|to|about|for|happens|matches)\b)/gi,
+    // Set from a swept corpus rather than chosen, as the rule above was. Three findings survive
+    // the sweep: a reader quoted saying one of these in the taxonomy table, which appears both in
+    // an ADR and in the comment the ADR was written from, and a line of this checker's own test
+    // data. The margin is for the next page.
+    budget: 5,
+    message: "voice.md §4: an absence bolted onto the end of a sentence. Name the actor, or negate the verb.",
   },
   {
     id: "adverb-of-obviousness",
@@ -313,15 +353,91 @@ export function proseLines(path: string, source: string): { line: number; text: 
   return out;
 }
 
+/** Consecutive prose lines joined into the paragraph they were wrapped from.
+ *
+ *  **A rule matched line by line is wrong in both directions.** Prose here is hard-wrapped at
+ *  around 100 columns, and a wrap falls wherever the column ran out rather than anywhere
+ *  meaningful, so a construction the guide describes is as likely to straddle two lines as to sit
+ *  on one. Matched per line, a tell split by a wrap is missed, and an exclusion split by one stops
+ *  firing, which counts an honest phrase against a budget. The corpus had both: two "and nothing
+ *  else" were being counted as findings because `else` had wrapped to the next line, and no rule
+ *  here could ever have seen a tell that wrapped. Turning this on found a phrase §5 bans outright
+ *  that had sat in the corpus unseen, on a page nobody had edited since.
+ *
+ *  A block ends at a blank line, and at any gap in the line numbers. The gap matters as much as
+ *  the blank: `proseLines` drops fences, `code:` and captured output, so without it the sentence
+ *  before a code block would be joined to the sentence after it and the rules would read across a
+ *  join that is not in the file.
+ *
+ *  In an `examples.yaml` a line starting a new key ends the block too, since two fields are not
+ *  one sentence however they are stacked. What that leaves joined is a folded scalar's
+ *  continuation lines, which is the wrapped prose this exists for.
+ *
+ *  Offsets carry the line each character came from, so a finding still reports where to look. */
+export function proseBlocks(
+  path: string,
+  lines: { line: number; text: string }[],
+): { text: string; lineAt: (index: number) => number }[] {
+  const isExamples = path.endsWith(EXAMPLES_FILE);
+  const blocks: { text: string; lineAt: (index: number) => number }[] = [];
+  let parts: { text: string; line: number }[] = [];
+
+  const flush = (): void => {
+    if (!parts.length) return;
+    const starts: { at: number; line: number }[] = [];
+    let text = "";
+    for (const part of parts) {
+      if (text) text += " ";
+      starts.push({ at: text.length, line: part.line });
+      text += part.text.trim();
+    }
+    const captured = starts;
+    blocks.push({
+      text,
+      lineAt: (index) => {
+        let line = captured[0]?.line ?? 1;
+        for (const start of captured) if (start.at <= index) line = start.line;
+        return line;
+      },
+    });
+    parts = [];
+  };
+
+  for (const entry of lines) {
+    const previous = parts[parts.length - 1];
+    const breaks =
+      entry.text.trim() === "" ||
+      (previous !== undefined && entry.line !== previous.line + 1) ||
+      (isExamples && /^\s*-?\s*[a-z_]+:/.test(entry.text));
+    if (breaks) flush();
+    if (entry.text.trim() === "") continue;
+    parts.push({ text: entry.text, line: entry.line });
+  }
+  flush();
+  return blocks;
+}
+
 export function checkFile(absolute: string): Finding[] {
   const file = relative(ROOT, absolute);
   if (EXEMPT.has(file)) return [];
   if (EXEMPT_DIRS.some((dir) => resolve(absolute).startsWith(dir + sep))) return [];
   const findings: Finding[] = [];
-  for (const { line, text } of proseLines(file, readFileSync(absolute, "utf-8"))) {
+  const lines = proseLines(file, readFileSync(absolute, "utf-8"));
+
+  // Anchored rules keep the line: their patterns begin at `^` and mean the start of a caption,
+  // which a joined block no longer offers anywhere but its first character.
+  for (const { line, text } of lines) {
     for (const rule of RULES) {
-      for (const match of text.matchAll(rule.pattern)) {
-        findings.push({ file, line, rule, text: match[0] });
+      if (!rule.anchored) continue;
+      for (const match of text.matchAll(rule.pattern)) findings.push({ file, line, rule, text: match[0] });
+    }
+  }
+
+  for (const block of proseBlocks(file, lines)) {
+    for (const rule of RULES) {
+      if (rule.anchored) continue;
+      for (const match of block.text.matchAll(rule.pattern)) {
+        findings.push({ file, line: block.lineAt(match.index ?? 0), rule, text: match[0] });
       }
     }
   }

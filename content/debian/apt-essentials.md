@@ -22,7 +22,7 @@ sudo apt full-upgrade        # like upgrade, but allowed to add/remove packages 
 ```
 
 `apt update` doesn't install anything. It downloads the latest list of available package
-versions from your sources, and nothing on your system changes until you run `upgrade`. Use
+versions from your sources, and your system stays as it is until you run `upgrade`. Use
 `full-upgrade` (the successor to `dist-upgrade`) when a security update needs to remove an
 obsolete package or install a new dependency that plain `upgrade` won't touch on its own.
 
