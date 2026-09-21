@@ -335,6 +335,14 @@
     "fixtures": 2,
     "unpaired": 0
   },
+  "commands/rsync": {
+    "checked": 37,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 1,
+    "unpaired": 0
+  },
   "commands/sed": {
     "checked": 26,
     "byShape": 0,

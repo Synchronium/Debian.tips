@@ -123,8 +123,8 @@ du -sh --count-links backups/daily-1 backups/daily-2
 `du` credits the data to whichever name it walks first and shows the second directory as almost
 empty, though a full copy of the archive is reachable through it. `--count-links` gives the figure
 you would need if you replaced every link with a copy. This is the mechanism behind snapshot
-backups: `rsync --link-dest` hard-links every unchanged file into the new snapshot, so a daily
-backup of a mostly unchanged tree costs the size of what changed. A symlink cannot do this job,
+backups: [`rsync --link-dest`](/commands/rsync/) hard-links every unchanged file into the new
+snapshot, so a daily backup of a mostly unchanged tree costs the size of what changed. A symlink cannot do this job,
 since it would break the moment an old snapshot was deleted.
 
 ## Copying a tree keeps one kind and not the other
