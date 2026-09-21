@@ -141,11 +141,16 @@ const RULES: readonly Rule[] = [
     // them here would put the construction into a file this very rule reads, which is the reason
     // voice.md is the one document exempt from the checker.
     //
-    // Three exclusions, each of which is ordinary English that shares only the word.
+    // The exclusions, each of which is ordinary English that shares only the word.
     //
     // The copula, because `nothing is printed` is a passive with no actor to name and reads
     // perfectly: it is 71 of the corpus's hits and none of them is the fault. `else` sits inside
     // the optional group rather than outside it, so `nothing else is printed` is excluded too.
+    //
+    // The perfect passive (`has been`, `have been`, `had been`) for the same reason and in the
+    // same breath: a different auxiliary in front of the same participle, still with no actor the
+    // sentence could name. Only the passive form goes. A bare `has` stays matched, because an
+    // absence that *has* something is the construction rather than a passive.
     //
     // `with nothing added`, `with nothing captured`: an absolute construction rather than a
     // clause, so there is no verb to negate.
@@ -161,17 +166,26 @@ const RULES: readonly Rule[] = [
     // and `does nothing at all` are all ordinary, and a check wrong twice in three findings
     // teaches its reader to skip it.
     //
-    // What the pattern still cannot see, and what the budget therefore holds room for. A verb in
-    // front turns the word into an object while the shape here stays the same, so a sentence
-    // about a glob matching no files reads to this rule as an absence doing the expanding. And a
+    // A verb in front turns the word into an object while the shape here stays the same, so a
+    // sentence about a glob matching no files would read to this rule as an absence doing the
+    // expanding. The `ing` lookbehind is the part of that a spelling can settle: a gerund
+    // immediately in front takes the word as its object and leaves no room for it to be a subject.
+    //
+    // **Only the gerund.** A finite verb in front does not settle it, because a verb of meaning or
+    // showing takes a whole clause rather than an object, and the absence is then the subject of
+    // that clause and the fault this rule is looking for. `test/voiceCheck.test.ts` holds one, and
+    // widening the lookbehind to any word ending in `s` silences it.
+    //
+    // What the pattern still cannot see, and what the budget therefore holds room for: a
     // participle can be an adjective rather than a verb, which is what an ADR means by recording
-    // that no automated thing enforces it. Both need to know which word is the subject, which is
-    // grammar rather than spelling. Examples of each are in the commit that swept the corpus,
-    // deliberately not here: a comment is prose this rule reads.
+    // that no automated thing enforces it, and a finite verb in front is the case above. Both need
+    // to know which word is the subject, which is grammar rather than spelling. Examples are in
+    // the commit that swept the corpus, deliberately not here: a comment is prose this rule reads.
     pattern:
-      /(?<!with )\bnothing (?:(?:can|could|will|would|may|might|must|should|does|did|do|ever|then|else|now|still|really|actually) )?(?!is\b|was\b|are\b|were\b|be\b|been\b|being\b|match|happen|unless\b|this\b)[a-z]+(?:s|ed)\b/gi,
-    // Set from a swept corpus rather than chosen: ten findings survive the sweep and every one is
-    // a false positive of the two kinds above. The margin is for the next page, not for them.
+      /(?<!with )(?<![a-z]+ing )\bnothing (?:(?:can|could|will|would|may|might|must|should|does|did|do|ever|then|else|now|still|really|actually) )?(?!is\b|was\b|are\b|were\b|be\b|been\b|being\b|ha(?:s|ve|d) been\b|match|happen|unless\b|this\b)[a-z]+(?:s|ed)\b/gi,
+    // Set from a swept corpus rather than chosen: ten findings survive the sweep, and every one is
+    // a participle or a finite verb the rule cannot tell from the real construction. The margin is
+    // for the next page, not for them.
     budget: 15,
     message: "voice.md §4: an absence as the subject of a verb. Name the actor, or negate the verb.",
   },
@@ -199,15 +213,17 @@ const RULES: readonly Rule[] = [
     // because a person really can be the missing actor, and the corpus quotes a reader saying one
     // of them in the taxonomy tables. Both are what the budget is for.
     //
-    // What it cannot see, and what the budget holds room for: this file is read a line at a time,
-    // so a paragraph wrapped between the word and its exclusion reads here as an unexcluded hit.
+    // The exclusions are matched against the whole paragraph, so one wrapped away from the word it
+    // excludes still fires. That is the block joining below, and it is the reason this rule can
+    // afford to state its exclusions as a plain word list.
     pattern:
       /\band (?:nothing|nobody|no[ -]one)\b(?! (?:else|more|but|you|that|which|they|we|is|was|are|were|be|been|being|to|about|for|happens|matches)\b)/gi,
-    // Set from a swept corpus rather than chosen, as the rule above was. Three findings survive
-    // the sweep: a reader quoted saying one of these in the taxonomy table, which appears both in
-    // an ADR and in the comment the ADR was written from, and a line of this checker's own test
-    // data. The margin is for the next page.
-    budget: 5,
+    // Set from a swept corpus rather than chosen, as the rule above was. Four findings survive the
+    // sweep: a reader quoted saying one of these in the taxonomy table, which appears both in an
+    // ADR and in the comment the ADR was written from; this file's own description of the wrapped
+    // phrase the paragraph matching fixed; and one setup script pairing the two clauses on
+    // purpose. The margin is for the next page.
+    budget: 6,
     message: "voice.md §4: an absence bolted onto the end of a sentence. Name the actor, or negate the verb.",
   },
   {

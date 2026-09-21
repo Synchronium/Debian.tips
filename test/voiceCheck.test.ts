@@ -174,6 +174,11 @@ describe("voice-check scoping", () => {
       "It prints nothing but the header.",
       "This has nothing to do with parents.",
       "Two things happen, and they look nothing alike.",
+      // The perfect passive, which is the copula exclusion with a different auxiliary in front
+      // of the participle and still no actor the sentence could name.
+      "The fix does not apply, because nothing has been installed yet.",
+      // A gerund in front takes the word as its object, so the verb after it has its own subject.
+      "An exemption matching nothing reads as though it exempts something.",
     ];
 
     const idsFor = (line: string) =>
