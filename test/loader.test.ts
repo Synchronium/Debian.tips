@@ -93,6 +93,58 @@ describe("loadContent: validation", () => {
     ).toEqual(["/commands/greet/", "/concepts/greet/"]);
   });
 
+  /** Two pages sharing one slug, in two prose categories. Built here rather than by renaming the
+   *  fixture command page, so the collision is in the tree under test and does not depend on what
+   *  `content/commands/` happens to hold. */
+  function withSlugInTwoCategories(dir: string, slug: string): void {
+    for (const category of ["concepts", "recipes"]) {
+      mkdirSync(join(dir, category), { recursive: true });
+      writeFileSync(
+        join(dir, category, `${slug}.md`),
+        [
+          "---",
+          `title: "${slug}, in ${category}"`,
+          `description: "A page deliberately sharing the ${slug} slug across two categories."`,
+          `category: ${category}`,
+          "tags: [demo]",
+          "updated: 2026-01-01",
+          "---",
+          "",
+          "Body.",
+        ].join("\n"),
+        "utf-8",
+      );
+    }
+  }
+
+  /** A harness directory of this test's own, holding a setup script for each slug named and
+   *  nothing else. The collision guard is a question about the harness it was handed, so a test
+   *  that let `fixtureDir` default would be asserting against this repository's
+   *  `scripts/fixtures/` rather than against the tree it had just built. */
+  function harnessWith(...slugs: string[]): string {
+    const dir = mkdtempSync(join(tmpdir(), "debian-tips-loader-harness-"));
+    tempDirs.push(dir);
+    for (const slug of slugs) {
+      writeFileSync(join(dir, `${slug}.sh`), "# This page needs no sample files.\n", "utf-8");
+    }
+    return dir;
+  }
+
+  it("rejects two pages sharing a slug the given harness has a setup script for", async () => {
+    const dir = brokenContent((d) => withSlugInTwoCategories(d, "greet"));
+    await expect(loadContent(dir, harnessWith("greet"))).rejects.toThrow(
+      /slug "greet" is used by .+ and they would share the one setup script/,
+    );
+  });
+
+  /* The same guard from the other side. `ls` is a slug this repository really does have a script
+   * for, and the harness handed over here does not, so a guard reading `scripts/fixtures/` instead
+   * of its argument rejects a tree that has no such file anywhere near it. */
+  it("ignores a setup script outside the harness it was given", async () => {
+    const dir = brokenContent((d) => withSlugInTwoCategories(d, "ls"));
+    await expect(loadContent(dir, harnessWith())).resolves.toBeDefined();
+  });
+
   it("rejects a bare related: slug that two pages answer to", async () => {
     const dir = brokenContent((d) => {
       withReusedSlug(d, "greet");

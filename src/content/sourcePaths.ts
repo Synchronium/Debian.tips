@@ -11,16 +11,16 @@
 // hardcoding this repository's would make every path on those pages wrong while still pointing
 // at files that exist.
 import { existsSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { join } from "node:path";
 import {
   CONTENT_DIR,
   EXAMPLES_FILE,
   FIXTURE_DIR,
   INDEX_FILE,
-  ROOT,
   commandDir,
   fixtureScript,
   proseSource,
+  repoPath,
   skipFile,
 } from "../paths.js";
 import { replayTimings } from "./replayTimings.js";
@@ -52,11 +52,6 @@ export interface PageSources {
    *  costs the reader an inaccurate estimate and nothing else, so a page with no time simply
    *  does not offer one rather than guessing. */
   replaySeconds?: number | undefined;
-}
-
-/** Repository-root-relative, forward slashes on every platform. */
-function repoPath(absolute: string): string {
-  return relative(ROOT, absolute).split(sep).join("/");
 }
 
 export function pageSources(

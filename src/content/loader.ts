@@ -26,6 +26,7 @@ import {
   commandsDir,
   fixtureScript,
   proseSlug,
+  repoPath,
 } from "../paths.js";
 import { type TocEntry, renderMarkdown } from "./markdown.js";
 import { type PageSources, pageSources } from "./sourcePaths.js";
@@ -319,10 +320,11 @@ export async function loadContent(
   // second would be replayed against the first one's fixtures while reporting a clean run. Caught
   // here, in the cheap gate, rather than in the replay, which needs Docker.
   for (const [slug, entries] of bySlug) {
-    if (entries.length > 1 && existsSync(fixtureScript(slug))) {
+    const setup = fixtureScript(slug, fixtureDir);
+    if (entries.length > 1 && existsSync(setup)) {
       throw new ContentError(
         `slug "${slug}" is used by ${entries.map((e) => e.file).join(" and ")}, and they would share ` +
-          `the one setup script at scripts/fixtures/${slug}.sh: rename one of the pages`,
+          `the one setup script at ${repoPath(setup)}: rename one of the pages`,
       );
     }
   }
