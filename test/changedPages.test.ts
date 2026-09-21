@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { pagesTouchedBy } from "../scripts/lib/changedPages.js";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterAll, describe, expect, it } from "vitest";
+import { pagesTouchedBy, porcelainPaths } from "../scripts/lib/changedPages.js";
 
 /* The two mistakes this can make cost different things, and only one of them is visible.
  *
@@ -57,6 +61,14 @@ describe("what puts every page back in", () => {
     expect(pagesTouchedBy(["scripts/replay/sandbox/Dockerfile"])).toBe("all");
   });
 
+  /* The harness asks `src/paths.ts` which setup script a page gets and which files in a content
+   * directory are pages, so a change there decides what runs rather than only how fast. Its
+   * neighbours in `src/` are the generator and move nothing a page claims. */
+  it("a change to src/paths.ts, which the harness addresses every file through", () => {
+    expect(pagesTouchedBy(["src/paths.ts"])).toBe("all");
+    expect(pagesTouchedBy(["src/build.ts"])).toEqual([]);
+  });
+
   it("a change to the fixture bodies every page shares", () => {
     expect(pagesTouchedBy(["scripts/fixtures/_common.sh"])).toBe("all");
   });
@@ -73,5 +85,43 @@ describe("what puts every page back in", () => {
    * under scripts/fixtures/ beside the file that is. */
   it("but not an ordinary setup script under the same directory", () => {
     expect(pagesTouchedBy(["scripts/fixtures/wget.sh"])).toEqual(["wget"]);
+  });
+});
+
+/* A rename is the one status line naming two paths, and the page that gained the files is the one
+ * a run has to replay. The line's shape is git's rather than ours, so it is taken from a real
+ * `git mv` in a throwaway repository instead of written out here and assumed. */
+describe("a page renamed but not yet committed", () => {
+  const repos: string[] = [];
+  afterAll(() => {
+    for (const dir of repos.splice(0)) rmSync(dir, { recursive: true, force: true });
+  });
+
+  function renamedPageStatus(): string[] {
+    const dir = mkdtempSync(join(tmpdir(), "debian-tips-rename-"));
+    repos.push(dir);
+    const git = (...args: string[]): string =>
+      execFileSync("git", ["-C", dir, ...args], { encoding: "utf-8" });
+
+    git("init", "-q", ".");
+    git("config", "user.email", "test@example.invalid");
+    git("config", "user.name", "Test");
+    mkdirSync(join(dir, "content", "commands", "ls"), { recursive: true });
+    writeFileSync(join(dir, "content", "commands", "ls", "index.md"), "page\n");
+    git("add", "-A");
+    git("commit", "-qm", "init");
+    git("mv", "content/commands/ls", "content/commands/list");
+
+    return git("status", "--porcelain=v1", "--untracked-files=all")
+      .split("\n")
+      .filter((line) => line !== "");
+  }
+
+  it("selects the page the files moved to, not only the one they left", () => {
+    const paths = renamedPageStatus().flatMap(porcelainPaths);
+    const selected = pagesTouchedBy(paths);
+
+    expect(selected).not.toBe("all");
+    expect([...(selected as string[])].sort()).toEqual(["list", "ls"]);
   });
 });

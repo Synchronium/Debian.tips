@@ -11,21 +11,29 @@ import { execFileSync } from "node:child_process";
 
 /** Paths whose change can move any page's result, so a diff touching one replays everything.
  *
+ *  A directory is named with its trailing slash and a single file by its whole path, which is a
+ *  prefix of itself, so both kinds sit in one list.
+ *
  *  `src/content/` is here because the replay imports from it: the fence-pairing rule, the
  *  partition, the exemption parser and the comparison vocabulary all live there. Leaving it out
  *  meant a pull request touching the pairing rule replayed nothing at all, and a mis-paired fence
  *  reports as "not checkable" rather than as broken, so the loss was silent.
  *
+ *  `src/paths.ts` is here for the same reason and was missed: the harness asks it which setup
+ *  script a page gets, which files in a content directory are pages, and where the sandbox driver
+ *  is. A change to any of those decides what runs, and for a page that changes what is checked
+ *  rather than only how fast.
+ *
  *  `scripts/replay/` covers the three replays and the sandbox image together. A change to how a
  *  page is put in a container, or to what the image contains, can move any output on the site. */
-const HARNESS_WIDE_PREFIXES = ["scripts/lib/", "scripts/replay/", "src/content/"] as const;
+const HARNESS_WIDE_PATHS = ["scripts/lib/", "scripts/replay/", "src/content/", "src/paths.ts"] as const;
 
 /** The one file under `scripts/fixtures/` that belongs to every page rather than to one. */
 const SHARED_FIXTURE = "scripts/fixtures/_common.sh";
 
 function isHarnessWide(file: string): boolean {
   return (
-    HARNESS_WIDE_PREFIXES.some((prefix) => file.startsWith(prefix)) ||
+    HARNESS_WIDE_PATHS.some((prefix) => file.startsWith(prefix)) ||
     file === SHARED_FIXTURE ||
     // The Python helpers a page's examples talk to, wherever they sit.
     file.endsWith(".py")
@@ -57,6 +65,20 @@ export function pagesTouchedBy(files: readonly string[]): string[] | "all" {
   return [...touched];
 }
 
+/** A `git status --porcelain=v1` line as the paths it refers to.
+ *
+ *  The two-character status and its space come off the front. A rename then leaves `old -> new`,
+ *  and **both halves are paths this diff touched**: the page that lost its files and the page that
+ *  gained them. Keeping only the string as printed matched the old slug out of the middle of it and
+ *  never saw the new page at all, so renaming a page locally selected a slug that no longer exists
+ *  and replayed nothing.
+ *
+ *  Exported for `test/changedPages.test.ts`, since the shape is git's rather than ours and a test
+ *  that built the line by hand would be asserting against our idea of it. */
+export function porcelainPaths(line: string): string[] {
+  return line.slice(3).split(" -> ");
+}
+
 /** Every path the branch has changed against `base`, committed or not.
  *
  *  Uncommitted work is included so that running this locally over a page being written replays
@@ -71,7 +93,6 @@ export function changedFiles(base: string): string[] {
 
   return [
     ...git("diff", "--name-only", `${base}...HEAD`),
-    // `--porcelain=v1` prefixes each path with a two-character status and a space.
-    ...git("status", "--porcelain=v1", "--untracked-files=all").map((line) => line.slice(3)),
+    ...git("status", "--porcelain=v1", "--untracked-files=all").flatMap(porcelainPaths),
   ];
 }
