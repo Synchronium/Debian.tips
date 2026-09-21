@@ -214,7 +214,7 @@ const RULES: readonly Rule[] = [
     // of them in the taxonomy tables. Both are what the budget is for.
     //
     // The exclusions are matched against the whole paragraph, so one wrapped away from the word it
-    // excludes still fires. That is the block joining below, and it is the reason this rule can
+    // excludes still fires. That is `wrappedParagraphs` below, and it is the reason this rule can
     // afford to state its exclusions as a plain word list.
     pattern:
       /\band (?:nothing|nobody|no[ -]one)\b(?! (?:else|more|but|you|that|which|they|we|is|was|are|were|be|been|being|to|about|for|happens|matches)\b)/gi,
@@ -371,6 +371,11 @@ export function proseLines(path: string, source: string): { line: number; text: 
 
 /** Consecutive prose lines joined into the paragraph they were wrapped from.
  *
+ *  Not to be confused with `src/content/proseBlocks.ts`, which is a different question about
+ *  different files: that one pairs a prose page's command fence to the output fence below it, and
+ *  the replay reads it to decide what a page claims. This one is about hard wrapping, and nothing
+ *  outside this file reads it.
+ *
  *  **A rule matched line by line is wrong in both directions.** Prose here is hard-wrapped at
  *  around 100 columns, and a wrap falls wherever the column ran out rather than anywhere
  *  meaningful, so a construction the guide describes is as likely to straddle two lines as to sit
@@ -390,7 +395,7 @@ export function proseLines(path: string, source: string): { line: number; text: 
  *  continuation lines, which is the wrapped prose this exists for.
  *
  *  Offsets carry the line each character came from, so a finding still reports where to look. */
-export function proseBlocks(
+export function wrappedParagraphs(
   path: string,
   lines: { line: number; text: string }[],
 ): { text: string; lineAt: (index: number) => number }[] {
@@ -449,7 +454,7 @@ export function checkFile(absolute: string): Finding[] {
     }
   }
 
-  for (const block of proseBlocks(file, lines)) {
+  for (const block of wrappedParagraphs(file, lines)) {
     for (const rule of RULES) {
       if (rule.anchored) continue;
       for (const match of block.text.matchAll(rule.pattern)) {
