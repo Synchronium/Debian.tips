@@ -15,10 +15,11 @@ each time, `rsync` compares the two sides first and transfers the difference. Po
 same destination a second time is cheap, which is what makes it the tool for a backup, a deploy,
 or any copy you expect to repeat.
 
-Everything below runs between two local directories. `rsync` behaves the same way across a
-network, where it gains its other advantage: only the changed parts cross the link. The
-[copy files between machines](/recipes/copy-files-between-machines/) recipe covers that side,
-including how it resumes an interrupted transfer.
+Most of what follows runs between two local directories, because the flags behave identically
+either way and a local pair is easier to reason about. A remote path is `host:path`, and the
+last section covers what genuinely changes once you write one. The
+[copy files between machines](/recipes/copy-files-between-machines/) recipe covers the workflow
+around a transfer, including how it resumes after an interruption.
 
 ## The trailing slash decides what you get
 
@@ -49,8 +50,9 @@ cd+++++++++ css/
 *deleting   stale.html
 ```
 
-The first character is the update being made (`>` received, `c` created locally, `*` a message
-rather than a transfer), the second is the file type (`f` file, `d` directory, `L` symlink). A
+The first character is the update being made (`>` received, `<` sent to a remote host,
+`c` created locally, `*` a message rather than a transfer), the second is the file type
+(`f` file, `d` directory, `L` symlink). A
 `+` in place of a letter means the item is being created, so no comparison was made. Otherwise a
 letter marks a field that differs and a `.` marks one that matches: `s` size, `t` time,
 `p` permissions, `o` owner,

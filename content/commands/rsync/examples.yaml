@@ -588,3 +588,106 @@ sections:
           -rw-r--r-- 1 user user 17 Feb  1  2026 snap2/index.html
         level: advanced
         tags: [sysadmin]
+
+  - title: "Across a network"
+    intro: >-
+      A remote path is `host:path`, and everything above behaves identically once you write one.
+      What changes is the direction marker in the itemised output, the transport flags, and the
+      byte accounting, which is where the delta algorithm becomes visible. The
+      [copy files between machines](/recipes/copy-files-between-machines/) recipe covers the
+      workflow around these, including resuming an interrupted transfer.
+    examples:
+      - title: "Push a tree to another machine"
+        code: rsync -ai site/ deb1:backup/
+        description: >-
+          `deb1:backup/` is a path on the far end, relative to that account's home directory. The
+          first character is now `<`, meaning the file was sent away from here, where a local copy
+          reports `>` for received.
+        output: |2
+          created directory backup
+          cd+++++++++ ./
+          <f+++++++++ about.html
+          <f+++++++++ build.tmp
+          <f+++++++++ index.html
+          cd+++++++++ css/
+          <f+++++++++ css/main.css
+          cd+++++++++ drafts/
+          <f+++++++++ drafts/latest.html
+          <f+++++++++ drafts/release-notes.html
+          <f+++++++++ drafts/v2.html
+          cd+++++++++ img/
+          <f+++++++++ img/logo.png
+        level: intermediate
+        tags: [networking]
+      - title: "Pull a tree from another machine"
+        code: |-
+          rsync -a site/ deb1:backup/
+          rsync -ai deb1:backup/ pulled/
+        description: >-
+          Put the remote path first and the transfer runs the other way. The marker returns to
+          `>`, so reading the first character tells you which side won if the two disagree.
+        output: |2
+          created directory pulled
+          cd+++++++++ ./
+          >f+++++++++ about.html
+          >f+++++++++ build.tmp
+          >f+++++++++ index.html
+          cd+++++++++ css/
+          >f+++++++++ css/main.css
+          cd+++++++++ drafts/
+          >f+++++++++ drafts/latest.html
+          >f+++++++++ drafts/release-notes.html
+          >f+++++++++ drafts/v2.html
+          cd+++++++++ img/
+          >f+++++++++ img/logo.png
+        level: intermediate
+        tags: [networking]
+      - title: "See how much actually crossed the link"
+        code: rsync -a --stats site/ deb1:backup/ | grep -E '^(Total file size|Total bytes sent|Total bytes received)'
+        description: >-
+          On a first copy the bytes sent exceed the file size, since the protocol carries the file
+          list and checksums as well as the contents. Comparing the two figures is how you tell
+          whether a transfer is dominated by data or by overhead.
+        output: |2
+          Total file size: 2,193 bytes
+          Total bytes sent: 2,820
+          Total bytes received: 191
+        level: advanced
+        tags: [networking]
+      - title: "Watch the second transfer cost almost nothing"
+        code: |-
+          rsync -a site/ deb1:backup/
+          rsync -av site/ deb1:backup/ | grep '^total size'
+        description: >-
+          The same `speedup` figure as a local copy, and the reason `rsync` is worth the setup
+          over a slow link: the second run moves file lists and checksums rather than files.
+        output: |2
+          total size is 2,193  speedup is 8.00
+        level: intermediate
+        tags: [networking]
+      - title: "Reach a host on a non-default port"
+        code: rsync -ai -e 'ssh -p 2222' site/index.html deb1:backup/
+        description: >-
+          `-e` replaces the whole remote shell command, so anything [ssh](/commands/ssh/) accepts
+          goes here: a port, an identity file, a jump host. Quote it, since it contains a space.
+        output: |2
+          created directory backup
+          <f+++++++++ index.html
+        level: advanced
+        tags: [networking, ssh]
+      - title: "Write to a directory the remote account cannot"
+        code: |-
+          rsync -ai --rsync-path='sudo rsync' site/index.html deb1:/opt/tips/
+          stat -c '%U %G %n' /opt/tips /opt/tips/index.html
+        description: >-
+          `--rsync-path` sets the command run at the far end, so the receiving side is root while
+          the connection stays an ordinary user's. The directory is created as root; the file
+          keeps its source ownership, because `-a` asks for owner and group to be preserved and
+          only a root receiver is able to set them.
+        output: |2
+          created directory /opt/tips
+          <f+++++++++ index.html
+          root root /opt/tips
+          user user /opt/tips/index.html
+        level: advanced
+        tags: [networking, sysadmin]
