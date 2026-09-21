@@ -52,9 +52,9 @@ export function selectAdoptTargets<T extends TitledExample>(
 ): AdoptSelection<T> {
   const adoptable = withOutput.filter((example) => !skipTitles.has(example.title));
 
-  // Recognised wherever it appears rather than in first position only, so it cannot end up
-  // treated as the title of an example and reported as one that matched nothing. The caller
-  // refuses it alongside other titles, which is a usage error rather than a selection.
+  // Recognised wherever it appears, not in first position only, so it cannot end up treated as
+  // the title of an example and reported as one that matched nothing. The caller refuses it
+  // alongside other titles, which is a usage error and not a selection.
   const wantAll = titles.includes(ADOPT_ALL);
   const targets = adoptable
     .map((example, index) => ({ example, index }))

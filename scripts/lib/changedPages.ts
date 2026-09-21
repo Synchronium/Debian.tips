@@ -19,10 +19,10 @@ import { execFileSync } from "node:child_process";
  *  meant a pull request touching the pairing rule replayed nothing at all, and a mis-paired fence
  *  reports as "not checkable" rather than as broken, so the loss was silent.
  *
- *  `src/paths.ts` is here for the same reason and was missed: the harness asks it which setup
- *  script a page gets, which files in a content directory are pages, and where the sandbox driver
- *  is. A change to any of those decides what runs, and for a page that changes what is checked
- *  rather than only how fast.
+ *  `src/paths.ts` is here for the same reason: the harness asks it which setup script a page gets,
+ *  which files in a content directory are pages, and where the sandbox driver is. Those answers
+ *  decide which pages run and what each one runs against, so a change to them moves what is
+ *  checked rather than only how long it takes.
  *
  *  `scripts/replay/` covers the three replays and the sandbox image together. A change to how a
  *  page is put in a container, or to what the image contains, can move any output on the site. */
@@ -67,11 +67,11 @@ export function pagesTouchedBy(files: readonly string[]): string[] | "all" {
 
 /** A `git status --porcelain=v1` line as the paths it refers to.
  *
- *  The two-character status and its space come off the front. A rename then leaves `old -> new`,
- *  and **both halves are paths this diff touched**: the page that lost its files and the page that
- *  gained them. Keeping only the string as printed matched the old slug out of the middle of it and
- *  never saw the new page at all, so renaming a page locally selected a slug that no longer exists
- *  and replayed nothing.
+ *  The two-character status and its space come off the front. **A rename then leaves two paths on
+ *  one line**, `old -> new`, and a replay needs both: the page the files left and the page they
+ *  arrived at. Read as a single string, the page pattern finds the old slug inside it and the new
+ *  page goes unselected, which for a page being renamed is the whole of what a caller wanted
+ *  replayed.
  *
  *  Exported for `test/changedPages.test.ts`, since the shape is git's rather than ours and a test
  *  that built the line by hand would be asserting against our idea of it. */

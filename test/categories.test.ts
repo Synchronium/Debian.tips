@@ -56,11 +56,11 @@ describe("category configuration", () => {
  *
  * A group naming a slug no page has is deliberately not checked. `src/config.ts` says the table
  * doubles as a rough roadmap of intended coverage, so a slug waiting for its page is the table
- * being used as designed rather than a defect.
+ * being used as designed, not a defect.
  *
- * A slug naming itself twice is a defect, and it is the one this table's shape invites: moving a
- * page between groups means a deletion in one list and an addition in another, and getting half of
- * that right leaves the page rendered in both sections. */
+ * A slug named twice is a defect, and it is the one this table's shape invites: moving a page
+ * between groups means a deletion in one list and an addition in another, and doing only the
+ * addition leaves the page rendered in both sections. */
 describe("command page grouping", () => {
   it("files every command page under a real group, not the catch-all", () => {
     const grouped = new Set(COMMAND_GROUPS.flatMap((group) => group.commands));
@@ -73,8 +73,9 @@ describe("command page grouping", () => {
   });
 
   /* `groupedCommands` in src/templates/listing.ts resolves each group's slugs against the same
-   * page map, so a slug in two groups renders a row in each. Its `used` set is a Set, so the
-   * catch-all stays empty and the listing says nothing is wrong. */
+   * page map, so a slug in two groups renders a row in each. It then collects what it rendered
+   * into a set, which a repeat enters once, so the catch-all stays empty and the page appears
+   * twice with nothing on the listing to say so. */
   it("names each command in one group only", () => {
     const listed = COMMAND_GROUPS.flatMap((group) => group.commands);
     const seen = new Set<string>();

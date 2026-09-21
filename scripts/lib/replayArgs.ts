@@ -43,9 +43,8 @@ export function parseReplayArgs(args: string[]): ReplayRequest {
 
   /** The value given to a flag, refusing a second one rather than taking either.
    *
-   *  Silently keeping the first means `--shard=1/4 --shard=3/4` runs shard 1 and reports a clean
-   *  exit, which is this file's own definition of the thing worth refusing: a green run over a set
-   *  of pages nobody chose. */
+   *  Keeping the first silently means `--shard=1/4 --shard=3/4` replays a quarter of the site and
+   *  exits clean, which is a green run over a set of pages nobody chose. */
   const valueOf = (flag: string): string | undefined => {
     const given = args.filter((arg) => arg.startsWith(flag));
     if (given.length > 1) {

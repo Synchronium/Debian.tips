@@ -147,10 +147,10 @@ const RULES: readonly Rule[] = [
     // perfectly: it is 71 of the corpus's hits and none of them is the fault. `else` sits inside
     // the optional group rather than outside it, so `nothing else is printed` is excluded too.
     //
-    // The perfect passive (`has been`, `have been`, `had been`) for the same reason and in the
-    // same breath: a different auxiliary in front of the same participle, still with no actor the
-    // sentence could name. Only the passive form goes. A bare `has` stays matched, because an
-    // absence that *has* something is the construction rather than a passive.
+    // The perfect passive (`has been`, `have been`, `had been`) for the same reason: a different
+    // auxiliary in front of the same participle, still with no actor the sentence could name. Only
+    // the passive form goes. A bare `has` stays matched, since an absence that possesses something
+    // is the construction rather than a passive.
     //
     // `with nothing added`, `with nothing captured`: an absolute construction rather than a
     // clause, so there is no verb to negate.
@@ -168,19 +168,19 @@ const RULES: readonly Rule[] = [
     //
     // A verb in front turns the word into an object while the shape here stays the same, so a
     // sentence about a glob matching no files would read to this rule as an absence doing the
-    // expanding. The `ing` lookbehind is the part of that a spelling can settle: a gerund
-    // immediately in front takes the word as its object and leaves no room for it to be a subject.
+    // expanding. The `ing` lookbehind covers the part of that a spelling can decide: a gerund
+    // immediately in front takes the word as its object, which leaves it no room to be a subject.
     //
-    // **Only the gerund.** A finite verb in front does not settle it, because a verb of meaning or
-    // showing takes a whole clause rather than an object, and the absence is then the subject of
-    // that clause and the fault this rule is looking for. `test/voiceCheck.test.ts` holds one, and
-    // widening the lookbehind to any word ending in `s` silences it.
+    // **A finite verb in front is not the same case**, which is why the lookbehind asks for the
+    // gerund and not for any word ending in `s`. A verb of meaning or showing takes a clause, and
+    // the absence is then the subject of that clause and the fault being looked for.
+    // `test/voiceCheck.test.ts` holds such a line, and the wider lookbehind silences it.
     //
-    // What the pattern still cannot see, and what the budget therefore holds room for: a
-    // participle can be an adjective rather than a verb, which is what an ADR means by recording
-    // that no automated thing enforces it, and a finite verb in front is the case above. Both need
-    // to know which word is the subject, which is grammar rather than spelling. Examples are in
-    // the commit that swept the corpus, deliberately not here: a comment is prose this rule reads.
+    // What the pattern therefore cannot see, and what the budget holds room for: that case, and a
+    // participle used as an adjective rather than a verb, which is what an ADR means by recording
+    // that no automated thing enforces it. Both need to know which word is the subject, which is
+    // grammar rather than spelling. Examples are in the commit that swept the corpus, deliberately
+    // not here: a comment is prose this rule reads.
     pattern:
       /(?<!with )(?<![a-z]+ing )\bnothing (?:(?:can|could|will|would|may|might|must|should|does|did|do|ever|then|else|now|still|really|actually) )?(?!is\b|was\b|are\b|were\b|be\b|been\b|being\b|ha(?:s|ve|d) been\b|match|happen|unless\b|this\b)[a-z]+(?:s|ed)\b/gi,
     // Set from a swept corpus rather than chosen: ten findings survive the sweep, and every one is
@@ -371,10 +371,9 @@ export function proseLines(path: string, source: string): { line: number; text: 
 
 /** Consecutive prose lines joined into the paragraph they were wrapped from.
  *
- *  Not to be confused with `src/content/proseBlocks.ts`, which is a different question about
- *  different files: that one pairs a prose page's command fence to the output fence below it, and
- *  the replay reads it to decide what a page claims. This one is about hard wrapping, and nothing
- *  outside this file reads it.
+ *  `src/content/proseBlocks.ts` asks a different question about different files: it pairs a prose
+ *  page's command fence to the output fence below it, and the replay reads it to decide what a
+ *  page claims. This one is about hard wrapping, and no file outside this one reads it.
  *
  *  **A rule matched line by line is wrong in both directions.** Prose here is hard-wrapped at
  *  around 100 columns, and a wrap falls wherever the column ran out rather than anywhere
@@ -414,8 +413,8 @@ export function wrappedParagraphs(
     }
     blocks.push({
       text,
-      // `starts` is built fresh each time through and never reassigned, so the closure keeps this
-      // block's offsets rather than the next one's.
+      // `starts` is built fresh on each call and never reassigned, so the closure keeps this
+      // block's offsets and not the next one's.
       lineAt: (index) => {
         let line = starts[0]?.line ?? 1;
         for (const start of starts) if (start.at <= index) line = start.line;
@@ -574,8 +573,8 @@ function main(): void {
     const target = hookTarget();
     targets = target !== null && inScope(target) ? [target] : [];
   } else {
-    // Absolute, because `checkFile` reports each finding against the path relative to the root and
-    // a name typed at the shell is relative to the working directory.
+    // Resolved against the working directory, which is where a name typed at the shell is
+    // relative to. `checkFile` takes an absolute path and reports the finding against the root.
     targets = named.length ? named.map((path) => resolve(path)) : corpusFiles();
   }
 

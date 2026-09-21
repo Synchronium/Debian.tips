@@ -62,8 +62,8 @@ describe("what puts every page back in", () => {
   });
 
   /* The harness asks `src/paths.ts` which setup script a page gets and which files in a content
-   * directory are pages, so a change there decides what runs rather than only how fast. Its
-   * neighbours in `src/` are the generator and move nothing a page claims. */
+   * directory are pages, so a change there decides what runs and not merely how fast. Its
+   * neighbours in `src/` build the site and move nothing a page claims. */
   it("a change to src/paths.ts, which the harness addresses every file through", () => {
     expect(pagesTouchedBy(["src/paths.ts"])).toBe("all");
     expect(pagesTouchedBy(["src/build.ts"])).toEqual([]);
@@ -89,8 +89,8 @@ describe("what puts every page back in", () => {
 });
 
 /* A rename is the one status line naming two paths, and the page that gained the files is the one
- * a run has to replay. The line's shape is git's rather than ours, so it is taken from a real
- * `git mv` in a throwaway repository instead of written out here and assumed. */
+ * a run has to replay. The line's shape belongs to git, so it is taken from a real `git mv` in a
+ * throwaway repository instead of being written out here and assumed. */
 describe("a page renamed but not yet committed", () => {
   const repos: string[] = [];
   afterAll(() => {
