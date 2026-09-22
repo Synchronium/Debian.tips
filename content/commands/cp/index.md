@@ -21,3 +21,7 @@ so it takes today's timestamp and your umask decides its mode unless you ask for
 Directories need `-r`. Whether that leaves you with `published` or `published/site` depends on
 whether `published` existed when you ran it, which is the one to watch in a script that might run
 twice.
+
+For a copy you expect to repeat, [`rsync`](/commands/rsync/) answers that question with a rule
+rather than a condition: a trailing slash on the source means the contents, and no slash means the
+directory. It also compares the two sides first, so the second run transfers only what changed.

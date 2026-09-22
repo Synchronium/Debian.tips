@@ -340,10 +340,21 @@ asking for the mechanism. Try each of the others the cheap way first.
   mailed to a machine with no MTA, and a 127 nobody reads, plus the three failures that produce
   the same symptom with `PATH` in perfect order.
 - **`why-is-this-process-using-so-much-cpu`** and
-  **`why-is-this-process-using-so-much-memory`**. **Needs**: `top`, `free`, `ps` (written).
-  **Demo**: a process spinning against one that is blocked; resident against virtual size; cache
-  and buffers counted as used, which is the misreading `free` invites. These two give the
-  `performance` tag its first pages.
+  **`why-is-this-process-using-so-much-memory`**. **Needs**: a decision about what a container may
+  honestly report about memory, and then `top` and `free`. **Demo**: a process spinning against one
+  that is blocked; resident against virtual size; cache and buffers counted as used, which is the
+  misreading `free` invites. These two give the `performance` tag its first pages.
+
+  **Blocked on more than the two command pages, measured 2026-09-21.** `free` and `top` report the
+  host's memory rather than the container's, so `total` is a property of whichever machine ran the
+  replay: 3.8Gi in this devcontainer, and whatever a runner is given. That is the defect the
+  architecture rule exists for, a captured output that reproduces perfectly and holds on one
+  machine only, except that `test/architecture.test.ts` is not looking for it. Every other figure
+  on the line moves between consecutive runs, and `top` adds uptime, load average and PIDs.
+  Writing either page the ordinary way would put `compare: shape` on nearly every example, which
+  reduces those figures to tokens and certifies close to nothing. Settle what the harness should do
+  about a container's view of memory first, in §4, rather than treating these as two command pages
+  away.
 
 `cannot-remove-file-in-use` left this list on 2026-09-13, and §13.7 says why: Linux refuses none
 of the removals it was named after. `text-file-busy` was written in its place, covering the one
@@ -471,10 +482,14 @@ Still out of reach, and not on any list here: `lsblk`, `lspci`, `lsusb`, `fdisk 
 Most of this group waits on a fixture. What is written is `curl`, `wget`, `ssh` and `ss`, and
 `scripts/fixtures/http-mock.py` is the pattern the rest would follow.
 
+Checked 2026-09-21: of the commands below, the image carries `rsync` alone. `nc`, `dig` and `host`
+are absent, so each of those pages owes an install in its own setup script before it owes anything
+else. A page may install what it documents, and the container it installs into is its own.
+
 - **`rsync`** (`flagship`). **Needs**: nothing. **Demo**: local trees, the trailing-slash rule,
   `--dry-run`, `-H` for hard links, which §13 records as `rsync`'s alone. Written against local
   paths, so no peer is needed.
-- **`nc`** (`standard`). **Needs**: nothing. **Demo**: a listener and a client inside one
+- **`nc`** (`standard`). **Needs**: the package. **Demo**: a listener and a client inside one
   container. Execute the listener directly rather than through `env`, or `ss -p` names it after
   the interpreter.
 - **`dig`** (`flagship`) and **`host`** (`light`). **Needs**: a local resolver fixture serving a

@@ -70,3 +70,7 @@ files.
 The trailing slash on the source path (`project/` vs `project`) matters for both tools: with the
 slash, the *contents* of `project/` land directly in the destination directory; without it, the
 `project` directory itself is created as a subdirectory of the destination.
+
+The [rsync command page](/commands/rsync/) works through the rest of its flags against local
+trees, including `--delete` for a true mirror, exclude patterns, and what `-a` does and does not
+preserve.

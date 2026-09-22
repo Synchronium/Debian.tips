@@ -1,0 +1,724 @@
+command: rsync
+
+fixtures:
+  - name: site
+    note: >-
+      The tree every example copies. `drafts/latest.html` and `drafts/v2.html` are two names for
+      one inode, which is the link count of `2` in the listing, and `build.tmp` is the artefact the
+      exclude examples leave behind. Every example also starts with an empty `backup/` directory
+      alongside it.
+    from: ls -lAR site
+    content: |2
+      site:
+      total 24
+      -rw-r--r-- 1 user user   15 Jan  5  2026 about.html
+      -rw-r--r-- 1 user user   17 Jan  5  2026 build.tmp
+      drwxr-xr-x 2 user user 4096 Jan  5  2026 css
+      drwxr-xr-x 2 user user 4096 Jan  5  2026 drafts
+      drwxr-xr-x 2 user user 4096 Jan  5  2026 img
+      -rw-r--r-- 1 user user   14 Jan  5  2026 index.html
+
+      site/css:
+      total 4
+      -rw-r--r-- 1 user user 19 Jan  5  2026 main.css
+
+      site/drafts:
+      total 12
+      -rw-r--r-- 2 user user 23 Jan  5  2026 latest.html
+      -rw-r--r-- 1 user user 34 Jan  5  2026 release-notes.html
+      -rw-r--r-- 2 user user 23 Jan  5  2026 v2.html
+
+      site/img:
+      total 4
+      -rw-r--r-- 1 user user 2048 Jan  5  2026 logo.png
+
+sections:
+  - title: "Copying a tree"
+    intro: >-
+      The trailing slash on the source is the first thing to get right: with one you copy the
+      contents, without one you copy the directory itself.
+    examples:
+      - title: "Copy a directory's contents into another directory"
+        code: rsync -ai site/ backup/
+        description: >-
+          The trailing slash on `site/` means *the contents of*, so `backup/` ends up holding
+          `index.html` rather than `site/index.html`. `-a` preserves permissions, times and
+          symlinks; `-i` prints a line per item, where `>f+++++++++` is a file being created.
+        output: |2
+          >f+++++++++ about.html
+          >f+++++++++ build.tmp
+          >f+++++++++ index.html
+          cd+++++++++ css/
+          >f+++++++++ css/main.css
+          cd+++++++++ drafts/
+          >f+++++++++ drafts/latest.html
+          >f+++++++++ drafts/release-notes.html
+          >f+++++++++ drafts/v2.html
+          cd+++++++++ img/
+          >f+++++++++ img/logo.png
+        level: basic
+        tags: [files]
+      - title: "Copy the directory itself, keeping its name"
+        code: rsync -ai site backup/
+        description: >-
+          Drop the trailing slash and `site` is copied as a directory, so every path gains a
+          `site/` component. Both forms succeed, which is why running the wrong one twice gives
+          you `backup/site/site/`.
+        output: |2
+          cd+++++++++ site/
+          >f+++++++++ site/about.html
+          >f+++++++++ site/build.tmp
+          >f+++++++++ site/index.html
+          cd+++++++++ site/css/
+          >f+++++++++ site/css/main.css
+          cd+++++++++ site/drafts/
+          >f+++++++++ site/drafts/latest.html
+          >f+++++++++ site/drafts/release-notes.html
+          >f+++++++++ site/drafts/v2.html
+          cd+++++++++ site/img/
+          >f+++++++++ site/img/logo.png
+        level: basic
+        tags: [files]
+      - title: "Copy a single file"
+        code: rsync -ai site/index.html backup/
+        description: >-
+          A file source needs no slash rule. The file lands in `backup/` under its own name.
+        output: |2
+          >f+++++++++ index.html
+        level: basic
+        tags: [files]
+      - title: "Copy a file under a different name"
+        code: |-
+          rsync -ai site/index.html backup/homepage.html
+          ls backup/
+        description: >-
+          Where the destination names a file rather than a directory, `rsync` renames as it
+          copies, the same way `cp` does.
+        output: |2
+          >f+++++++++ index.html
+          homepage.html
+        level: basic
+        tags: [files]
+      - title: "Create the destination directory if it is missing"
+        code: |-
+          rsync -ai site/ newdir/ | head -3
+          ls -ld newdir
+        description: >-
+          `rsync` creates the last component of the destination path and reports that it has done
+          so. It will not create missing parent directories, which needs `--mkpath`.
+        output: |2
+          created directory newdir
+          cd+++++++++ ./
+          >f+++++++++ about.html
+          drwxr-xr-x 5 user user 4096 Jan  5  2026 newdir
+        level: basic
+        tags: [files]
+      - title: "Confirm the two trees really match"
+        code: |-
+          rsync -a site/ backup/
+          diff -r site backup && echo "trees match"
+        description: >-
+          `diff -r` compares the two trees file by file and won't print anything when they agree, so
+          this is the check that the copy did what you meant. See [diff](/commands/diff/).
+        output: |2
+          trees match
+        level: basic
+        tags: [files]
+
+  - title: "Seeing what it will do first"
+    intro: >-
+      `-n` is dry-run mode. It is cheap to run, and it shows exactly what would happen without
+      making any changes, which makes it good practice before any non-trivial copy.
+    examples:
+      - title: "Preview a transfer without writing anything"
+        code: rsync -ain site/ backup/ | head -4
+        description: >-
+          `-n` (`--dry-run`) does the comparison and prints the same itemised lines, leaving the
+          destination untouched. Pair it with `-i` and you can read the plan before agreeing to it.
+        output: |2
+          >f+++++++++ about.html
+          >f+++++++++ build.tmp
+          >f+++++++++ index.html
+          cd+++++++++ css/
+        level: basic
+        tags: [files]
+      - title: "See why a file is being sent"
+        code: |-
+          rsync -a site/ backup/
+          touch -d "2026-02-01 10:00:00" site/about.html
+          rsync -ai site/ backup/
+        description: >-
+          Only the timestamp moved, so only `t` is lettered and the rest of the fields are `.`.
+          Note what that does *not* say: the size matched and the timestamp differed, which is
+          enough for `rsync` to resend the file without ever reading either copy. Whether the
+          contents changed is a question only `-c` (`--checksum`) can answer.
+        output: |2
+          >f..t...... about.html
+        level: intermediate
+        tags: [files]
+      - title: "Count what a transfer moved"
+        code: rsync -a --stats site/ backup/ | grep -E '^(Number|Total file size)'
+        description: >-
+          `--stats` totals the transfer. The lines are filtered here because the rest of the block
+          reports a transfer rate, which differs on every run.
+        output: |2
+          Number of files: 12 (reg: 8, dir: 4)
+          Number of created files: 11 (reg: 8, dir: 3)
+          Number of deleted files: 0
+          Number of regular files transferred: 8
+          Total file size: 2,193 bytes
+        level: intermediate
+        tags: [files]
+
+  - title: "Only what changed"
+    intro: >-
+      The second run is the one that shows what `rsync` is for. It compares size and modification
+      time, transfers the difference, and says how much it saved.
+    examples:
+      - title: "Watch the second run transfer nothing"
+        code: |-
+          rsync -a site/ backup/
+          rsync -ai site/ backup/
+          echo "(no itemised lines above)"
+        description: >-
+          Everything already matches on size and time, so `rsync` writes nothing and prints
+          nothing. Repeating a copy is close to free, which is what makes it safe to schedule.
+        output: |2
+          (no itemised lines above)
+        level: basic
+        tags: [files]
+      - title: "Count what a first and second run each transferred"
+        code: |-
+          rsync -a --stats site/ backup/ | grep "regular files transferred"
+          rsync -a --stats site/ backup/ | grep "regular files transferred"
+        description: >-
+          Eight files on the first run and none on the second, which is the whole point of using
+          `rsync` over `cp` for a regular or scheduled copy. `--stats` also reports a `speedup`
+          ratio and a byte total, both of which move between machines, so this asks for the line
+          that does not.
+        output: |2
+          Number of regular files transferred: 8
+          Number of regular files transferred: 0
+        level: intermediate
+        tags: [performance]
+      - title: "Miss an edit that kept its size and timestamp"
+        code: |-
+          rsync -a site/ backup/
+          printf '<h1>Hom3</h1>\n' > site/index.html
+          touch -d "2026-01-05 09:00:00" site/index.html
+          rsync -ai site/ backup/
+          cat backup/index.html
+        description: >-
+          The edit is the same length as the original and the timestamp was put back, so the quick
+          check finds both sides identical and skips the file. The destination still holds the old
+          contents. This is the one case where the default is wrong rather than merely fast.
+        output: |2
+          <h1>Home</h1>
+        level: advanced
+        tags: [files]
+      - title: "Catch it by comparing contents"
+        code: |-
+          rsync -a site/ backup/
+          printf '<h1>Hom3</h1>\n' > site/index.html
+          touch -d "2026-01-05 09:00:00" site/index.html
+          rsync -aic site/ backup/
+          cat backup/index.html
+        description: >-
+          `-c` (`--checksum`) reads both copies and compares them, so the difference is found. The
+          `c` in `>fc........` is the checksum field, the only one that differs. It costs a full
+          read of both sides, so use it where you suspect drift.
+        output: |2
+          >fc........ index.html
+          <h1>Hom3</h1>
+        level: advanced
+        tags: [files]
+      - title: "Leave a newer destination file alone"
+        code: |-
+          rsync -a site/ backup/
+          touch -d "2026-06-01 12:00:00" backup/index.html
+          rsync -aiu site/ backup/
+          echo "(nothing transferred)"
+          ls -l backup/index.html
+        description: >-
+          `-u` (`--update`) skips any destination file with a newer timestamp than the source, so
+          a copy edited at the far end is not overwritten by an older original.
+        output: |2
+          (nothing transferred)
+          -rw-r--r-- 1 user user 14 Jun  1 12:00 backup/index.html
+        level: intermediate
+        tags: [files]
+      - title: "Skip files the destination already has"
+        code: |-
+          rsync -a site/ backup/
+          printf '<h1>Changed</h1>\n' > site/index.html
+          rsync -ai --ignore-existing site/ backup/
+          echo "(nothing transferred)"
+          cat backup/index.html
+        description: >-
+          `--ignore-existing` compares nothing for a file that is already there, whatever its
+          contents or age. Useful for topping up a destination without touching what it holds.
+        output: |2
+          (nothing transferred)
+          <h1>Home</h1>
+        level: intermediate
+        tags: [files]
+      - title: "Update only files the destination already has"
+        code: |-
+          rsync -a --exclude=about.html site/ backup/
+          rsync -ai --existing site/ backup/
+          echo "(about.html was not created)"
+        description: >-
+          `--existing` is the mirror of the flag above: it updates what is there and refuses to
+          add anything new, so a partial destination stays partial.
+        output: |2
+          (about.html was not created)
+        level: advanced
+        tags: [files]
+
+  - title: "Choosing what to copy"
+    intro: >-
+      Exclude patterns match against the path relative to the source, and a pattern ending in `/`
+      matches directories alone.
+    examples:
+      - title: "Leave build artefacts behind"
+        code: rsync -ai --exclude='*.tmp' site/ backup/
+        description: >-
+          `--exclude` takes a glob matched against each path below the source. Quote it, or the
+          shell expands it against the current directory before `rsync` sees it, which is the same
+          trap [quoting](/scripting/variables-and-quoting/) covers in general.
+        output: |2
+          >f+++++++++ about.html
+          >f+++++++++ index.html
+          cd+++++++++ css/
+          >f+++++++++ css/main.css
+          cd+++++++++ drafts/
+          >f+++++++++ drafts/latest.html
+          >f+++++++++ drafts/release-notes.html
+          >f+++++++++ drafts/v2.html
+          cd+++++++++ img/
+          >f+++++++++ img/logo.png
+        level: basic
+        tags: [files]
+      - title: "Skip a whole directory"
+        code: rsync -ai --exclude='drafts/' site/ backup/
+        description: >-
+          The trailing slash restricts the pattern to directories, so a file called `drafts` would
+          still be copied. The directory is not descended into at all.
+        output: |2
+          >f+++++++++ about.html
+          >f+++++++++ build.tmp
+          >f+++++++++ index.html
+          cd+++++++++ css/
+          >f+++++++++ css/main.css
+          cd+++++++++ img/
+          >f+++++++++ img/logo.png
+        level: basic
+        tags: [files]
+      - title: "Keep the exclusions in a file"
+        code: |-
+          printf '*.tmp\ndrafts/\n' > exclude.txt
+          rsync -ai --exclude-from=exclude.txt site/ backup/
+        description: >-
+          `--exclude-from` reads one pattern per line from the file. This is handy when there are
+          many patterns, since it keeps the command readable, and it lets the list live under
+          version control alongside the thing being copied.
+        output: |2
+          >f+++++++++ about.html
+          >f+++++++++ index.html
+          cd+++++++++ css/
+          >f+++++++++ css/main.css
+          cd+++++++++ img/
+          >f+++++++++ img/logo.png
+        level: intermediate
+        tags: [files]
+      - title: "Copy an explicit list of paths"
+        code: |-
+          printf 'index.html\ncss/main.css\n' > list.txt
+          rsync -ai --files-from=list.txt site/ backup/
+        description: >-
+          `--files-from` inverts the question: rather than excluding, it names exactly what to
+          send. Parent directories in the list are created as needed.
+        output: |2
+          >f+++++++++ index.html
+          cd+++++++++ css/
+          >f+++++++++ css/main.css
+        level: intermediate
+        tags: [files]
+      - title: "Copy one file type and drop the empty directories"
+        code: rsync -aim --include='*/' --include='*.css' --exclude='*' site/ backup/
+        description: >-
+          Include-then-exclude is the idiom for a whitelist: descend into every directory, keep
+          the `.css` files, reject the rest. `-m` (`--prune-empty-dirs`) then removes the
+          directories that matched nothing, which would otherwise all be created empty.
+        output: |2
+          cd+++++++++ css/
+          >f+++++++++ css/main.css
+        level: advanced
+        tags: [files]
+
+  - title: "Making the destination match"
+    intro: >-
+      `rsync` adds and updates but never removes, so a destination only drifts in one direction
+      until you ask for the other.
+    examples:
+      - title: "See that a deleted file survives in the destination"
+        code: |-
+          rsync -a site/ backup/
+          rm site/about.html
+          rsync -ai site/ backup/
+          ls backup/about.html
+        description: >-
+          The file is gone from the source but still in the destination. `rsync` reports nothing
+          about it. A backup taken this way accumulates everything ever deleted.
+        output: |2
+          .d..t...... ./
+          backup/about.html
+        level: intermediate
+        tags: [files]
+      - title: "Preview the deletions before agreeing to them"
+        code: |-
+          rsync -a site/ backup/
+          rm site/about.html
+          rsync -ain --delete site/ backup/
+        description: >-
+          Lines prefixed with `*deleting` show every file `--delete` would remove. Previewing
+          them under `-n` is an excellent habit to adopt, and it is what separates a mirror from
+          an accident.
+        output: |2
+          *deleting   about.html
+          .d..t...... ./
+        level: intermediate
+        tags: [files]
+      - title: "See what a wrong source path would destroy"
+        code: |-
+          rsync -a site/ backup/
+          mkdir -p empty
+          rsync -ain --delete empty/ backup/ | grep deleting
+        description: >-
+          `--delete` trusts the source completely, so an empty or mistyped source means every
+          file in the destination is one the source no longer has. `rsync` cannot tell that apart
+          from a deliberate emptying, so it carries on: filtering the dry run for `deleting` is
+          what shows the whole backup about to go.
+        output: |2
+          *deleting   img/logo.png
+          *deleting   img/
+          *deleting   drafts/v2.html
+          *deleting   drafts/release-notes.html
+          *deleting   drafts/latest.html
+          *deleting   drafts/
+          *deleting   css/main.css
+          *deleting   css/
+          *deleting   index.html
+          *deleting   build.tmp
+          *deleting   about.html
+        level: advanced
+        tags: [sysadmin]
+      - title: "Mirror the source, removals included"
+        code: |-
+          rsync -a site/ backup/
+          rm site/about.html
+          rsync -ai --delete site/ backup/
+          ls backup/about.html 2>&1
+        description: >-
+          `--delete` removes destination files the source no longer has, which is what makes the
+          copy a mirror. Check the source path twice: a typo that resolves to an empty directory
+          empties the destination.
+        output: |2
+          *deleting   about.html
+          .d..t...... ./
+          ls: cannot access 'backup/about.html': No such file or directory
+        level: intermediate
+        tags: [files]
+      - title: "Stop a mirror that wants to delete too much"
+        code: |-
+          rsync -a site/ backup/
+          rm site/about.html site/index.html
+          rsync -a --delete --max-delete=1 site/ backup/ 2>&1 | head -1
+          echo "exit status: ${PIPESTATUS[0]}"
+        description: >-
+          `--max-delete` abandons the run once the count is exceeded, and exits 25 rather than 0.
+          Worth setting on anything that runs unattended, where a sudden mass deletion is more
+          likely to be a broken source path than a real change.
+        output: |2
+          Deletions stopped due to --max-delete limit (1 skipped)
+          exit status: 25
+        level: advanced
+        tags: [sysadmin]
+      - title: "Remove excluded files from the destination too"
+        code: |-
+          rsync -a site/ backup/
+          rsync -ai --exclude='*.tmp' --delete --delete-excluded site/ backup/
+        description: >-
+          `--delete` alone protects excluded files, since they are not part of the comparison.
+          `--delete-excluded` says to remove them as well. That is what you want when a file used
+          to be copied and should now be cleaned out of the destination rather than left behind.
+        output: |2
+          *deleting   build.tmp
+        level: advanced
+        tags: [files]
+      - title: "Keep a copy of every file replaced"
+        code: |-
+          rsync -a site/ backup/
+          printf '<h1>Home v2</h1>\n' > site/index.html
+          rsync -ai --backup --backup-dir=../old site/ backup/
+          ls old/
+        description: >-
+          `--backup` moves the old version aside rather than overwriting it, and `--backup-dir`
+          says where. The path is relative to the *destination*, so the `../` is what puts `old/`
+          beside `backup/` rather than inside it. Put it inside and `--delete` finds a directory
+          the source does not have and tries to remove it, while each run backs up the previous
+          backup. Where it has to live inside, `--exclude` keeps it out of the comparison.
+        output: |2
+          >f.st...... index.html
+          index.html
+        level: advanced
+        tags: [sysadmin]
+      - title: "Move files rather than copy them"
+        code: |-
+          rsync -ai --remove-source-files site/index.html backup/
+          ls site/index.html 2>&1
+        description: >-
+          `--remove-source-files` deletes each source file once it has been transferred and
+          verified. Directories are left behind. Prefer it to [`mv`](/commands/mv/) when moving
+          files between different filesystems: `mv` there copies and then deletes, so an
+          interruption can leave a partial copy, where `rsync` removes the source only after the
+          transfer is verified.
+        output: |2
+          >f+++++++++ index.html
+          ls: cannot access 'site/index.html': No such file or directory
+        level: advanced
+        tags: [files]
+
+  - title: "What gets preserved"
+    intro: >-
+      `-a` covers permissions, times, symlinks, owner and group. Hard links and a few other
+      properties are separate flags, because each one requires a bit more effort to detect.
+    examples:
+      - title: "Lose the timestamps by recursing without -a"
+        code: |-
+          rsync -r site/ backup/
+          if [ "$(stat -c %Y site/index.html)" = "$(stat -c %Y backup/index.html)" ]; then
+            echo "timestamp preserved"
+          else
+            echo "timestamp not preserved"
+          fi
+        description: >-
+          `-r` copies the tree and preserves none of the metadata that `-a` would. Every
+          destination file is stamped with the time it was copied rather than the time it was
+          written, so the next run has no stable timestamp to compare and re-sends more than it
+          should.
+        output: |2
+          timestamp not preserved
+        level: intermediate
+        tags: [files]
+      - title: "Keep them with -a"
+        code: |-
+          rsync -a site/ backup/
+          if [ "$(stat -c %Y site/index.html)" = "$(stat -c %Y backup/index.html)" ]; then
+            echo "timestamp preserved"
+          else
+            echo "timestamp not preserved"
+          fi
+        description: >-
+          `-a` expands to `-rlptgoD`, and the `t` is what makes repeat runs cheap. Almost every
+          `rsync` command wants `-a` for this reason alone.
+        output: |2
+          timestamp preserved
+        level: basic
+        tags: [files]
+      - title: "Watch -r refuse a symlink"
+        code: |-
+          ln -s index.html site/home.html
+          touch -h -d "2026-01-05 09:00:00" site/home.html
+          rsync -r site/ backup/ 2>&1 | head -1
+        description: >-
+          Without the `l` that `-a` includes, a symlink is neither followed nor recreated. It is
+          skipped with a warning, so the destination is quietly missing a file.
+        output: |2
+          skipping non-regular file "home.html"
+        level: intermediate
+        tags: [files]
+      - title: "Store a symlink as a symlink"
+        code: |-
+          ln -s index.html site/home.html
+          touch -h -d "2026-01-05 09:00:00" site/home.html
+          rsync -ai site/ backup/ | grep home
+          ls -l backup/home.html
+        description: >-
+          `-a` includes `-l`, so the link is recreated pointing at the same target. `cL+++++++++`
+          marks a symlink being created. See
+          [hard vs symbolic links](/compare/hard-vs-symbolic-links/).
+        output: |2
+          cL+++++++++ home.html -> index.html
+          lrwxrwxrwx 1 user user 10 Jan  5  2026 backup/home.html -> index.html
+        level: intermediate
+        tags: [files]
+      - title: "Follow a symlink and copy what it points at"
+        code: |-
+          ln -s index.html site/home.html
+          touch -h -d "2026-01-05 09:00:00" site/home.html
+          rsync -aiL site/ backup/ | grep home
+          ls -l backup/home.html
+        description: >-
+          `-L` (`--copy-links`) resolves each symlink and sends the file instead, so the
+          destination is standalone. The cost is that a link and its target are stored twice.
+        output: |2
+          >f+++++++++ home.html
+          -rw-r--r-- 1 user user 14 Jan  5  2026 backup/home.html
+        level: advanced
+        tags: [files]
+      - title: "See two hard links arrive as two files"
+        code: |-
+          rsync -a site/ backup/
+          ls -l backup/drafts/latest.html backup/drafts/v2.html
+        description: >-
+          `latest.html` and `v2.html` are one inode in the source, shown by the link count of `2`
+          in the fixture listing. A plain `-a` copies the contents twice and the count drops to
+          `1`, so the destination is larger than the source.
+        output: |2
+          -rw-r--r-- 1 user user 23 Jan  5  2026 backup/drafts/latest.html
+          -rw-r--r-- 1 user user 23 Jan  5  2026 backup/drafts/v2.html
+        level: advanced
+        tags: [files]
+      - title: "Preserve the hard link with -H"
+        code: |-
+          rsync -aH site/ backup/
+          ls -l backup/drafts/latest.html backup/drafts/v2.html
+        description: >-
+          `-H` (`--hard-links`) detects that two paths share an inode and recreates the link
+          rather than the bytes, so the count stays `2`. It is not in `-a` because finding them
+          means tracking every inode in the transfer.
+        output: |2
+          -rw-r--r-- 2 user user 23 Jan  5  2026 backup/drafts/latest.html
+          -rw-r--r-- 2 user user 23 Jan  5  2026 backup/drafts/v2.html
+        level: advanced
+        tags: [files]
+      - title: "Set the destination permissions as you copy"
+        code: |-
+          rsync -ai --chmod=F640 site/ backup/ | grep index
+          ls -l backup/index.html
+        description: >-
+          `--chmod` overrides what `-a` would have preserved. `F640` applies to files alone and
+          `D750` to directories. The two can be combined into a single flag as
+          `--chmod=F640,D750`.
+        output: |2
+          >f+++++++++ index.html
+          -rw-r----- 1 user user 14 Jan  5  2026 backup/index.html
+        level: advanced
+        tags: [permissions]
+      - title: "Build a snapshot that shares unchanged files"
+        code: |-
+          rsync -a site/ snap1/
+          printf '<h1>Home v2</h1>\n' > site/index.html
+          touch -d "2026-02-01 09:00:00" site/index.html
+          rsync -ai --link-dest=../snap1 site/ snap2/ | grep -v '^cd'
+          ls -l snap2/about.html snap2/index.html
+        description: >-
+          `--link-dest` compares against a previous snapshot and hard-links anything unchanged
+          instead of copying it. `about.html` has a link count of `2` because it is the same inode
+          as in `snap1`; `index.html` was edited, so it is a real copy. A directory of dated
+          snapshots costs one full tree plus the changes.
+        output: |2
+          created directory snap2
+          >f.st...... index.html
+          -rw-r--r-- 2 user user 15 Jan  5  2026 snap2/about.html
+          -rw-r--r-- 1 user user 17 Feb  1  2026 snap2/index.html
+        level: advanced
+        tags: [sysadmin]
+
+  - title: "Across a network"
+    intro: >-
+      A remote path is `host:path`, and everything above behaves identically once you write one.
+      What changes is the direction marker in the itemised output, the transport flags, and the
+      byte accounting, which is where the delta algorithm becomes visible. The
+      [copy files between machines](/recipes/copy-files-between-machines/) recipe covers the
+      workflow around these, including resuming an interrupted transfer.
+    examples:
+      - title: "Push a tree to another machine"
+        code: rsync -ai site/ deb1:backup/
+        description: >-
+          `deb1:backup/` is a path on the far end, relative to that account's home directory. The
+          first character is now `<`, meaning the file was sent away from here, where a local copy
+          reports `>` for received.
+        output: |2
+          created directory backup
+          cd+++++++++ ./
+          <f+++++++++ about.html
+          <f+++++++++ build.tmp
+          <f+++++++++ index.html
+          cd+++++++++ css/
+          <f+++++++++ css/main.css
+          cd+++++++++ drafts/
+          <f+++++++++ drafts/latest.html
+          <f+++++++++ drafts/release-notes.html
+          <f+++++++++ drafts/v2.html
+          cd+++++++++ img/
+          <f+++++++++ img/logo.png
+        level: intermediate
+        tags: [networking]
+      - title: "Pull a tree from another machine"
+        code: |-
+          rsync -a site/ deb1:backup/
+          rsync -ai deb1:backup/ pulled/
+        description: >-
+          Put the remote path first and the transfer runs the other way. The marker returns to
+          `>`, so the first character tells you which of the two copies overwrote the other.
+        output: |2
+          created directory pulled
+          cd+++++++++ ./
+          >f+++++++++ about.html
+          >f+++++++++ build.tmp
+          >f+++++++++ index.html
+          cd+++++++++ css/
+          >f+++++++++ css/main.css
+          cd+++++++++ drafts/
+          >f+++++++++ drafts/latest.html
+          >f+++++++++ drafts/release-notes.html
+          >f+++++++++ drafts/v2.html
+          cd+++++++++ img/
+          >f+++++++++ img/logo.png
+        level: intermediate
+        tags: [networking]
+      - title: "See how much actually crossed the link"
+        code: rsync -a --stats site/ deb1:backup/ | grep -E '^(Total file size|Total bytes sent|Total bytes received)'
+        description: >-
+          On a first copy the bytes sent exceed the file size, since the protocol carries the file
+          list and checksums as well as the contents. Comparing the two figures is how you tell
+          whether a transfer is dominated by data or by overhead.
+        volatile: >-
+          the two byte totals differ by a few bytes between machines and between runs, so the
+          figures below are one real capture rather than a constant; the file size is fixed by the
+          fixture
+        compare: shape
+        output: |2
+          Total file size: 2,193 bytes
+          Total bytes sent: 2,820
+          Total bytes received: 191
+        level: advanced
+        tags: [networking]
+      - title: "Reach a host on a non-default port"
+        code: rsync -ai -e 'ssh -p 2222' site/index.html deb1:backup/
+        description: >-
+          `-e` replaces the whole remote shell command, so anything [ssh](/commands/ssh/) accepts
+          goes here: a port, an identity file, a jump host. Quote it, since it contains a space.
+        output: |2
+          created directory backup
+          <f+++++++++ index.html
+        level: advanced
+        tags: [networking, ssh]
+      - title: "Write to a directory the remote account cannot"
+        code: |-
+          rsync -ai --rsync-path='sudo rsync' site/index.html deb1:/opt/tips/
+          stat -c '%U %G %n' /opt/tips /opt/tips/index.html
+        description: >-
+          `--rsync-path` sets the command run at the far end, so the receiving side is root while
+          the connection stays an ordinary user's. The directory is created as root; the file
+          keeps its source ownership, because `-a` asks for owner and group to be preserved but
+          only a root receiver is able to set them.
+        output: |2
+          created directory /opt/tips
+          <f+++++++++ index.html
+          root root /opt/tips
+          user user /opt/tips/index.html
+        level: advanced
+        tags: [networking, sysadmin]
