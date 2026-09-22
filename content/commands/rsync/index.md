@@ -92,7 +92,7 @@ the destination the source no longer has.
 The catch is that `--delete` trusts the source absolutely. Point it at a path that does not hold
 what you think, or at a directory that happens to be empty, and every file in the destination
 qualifies as something the source no longer has. A mistyped source path is therefore an
-instruction to empty the backup, which is then carried out without immediately.
+instruction to empty the backup, which is then carried out immediately.
 
 So run it under `-n` (`--dry-run`) first, and filter for the removals when the file list is long
 enough to bury them:
