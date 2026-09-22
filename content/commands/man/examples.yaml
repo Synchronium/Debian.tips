@@ -100,7 +100,7 @@ sections:
           man 2.13.1
         level: intermediate
 
-  - title: "Sections, and why the number matters"
+  - title: "Sections, and what the number selects"
     intro: "The number in `ls(1)` selects which manual a name is looked up in. Give `man` a number before the name and it looks only there; give it none and it takes the lowest-numbered section that has a page."
     examples:
       - title: "See every section a name appears in"
