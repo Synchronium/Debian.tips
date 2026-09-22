@@ -395,10 +395,10 @@ sections:
           mkdir -p empty
           rsync -ain --delete empty/ backup/ | grep deleting
         description: >-
-          `--delete` trusts the source completely, so an empty or mistyped source means every file
-          in the destination is one the source no longer has. Nothing here is a mistake `rsync`
-          can detect, which is why the dry run matters: filtering for `deleting` shows the whole
-          backup about to go.
+          `--delete` trusts the source completely, so an empty or mistyped source means every
+          file in the destination is one the source no longer has. `rsync` cannot tell that apart
+          from a deliberate emptying, so it carries on: filtering the dry run for `deleting` is
+          what shows the whole backup about to go.
         output: |2
           *deleting   img/logo.png
           *deleting   img/
@@ -465,10 +465,9 @@ sections:
         description: >-
           `--backup` moves the old version aside rather than overwriting it, and `--backup-dir`
           says where. The path is relative to the *destination*, so the `../` is what puts `old/`
-          beside `backup/` rather than inside it. Inside is worth avoiding: `--delete` then finds a
-          directory the source does not have and tries to remove it, and each run backs up the
-          previous backup. Where it has to live inside, exclude it with
-          `--exclude` so the comparison skips it.
+          beside `backup/` rather than inside it. Put it inside and `--delete` finds a directory
+          the source does not have and tries to remove it, while each run backs up the previous
+          backup. Where it has to live inside, `--exclude` keeps it out of the comparison.
         output: |2
           >f.st...... index.html
           index.html
