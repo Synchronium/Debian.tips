@@ -185,17 +185,18 @@ sections:
           (no itemised lines above)
         level: basic
         tags: [files]
-      - title: "Compare the cost of a first and second run"
+      - title: "Count what a first and second run each transferred"
         code: |-
-          rsync -av site/ backup/ | grep "^total size"
-          rsync -av site/ backup/ | grep "^total size"
+          rsync -a --stats site/ backup/ | grep "regular files transferred"
+          rsync -a --stats site/ backup/ | grep "regular files transferred"
         description: >-
-          `speedup` is the tree's size divided by the bytes actually sent. Below 1 on the first
-          run, because the whole tree crossed plus protocol overhead; well above it on the second,
-          where only checksums and file lists moved.
+          Eight files on the first run and none on the second, which is the whole argument for
+          `rsync` over a plain copy stated as a count. `--stats` also reports a `speedup` ratio
+          and a byte total, both of which move between machines, so this asks for the line that
+          does not.
         output: |2
-          total size is 2,193  speedup is 0.73
-          total size is 2,193  speedup is 8.00
+          Number of regular files transferred: 8
+          Number of regular files transferred: 0
         level: intermediate
         tags: [performance]
       - title: "Miss an edit that kept its size and timestamp"
@@ -648,22 +649,16 @@ sections:
           On a first copy the bytes sent exceed the file size, since the protocol carries the file
           list and checksums as well as the contents. Comparing the two figures is how you tell
           whether a transfer is dominated by data or by overhead.
+        volatile: >-
+          the two byte totals differ by a few bytes between machines and between runs, so the
+          figures below are one real capture rather than a constant; the file size is fixed by the
+          fixture
+        compare: shape
         output: |2
           Total file size: 2,193 bytes
           Total bytes sent: 2,820
           Total bytes received: 191
         level: advanced
-        tags: [networking]
-      - title: "Watch the second transfer cost almost nothing"
-        code: |-
-          rsync -a site/ deb1:backup/
-          rsync -av site/ deb1:backup/ | grep '^total size'
-        description: >-
-          The same `speedup` figure as a local copy, and the reason `rsync` is worth the setup
-          over a slow link: the second run moves file lists and checksums rather than files.
-        output: |2
-          total size is 2,193  speedup is 8.00
-        level: intermediate
         tags: [networking]
       - title: "Reach a host on a non-default port"
         code: rsync -ai -e 'ssh -p 2222' site/index.html deb1:backup/

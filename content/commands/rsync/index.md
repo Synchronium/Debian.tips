@@ -4,7 +4,7 @@ tagline: "Synchronise directory trees, copying only what changed"
 description: "Tested rsync examples: the trailing-slash rule, dry runs, itemised output, --delete, exclude patterns, hard links and --link-dest snapshots."
 category: commands
 tags: [files, networking, sysadmin]
-updated: 2026-09-21
+updated: 2026-09-22
 tier: flagship
 related: [cp, tar, ssh, copy-files-between-machines, hard-vs-symbolic-links]
 ---
