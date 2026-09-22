@@ -189,6 +189,34 @@ describe("voice-check scoping", () => {
     expect(caught.filter((line) => idsFor(line).length === 0)).toEqual([]);
     expect(spared.filter((line) => idsFor(line).length > 0)).toEqual([]);
   });
+
+  it("catches importance named rather than shown, and spares the reason given on the spot", () => {
+    const caught = [
+      "Combining stdout and stderr, and why order matters",
+      "Sections, and why the number matters",
+      "The filter is cheap, which is why the dry run matters.",
+      "It explains why the suite name in your sources file matters to an upgrade.",
+      "The suite name matters more than you think.",
+    ];
+    const spared = [
+      // The reason arrives in the same breath, which is the whole distinction.
+      "Order matters: the first matching value for a setting wins.",
+      "The quoting matters: unquoted, the shell reads it as an operator.",
+      "The flag matters when you are correlating against logs from another host.",
+      "Case matters too, since the default comparison is case-sensitive.",
+      "Pipe through sort if the order matters.",
+      // Owned by reader-instruction, so this rule leaves it alone rather than reporting it twice.
+      "Here is why that matters.",
+    ];
+
+    const idsFor = (line: string) =>
+      checkFile(write("page.md", `${line}\n`))
+        .map((finding) => finding.rule.id)
+        .filter((id) => id === "significance-nominalised");
+
+    expect(caught.filter((line) => idsFor(line).length === 0)).toEqual([]);
+    expect(spared.filter((line) => idsFor(line).length > 0)).toEqual([]);
+  });
 });
 
 /* The hook is handed any path the session just wrote, so it decides scope on its own. Naming a

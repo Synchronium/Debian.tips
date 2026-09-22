@@ -206,6 +206,16 @@ is*, *what this really means is*, *at the heart of this*. The construction asser
 rather than demonstrating it, and it is among the most recognisable AI tics in English. If a fact
 is the important one, its placement and the space given to it say so.
 
+**The word "matters" is not the tell, and banning it would be wrong.** Around eighty sentences here
+use it well, because the reason arrives in the same breath: *Order matters: the first matching
+value wins*. *The quoting matters: unquoted, the shell reads `^` as an operator*. Each shows the
+consequence rather than claiming there is one.
+
+What is banned is the noun phrase, *why order matters*, which names the importance and leaves the
+reason to arrive later or not at all, and the amplified form, *matters more than you think*, which
+tells the reader they have underestimated something instead of showing them. Write the heading as
+*where order changes the result*, and the sentence as *X matters when Y*.
+
 | Also banned | Why |
 | --- | --- |
 | **load-bearing**, **earns its keep** | Showy where plain description would do |

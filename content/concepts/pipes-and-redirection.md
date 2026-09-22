@@ -61,7 +61,7 @@ the redirected command starts, even before it writes anything. `>>` skips the tr
 appends. `2>` redirects file descriptor 2 (stderr) specifically; plain `>` (or `1>`) redirects
 only fd 1 (stdout). The two are independent unless you explicitly connect them.
 
-## Combining stdout and stderr, and why order matters
+## Combining stdout and stderr, where order changes the result
 
 `2>&1` means "make fd 2 point wherever fd 1 currently points," not "merge them from now on."
 Redirections are applied **left to right**, so where you put `2>&1` relative to a file

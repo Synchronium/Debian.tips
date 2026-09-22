@@ -62,6 +62,19 @@ const RULES: readonly Rule[] = [
     message: 'voice.md §5: same family as "the X that matters".',
   },
   {
+    // The word itself is fine, and the corpus is full of it: a reason that follows immediately
+    // ("Order matters: the first matching value wins") is demonstration rather than assertion.
+    // What this catches is the noun phrase, which names the importance and leaves the reason to
+    // be supplied somewhere else, and the amplified form, which tells the reader they have
+    // underestimated something instead of showing them why.
+    id: "significance-nominalised",
+    severity: SEVERITY.fail,
+    pattern:
+      /\bwhy\s+(?!(?:that|this|it)\s+matters\b)(?:the|a|an|its|your|our|his|her|their)?\s*[\w-]+(?:\s+[\w-]+){0,6}\s+matters\b|\bmatters more than you (?:think|realise|realize|expect|would think)\b/gi,
+    message:
+      "voice.md §5: names the importance instead of showing it. Give the reason on the spot, or cut the claim.",
+  },
+  {
     id: "showy-praise",
     severity: SEVERITY.fail,
     pattern: /\b(?:load-bearing|earns its keep|earn its keep|earns its place|earn its place)\b/gi,
