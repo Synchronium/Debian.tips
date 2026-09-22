@@ -15,11 +15,11 @@ each time, `rsync` compares the two sides first and transfers the difference. Po
 same destination a second time is cheap, which is what makes it the tool for a backup, a deploy,
 or any copy you expect to repeat.
 
-Most of what follows runs between two local directories, because the flags behave identically
-either way and a local pair is easier to reason about. A remote path is `host:path`, and the
-last section covers what genuinely changes once you write one. The
-[copy files between machines](/recipes/copy-files-between-machines/) recipe covers the workflow
-around a transfer, including how it resumes after an interruption.
+Although `rsync` can copy to a remote machine, most of what follows runs between two local
+directories, because the flags behave identically either way and a local pair is easier to reason
+about. A remote path is `host:path`, and the last section covers what genuinely changes once you
+write one. The [copy files between machines](/recipes/copy-files-between-machines/) recipe covers
+the workflow around a transfer, including how it resumes after an interruption.
 
 ## The trailing slash decides what you get
 
@@ -40,8 +40,8 @@ deliberate about the source.
 
 ## Reading what it did
 
-`-v` prints filenames. `-i` (`--itemize-changes`) prints a reason for each one, and it is the more
-useful of the two once the first copy is behind you:
+`-v` prints filenames. `-i` (`--itemize-changes`) prints a reason for each one, which makes it the
+more useful of the two once the first copy is behind you:
 
 ```
 >f+++++++++ about.html
@@ -51,27 +51,26 @@ cd+++++++++ css/
 ```
 
 The first character is the update being made (`>` received, `<` sent to a remote host,
-`c` created locally, `*` a message rather than a transfer), the second is the file type
-(`f` file, `d` directory, `L` symlink). A
-`+` in place of a letter means the item is being created, so no comparison was made. Otherwise a
-letter marks a field that differs and a `.` marks one that matches: `s` size, `t` time,
-`p` permissions, `o` owner,
-`g` group, `c` checksum. So `>f.st......` reads as "sending a file whose size and time differ",
-which is the ordinary case for a file you edited.
+`c` created locally, `*` a message rather than a transfer), and the second is the file type
+(`f` file, `d` directory, `L` symlink). A `+` in place of a letter means the item is being
+created, so no comparison was made. Otherwise a letter marks a field that differs and a `.` marks
+one that matches: `s` size, `t` time, `p` permissions, `o` owner, `g` group, `c` checksum. So
+`>f.st......` reads as "sending a file whose size and time differ", which is the ordinary case for
+a file you edited.
 
 Used alone, `-i` prints no summary line, which is why the examples below prefer it. Adding `-v`
 appends a transfer rate that differs on every run.
 
 ## How it decides what to copy
 
-By default `rsync` compares **size and modification time**, and that quick check is the reason a
-second run costs almost nothing. The same check is the one assumption here that can be wrong: a
-file edited in place, to the same length, with its timestamp restored afterwards, matches on both
-counts and is skipped.
+By default `rsync` compares **size and modification time**. This is quick to check, which is the
+reason a second run costs very little. The same check is the one assumption here that can be
+wrong: a file edited in place, to the same length, with its timestamp restored afterwards, matches
+on both counts and is skipped.
 
 `-c` (`--checksum`) reads both copies and compares them properly. It is correct where the quick
-check is merely fast, and it costs a full read of both sides, so it belongs on the run where you
-suspect something rather than on every run.
+check is merely fast, but it requires a full read of both sides, so it belongs on the run where
+you suspect something rather than on every run.
 
 ## `-a` is a bundle, not a mode
 
@@ -90,7 +89,17 @@ was written, so a later run has nothing stable to compare against.
 ever, so the two drift apart in one direction only. `--delete` fixes that by removing anything in
 the destination the source no longer has.
 
-It is also the flag that turns a mistyped source path into an emptied backup. Two habits make it
-safe. Run it with `-n` (`--dry-run`) first and read the `*deleting` lines, and keep `--max-delete`
-on any command that runs unattended, which stops the whole transfer rather than proceeding once
-the count looks wrong.
+The catch is that `--delete` trusts the source absolutely. Point it at a path that does not hold
+what you think, or at a directory that happens to be empty, and every file in the destination
+qualifies as something the source no longer has. A mistyped source path is therefore an
+instruction to empty the backup, and it is carried out without a prompt.
+
+So run it under `-n` (`--dry-run`) first, and filter for the removals when the file list is long
+enough to bury them:
+
+```bash
+rsync -ain --delete site/ backup/ | grep deleting
+```
+
+Then keep `--max-delete` on anything that runs unattended, which abandons the transfer rather than
+proceeding once the count looks wrong.

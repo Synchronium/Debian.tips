@@ -336,7 +336,7 @@
     "unpaired": 0
   },
   "commands/rsync": {
-    "checked": 42,
+    "checked": 43,
     "byShape": 1,
     "unordered": 0,
     "exempt": 0,

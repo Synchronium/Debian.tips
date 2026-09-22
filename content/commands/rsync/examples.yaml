@@ -104,8 +104,8 @@ sections:
           rsync -ai site/ newdir/ | head -3
           ls -ld newdir
         description: >-
-          `rsync` creates the last component of the destination path and says so. It will not
-          create missing parent directories, which needs `--mkpath`.
+          `rsync` creates the last component of the destination path and reports that it has done
+          so. It will not create missing parent directories, which needs `--mkpath`.
         output: |2
           created directory newdir
           cd+++++++++ ./
@@ -118,7 +118,7 @@ sections:
           rsync -a site/ backup/
           diff -r site backup && echo "trees match"
         description: >-
-          `diff -r` compares the two trees file by file and prints nothing when they agree, so
+          `diff -r` compares the two trees file by file and won't print anything when they agree, so
           this is the check that the copy did what you meant. See [diff](/commands/diff/).
         output: |2
           trees match
@@ -127,8 +127,8 @@ sections:
 
   - title: "Seeing what it will do first"
     intro: >-
-      `-n` costs nothing and answers the question every `rsync` command raises, which is what
-      exactly is about to be written.
+      `-n` is dry-run mode. It is cheap to run, and it shows exactly what would happen without
+      making any changes, which makes it good practice before any non-trivial copy.
     examples:
       - title: "Preview a transfer without writing anything"
         code: rsync -ain site/ backup/ | head -4
@@ -149,7 +149,9 @@ sections:
           rsync -ai site/ backup/
         description: >-
           Only the timestamp moved, so only `t` is lettered and the rest of the fields are `.`.
-          Reading `>f..t......` tells you the contents were never in question.
+          Note what that does *not* say: the size matched and the timestamp differed, which is
+          enough for `rsync` to resend the file without ever reading either copy. Whether the
+          contents changed is a question only `-c` (`--checksum`) can answer.
         output: |2
           >f..t...... about.html
         level: intermediate
@@ -190,10 +192,10 @@ sections:
           rsync -a --stats site/ backup/ | grep "regular files transferred"
           rsync -a --stats site/ backup/ | grep "regular files transferred"
         description: >-
-          Eight files on the first run and none on the second, which is the whole argument for
-          `rsync` over a plain copy stated as a count. `--stats` also reports a `speedup` ratio
-          and a byte total, both of which move between machines, so this asks for the line that
-          does not.
+          Eight files on the first run and none on the second, which is the whole point of using
+          `rsync` over `cp` for a regular or scheduled copy. `--stats` also reports a `speedup`
+          ratio and a byte total, both of which move between machines, so this asks for the line
+          that does not.
         output: |2
           Number of regular files transferred: 8
           Number of regular files transferred: 0
@@ -282,7 +284,8 @@ sections:
         code: rsync -ai --exclude='*.tmp' site/ backup/
         description: >-
           `--exclude` takes a glob matched against each path below the source. Quote it, or the
-          shell expands it against the current directory before `rsync` sees it.
+          shell expands it against the current directory before `rsync` sees it, which is the same
+          trap [quoting](/scripting/variables-and-quoting/) covers in general.
         output: |2
           >f+++++++++ about.html
           >f+++++++++ index.html
@@ -316,8 +319,9 @@ sections:
           printf '*.tmp\ndrafts/\n' > exclude.txt
           rsync -ai --exclude-from=exclude.txt site/ backup/
         description: >-
-          `--exclude-from` reads one pattern per line, which keeps a long list out of the command
-          and under version control alongside the thing being copied.
+          `--exclude-from` reads one pattern per line from the file. This is handy when there are
+          many patterns, since it keeps the command readable, and it lets the list live under
+          version control alongside the thing being copied.
         output: |2
           >f+++++++++ about.html
           >f+++++++++ index.html
@@ -364,8 +368,8 @@ sections:
           rsync -ai site/ backup/
           ls backup/about.html
         description: >-
-          The file is gone from the source and still in the destination, and `rsync` reports
-          nothing about it. A backup taken this way accumulates everything ever deleted.
+          The file is gone from the source but still in the destination. `rsync` reports nothing
+          about it. A backup taken this way accumulates everything ever deleted.
         output: |2
           .d..t...... ./
           backup/about.html
@@ -377,13 +381,38 @@ sections:
           rm site/about.html
           rsync -ain --delete site/ backup/
         description: >-
-          `*deleting` lines name every file `--delete` would remove. Reading them under `-n` is
-          the habit that separates a mirror from an accident.
+          Lines prefixed with `*deleting` show every file `--delete` would remove. Previewing
+          them under `-n` is an excellent habit to adopt, and it is what separates a mirror from
+          an accident.
         output: |2
           *deleting   about.html
           .d..t...... ./
         level: intermediate
         tags: [files]
+      - title: "See what a wrong source path would destroy"
+        code: |-
+          rsync -a site/ backup/
+          mkdir -p empty
+          rsync -ain --delete empty/ backup/ | grep deleting
+        description: >-
+          `--delete` trusts the source completely, so an empty or mistyped source means every file
+          in the destination is one the source no longer has. Nothing here is a mistake `rsync`
+          can detect, which is why the dry run matters: filtering for `deleting` shows the whole
+          backup about to go.
+        output: |2
+          *deleting   img/logo.png
+          *deleting   img/
+          *deleting   drafts/v2.html
+          *deleting   drafts/release-notes.html
+          *deleting   drafts/latest.html
+          *deleting   drafts/
+          *deleting   css/main.css
+          *deleting   css/
+          *deleting   index.html
+          *deleting   build.tmp
+          *deleting   about.html
+        level: advanced
+        tags: [sysadmin]
       - title: "Mirror the source, removals included"
         code: |-
           rsync -a site/ backup/
@@ -421,8 +450,8 @@ sections:
           rsync -ai --exclude='*.tmp' --delete --delete-excluded site/ backup/
         description: >-
           `--delete` alone protects excluded files, since they are not part of the comparison.
-          `--delete-excluded` says to remove them as well, which is how you retire a pattern that
-          used to be copied.
+          `--delete-excluded` says to remove them as well. That is what you want when a file used
+          to be copied and should now be cleaned out of the destination rather than left behind.
         output: |2
           *deleting   build.tmp
         level: advanced
@@ -435,7 +464,11 @@ sections:
           ls old/
         description: >-
           `--backup` moves the old version aside rather than overwriting it, and `--backup-dir`
-          collects them outside the destination so they are not mirrored back.
+          says where. The path is relative to the *destination*, so the `../` is what puts `old/`
+          beside `backup/` rather than inside it. Inside is worth avoiding: `--delete` then finds a
+          directory the source does not have and tries to remove it, and each run backs up the
+          previous backup. Where it has to live inside, exclude it with
+          `--exclude` so the comparison skips it.
         output: |2
           >f.st...... index.html
           index.html
@@ -447,8 +480,10 @@ sections:
           ls site/index.html 2>&1
         description: >-
           `--remove-source-files` deletes each source file once it has been transferred and
-          verified. Directories are left behind. Prefer it to `mv` across filesystems, since a
-          failed transfer leaves the source intact.
+          verified. Directories are left behind. Prefer it to [`mv`](/commands/mv/) when moving
+          files between different filesystems: `mv` there copies and then deletes, so an
+          interruption can leave a partial copy, where `rsync` removes the source only after the
+          transfer is verified.
         output: |2
           >f+++++++++ index.html
           ls: cannot access 'site/index.html': No such file or directory
@@ -458,7 +493,7 @@ sections:
   - title: "What gets preserved"
     intro: >-
       `-a` covers permissions, times, symlinks, owner and group. Hard links and a few other
-      properties are separate flags, because each one costs something to detect.
+      properties are separate flags, because each one requires a bit more effort to detect.
     examples:
       - title: "Lose the timestamps by recursing without -a"
         code: |-
@@ -469,8 +504,9 @@ sections:
             echo "timestamp not preserved"
           fi
         description: >-
-          `-r` recurses and stops there. Every destination file is stamped with the time it was
-          copied, so the next run has no stable timestamp to compare and re-sends more than it
+          `-r` copies the tree and preserves none of the metadata that `-a` would. Every
+          destination file is stamped with the time it was copied rather than the time it was
+          written, so the next run has no stable timestamp to compare and re-sends more than it
           should.
         output: |2
           timestamp not preserved
@@ -563,8 +599,9 @@ sections:
           rsync -ai --chmod=F640 site/ backup/ | grep index
           ls -l backup/index.html
         description: >-
-          `--chmod` overrides what `-a` would have preserved. `F640` applies to files alone;
-          `D750` does the same for directories, and both can be given at once.
+          `--chmod` overrides what `-a` would have preserved. `F640` applies to files alone and
+          `D750` to directories, and the two combine in one flag as
+          `--chmod=F640,D750`.
         output: |2
           >f+++++++++ index.html
           -rw-r----- 1 user user 14 Jan  5  2026 backup/index.html
@@ -626,7 +663,7 @@ sections:
           rsync -ai deb1:backup/ pulled/
         description: >-
           Put the remote path first and the transfer runs the other way. The marker returns to
-          `>`, so reading the first character tells you which side won if the two disagree.
+          `>`, so the first character tells you which of the two copies overwrote the other.
         output: |2
           created directory pulled
           cd+++++++++ ./
@@ -677,7 +714,7 @@ sections:
         description: >-
           `--rsync-path` sets the command run at the far end, so the receiving side is root while
           the connection stays an ordinary user's. The directory is created as root; the file
-          keeps its source ownership, because `-a` asks for owner and group to be preserved and
+          keeps its source ownership, because `-a` asks for owner and group to be preserved but
           only a root receiver is able to set them.
         output: |2
           created directory /opt/tips
