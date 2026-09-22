@@ -599,7 +599,7 @@ sections:
           ls -l backup/index.html
         description: >-
           `--chmod` overrides what `-a` would have preserved. `F640` applies to files alone and
-          `D750` to directories, and the two combine in one flag as
+          `D750` to directories. The two can be combined into a single flag as
           `--chmod=F640,D750`.
         output: |2
           >f+++++++++ index.html
