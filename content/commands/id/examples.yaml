@@ -1,0 +1,139 @@
+command: id
+
+fixtures:
+  - name: "the accounts, and a copy of id that runs as root"
+    from: "getent passwd tips-dev tips-ops tips-site; getent group tips-deploy; stat -c '%A %U %n' id-setuid"
+    note: "The same accounts as [getent](/commands/getent/), and the first two are the ones [managing-users](/commands/managing-users/) starts from, so the three pages name the same people. `tips-ops` carries `tips-deploy` as a supplementary group and `tips-site` carries it as its primary one, which is the difference `-g` and `-G` are read for. `id-setuid` is a copy of `/usr/bin/id` owned by root with the setuid bit set: every ordinary command runs with its real and effective uid equal, so there is no way to show the two apart without a program that has them apart."
+    content: |2
+      tips-dev:x:1001:1001:Deployment account:/home/tips-dev:/bin/bash
+      tips-ops:x:1002:1002:Operations account:/home/tips-ops:/bin/bash
+      tips-site:x:1010:4000:Website account:/home/tips-site:/bin/bash
+      tips-deploy:x:4000:tips-ops
+      -rwsr-xr-x root id-setuid
+
+sections:
+  - title: "The three parts of the line"
+    intro: "Every field is printed twice, once as the number the kernel uses and once as the name a person reads. A flag narrows the output to one of them, which is what makes `id` usable in a script as well as at a prompt."
+    examples:
+      - title: "See everything about an account at once"
+        code: id tips-ops
+        description: "The uid, then the primary group, then every group the account is in including the primary one. This is the first command to run when a permission refusal does not make sense, because it tells you what the account is rather than what any one file allows."
+        output: |2
+          uid=1002(tips-ops) gid=1002(tips-ops) groups=1002(tips-ops),100(users),4000(tips-deploy)
+        level: basic
+        tags: [beginner]
+      - title: "Get the uid on its own"
+        code: id -u tips-ops
+        description: "A bare number and a newline, the form a script wants. Every field flag works this way: no brackets, no label, nothing to parse."
+        output: |2
+          1002
+        level: basic
+        tags: [scripting]
+      - title: "Turn a number back into a name"
+        code: id -un 1002
+        description: "The argument is a uid here rather than a name, and `-n` prints the result as a name, so the pair reads a number back into an account. Useful on output that carries bare uids, such as `ls -n` or a `find -printf '%U'`."
+        output: |2
+          tips-ops
+        level: intermediate
+      - title: "Tell the primary group from the rest"
+        code: id -g tips-ops; id -G tips-ops
+        description: "`-g` is the primary group alone, `-G` is all of them with the primary first. The primary is the one a new file is group-owned by, unless the directory's setgid bit says otherwise; the others grant access."
+        output: |2
+          1002
+          1002 100 4000
+        level: intermediate
+      - title: "Get the group names rather than the numbers"
+        code: id -Gn tips-ops
+        description: "`-n` applies to whichever field flag it is given, so `-Gn` is the whole group list by name. Space-separated on one line, which is worth knowing before writing a [loop](/scripting/loops/) over it."
+        output: |2
+          tips-ops users tips-deploy
+        level: basic
+      - title: "Spot an account whose primary group is a shared one"
+        code: id -gn tips-ops; id -gn tips-site
+        description: "Debian gives each account a group of its own with the same name, which is what the first line shows. `tips-site` was made with `--ingroup` instead, so everything it creates is group-owned by `tips-deploy` and readable by the rest of the team without anybody running `chgrp`."
+        output: |2
+          tips-ops
+          tips-deploy
+        level: intermediate
+        tags: [permissions]
+      - title: "Read the groups with the other command that prints them"
+        code: groups tips-ops
+        description: "`groups` is `id -Gn` with the account name and a colon in front, and it takes no options at all. Fine to read, but awkward to parse, so a script that wants this list should use `id` instead."
+        output: |2
+          tips-ops : tips-ops users tips-deploy
+        level: intermediate
+      - title: "Ask about an account that is not there"
+        code: id nosuchuser; echo "exit $?"
+        description: "The message goes to standard error and the status is 1, so `id -u \"$name\" >/dev/null 2>&1` is a serviceable test for whether an account exists before a script tries to create it."
+        output: |2
+          id: 'nosuchuser': no such user
+          exit 1
+        level: intermediate
+        tags: [scripting]
+
+  - title: "What the current process is running as"
+    intro: "With no argument at all, `id` stops reading the database and reports the credentials of the process asking. These examples run as root, so the first is root's own line and the second borrows an ordinary account to stand next to it."
+    examples:
+      - title: "See root's line"
+        code: id
+        description: "Root is uid 0 in group 0, and on a stock Debian system it is in no supplementary groups at all. It needs none: the kernel lets uid 0 read and write whatever a file's mode says, so no group is consulted."
+        output: |2
+          uid=0(root) gid=0(root) groups=0(root)
+        level: basic
+      - title: "See an ordinary account's"
+        code: runuser -u user -- id
+        description: "`runuser` starts a process as another account without a password, which only root may do. The group list here was built from the database at the moment the process started and is never rebuilt, which is the subject of the last section."
+        output: |2
+          uid=1000(user) gid=1000(user) groups=1000(user)
+        level: basic
+      - title: "Test for root the way an install script does"
+        code: '[ "$(id -u)" -eq 0 ] && echo "running as root"'
+        description: "The uid is what the kernel checks, so it is what to test. `-eq` compares numbers, so the test holds whatever uid 0 happens to be called."
+        output: |2
+          running as root
+        level: intermediate
+        tags: [scripting]
+      - title: "See why a script should not trust $USER"
+        code: |-
+          runuser -u user -- env USER=root sh -c '[ "$USER" = root ] && echo "\$USER says root"; id -u'
+        description: "An ordinary account sets `USER` to `root` for one command, and the variable test believes it. `id -u` in the same shell still prints `1000`, because it asks the kernel. Nothing stops anyone doing this, so a script that decides what it may do from `$USER` can be talked into it."
+        output: |2
+          $USER says root
+          1000
+        level: intermediate
+        tags: [scripting, security]
+
+  - title: "Real against effective, and a group list that has gone stale"
+    intro: "A process carries two uids. The real one is who started it and the effective one is what gets checked, and they are equal until a program with the setuid bit sets them apart. The examples here use `id-setuid`, which the page's setup script makes: a copy of `/usr/bin/id`, owned by root, with that bit set, so it shows its own uids while running as root."
+    examples:
+      - title: "Watch a fourth field appear"
+        code: runuser -u user -- ./id-setuid
+        description: "`./id-setuid` is that copy, in the page's working directory. `user` starts it, and it runs as root: `id` prints `euid` only when it differs from `uid`, so the field appearing at all is the thing to look for. Everywhere else on this page the two are equal, which is why it has not been printed."
+        output: |2
+          uid=1000(user) gid=1000(user) euid=0(root) groups=1000(user)
+        level: advanced
+        tags: [security]
+      - title: "Ask for the real uid rather than the effective one"
+        code: runuser -u user -- ./id-setuid -u; runuser -u user -- ./id-setuid -ur
+        description: "`-u` gives the effective uid, the one the kernel checks when the program opens a file. `-r` gives the real uid, the account that started it. A setuid program needs both, and `passwd` is the everyday case: it is setuid root, so its effective uid is allowed to write `/etc/shadow`, and it reads its real uid to find out whose password it is changing. That is why an ordinary account can run it and still change only its own."
+        output: |2
+          0
+          1000
+        level: advanced
+        tags: [security]
+      - title: "Watch a running shell miss a group it was just given"
+        code: runuser -u tips-dev -- sh -c 'sleep 1; id -Gn' > shell-view.txt & sleep 0.2; usermod -aG tips-deploy tips-dev; wait; cat shell-view.txt; id -Gn tips-dev
+        description: "A shell starts, `usermod` adds a group while it is still running, and the two lines disagree: the first is what that shell holds, the second is what the database now says. The `sleep` is what makes the order certain rather than a race. This is why the advice after adding somebody to a group is to log out and back in, and why `id` without an argument is the one to trust when a permission is refused."
+        output: |2
+          tips-dev users
+          tips-dev users tips-deploy
+        level: advanced
+        tags: [permissions]
+      - title: "Ask for the SELinux context on a kernel without one"
+        code: id -Z; echo "exit $?"
+        description: "Debian enables AppArmor by default rather than SELinux, so `-Z` has no context to report and says so. A script carrying this flag from a Red Hat machine fails here with status 1."
+        output: |2
+          id: --context (-Z) works only on an SELinux-enabled kernel
+          exit 1
+        level: intermediate
+        tags: [debian, security]

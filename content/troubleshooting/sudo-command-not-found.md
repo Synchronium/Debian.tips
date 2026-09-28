@@ -127,7 +127,7 @@ The `-a` in `-aG` is not optional:
 your own account can remove the very access you are trying to add.
 
 Then **log out and back in.** Group membership is read when your session starts, so your current
-shell will not have it. `id -nG` in the old session keeps showing the old answer, which reliably
+shell will not have it. [`id -nG`](/commands/id/) in the old session keeps showing the old answer, which reliably
 convinces people the fix did not work.
 
 Adding the user to the group is all it takes, because Debian's `/etc/sudoers` already grants the

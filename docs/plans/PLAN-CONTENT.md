@@ -373,7 +373,8 @@ does not" is not an argument.
 
 Written first, because §5 cannot proceed without them. `lsof` and `fuser` are done, on one shared
 fixture, and `mount` went with the §6.7 batch that shares the loop-device one. §13.2 has what both
-cost.
+cost. `id` and `getent` are done, on the account fixture `managing-users` already had, and §13.1
+has what sharing it cost.
 
 - **`free`** (`light`) and **`top`** (`standard`). **Blocked, and not on a dependency.** Measured
   2026-09-11: inside the sandbox `free` reports the *host's* memory, not the container's, and
@@ -383,10 +384,6 @@ cost.
   needs the decision in the immediate backlog about what verification owes a page it cannot check,
   and that decision also gates the two hubs in §5.3, which are built on `free`'s cache-counted-as-
   used misreading. Do not start them before it is made.
-- **`id`** (`light`). **Needs**: nothing. **Demo**: real against effective, supplementary groups.
-  Shares a fixture with `getent` and with `managing-users`, which is written.
-- **`getent`** (`light`). **Needs**: `id`. **Demo**: passwd, group and hosts against the local
-  database.
 - **`dmesg`** (`light`). **Needs**: nothing. **Demo**: what a container can and cannot see, said
   honestly. Candidate for exemption under §4.2, and worth checking before committing to it.
 
@@ -699,6 +696,13 @@ Distilled from the shipped ledger this plan replaces. Each of these cost a batch
 - **Two pages that each complete the other go together.** `arrays` and `parameter-expansion`
   shipped as a pair because a trim applied to `"${arr[@]}"` runs on every element.
 - **A page written for its own sake is fine.** `cowsay` was on no backlog.
+- **A shared fixture is a claim on every page that sources it.** `id` and `getent` needed an
+  account whose primary group is a shared one, and adding it to `mk_accounts` at uid 1010 broke two
+  examples on `managing-users`, which neither new page touches. `adduser` gives the next account
+  the lowest free uid and `useradd` gives it one above the highest in use, so with 1000 to 1002
+  full and nothing above, both answer 1003; any account above that moves `useradd`'s answer. The
+  account went into a second function the two new pages call. Replay every page that sources a
+  shared body before trusting the one you wrote it for.
 
 ### §13.2. What the replay does to a page
 
@@ -770,6 +774,13 @@ Distilled from the shipped ledger this plan replaces. Each of these cost a batch
   `VFS-OPTIONS` is the kernel's own flags and cannot contain `inode64` (proven by mounting with
   `-o inode64` and watching the column not move), `FS-OPTIONS` is where the filesystem's own go,
   and `SIZE` with `stat -c %A` covers `size=` and `mode=`.
+- **The machine's own name, resolved.** Docker writes the container's hostname into `/etc/hosts`
+  against the address it assigned, and that address is different on every run, so `getent hosts`
+  on it documents a number the next replay will not print. A page about name resolution adds a
+  name of its own under `example.com` and `192.0.2.0/24`, as `scripts/fixtures/getent.sh` does.
+- **A shadow record past its second field.** The third is the day the password last changed,
+  counted from 1970, which for a fixture account is the day the fixture ran. `cut -d: -f1,2` keeps
+  the name and the lock state and drops the date.
 - **A shell's `Terminated` notice**, which does not appear under replay, and an asynchronous job
   notice, which bash prefixes with `bash: line N:` when it is not interactive.
 - **`apt-get update` with its two streams merged.** The `Hit:`/`Get:`/`Err:` transcript goes to

@@ -6,7 +6,7 @@ category: commands
 tags: [permissions, security, sysadmin, debian]
 updated: 2026-09-05
 tier: standard
-related: [chown, sudo, chmod, file-permissions-explained, su-vs-sudo-i-vs-sudo-s]
+related: [chown, sudo, chmod, id, getent, file-permissions-explained, su-vs-sudo-i-vs-sudo-s]
 ---
 
 Debian ships two tools for every job here, and they are not alternatives. `useradd`, `usermod`,

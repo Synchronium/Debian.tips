@@ -5,7 +5,7 @@ description: "The message names the path and never the reason. Work out which ch
 category: troubleshooting
 tags: [permissions, files, sysadmin]
 updated: 2026-09-13
-related: [file-permissions-explained, stat, chmod, sudo, find-permission-denied]
+related: [file-permissions-explained, stat, id, chmod, sudo, find-permission-denied]
 ---
 
 Almost every one of these is the same errno: `EACCES`, number 13. Every program words it
@@ -25,7 +25,7 @@ questions answer all of it, best asked in order.
 ## Who you are, and what the file allows
 
 [`stat`](/commands/stat/) prints the mode and both owners without the padding and the date that
-make `ls -l` awkward to read, and `id` says who the kernel thinks you are:
+make `ls -l` awkward to read, and [`id`](/commands/id/) says who the kernel thinks you are:
 
 ```bash
 stat -c "%A %U %G %n" /srv/tips/secrets.env
@@ -135,7 +135,7 @@ user
 tipsdata:x:1001:user
 ```
 
-`getent` reads the group database and shows the membership landed. `id` reports the groups the
+[`getent`](/commands/getent/) reads the group database and shows the membership landed. `id` reports the groups the
 kernel attached to this process when it started; a running process never picks up one it was not
 given at the time. Log out and back in, or start one shell that has it with `newgrp tipsdata`. A service needs
 restarting for the same reason. Check the account rather than assuming: `id` takes a username, so
