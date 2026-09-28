@@ -1,0 +1,124 @@
+command: getent
+
+fixtures:
+  - name: "the accounts, and a host that exists only in /etc/hosts"
+    from: "getent passwd tips-dev tips-ops tips-site; getent group tips-deploy; grep backup /etc/hosts"
+    note: "The same accounts as [id](/commands/id/), and the first two are the ones [managing-users](/commands/managing-users/) starts from, so the three pages name the same people. `tips-ops` holds `tips-deploy` as a supplementary group and `tips-site` holds it as its primary one, which is the difference the group listing below does not show. `backup.example.com` is in `/etc/hosts` and in no zone anywhere: `example.com` is reserved by RFC 2606 and `192.0.2.0/24` by RFC 5737, so the name cannot collide with a real host and the address cannot route to one."
+    content: |2
+      tips-dev:x:1001:1001:Deployment account:/home/tips-dev:/bin/bash
+      tips-ops:x:1002:1002:Operations account:/home/tips-ops:/bin/bash
+      tips-site:x:1010:4000:Website account:/home/tips-site:/bin/bash
+      tips-deploy:x:4000:tips-ops
+      192.0.2.10  backup.example.com backup
+
+sections:
+  - title: "Looking up an account or a group"
+    intro: "The `passwd` and `group` databases print a record in the format of the file they are named after, colons and all. The key may be the name or the number."
+    examples:
+      - title: "Read one account's record"
+        code: getent passwd tips-ops
+        description: "Name, password placeholder, uid, primary gid, description, home directory, shell. The `x` is not a password: it means the hash lives in `/etc/shadow`, which is a separate database with separate permissions."
+        output: |2
+          tips-ops:x:1002:1002:Operations account:/home/tips-ops:/bin/bash
+        level: basic
+        tags: [beginner]
+      - title: "Look an account up by its number"
+        code: getent passwd 1002
+        description: "Numeric keys work on every database that has them, so this puts a name to a uid in output that carries bare numbers. [id -un](/commands/id/) answers the same question and prints only the name."
+        output: |2
+          tips-ops:x:1002:1002:Operations account:/home/tips-ops:/bin/bash
+        level: intermediate
+      - title: "Read a group's membership"
+        code: getent group tips-deploy
+        description: "The fourth field is the member list, and it is the whole record: a group knows its members, and an account's record has no field naming the groups it is in. Asking the question the other way round means walking every group, and `id -G` does that walk for you."
+        output: |2
+          tips-deploy:x:4000:tips-ops
+        level: basic
+      - title: "Ask for a key that is not there"
+        code: getent passwd nosuchuser; echo "exit $?"
+        description: "Nothing on standard output and status 2, which is the number to test for: it is what separates a key that is not there from a misspelled database, which the next example shows exiting 1."
+        output: |2
+          exit 2
+        level: intermediate
+        tags: [scripting]
+      - title: "Ask for a database that does not exist"
+        code: getent nosuchdb tips-ops 2>&1; echo "exit $?"
+        description: "Status 1 rather than 2, so the two failures are distinguishable. It is the typo case: the database is `group`, and `getent groups` stops here with this message."
+        output: |2
+          Unknown database: nosuchdb
+          Try `getent --help' or `getent --usage' for more information.
+          exit 1
+        level: intermediate
+        tags: [scripting]
+
+  - title: "Which source answered, and who is allowed to ask"
+    intro: "`getent` is a thin wrapper over the same library calls every other program makes, so it consults the sources named in `/etc/nsswitch.conf` in the order written there."
+    examples:
+      - title: "See where each database gets its answers"
+        code: grep -E "^(passwd|group|hosts):" /etc/nsswitch.conf
+        description: "A stock Debian install answers accounts from files alone, and hostnames from the file first and DNS after. Joining a machine to LDAP or Active Directory adds a source to these lines, and from that moment a `grep` of `/etc/passwd` is looking at a fraction of the accounts."
+        output: |2
+          passwd:         files
+          group:          files
+          hosts:          files dns
+        level: basic
+        tags: [debian]
+      - title: "Force one source and skip the rest"
+        code: getent -s files passwd tips-ops
+        description: "`-s` overrides `nsswitch.conf` for this call only. Asking `files` explicitly is how to find out whether an account is local or comes from the directory, without editing anything or restarting a service."
+        output: |2
+          tips-ops:x:1002:1002:Operations account:/home/tips-ops:/bin/bash
+        level: advanced
+      - title: "Prove the file was skipped"
+        code: getent -s dns hosts backup.example.com; echo "exit $?"
+        description: "The name is in `/etc/hosts` and in no zone anywhere, as the fixture above shows, so restricted to DNS it is not found. The file was skipped, not read and ignored."
+        output: |2
+          exit 2
+        level: advanced
+        tags: [networking]
+      - title: "Read the shadow database as root and as anybody else"
+        code: 'getent shadow tips-dev | cut -d: -f1,2; runuser -u user -- getent shadow tips-dev; echo "exit $?"'
+        description: "Trimmed to the first two fields because the rest are day counts that move. `!` is a locked password. The second call asks the same question as an ordinary account and gets status 2, the same answer as for a name that does not exist. `/etc/shadow` is mode `640`, owned by root and group `shadow`, so the lookup cannot open the file and reports finding nothing rather than being refused."
+        output: |2
+          tips-dev:!
+          exit 2
+        level: advanced
+        tags: [security, permissions]
+
+  - title: "Members a group listing leaves out"
+    intro: "A group's fourth field names the accounts that hold it as a *supplementary* group. An account whose *primary* group it is has the membership recorded on its own record instead, and appears in neither field the other one prints."
+    examples:
+      - title: "Find the member the group does not mention"
+        code: getent passwd tips-site; id -Gn tips-site
+        description: "The fourth field of the account record is `4000`, which is `tips-deploy`, and `getent group tips-deploy` above lists only `tips-ops`. Auditing a group by reading its member list therefore misses everyone who was added with `adduser --ingroup`, and [id](/commands/id/) is the command that does not."
+        output: |2
+          tips-site:x:1010:4000:Website account:/home/tips-site:/bin/bash
+          tips-deploy users
+        level: advanced
+        tags: [permissions, security]
+
+  - title: "The databases that are not about accounts"
+    intro: "Anything with a file under `/etc` and a lookup function in the C library is reachable here, which saves guessing at a format or remembering a path."
+    examples:
+      - title: "Resolve a hostname the way the system does"
+        code: getent hosts backup.example.com
+        description: "Address first, then every name the entry carries. This follows `nsswitch.conf`, so it sees `/etc/hosts` and answers with what a program connecting to the name would get, which a tool that queries DNS directly cannot. `getent ahosts` asks through `getaddrinfo` instead and reports every address family and socket type separately."
+        output: |2
+          192.0.2.10      backup.example.com backup
+        level: basic
+        tags: [networking]
+      - title: "Put a number to a service name, or the reverse"
+        code: getent services ssh; getent services 80/tcp
+        description: "Either direction, from `/etc/services`. Handy when reading firewall rules or `ss` output that has been left numeric, and quicker than searching a file of three hundred-odd entries by eye."
+        output: |2
+          ssh                   22/tcp
+          http                  80/tcp www
+        level: intermediate
+        tags: [networking]
+      - title: "Put a number to a protocol"
+        code: getent protocols tcp
+        description: "The number an IP header carries to say what follows it, and the table `iptables -p tcp` consults to turn the name into it. 6 for TCP, 17 for UDP, 1 for ICMP."
+        output: |2
+          tcp                   6 TCP
+        level: intermediate
+        tags: [networking]

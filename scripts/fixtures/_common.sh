@@ -441,3 +441,82 @@ mk_loop_disks() {
   # already taken would make `losetup --find` answer with the second one.
   :
 }
+mk_accounts() {
+# The account database three pages read. `managing-users` changes it, `id` and `getent` inspect
+# it, and all three print the same names, ids and group memberships, so a reader moving between
+# them meets one set of accounts rather than three that resemble each other.
+#
+# Accounts are the sharpest case of state the per-example restore does not undo. It empties the
+# page's working directory and runs the setup script again; it knows nothing about /etc/passwd.
+# So an account one example creates is still there for the next, and the one after that fails on
+# a name already taken. Every account and group below is therefore deleted and rebuilt from
+# nothing on every run.
+#
+# A page whose own examples create accounts has to delete those itself, before calling this. What
+# is here is only the state every one of the three starts from.
+#
+# Nothing else may be added at a uid of 1000 or more. `managing-users` documents the id each tool
+# gives the next account it makes, and the two tools choose differently: `adduser` takes the lowest
+# free id and `useradd` takes one above the highest in use. These three fill 1000 to 1002 with no
+# gap, which is the one arrangement where both answer 1003. An account anywhere above that moves
+# `useradd`'s answer, and one at 1003 moves `adduser`'s.
+
+  # Each account's own group goes with it, and the account names appear in the group loop for
+  # that reason as well as the group names. Deleting an account does take its group, but
+  # `usermod -l` renames the account and leaves the group under the old name, so an account
+  # deleted after a rename leaves a group called tips-dev still holding gid 1001. `adduser --uid
+  # 1001` then refuses, and every example after it reports that tips-dev does not exist.
+  for u in tips-dev tips-ops; do
+    if id -u "$u" >/dev/null 2>&1; then
+      deluser --remove-home "$u" >/dev/null 2>&1 || userdel -r -f "$u" >/dev/null 2>&1
+    fi
+    # deluser leaves a home directory it never created, and `userdel -r` reports a failure for one
+    # that is missing, so neither can be trusted to have cleaned up after an example that made the
+    # directory some other way.
+    rm -rf "/home/$u" "/srv/$u"
+  done
+  for g in tips-deploy tips-dev tips-ops; do
+    if getent group "$g" >/dev/null 2>&1; then
+      # `groupdel -f` as well, because `delgroup` refuses a group that is some account's primary
+      # one, and `mk_primary_group_account` makes exactly such an account.
+      delgroup "$g" >/dev/null 2>&1 || groupdel -f "$g" >/dev/null 2>&1
+    fi
+  done
+
+  # ids are given explicitly because all three pages print them. Left to choose, the id an account
+  # gets would depend on which examples had already run and in what order.
+  #
+  # tips-dev is an ordinary account with nothing done to it, so an example that inspects one has
+  # something plain to inspect. tips-ops carries a supplementary group, which is what `id -G` and
+  # a group's member list are read from.
+  adduser --quiet --disabled-password --gecos "Deployment account" --uid 1001 tips-dev >/dev/null 2>&1
+  addgroup --quiet --gid 4000 tips-deploy >/dev/null 2>&1
+  adduser --quiet --disabled-password --gecos "Operations account" --uid 1002 tips-ops >/dev/null 2>&1
+  adduser --quiet tips-ops tips-deploy >/dev/null 2>&1
+
+  # Both accounts start with a locked password, which is what `--disabled-password` leaves behind
+  # and what the shadow database is read for. An example that sets or unlocks a password has to be
+  # undone here, or the one after it reports the wrong state.
+  passwd -q -l tips-dev >/dev/null 2>&1
+  passwd -q -l tips-ops >/dev/null 2>&1
+
+  # Password ageing reset to the package defaults, which `chage` examples change and others print.
+  chage -m 0 -M 99999 -W 7 -I -1 -E -1 tips-dev
+  chage -m 0 -M 99999 -W 7 -I -1 -E -1 tips-ops
+}
+mk_primary_group_account() {
+# An account whose *primary* group is tips-deploy, for the pages that read group membership. It is
+# the case that makes a group's member list misleading: `getent group tips-deploy` names only the
+# accounts holding it as a supplementary group, so tips-site belongs to the group and is absent
+# from the list.
+#
+# Kept out of `mk_accounts`, which says why nothing more can go there. `id` and `getent` create no
+# accounts of their own, so the uid this one takes changes nothing they print but itself.
+#
+# Needs `mk_accounts` to have run first, for tips-deploy.
+  if id -u tips-site >/dev/null 2>&1; then
+    deluser --remove-home tips-site >/dev/null 2>&1 || userdel -r -f tips-site >/dev/null 2>&1
+  fi
+  rm -rf /home/tips-site
+  adduser --quiet --disabled-password --gecos "Website account" --uid 1010 --ingroup tips-deploy tips-site >/dev/null 2>&1
+}

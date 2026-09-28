@@ -138,7 +138,7 @@ sections:
         level: basic
       - title: "Read a group's members"
         code: getent group tips-deploy
-        description: "The last field lists the accounts that have this group as a *supplementary* group. An account whose primary group this is does not appear here, which is why `getent group` and `id -Gn` can disagree."
+        description: "The last field lists the accounts that have this group as a *supplementary* group. An account whose primary group this is does not appear here, which is why [`getent group`](/commands/getent/) and [`id -Gn`](/commands/id/) can disagree."
         output: |2
           tips-deploy:x:4000:tips-ops
         level: intermediate
