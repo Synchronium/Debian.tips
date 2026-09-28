@@ -17,7 +17,7 @@ sections:
     examples:
       - title: "See everything about an account at once"
         code: id tips-ops
-        description: "The uid, then the primary group, then every group the account is in including the primary one. This is the first command to run when a permission refusal does not make sense, because it answers what the account is rather than what any one file allows."
+        description: "The uid, then the primary group, then every group the account is in including the primary one. This is the first command to run when a permission refusal does not make sense, because it tells you what the account is rather than what any one file allows."
         output: |2
           uid=1002(tips-ops) gid=1002(tips-ops) groups=1002(tips-ops),100(users),4000(tips-deploy)
         level: basic
@@ -31,7 +31,7 @@ sections:
         tags: [scripting]
       - title: "Turn a number back into a name"
         code: id -un 1002
-        description: "The argument is a uid here rather than a name, and `-n` asks for the answer as a name, so the pair reads a number back into an account. Useful on output that carries bare uids, such as `ls -n` or a `find -printf '%U'`."
+        description: "The argument is a uid here rather than a name, and `-n` prints the result as a name, so the pair reads a number back into an account. Useful on output that carries bare uids, such as `ls -n` or a `find -printf '%U'`."
         output: |2
           tips-ops
         level: intermediate
@@ -44,7 +44,7 @@ sections:
         level: intermediate
       - title: "Get the group names rather than the numbers"
         code: id -Gn tips-ops
-        description: "`-n` applies to whichever field flag it is given, so `-Gn` is the whole group list by name. Space-separated on one line, which is worth knowing before writing a loop over it."
+        description: "`-n` applies to whichever field flag it is given, so `-Gn` is the whole group list by name. Space-separated on one line, which is worth knowing before writing a [loop](/scripting/loops/) over it."
         output: |2
           tips-ops users tips-deploy
         level: basic
@@ -58,7 +58,7 @@ sections:
         tags: [permissions]
       - title: "Read the groups with the other command that prints them"
         code: groups tips-ops
-        description: "`groups` is `id -Gn` with the account name and a colon in front, and it takes no options at all. Fine to read, awkward to parse, so a script that wants this list should ask `id` for it."
+        description: "`groups` is `id -Gn` with the account name and a colon in front, and it takes no options at all. Fine to read, but awkward to parse, so a script that wants this list should use `id` instead."
         output: |2
           tips-ops : tips-ops users tips-deploy
         level: intermediate
@@ -88,25 +88,34 @@ sections:
         level: basic
       - title: "Test for root the way an install script does"
         code: '[ "$(id -u)" -eq 0 ] && echo "running as root"'
-        description: "The uid is what the kernel checks, so it is what to test. `$USER` is an ordinary variable that `sudo` may or may not have rewritten, and comparing `whoami` against `root` tests a name when the privilege belongs to the number."
+        description: "The uid is what the kernel checks, so it is what to test. `-eq` compares numbers, so the test holds whatever uid 0 happens to be called."
         output: |2
           running as root
         level: intermediate
         tags: [scripting]
+      - title: "See why a script should not trust $USER"
+        code: |-
+          runuser -u user -- env USER=root sh -c '[ "$USER" = root ] && echo "\$USER says root"; id -u'
+        description: "An ordinary account sets `USER` to `root` for one command, and the variable test believes it. `id -u` in the same shell still prints `1000`, because it asks the kernel. Nothing stops anyone doing this, so a script that decides what it may do from `$USER` can be talked into it."
+        output: |2
+          $USER says root
+          1000
+        level: intermediate
+        tags: [scripting, security]
 
   - title: "Real against effective, and a group list that has gone stale"
-    intro: "A process carries two uids. The real one is who started it and the effective one is what gets checked, and they are equal until something sets them apart: `sudo`, `runuser`, or a file with the setuid bit on it like the `id-setuid` above."
+    intro: "A process carries two uids. The real one is who started it and the effective one is what gets checked, and they are equal until a program with the setuid bit sets them apart. The examples here use `id-setuid`, which the page's setup script makes: a copy of `/usr/bin/id`, owned by root, with that bit set, so it shows its own uids while running as root."
     examples:
       - title: "Watch a fourth field appear"
         code: runuser -u user -- ./id-setuid
-        description: "Run by `user`, running as root. `id` prints `euid` only when it differs from `uid`, so the field appearing at all is the thing to look for. Everywhere else on this page the two are equal, which is why it has not been printed."
+        description: "`./id-setuid` is that copy, in the page's working directory. `user` starts it, and it runs as root: `id` prints `euid` only when it differs from `uid`, so the field appearing at all is the thing to look for. Everywhere else on this page the two are equal, which is why it has not been printed."
         output: |2
           uid=1000(user) gid=1000(user) euid=0(root) groups=1000(user)
         level: advanced
         tags: [security]
       - title: "Ask for the real uid rather than the effective one"
         code: runuser -u user -- ./id-setuid -u; runuser -u user -- ./id-setuid -ur
-        description: "`-u` gives the effective uid, which is what the kernel tests, and `-r` asks for the real one, which is who to blame. A setuid program that logs an action wants the second; one deciding whether to permit it wants the first."
+        description: "`-u` gives the effective uid, the one the kernel checks when the program opens a file. `-r` gives the real uid, the account that started it. A setuid program needs both, and `passwd` is the everyday case: it is setuid root, so its effective uid is allowed to write `/etc/shadow`, and it reads its real uid to find out whose password it is changing. That is why an ordinary account can run it and still change only its own."
         output: |2
           0
           1000
