@@ -386,7 +386,14 @@ mk_loop_disks() {
   # belong to the kernel, not to the container**, so a privileged container detaching all of them
   # detaches whatever the machine outside it had attached. On a host that keeps a filesystem on
   # one, that is someone else's mount going away.
-  losetup -a 2>/dev/null | awk -F: '/\(\/srv\/images\// {print $1}' | while read -r d; do
+  #
+  # The page's working directory counts as this fixture's own, since an example is free to make an
+  # image there and attach it. The restore deletes that file before this runs, and a deleted file
+  # keeps its loop device attached for as long as the kernel runs, well after the container is gone.
+  # Each run then holds one more device, until `losetup --find` has none left to give and every page
+  # built on this function fails at once. Matched as a plain prefix rather than a pattern, because
+  # the path is the caller's and may contain characters a regular expression would read.
+  losetup -a 2>/dev/null | awk -F: -v here="($PWD/" 'index($0, "(/srv/images/") || index($0, here) {print $1}' | while read -r d; do
     losetup -d "$d" 2>/dev/null || true
   done
 
