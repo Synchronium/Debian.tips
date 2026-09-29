@@ -88,10 +88,10 @@ apt-get install -s ./hello-tips_1.0-1_all.deb | tail -7
 ```
 The following NEW packages will be installed:
   cowsay hello-tips
-0 upgraded, 2 newly installed, 0 to remove and 3 not upgraded.
-Inst cowsay (3.03+dfsg2-8 Debian:13.6/stable [all])
+0 upgraded, 2 newly installed, 0 to remove and 0 not upgraded.
+Inst cowsay (3.03+dfsg2-8 Debian:13.7/stable [all])
 Inst hello-tips (1.0-1 local-deb [all])
-Conf cowsay (3.03+dfsg2-8 Debian:13.6/stable [all])
+Conf cowsay (3.03+dfsg2-8 Debian:13.7/stable [all])
 Conf hello-tips (1.0-1 local-deb [all])
 ```
 

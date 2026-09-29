@@ -421,6 +421,6 @@ sections:
         volatile: "the point release moves whenever the machine is updated"
         compare: shape
         output: |
-          13.6
+          13.7
         level: basic
         tags: [debian, sysadmin]

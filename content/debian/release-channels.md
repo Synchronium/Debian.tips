@@ -40,6 +40,7 @@ eventually stops being served from the mirrors altogether, which is
 [the repository does not have a Release file](/troubleshooting/repository-does-not-have-a-release-file/)
 arriving on a machine that hasn't been upgraded by anybody:
 
+<!-- verify: shape the point release moves every time Debian publishes one -->
 ```bash
 head -7 /etc/os-release
 ```
@@ -49,11 +50,11 @@ NAME="Debian GNU/Linux"
 VERSION_ID="13"
 VERSION="13 (trixie)"
 VERSION_CODENAME=trixie
-DEBIAN_VERSION_FULL=13.6
+DEBIAN_VERSION_FULL=13.7
 ID=debian
 ```
 
-The `13.6` is the point release, a periodic reroll of the installation media with the accumulated
+The `13.7` is the point release, a periodic reroll of the installation media with the accumulated
 fixes folded in. It is not a different version of Debian, and a machine kept current is already
 at the newest point release without doing anything.
 
@@ -151,7 +152,7 @@ apt-get install -s --no-install-recommends golang-go | grep "^Inst golang-go" | 
 apt-get install -s --no-install-recommends -t trixie-backports golang-go | grep "^Inst golang-go" | sed 's/ \[[^]]*\]//'
 ```
 ```
-Inst golang-go (2:1.24~2 Debian:13.6/stable)
+Inst golang-go (2:1.24~2 Debian:13.7/stable)
 Inst golang-go (2:1.26~1~bpo13+1 Debian Backports:stable-backports)
 ```
 

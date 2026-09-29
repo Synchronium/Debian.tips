@@ -99,7 +99,7 @@ sections:
         code: apt install -s cowsay-off
         description: Shows what would be installed, including dependencies pulled in behind the package you named.
         level: basic
-        volatile: "the point release in `Debian:13.6` and the `Not Upgrading` count move as the archive does"
+        volatile: "the point release in `Debian:13.7` and the `Not Upgrading` count move as the archive does"
         compare: shape
         output: |2
           Reading package lists...
@@ -109,14 +109,14 @@ sections:
             cowsay-off
 
           Summary:
-            Upgrading: 0, Installing: 1, Removing: 0, Not Upgrading: 1
-          Inst cowsay-off (3.03+dfsg2-8 Debian:13.6/stable [all])
-          Conf cowsay-off (3.03+dfsg2-8 Debian:13.6/stable [all])
+            Upgrading: 0, Installing: 1, Removing: 0, Not Upgrading: 0
+          Inst cowsay-off (3.03+dfsg2-8 Debian:13.7/stable [all])
+          Conf cowsay-off (3.03+dfsg2-8 Debian:13.7/stable [all])
       - title: Simulate a removal
         code: apt remove -s cowsay
         description: The line to read is anything under `REMOVED` - this is where an unexpected cascade shows up before it happens rather than after.
         level: basic
-        volatile: "the point release in `Debian:13.6` and the `Not Upgrading` count move as the archive does"
+        volatile: "the point release in `Debian:13.7` and the `Not Upgrading` count move as the archive does"
         compare: shape
         output: |2
           Reading package lists...
@@ -130,13 +130,13 @@ sections:
             cowsay
 
           Summary:
-            Upgrading: 0, Installing: 0, Removing: 1, Not Upgrading: 1
+            Upgrading: 0, Installing: 0, Removing: 1, Not Upgrading: 0
           Remv cowsay [3.03+dfsg2-8]
       - title: Simulate an install without the recommended extras
         code: apt install -s --no-install-recommends cowsay-off
         description: Debian installs `Recommends:` by default. Comparing this against the plain simulate above shows exactly what that policy adds.
         level: intermediate
-        volatile: "the point release in `Debian:13.6` and the `Not Upgrading` count move as the archive does"
+        volatile: "the point release in `Debian:13.7` and the `Not Upgrading` count move as the archive does"
         compare: shape
         output: |2
           Reading package lists...
@@ -146,21 +146,21 @@ sections:
             cowsay-off
 
           Summary:
-            Upgrading: 0, Installing: 1, Removing: 0, Not Upgrading: 1
-          Inst cowsay-off (3.03+dfsg2-8 Debian:13.6/stable [all])
-          Conf cowsay-off (3.03+dfsg2-8 Debian:13.6/stable [all])
+            Upgrading: 0, Installing: 1, Removing: 0, Not Upgrading: 0
+          Inst cowsay-off (3.03+dfsg2-8 Debian:13.7/stable [all])
+          Conf cowsay-off (3.03+dfsg2-8 Debian:13.7/stable [all])
       - title: See which packages are no longer needed
         code: apt autoremove -s
         description: Lists packages installed automatically as dependencies that no installed package requires any more. Worth reading before running the real thing.
         level: intermediate
-        volatile: "the point release in `Debian:13.6` and the `Not Upgrading` count move as the archive does"
+        volatile: "the point release in `Debian:13.7` and the `Not Upgrading` count move as the archive does"
         compare: shape
         output: |2
           Reading package lists...
           Building dependency tree...
           Reading state information...
           Summary:
-            Upgrading: 0, Installing: 0, Removing: 0, Not Upgrading: 1
+            Upgrading: 0, Installing: 0, Removing: 0, Not Upgrading: 0
   - title: Installing packages
     intro: >-
       All of these need root. `-y` answers the confirmation prompt in advance, which a script

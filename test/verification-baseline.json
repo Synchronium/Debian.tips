@@ -641,7 +641,7 @@
   },
   "debian/list-installed-packages": {
     "checked": 12,
-    "byShape": 5,
+    "byShape": 7,
     "unordered": 0,
     "exempt": 0,
     "fixtures": 0,
@@ -649,7 +649,7 @@
   },
   "debian/release-channels": {
     "checked": 4,
-    "byShape": 2,
+    "byShape": 3,
     "unordered": 0,
     "exempt": 0,
     "fixtures": 0,

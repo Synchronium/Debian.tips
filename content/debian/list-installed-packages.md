@@ -35,6 +35,7 @@ bsdextrautils
 
 Add fields as needed. `${Version}` is the usual second one:
 
+<!-- verify: shape each version moves whenever Debian ships a stable update to that package -->
 ```bash
 dpkg-query -W -f='${Package} ${Version}\n' | head -5
 ```
@@ -42,7 +43,7 @@ dpkg-query -W -f='${Package} ${Version}\n' | head -5
 adduser 3.152
 apt 3.0.3
 apt-utils 3.0.3
-base-files 13.8+deb13u6
+base-files 13.8+deb13u7
 base-passwd 3.6.7
 ```
 
@@ -151,12 +152,13 @@ worth investigating rather than ignoring.
 `${Installed-Size}` is in kilobytes and comes from the package's own record, so this needs no
 disk access at all:
 
+<!-- verify: shape a package's recorded size moves whenever Debian ships a stable update to it -->
 ```bash
 dpkg-query -W -f='${Installed-Size}\t${Package}\n' cowsay perl-modules-5.40
 ```
 ```
 92	cowsay
-19988	perl-modules-5.40
+19993	perl-modules-5.40
 ```
 
 Sort the whole list to find the packages worth deleting:
