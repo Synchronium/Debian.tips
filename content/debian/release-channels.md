@@ -140,12 +140,15 @@ Asking for the backport takes `-t`:
 sudo apt install -t trixie-backports golang-go
 ```
 
-Simulating both makes the difference explicit, and `-s` means neither installs anything:
+Simulating both makes the difference explicit, and `-s` means neither installs anything.
+`--no-install-recommends` keeps the simulation to `golang-go` and what it strictly needs, rather than
+the C compiler Go recommends as well, so apt has far less to work out and the suite each line names
+is the same either way:
 
 <!-- verify: shape the versions and the point release move whenever either suite publishes -->
 ```bash
-apt-get install -s golang-go | grep "^Inst golang-go" | sed 's/ \[[^]]*\]//'
-apt-get install -s -t trixie-backports golang-go | grep "^Inst golang-go" | sed 's/ \[[^]]*\]//'
+apt-get install -s --no-install-recommends golang-go | grep "^Inst golang-go" | sed 's/ \[[^]]*\]//'
+apt-get install -s --no-install-recommends -t trixie-backports golang-go | grep "^Inst golang-go" | sed 's/ \[[^]]*\]//'
 ```
 ```
 Inst golang-go (2:1.24~2 Debian:13.6/stable)

@@ -29,6 +29,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     jq lsof psmisc cowsay \
     && rm -rf /var/lib/apt/lists/*
 
+# The official images add this apt fragment so that no layer carries apt's caches: it switches off
+# the binary package cache and deletes downloaded packages after every run. A Debian install keeps
+# both, and without the cache every apt command re-parses every index before it starts, which on a
+# page with backports configured is seconds per command against a five-second limit per example.
+# Removed after the install above, so the image itself is built without the caches.
+RUN rm -f /etc/apt/apt.conf.d/docker-clean
+
 # cowsay installs into /usr/games, which Debian puts on a login shell's PATH via
 # /etc/login.defs and leaves off everything else, which /troubleshooting/sudo-command-not-found/
 # documents the same list from the other end. A `docker exec` is not a login shell, so without

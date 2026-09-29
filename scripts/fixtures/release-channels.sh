@@ -22,6 +22,12 @@ sed -i '/^# http:\/\/snapshot\.debian\.org/d' /etc/apt/sources.list.d/debian.sou
 
 # The page shows a package that exists in both stable and backports, which needs the
 # backports suite configured before apt can see it.
+#
+# Its two simulated installs of that package share one block, and so one five-second limit.
+# Resolving golang-go with its recommends means working out a whole C toolchain, and the pair ran
+# past the limit, which kills the second command before it prints. `--no-install-recommends` on
+# both is what keeps the block inside it. Remove it and the block fails without any change to
+# what the page claims.
 cat > /etc/apt/sources.list.d/backports.sources <<'EOF'
 Types: deb
 URIs: http://deb.debian.org/debian
