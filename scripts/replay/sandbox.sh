@@ -122,6 +122,7 @@ usage() {
 Usage:
   $0 build                               build the sandbox image if it is missing or stale
   $0 context-hash                        print the hash this build context tags to
+  $0 context                             print the directory the image is built from
   $0 registry                            print the repository a published image is pulled from
   $0 start [--systemd|--privileged] [n]  start a disposable sandbox, prints its name
   $0 exec [-u user] <name> <command...>  run a command inside the sandbox (bash -c)
@@ -146,6 +147,11 @@ case "$cmd" in
   # consumer would recognise any published tag, silently, with slowness as the only symptom.
   context-hash)
     context_hash
+    ;;
+  # The directory that hash is taken over, for the same reason: the workflow builds from it, and
+  # a path written out there as well goes on building from wherever it pointed after this one moves.
+  context)
+    echo "$DOCKERFILE_DIR"
     ;;
   # Where a published image is pulled from, for the same reason: the workflow has to push the
   # repository this pulls from, and a name spelled out in both places agrees right up until one of

@@ -38,8 +38,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      # Both asked of `scripts/replay/sandbox.sh` rather than written out again here. The tag is what
-      # every consumer looks for, and a second copy of either half agrees until one of them is
+      # All three asked of `scripts/replay/sandbox.sh` rather than written out again here. The tag is
+      # what every consumer looks for, and a second copy of any of them agrees until one of them is
       # edited; the failure then is silent, because publishing under a name nothing pulls breaks
       # no build. Everything would just build, having found no tag it recognised, and the only
       # symptom is the slowness this workflow exists to remove.
@@ -49,6 +49,7 @@ jobs:
           {
             echo "repository=$(scripts/replay/sandbox.sh registry)"
             echo "hash=$(scripts/replay/sandbox.sh context-hash)"
+            echo "context=$(scripts/replay/sandbox.sh context)"
           } >> "$GITHUB_OUTPUT"
       # Nothing to do when this exact context is already published.
       #
@@ -97,7 +98,7 @@ jobs:
       - if: steps.existing.outputs.published != 'true'
         uses: docker/build-push-action@v7
         with:
-          context: scripts/sandbox
+          context: ${{ steps.image.outputs.context }}
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.image.outputs.repository }}:${{ steps.image.outputs.hash }}

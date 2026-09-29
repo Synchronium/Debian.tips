@@ -1,5 +1,5 @@
 # Disposable Debian trixie image for testing content-page command examples.
-# Rebuilt on demand by scripts/sandbox.sh when missing; not part of the site build.
+# Rebuilt on demand by scripts/replay/sandbox.sh when missing; not part of the site build.
 FROM debian:trixie
 
 # Every tool a page needs is installed here rather than by the page itself. Since ADR-0020 this
