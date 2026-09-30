@@ -213,6 +213,18 @@ export const exampleSchema = z.object({
    *  Requires `volatile:` for the reason `compare: shape` does: the reader is looking at an order
    *  nobody promises to reproduce, and should be told rather than left to trust it. */
   unordered: z.boolean().optional(),
+  /** The title of the example on this page that this one exists to back up. ADR-0029.
+   *
+   *  Set on an example whose command a reader would rarely type: it works out a claim the page
+   *  makes about an exempt example, whose own output describes the host, and prints something
+   *  the replay can compare. The page tells the reader so above its description, in the sentence
+   *  `proofNote` in `src/templates/partials/proofNote.ts` writes, and marks it apart from the
+   *  ordinary examples, because a command that is on the page only to be checked would otherwise
+   *  read as one worth learning.
+   *
+   *  The loader holds it to what that sentence says: the example named here has to be one the
+   *  page's `.skip` file exempts, and this one has to document an output and be checked. */
+  proves: z.string().min(1).optional(),
 }).superRefine((example, ctx) => {
   if (example.compare === COMPARISON.shape && !example.volatile) {
     ctx.addIssue({

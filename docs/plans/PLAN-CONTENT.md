@@ -63,7 +63,8 @@ not in `docs/adr/`.
 1. **Scenario-aware verification** (§4.1). A page declares which of several named states an example
    needs, and the page's existing setup script dispatches on the name.
 2. **A four-state verification status** (§4.2), replacing a figure that currently cannot
-   distinguish a fully verified page from one that verifies nothing.
+   distinguish a fully verified page from one that verifies nothing. Settled by ADR-0029, which
+   also settles the memory question in §5.3.
 3. **Naming the release a page was verified against** (§4.3), which changes what every page claims.
 
 ## §2. Where the site is now
@@ -214,25 +215,17 @@ to fail should be able to ask for longer.
 
 ### §4.2. A verification status a reader can act on
 
-**Needs**: nothing. **Blocks**: any prose page under §3.3's gate 2.
+**Needs**: nothing. **Blocks**: any prose page under §3.3's gate 2, and everything that shows a
+figure about the host.
 
-A prose page with a setup script and no command-output pairs reports 0/0 and passes. It counts in
-neither the replayed nor the unreplayed figure, so it looks identical to a fully verified page in
-everything the site publishes about itself. No page is in that state, and allowing prose pages
-guarantees that some will be.
+Most of this has been built since it was written. Every page footer already says how many outputs it
+checks, how many of those by shape or in any order, and how many are exempt, and a page whose
+outputs are all exempt says so in a sentence of its own. What is left is a page with no output to
+check, whose footer either says nothing or says its examples were checked by hand.
 
-Four states, replacing the current pass:
-
-- **Verified**: every documented output was replayed.
-- **Partially verified**: some outputs were replayed, and some claims on the page sit outside the
-  harness. Most pages will land here once the distinction exists.
-- **Exempt**: the page documents something the harness cannot re-run, and names how it was checked
-  instead.
-- **No executable examples**: a prose page with nothing to replay.
-
-This is also the honest form of a badge saying a problem was reproduced. The replay checks that a
-documented output still matches what the command printed. It has no notion of a problem, so a page
-claiming one would be asserting something its own verification does not check.
+`docs/adr/0029-a-figure-about-the-host-is-never-a-checked-output.md` closes that, together with
+the question of what a page may claim about memory, load, uptime and other figures that belong to
+the host. This entry is done, and the entries in §5.3 and §6.1 that waited on it are unblocked.
 
 ### §4.3. Name the release a page was verified against
 
@@ -340,21 +333,17 @@ asking for the mechanism. Try each of the others the cheap way first.
   mailed to a machine with no MTA, and a 127 nobody reads, plus the three failures that produce
   the same symptom with `PATH` in perfect order.
 - **`why-is-this-process-using-so-much-cpu`** and
-  **`why-is-this-process-using-so-much-memory`**. **Needs**: a decision about what a container may
-  honestly report about memory, and then `top` and `free`. **Demo**: a process spinning against one
-  that is blocked; resident against virtual size; cache and buffers counted as used, which is the
-  misreading `free` invites. These two give the `performance` tag its first pages.
+  **`why-is-this-process-using-so-much-memory`**. **Needs**: `top` and `free`, written under
+  ADR-0029. **Demo**: a process spinning against one that is blocked; resident against virtual
+  size; cache and buffers counted as used, which is the misreading `free` invites. These two give
+  the `performance` tag its first pages.
 
-  **Blocked on more than the two command pages, measured 2026-09-21.** `free` and `top` report the
-  host's memory rather than the container's, so `total` is a property of whichever machine ran the
-  replay: 3.8Gi in this devcontainer, and whatever a runner is given. That is the defect the
-  architecture rule exists for, a captured output that reproduces perfectly and holds on one
-  machine only, except that `test/architecture.test.ts` is not looking for it. Every other figure
-  on the line moves between consecutive runs, and `top` adds uptime, load average and PIDs.
-  Writing either page the ordinary way would put `compare: shape` on nearly every example, which
-  reduces those figures to tokens and certifies close to nothing. Settle what the harness should do
-  about a container's view of memory first, in §4, rather than treating these as two command pages
-  away.
+  **Unblocked by ADR-0029.** `free` and `top` report the host's memory rather than the
+  container's, so their ordinary output is exempt and names the host figures. What these pages
+  teach about it is checked by `proves:` examples, and what they teach about a process they start
+  (resident against virtual size, a spinner against a sleeper) is an ordinary output. Show process
+  memory as a before-and-after difference, since the ADR's measurements were all on arm64 and a
+  bare RSS may not hold on amd64.
 
 `cannot-remove-file-in-use` left this list on 2026-09-13, and §13.7 says why: Linux refuses none
 of the removals it was named after. `text-file-busy` was written in its place, covering the one
@@ -376,16 +365,17 @@ fixture, and `mount` went with the §6.7 batch that shares the loop-device one. 
 cost. `id` and `getent` are done, on the account fixture `managing-users` already had, and §13.1
 has what sharing it cost.
 
-- **`free`** (`light`) and **`top`** (`standard`). **Blocked, and not on a dependency.** Measured
-  2026-09-11: inside the sandbox `free` reports the *host's* memory, not the container's, and
-  `/sys/fs/cgroup/memory.max` is `max`, so there is no limit to report instead. `compare: shape`
-  masks every digit, which leaves a page verifying its column headers. The figures are also ones
-  the reader could never see, which §4b says to remove rather than declare volatile. Writing these
-  needs the decision in the immediate backlog about what verification owes a page it cannot check,
-  and that decision also gates the two hubs in §5.3, which are built on `free`'s cache-counted-as-
-  used misreading. Do not start them before it is made.
+- **`free`** (`light`) and **`top`** (`standard`). **Needs**: nothing, under ADR-0029. Inside the
+  sandbox both report the *host's* memory, so the ordinary `free` and `top` blocks go in the page's
+  `.skip` naming the host figures, and each claim the page makes about them gets a `proves:`
+  example. `used` being `total` minus `available` is the first one for `free`, and was checked while
+  writing the ADR. `top` can compare a spinning process against a sleeping one it starts itself,
+  which reproduces. Written first in this group, because the two hubs in §5.3 are built on
+  `free`'s cache-counted-as-used misreading.
 - **`dmesg`** (`light`). **Needs**: nothing. **Demo**: what a container can and cannot see, said
-  honestly. Candidate for exemption under §4.2, and worth checking before committing to it.
+  honestly. An unprivileged sandbox is refused the kernel buffer outright (`Operation not
+  permitted`, checked 2026-09-30), so check what a `--privileged` one shows before committing to
+  it. What it shows belongs to the host under ADR-0029.
 
 ### §6.2. Files and inspection
 
@@ -424,7 +414,11 @@ clock, no network.
 - **`watch`** (`light`). **Demo**: intervals and `-d`. Output is inherently repetitive, so the page
   shows one capture and says so.
 - **`uptime`** (`light`). **Demo**: load average against processor count, which is the misreading
-  it invites. Figures are volatile.
+  it invites. The load average and the uptime are host figures under ADR-0029, and so is the
+  processor count, since a runner and this devcontainer have different numbers of cores. So the
+  ordinary output is exempt, and a `proves:` example needs a claim that holds on any machine. That
+  is harder here than on `free`, because the page's point is a comparison between two host figures.
+  Find the claim before committing to the page.
 
 Any page here that ends a process and then counts what is left needs `# verify: --systemd`, for
 the reason §13 gives.

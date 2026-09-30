@@ -99,3 +99,67 @@ export function proseChecks(source: string): PageChecks {
     fixtures: 0,
   };
 }
+
+/** What is wrong with a command page's proof examples (ADR-0029), as messages for the loader to
+ *  fail on. Empty when nothing is.
+ *
+ *  Each rule is something the sentence above a proof example tells the reader. It says the named
+ *  example's output cannot be checked, so that example has to be exempt; and it says this one's
+ *  answer is re-run on every change, so this one has to document an output that is not. */
+export function commandProofProblems(doc: ExamplesFile, slug: string, fixtureDir?: string): string[] {
+  const { checked, exempt } = partitionExamples(doc, slug, fixtureDir);
+  const all = doc.sections.flatMap((section) => section.examples);
+  const problems: string[] = [];
+  for (const example of all) {
+    if (example.proves === undefined) continue;
+    const where = `example "${example.title}"`;
+    const named = all.filter((other) => other.title === example.proves);
+    if (named.length !== 1) {
+      problems.push(
+        `${where}: proves "${example.proves}", which names ${named.length === 0 ? "no example" : `${named.length} examples`} on this page`,
+      );
+      continue;
+    }
+    if (!exempt.some((other) => other.title === example.proves)) {
+      problems.push(`${where}: proves "${example.proves}", which is not listed in the page's .skip file`);
+    }
+    if (!checked.some((other) => other.title === example.title)) {
+      problems.push(`${where}: a proof has to document an output that the replay checks`);
+    }
+  }
+  return problems;
+}
+
+/** The same rules for a prose page, where a proof is a pair marked `verify: proof` and the
+ *  exempt example it backs up is the output block immediately before it. The rendered sentence
+ *  calls that one "the command above", so it has to be a pair marked `verify: skip`: an exempt
+ *  output fence with no command has no command to be.
+ *
+ *  A `verify: proof` comment that no pair carries is refused as well, because the Markdown
+ *  pipeline would still mark whatever follows it, and the note would then call an unchecked
+ *  block checked. */
+export function proseProofProblems(source: string): string[] {
+  const { pairs, unpaired, strayProofs } = parseProsePage(source);
+  const problems = strayProofs.map(
+    (line) =>
+      `line ${line}: \`verify: proof\` has to sit on the line directly above a \`bash\` fence, ` +
+      `with the output fence opening on the line after that one closes`,
+  );
+
+  const blocks = [
+    ...pairs.map((pair) => ({ line: pair.line, skipped: pair.comparison === COMPARISON.skip, proof: pair.proof })),
+    ...unpaired.map((block) => ({ line: block.line, skipped: false, proof: false })),
+  ].sort((a, b) => a.line - b.line);
+
+  for (const [index, block] of blocks.entries()) {
+    if (!block.proof) continue;
+    const before = blocks[index - 1];
+    if (before === undefined || !before.skipped) {
+      problems.push(
+        `line ${block.line}: a \`verify: proof\` pair has to follow a pair marked \`verify: skip\`, ` +
+          `the command whose claim it checks`,
+      );
+    }
+  }
+  return problems;
+}

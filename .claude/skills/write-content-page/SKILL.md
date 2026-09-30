@@ -226,6 +226,30 @@ exactly and must name an example that documents an `output:` block, and the harn
 that matches nothing, because a renamed title otherwise leaves the file claiming an exemption it
 no longer grants.
 
+**Figures that belong to the host are exempt, never compared** (ADR-0029). Inside the sandbox,
+`free`, `top`, `uptime` and `/proc/meminfo` report the machine the container runs on, and even a
+`docker run -m` limit does not change what `free` prints. `compare: shape` is not the answer,
+because it would reduce the block to its column headers while the footer called it checked. So:
+
+- Put the ordinary command in the `.skip` file (prose: `<!-- verify: skip … -->`), and name the
+  host figures in the reason. "Hard to reproduce" is not a reason. `test/hostFigures.test.ts` fails
+  on a host figure in any compared output.
+- For each claim the page makes about that output, add a **proof example** that works the claim out
+  and prints a fixed answer: `proves: "<the exempt example's title>"` on a command page, or
+  `<!-- verify: proof -->` above a pair on a prose page, with no blank line anywhere in the three,
+  and no output block between it and the `verify: skip` pair it checks. The
+  page marks it with a blue edge and a fixed sentence telling the reader it is there to be checked
+  and they are unlikely to need it. So the description says what it establishes, and doesn't repeat
+  why it exists. The build refuses a proof whose target is not exempt, and a proof that is exempt
+  itself.
+- The claim has to hold on every machine, which only you can establish, since the replay sees two.
+  A property of the tool holds everywhere: `free` defines `used` as `total` minus `available`. A
+  property of the machine usually doesn't: "available is larger than free" is typical, and it is
+  prose.
+- A process the page starts is not the host. Its state (`R`, `S`) and its memory are ordinary
+  outputs, but show memory as a before-and-after difference, since a bare RSS may differ between
+  arm64 and amd64.
+
 If a page's output depends on who ran the command (file ownership in `ls -l` or `tar -tvf`, a
 path under `~`, a permission denial root would never see) put `# verify: --user` in its setup
 script. Both `scripts/replay/command-page.ts` and `scripts/authoring/adopt-real-output.ts` read it, so the command above stays

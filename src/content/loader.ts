@@ -30,7 +30,13 @@ import {
 } from "../paths.js";
 import { type TocEntry, renderMarkdown } from "./markdown.js";
 import { type PageSources, pageSources } from "./sourcePaths.js";
-import { type PageChecks, commandChecks, proseChecks } from "./pageChecks.js";
+import {
+  type PageChecks,
+  commandChecks,
+  commandProofProblems,
+  proseChecks,
+  proseProofProblems,
+} from "./pageChecks.js";
 
 export class ContentError extends Error {}
 
@@ -348,6 +354,36 @@ export async function loadContent(
     }
   }
 
+  // ADR-0029. A proof example tells the reader why it is on the page, and the sentence it shows is
+  // only true while the page is arranged the way that sentence describes.
+  //
+  // A setup script with nothing to check is refused too. The footer would offer a replay command
+  // that checks nothing, and the likeliest way to get there is a page whose output fences have
+  // stopped pairing with their commands, which leaves the blocks on the page and out of the replay.
+  // Sample-file `fixtures:` do not count. The replay re-reads them, but a command page showing files
+  // and no command output has nothing to teach with them, so it is refused as a broken page.
+  //
+  // Counted from what the page carries, not from what the replay last reported: the build has no
+  // sandbox. They agree because both sides read the same partition: see `src/content/pageChecks.ts`.
+  const checksFor = new Map<RawEntry, PageChecks>();
+  for (const entry of raw) {
+    const isCommand = entry.category === COMMANDS_CATEGORY;
+    const problems = isCommand
+      ? commandProofProblems(entry.examples, entry.slug, fixtureDir)
+      : proseProofProblems(entry.body);
+    if (problems.length > 0) throw new ContentError(`${entry.file}: ${problems.join("; ")}`);
+
+    const checks = isCommand ? commandChecks(entry.examples, entry.slug, fixtureDir) : proseChecks(entry.body);
+    checksFor.set(entry, checks);
+    const setup = fixtureScript(entry.slug, fixtureDir);
+    if (existsSync(setup) && checks.checked + checks.exempt === 0) {
+      throw new ContentError(
+        `${entry.file}: ${repoPath(setup)} exists but the page has no output for it to check. ` +
+          `Delete the script, or check that each output fence opens on the line after its command fence closes`,
+      );
+    }
+  }
+
   const seenOrders = new Map<number, string>();
   for (const entry of raw) {
     if (entry.data.category !== SCRIPTING_CATEGORY) continue;
@@ -385,6 +421,8 @@ export async function loadContent(
   );
 
   const built = rendered.map(({ entry, html, toc }) => {
+    const checks = checksFor.get(entry);
+    if (checks === undefined) throw new Error(`${entry.file}: rendered without its checks being counted`);
     const base = {
       slug: entry.slug,
       url: urlFor(entry.category, entry.slug),
@@ -399,13 +437,7 @@ export async function loadContent(
       html,
       toc,
       sources: pageSources(entry.category, entry.slug, contentDir, fixtureDir),
-      // Counted from what the page carries, not from what the replay last reported: the build
-      // has no sandbox. They agree because both sides read the same partition: see
-      // `src/content/pageChecks.ts`.
-      checks:
-        entry.category === COMMANDS_CATEGORY
-          ? commandChecks(entry.examples, entry.slug, fixtureDir)
-          : proseChecks(entry.body),
+      checks,
     };
 
     const page = ((): Page => {

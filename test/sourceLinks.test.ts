@@ -217,3 +217,26 @@ describe("what the block says is compared how", () => {
     expect(html.match(/\/about\/#output-that-cannot-be-identical/g)).toHaveLength(2);
   });
 });
+
+/* ADR-0029. A page with no output makes no claim for the replay to check, so neither the sentence
+ * about outputs re-run on every change nor the one about outputs checked by hand describes it. */
+describe("the footer of a page with no output", () => {
+  const footer = sourceLinks(
+    "no-output",
+    {
+      files: [{ path: "no-output.md", label: "the page" }],
+      replayable: false,
+      hasSkipFile: false,
+    },
+    { checked: 0, byShape: 0, unordered: 0, exempt: 0, fixtures: 0 },
+  ).value;
+
+  it("says there is nothing to check", () => {
+    expect(footer).toContain("This page shows no command output");
+  });
+
+  it("makes neither claim about outputs", () => {
+    expect(footer).not.toContain("checked by hand");
+    expect(footer).not.toContain("Every output was captured");
+  });
+});

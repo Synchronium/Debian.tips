@@ -322,3 +322,124 @@ describe("loadContent: validation is environment-independent", () => {
     });
   });
 });
+
+/* ADR-0029. A proof example shows the reader a sentence saying why it is on the page, so the loader
+ * holds the page to what that sentence says: the example it names is exempt, and the proof itself
+ * is checked. */
+describe("loadContent: proof examples", () => {
+  const FIXTURE_HARNESS = join(import.meta.dirname, "fixtures", "harness");
+
+  /** The fixture harness, which exempts "Greet from another terminal", plus any extra files. */
+  function harness(extra: Record<string, string> = {}): string {
+    const dir = mkdtempSync(join(tmpdir(), "debian-tips-loader-proof-"));
+    tempDirs.push(dir);
+    cpSync(FIXTURE_HARNESS, dir, { recursive: true });
+    for (const [name, body] of Object.entries(extra)) writeFileSync(join(dir, name), body, "utf-8");
+    return dir;
+  }
+
+  /** The greet page with one more example, proving whatever `proves` names. */
+  function withProof(proves: string, extra = ""): string {
+    return brokenContent((d) =>
+      editFile(
+        join(d, "commands", "greet", "examples.yaml"),
+        (s) =>
+          `${s}      - title: "Check the greeting"\n        code: echo checked\n        description: Works the claim out.\n        level: basic\n        proves: "${proves}"\n${extra}        output: |2\n          checked\n`,
+      ),
+    );
+  }
+
+  it("accepts a proof of an exempt example (positive control)", async () => {
+    await expect(loadContent(withProof("Greet from another terminal"), harness())).resolves.toBeDefined();
+  });
+
+  it("rejects a proof naming no example on the page", async () => {
+    await expect(loadContent(withProof("Greet nobody"), harness())).rejects.toThrow(
+      /proves "Greet nobody", which names no example/,
+    );
+  });
+
+  it("rejects a proof of an example that is checked rather than exempt", async () => {
+    await expect(loadContent(withProof("Say hello"), harness())).rejects.toThrow(
+      /proves "Say hello", which is not listed in the page's .skip file/,
+    );
+  });
+
+  it("rejects a proof that is itself exempt", async () => {
+    const dir = withProof("Greet from another terminal");
+    const skip = `Greet from another terminal\nCheck the greeting\n`;
+    await expect(loadContent(dir, harness({ "greet.skip": skip }))).rejects.toThrow(
+      /a proof has to document an output that the replay checks/,
+    );
+  });
+
+  const PROSE_PROOF = "\n<!-- verify: proof -->\n```bash\necho checked\n```\n```\nchecked\n```\n";
+
+  it("accepts a prose proof straight after an exempt block", async () => {
+    const dir = brokenContent((d) => editFile(join(d, "scripting", "lesson-two.md"), (s) => s + PROSE_PROOF));
+    await expect(loadContent(dir, harness())).resolves.toBeDefined();
+  });
+
+  it("rejects a prose proof straight after a checked block", async () => {
+    const dir = brokenContent((d) => editFile(join(d, "scripting", "lesson-one.md"), (s) => s + PROSE_PROOF));
+    await expect(loadContent(dir, harness())).rejects.toThrow(
+      /a `verify: proof` pair has to follow a pair marked `verify: skip`/,
+    );
+  });
+
+  it("rejects a prose proof after an output with no command, which the note would call one", async () => {
+    const unpaired = "\nSomething prints:\n\n<!-- verify: skip printed elsewhere -->\n```\nhost\n```\n";
+    const dir = brokenContent((d) =>
+      editFile(join(d, "scripting", "lesson-two.md"), (s) => s + unpaired + PROSE_PROOF),
+    );
+    await expect(loadContent(dir, harness())).rejects.toThrow(
+      /a `verify: proof` pair has to follow a pair marked `verify: skip`/,
+    );
+  });
+
+  it("rejects a `verify: proof` comment that no pair carries", async () => {
+    const loose = "\n<!-- verify: proof -->\n```bash\necho checked\n```\n\n```\nchecked\n```\n";
+    const dir = brokenContent((d) => editFile(join(d, "scripting", "lesson-two.md"), (s) => s + loose));
+    await expect(loadContent(dir, harness())).rejects.toThrow(
+      /`verify: proof` has to sit on the line directly above/,
+    );
+  });
+});
+
+describe("loadContent: a setup script with nothing to check", () => {
+  /** lesson-two with every fence removed, so it shows no output at all. */
+  const noOutput = (): string =>
+    brokenContent((d) =>
+      editFile(join(d, "scripting", "lesson-two.md"), (s) =>
+        s.slice(0, s.indexOf("A pair whose only block")),
+      ),
+    );
+
+  function harnessWith(...slugs: string[]): string {
+    const dir = mkdtempSync(join(tmpdir(), "debian-tips-loader-empty-"));
+    tempDirs.push(dir);
+    for (const slug of slugs) writeFileSync(join(dir, `${slug}.sh`), "# nothing\n", "utf-8");
+    return dir;
+  }
+
+  it("is refused", async () => {
+    await expect(loadContent(noOutput(), harnessWith("lesson-two"))).rejects.toThrow(
+      /lesson-two\.sh exists but the page has no output for it to check/,
+    );
+  });
+
+  it("is refused when the page has sample files but no output, since fixtures alone teach nothing", async () => {
+    const filesOnly = brokenContent((d) =>
+      editFile(join(d, "commands", "greet", "examples.yaml"), (s) =>
+        s.replace(/ +output: \|2\n( {10}.*\n)+/g, ""),
+      ),
+    );
+    await expect(loadContent(filesOnly, harnessWith("greet"))).rejects.toThrow(
+      /greet\.sh exists but the page has no output for it to check/,
+    );
+  });
+
+  it("is not required of a page with no output (positive control)", async () => {
+    await expect(loadContent(noOutput(), harnessWith())).resolves.toBeDefined();
+  });
+});

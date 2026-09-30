@@ -110,6 +110,22 @@ export function sourceLinks(slug: string, sources: PageSources, checks: PageChec
 
   const replayCommand = `npm run replay -- ${slug}`;
 
+  // A page with no output at all makes no claim the replay could check, so it needs no setup
+  // script, and both sentences below would describe outputs it does not have: one says they were
+  // captured and re-run, the other that they were checked by hand. The loader refuses a page that
+  // has a script and nothing for it to check, so this is the only footer such a page can get.
+  // ADR-0029.
+  if (checks.checked + checks.exempt === 0 && !sources.replayable) {
+    return html`<aside class="page-sources" aria-labelledby="page-sources-heading" data-pagefind-ignore>
+<h2 id="page-sources-heading">Check this page yourself</h2>
+<p>
+This page shows no command output, so the replay has nothing on it to check
+(<a href="/about/">how checking works</a>). These are the files behind it:
+</p>
+<ul class="source-files">${items}</ul>
+</aside>`;
+  }
+
   // `data-pagefind-ignore`: the whole of <main> is the search body, and this block is the same
   // paragraph on every page. Indexed, it would make "container", "repository" and "replay" match
   // every page on the site equally, which is worse than not matching at all.
