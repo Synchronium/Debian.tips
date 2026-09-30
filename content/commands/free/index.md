@@ -12,8 +12,8 @@ related: [top, ps, why-is-this-process-using-so-much-memory, processes-and-signa
 `free` prints one table for the whole machine: memory on the first row, swap on the second. People
 usually read the `free` column first, but it is the wrong one to read. Linux keeps file contents in spare
 memory as cache and hands it back the moment a program needs it, so on a machine that has been up
-for a while `free` is small and should be. `available` is the figure that answers "can I start
-something else", because it counts that cache as reclaimable. `used` is worked out from it, as
+for a while, `free` is small, which is fine. `available` is the figure to read to find out whether
+there is room to start something else, because it counts that cache as reclaimable. `used` is worked out from it, as
 `total` minus `available`, so cache is never counted as used.
 
 Every figure here describes the machine rather than a process, so no two machines print the same

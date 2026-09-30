@@ -10,6 +10,7 @@ Split buffers from the page cache
 Pick a unit that fits the number
 Show exact byte counts
 Count in powers of 1000
+Pick a unit that fits, in powers of 1000
 Add memory and swap together
 Print a fresh sample every second
 

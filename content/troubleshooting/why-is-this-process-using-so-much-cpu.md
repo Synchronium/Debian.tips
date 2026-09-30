@@ -9,8 +9,13 @@ related: [top, ps, kill, why-is-this-process-using-so-much-memory, processes-and
 ---
 
 The machine is slow, the fans are loud, or a job that normally takes a minute has taken an hour.
-Something is using the CPU, and the questions are which process, whether the figure means what it
-appears to, what kind of work it is doing, where it came from, and how to make it give way.
+Something is using the CPU, and there are five things to find out:
+
+- which process it is
+- whether its CPU figure means what it appears to
+- what kind of work it is doing
+- where it came from
+- how to make it give way
 
 The examples read four processes started for them. `spinner` is stuck in an empty loop, started by
 a script called `nightly-report`. `cruncher` is compressing an endless stream on several threads.
@@ -35,7 +40,7 @@ wanted a CPU got one. A load well above it means processes are queueing, and the
 slow even when no single process is to blame.
 
 On Linux the load also counts processes waiting on a disk in state `D`, which use no CPU at all.
-A high load with idle CPUs is a disk or a network filesystem that is slow to answer, and the rest
+A high load with idle CPUs is a disk or a network filesystem that is slow to respond, and the rest
 of this page will not help with it.
 
 ## Which process is it?
@@ -57,7 +62,7 @@ this is simply the top of the list.
 
 ## Is ps telling you the same thing?
 
-[`ps`](/commands/ps/) has a `%CPU` column too, and it answers a different question:
+[`ps`](/commands/ps/) has a `%CPU` column too, but it tells you something different:
 
 <!-- verify: shape the process ID, the CPU share and the running time differ from run to run -->
 ```bash
@@ -128,7 +133,7 @@ ddcaller: mostly system time
 
 `spinner` never asks the kernel for anything. `ddcaller` makes two system calls for every byte it
 copies, so the kernel does most of its work. A process heavy on user time is computing, and the
-answer is in what it was asked to compute. One heavy on system time is doing a great deal of I/O in
+explanation is in what it was asked to compute. One heavy on system time is doing a great deal of I/O in
 small pieces, or calling something far more often than it needs to. The `us` and `sy` figures on
 `top`'s CPU line give the same split for the machine as a whole.
 

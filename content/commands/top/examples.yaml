@@ -27,7 +27,7 @@ sections:
       - title: "Confirm the CPU states add up to 100%"
         code: |-
           top -b -n2 -d 0.5 | awk '/^%Cpu\(s\)/ {line = $0} END {gsub(/,/, " ", line); n = split(line, f, " "); for (i = 1; i <= n; i++) if (f[i] ~ /^[0-9.]+$/) s += f[i]; print (s > 99.5 && s < 100.5) ? "the CPU states add up to 100%" : "the CPU states do not add up to 100%"}'
-        description: "Sums every figure on the CPU line of the second update, which covers the half-second `-d 0.5` asks for. The eight states are shares of one total, so they make 100 once rounding is allowed for. The commas are turned into spaces first, because a state at `100.0` is printed with no space before it."
+        description: "Sums every figure on the CPU line of the second update, which covers the half-second period set by `-d 0.5`. The eight states are shares of one total, so they make 100 once rounding is allowed for. The commas are turned into spaces first, because a state at `100.0` is printed with no space before it."
         proves: "Take one snapshot of the whole machine"
         output: |2
           the CPU states add up to 100%
@@ -35,7 +35,7 @@ sections:
       - title: "Confirm top's memory total is the kernel's"
         code: |-
           [ "$(top -b -n1 | awk '/^MiB Mem/ {print $4}')" = "$(awk '/^MemTotal:/ {printf "%.1f", $2 / 1024}' /proc/meminfo)" ] && echo "top's total is MemTotal in MiB"
-        description: "Converts `MemTotal` from `/proc/meminfo` to mebibytes with one decimal place and compares it with the total `top` printed. `top` and `free` read the same file, so the two agree on everything but the moment they read it."
+        description: "Converts `MemTotal` from `/proc/meminfo` to mebibytes with one decimal place and compares it with the total `top` printed. `top` and `free` both read their memory figures from `/proc/meminfo`, so their totals match. Their other figures can differ slightly, because each reads the file at a different moment and memory use changes in between."
         proves: "Take one snapshot of the whole machine"
         output: |2
           top's total is MemTotal in MiB
@@ -60,7 +60,7 @@ sections:
     examples:
       - title: "Name the columns"
         code: top -b -n1 | sed -n 7p
-        description: "`PR` and `NI` are the scheduling priority and the nice value. `VIRT` is the address space the process has mapped, `RES` how much of it is in memory, and `SHR` how much of `RES` is shared with other processes, all in kibibytes. `S` is the state, `%CPU` its share of one CPU since the last update, `%MEM` its `RES` as a share of the machine's memory, and `TIME+` the CPU time it has used since it started."
+        description: "`PR` and `NI` are the scheduling priority and the nice value. `VIRT` is the address space the process has mapped, `RES` how much of it is in memory, and `SHR` how much of `RES` is shared with other processes, all in kibibytes. `S` is the state, `%CPU` its share of one CPU since the last update, `%MEM` its `RES` as a percentage of all the memory the machine has, so 5.3 means the process holds 5.3% of it, and `TIME+` the CPU time it has used since it started."
         output: |2
               PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
         level: basic
@@ -76,7 +76,7 @@ sections:
         level: basic
       - title: "Measure a process's CPU over half a second"
         code: top -b -n2 -d 0.5 -p "$(pgrep -x spinner)" | tail -1
-        description: "`-n2` takes two updates and `-d 0.5` puts half a second between them, so the row `tail -1` keeps is the second update's, and its `%CPU` covers that half-second. The first update has only a very short interval to measure over. `%CPU` is a share of one CPU, so a process busy on four cores shows 400."
+        description: "`-n2` takes two updates and `-d 0.5` puts half a second between them, so the row `tail -1` keeps belongs to the second update, and its `%CPU` covers that half-second. The first update has only a very short interval to measure over. `%CPU` is a share of one CPU, so a process busy on four cores shows 400."
         volatile: "the PID, `%CPU`, the memory figures and `TIME+` differ from run to run"
         compare: shape
         output: |2
@@ -158,7 +158,7 @@ sections:
         level: advanced
 
   - title: "Reading a process's memory"
-    intro: "Figures about the processes the setup script started, rather than about the machine, so they can be checked here as they are."
+    intro: "Figures about the processes this page's setup script started, rather than about the machine they run on, so they can be checked here as they are."
     examples:
       - title: "Show a process's memory in mebibytes"
         code: top -b -n1 -e m -p "$(pgrep -x memhog)" | tail -n +7

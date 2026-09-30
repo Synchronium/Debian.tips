@@ -51,10 +51,9 @@ nothing against the other.
 The `%CPU` column is the process's accumulated CPU time divided by how long it has been alive.
 That makes it an average across the whole lifetime rather than a reading of what the process is
 doing now: something that saturated a core this morning still reports a high figure tonight.
-[`top`](/commands/top/) measures between two updates instead, which is what answers "what is busy
-now", and [why is this process using so much CPU?](/troubleshooting/why-is-this-process-using-so-much-cpu/)
-shows the two disagreeing about the same process. For a
-command you are about to run rather than one already going,
+[`top`](/commands/top/) measures between two updates instead, so it reports what is busy now.
+[Why is this process using so much CPU?](/troubleshooting/why-is-this-process-using-so-much-cpu/)
+shows the two disagreeing about the same process. For a command you are about to run rather than one already going,
 [timing it](/recipes/time-how-long-something-takes/) separates the CPU time from the waiting.
 
 ## Finding a process by name

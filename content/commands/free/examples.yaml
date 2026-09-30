@@ -2,7 +2,7 @@ command: free
 
 sections:
   - title: "Reading the table"
-    intro: "The figures on this page are from one machine at one moment, and yours will differ in every column. What stays the same is how the columns relate to each other, which is what the checked examples here show."
+    intro: "The figures on this page are from one machine at a single moment in time. The commands you run on your own machine will differ in every column. What stays consistent is how the columns relate to each other, which is what the checked examples here show."
     examples:
       - title: "See how much memory is in use"
         code: free -m
@@ -35,7 +35,7 @@ sections:
           Mem:            3916        2180         831          12           7        1092        1736
           Swap:           1023         621         402
         level: intermediate
-      - title: "See the columns the wide form prints"
+      - title: "See the columns printed by the wide form"
         code: free -w | head -1
         description: "Seven columns rather than six, which matters to a script that picks a field by its position: `available` is field 7 in the normal form and field 8 in the wide one."
         output: |2
@@ -44,7 +44,7 @@ sections:
         tags: [scripting]
 
   - title: "Units"
-    intro: "The default is kibibytes, 1024 bytes each. Every unit flag scales the same figures, and none of them changes what is measured."
+    intro: "The default is kibibytes, 1024 bytes each. Every unit flag scales the same figures, and none of them changes what is actually measured."
     examples:
       - title: "Pick a unit that fits the number"
         code: free -h
@@ -66,14 +66,14 @@ sections:
       - title: "Confirm the default unit is 1024 bytes"
         code: |-
           echo $(( $(free -b | awk '/^Mem:/ {print $2}') / $(free -k | awk '/^Mem:/ {print $2}') ))
-        description: "Divides the total in bytes by the total in the default unit. The total does not move between the two runs, so the answer is the size of the unit."
+        description: "Divides the total in bytes by the total in the default unit. The total does not move between the two runs, so the result is the size of the unit."
         proves: "Show exact byte counts"
         output: |2
           1024
         level: advanced
       - title: "Count in powers of 1000"
         code: free --kilo
-        description: "`--kilo`, `--mega` and `--giga` divide by 1000 rather than 1024, which is what a disk manufacturer means by a kilobyte. `--si` does the same for `-h`. The figures come out larger than `-k` gives, for the same memory."
+        description: "`--kilo`, `--mega` and `--giga` divide by 1000 rather than 1024, which is what a disk manufacturer means by a kilobyte. The figures come out larger than `-k` gives, for the same memory."
         output: |2
                          total        used        free      shared  buff/cache   available
           Mem:         4106604     2284797      873766       13152     1152966     1821806
@@ -81,19 +81,27 @@ sections:
         level: intermediate
       - title: "Confirm --kilo divides by 1000"
         code: |-
-          [ $(( $(free -b | awk '/^Mem:/ {print $2}') / 1000 )) = "$(free --kilo | awk '/^Mem:/ {print $2}')" ] && echo "--kilo is bytes divided by 1000"
-        description: "Divides the byte total by 1000 in the shell and compares it with what `--kilo` printed. Both drop the remainder, so they agree to the last digit."
+          echo $(( $(free -b | awk '/^Mem:/ {print $2}') / $(free --kilo | awk '/^Mem:/ {print $2}') ))
+        description: "Divides the total in bytes by the total `--kilo` printed, as the check on the default unit does. `--kilo` drops the remainder when it divides, and so does the shell, so the result is the size of the unit."
         proves: "Count in powers of 1000"
         output: |2
-          --kilo is bytes divided by 1000
+          1000
         level: advanced
+      - title: "Pick a unit that fits, in powers of 1000"
+        code: free -h --si
+        description: "`--si` makes `-h` count in powers of 1000, so the suffixes lose their `i`: `G` rather than `Gi`. The same memory reads as slightly more, which is worth knowing before comparing `free` against a figure from a tool that counts this way."
+        output: |2
+                         total        used        free      shared  buff/cache   available
+          Mem:            4.1G        2.2G        929M         26M        1.2G        1.9G
+          Swap:           1.1G        664M        408M
+        level: intermediate
 
   - title: "Swap, totals and commitments"
-    intro: "Swap is disk standing in for memory. Some swap in use is normal, since the kernel moves out pages nothing has touched for a long time. Swap filling quickly while `available` is low is the sign of a machine that is short of memory."
+    intro: "Swap is disk standing in for memory. Some swap in use is normal, since the kernel moves out pages that have not been touched by anything for a long time. Swap filling quickly while `available` is low is the sign of a machine that is short of memory."
     examples:
       - title: "Add memory and swap together"
         code: free -t -m
-        description: "`-t` adds a `Total` row with memory and swap summed in the first three columns. It answers how much the machine can hold before it runs out of both."
+        description: "`-t` adds a `Total` row with memory and swap summed in the first three columns. It tells you how much the machine can hold before it runs out of both."
         output: |2
                          total        used        free      shared  buff/cache   available
           Mem:            3916        2180         831          12        1099        1735
@@ -111,14 +119,14 @@ sections:
       - title: "Confirm that swap used is swap total minus swap free"
         code: |-
           free | awk '/^Swap:/ {print ($2 - $4 == $3) ? "swap used is total minus free" : "swap used is not total minus free"}'
-        description: "Swap has no cache to discount, so its `used` is the plain difference. The memory row does not work this way, and the difference between the two rows is where most misreadings of `free` start."
+        description: "Swap holds no cache, so nothing needs to be left out of its `used`: it is simply `total` minus `free`. The memory row does not work this way, because its `used` leaves out the cache, and reading the memory row as if it worked like the swap row is where most misreadings of `free` start."
         proves: "Add memory and swap together"
         output: |2
           swap used is total minus free
         level: advanced
       - title: "See how much memory has been promised"
         code: free -v -m
-        description: "`-v` adds a `Comm` row. Its first figure is the commit limit, its second is how much memory running programs have been promised, and its third is the difference, negative here. Linux promises more than it has by default, because most programs never touch everything they ask for, so a negative figure is ordinary unless the kernel has been set to refuse overcommitment."
+        description: "`-v` adds a `Comm` row, for committed memory. When a program asks for memory, the kernel agrees to it and counts the amount as committed, but it only hands over real memory when the program first writes to it. The row's first figure is the commit limit, the most the kernel would commit if it were strict about it. The second is how much it has committed to running programs so far, and the third is the limit minus that, negative here. By default Linux commits more than it has, because most programs never use everything they ask for, so a negative figure is ordinary unless the kernel has been set to refuse to overcommit."
         output: |2
                          total        used        free      shared  buff/cache   available
           Mem:            3916        2180         831          12        1099        1735
@@ -128,14 +136,14 @@ sections:
       - title: "Confirm the Comm row's last figure is the limit minus the commitments"
         code: |-
           free -v | awk '/^Comm:/ {print ($2 - $3 == $4) ? "free is the limit minus what is committed" : "free is not the limit minus what is committed"}'
-        description: "Tests the third figure against the first two from one run. A negative answer means more has been promised than the limit allows, which only matters when the kernel is enforcing the limit."
+        description: "Tests the third figure against the first two from one run. A negative result means more has been committed than the limit allows, which only matters when the kernel is enforcing the limit."
         proves: "See how much memory has been promised"
         output: |2
           free is the limit minus what is committed
         level: advanced
       - title: "See that a 64-bit machine has no high memory"
         code: free -l | grep "^High:"
-        description: "`-l` splits memory into low and high, a distinction from 32-bit kernels, which could not address all of a large memory directly. A 64-bit kernel can, so the `High` row is all zeros on every 64-bit machine, and the `Low` row above it is simply all of memory."
+        description: "`-l` splits memory into low and high, a distinction left over from 32-bit kernels. A 32-bit kernel can only reach part of physical memory directly, and on a 32-bit PC anything past the first 896 MiB was high memory, which the kernel had to map in temporarily each time it used it. A 64-bit kernel can reach all physical memory directly, so none of it is high: the `High` row is all zeros on every 64-bit machine, and the `Low` row above it is simply all of memory."
         output: |2
           High:              0           0           0
         level: advanced
@@ -175,7 +183,7 @@ sections:
         tags: [scripting]
       - title: "Get one figure for a script"
         code: free -m | awk '/^Mem:/ {print $7}'
-        description: "The `available` figure in mebibytes, and nothing else, which is the one a script should test before starting something large. Matching the row by its label rather than its line number keeps it working if the output gains a row."
+        description: "Only the `available` figure, in mebibytes, which is the one a script should test before starting something large. Matching the row by its label rather than its line number keeps it working if the output gains a row."
         output: |2
           1737
         level: intermediate
