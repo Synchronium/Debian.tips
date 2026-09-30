@@ -1,0 +1,25 @@
+# Examples this page cannot replay, because every figure in their output belongs to the host
+# (ADR-0029). Inside a container, `free` and /proc/meminfo report the memory, swap and commit
+# figures of the machine the container runs on, so no two runs print the same table. Each was
+# captured in the sandbox, and what the page says about it is checked by the proof example that
+# names it.
+
+# Memory and swap totals, use, cache and availability.
+See how much memory is in use
+Split buffers from the page cache
+Pick a unit that fits the number
+Show exact byte counts
+Count in powers of 1000
+Pick a unit that fits, in powers of 1000
+Add memory and swap together
+Print a fresh sample every second
+
+# The commit limit and the memory committed against it.
+See how much memory has been promised
+
+# The same host figures, on one line or as a single number.
+Put the figures on one line for a log
+Get one figure for a script
+
+# The host's /proc/meminfo, which is where every figure above comes from.
+Read the kernel's own figures

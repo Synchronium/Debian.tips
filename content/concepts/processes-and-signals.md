@@ -5,7 +5,7 @@ description: "How processes are born, orphaned and reaped, what a signal actuall
 category: concepts
 tags: [processes, terminal, sysadmin, scripting]
 updated: 2026-08-27
-related: [ps, exit-codes-and-error-handling, systemctl, kill-whatever-is-using-a-port]
+related: [ps, top, exit-codes-and-error-handling, systemctl, kill-whatever-is-using-a-port]
 ---
 
 A process is a running program, and the kernel keeps a small amount of bookkeeping about each

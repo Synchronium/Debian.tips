@@ -92,7 +92,7 @@ usual.
 ## Figures that belong to the machine
 
 A few commands report on the machine rather than on anything a page sets up: how much memory it
-has and how much is free, its load average, how long it has been up. Inside the container that
+has and how much is [free](/commands/free/), its load average, how long it has been up. Inside the container that
 runs the checks, those figures belong to whatever computer the container happens to be running
 on. They differ between two runs of the same page, and none of them would match yours.
 
