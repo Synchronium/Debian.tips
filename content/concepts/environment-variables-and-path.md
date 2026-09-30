@@ -26,6 +26,9 @@ directories it searches and `~/bin` was not among them.
 [command not found](/troubleshooting/command-not-found/) triages the other reasons it says that,
 including the ones where `PATH` is correct.
 
+The `-p` on `mkdir` is there for readers who already have a `~/bin`: without it, `mkdir` stops
+with `File exists`, and with it the line does nothing and the rest of the block runs as shown.
+
 ## The environment is a copy, made at exec time
 
 Every process gets a block of `NAME=value` strings from whatever started it. The kernel hands that

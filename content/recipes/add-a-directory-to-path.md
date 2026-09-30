@@ -28,6 +28,10 @@ bash -lc mytool
 hello from mytool
 ```
 
+`-p` makes `mkdir` create `~/.local` as well when it is not there yet, which on a new account it
+is not, and makes it do nothing when the directory already exists. So every block on this page is
+safe to run whether or not you have the directory already.
+
 **How it works:**
 
 Debian's stock `~/.profile`, which every account gets from `/etc/skel`, already ends with this:
