@@ -115,3 +115,28 @@ describe("fence info strings", () => {
     expect(page.pairs[0]?.output).toBe("```bash x\nhi");
   });
 });
+
+/* ADR-0029. The Markdown pipeline marks whatever follows a `verify: proof` comment, so a comment
+ * this parser does not attach to a pair would be shown to the reader as a checked proof while the
+ * replay checked nothing about it. Each of these is reported so the loader can refuse it. */
+describe("verify: proof", () => {
+  const PROOF = "<!-- verify: proof -->";
+
+  it("is carried by the pair directly beneath it", () => {
+    const page = parseProsePage(`${PROOF}\n${fence("bash", "echo a")}\n${fence("", "a")}\n`);
+    expect(page.pairs[0]?.proof).toBe(true);
+    expect(page.strayProofs).toEqual([]);
+  });
+
+  it.each([
+    ["a blank line under the comment", `${PROOF}\n\n${fence("bash", "echo a")}\n${fence("", "a")}\n`],
+    ["a blank line between the fences", `${PROOF}\n${fence("bash", "echo a")}\n\n${fence("", "a")}\n`],
+    ["a command with no output", `${PROOF}\n${fence("bash", "echo a")}\n`],
+  ])("is stray with %s", (_, source) => {
+    expect(parseProsePage(source).strayProofs).toEqual([1]);
+  });
+
+  it("is not stray when a page shows it inside a fence", () => {
+    expect(parseProsePage(fence("", PROOF)).strayProofs).toEqual([]);
+  });
+});

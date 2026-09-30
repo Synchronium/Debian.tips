@@ -112,8 +112,11 @@ output belongs to the machine and cannot be checked, that this one is there to c
 says about it, and that the reader is unlikely to need it. The sentence links to the example it
 stands for on a command page, and says "the command above" on a prose page. A command page marks one
 with `proves:`, naming the exempt example's title, and a prose page with `<!-- verify: proof -->`
-above a pair that directly follows the exempt block. The sentence is written once, in
-`src/templates/partials/proofNote.ts`, and `/about/` explains the arrangement in its own section.
+above a pair whose previous output block is a pair marked `verify: skip`. An output fence with no
+command cannot come before a proof, because the sentence would call it a command. A
+`verify: proof` comment that no pair carries fails the build, because the page would still mark
+what follows it. The sentence is written once, in `src/templates/partials/proofNote.ts`, and
+`/about/` explains the arrangement in its own section.
 
 **A figure about a process or object the fixture built is an ordinary output**, compared exactly
 where it reproduces and by shape where it moves. Process memory is expected to differ between
@@ -126,15 +129,17 @@ out on its first CI run whether the form it chose holds on amd64.
 whether or not it has a setup script. A page that has a setup script and nothing for it to check,
 neither checked nor exempt, fails the build. Such a script is either left over from output the page
 no longer shows, or a sign that the page's output fences have stopped pairing with their commands,
-and in both cases the footer would offer a replay command that checks nothing. A page with no output
-also leaves `unreplayedProsePages`, which counts pages missing a script they need.
+and in both cases the footer would offer a replay command that checks nothing. Sample-file
+`fixtures:` on a command page do not count as something to check: a page that shows files and no
+command output has nothing to teach with them, so it is refused like any other. A page with no
+output also leaves `unreplayedProsePages`, which counts pages missing a script they need.
 
 ## Consequences
 
 **The exempt count on `/about/` will rise**, and every page with a host block says so in its own
-footer. Every exemption stays visible, but the site's headline figure covers a smaller share of what it shows.
-The limit on that is the list of host figures: a block may be exempted under this record only by
-naming one.
+footer. Every exemption stays visible, but the site's headline figure covers a smaller share of
+what it shows. The limit on that is the list of host figures: a block may be exempted under this
+record only by naming one.
 
 **`free`, `top`, the CPU and memory hubs, `uptime` and `dmesg` become writable.** `ip` needs the
 resolver fixture as well. The `performance` tag gets its first pages from the hubs.

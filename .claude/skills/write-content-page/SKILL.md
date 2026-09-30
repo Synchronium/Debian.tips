@@ -236,7 +236,8 @@ because it would reduce the block to its column headers while the footer called 
   on a host figure in any compared output.
 - For each claim the page makes about that output, add a **proof example** that works the claim out
   and prints a fixed answer: `proves: "<the exempt example's title>"` on a command page, or
-  `<!-- verify: proof -->` above a pair that directly follows the exempt block on a prose page. The
+  `<!-- verify: proof -->` above a pair on a prose page, with no blank line anywhere in the three,
+  and no output block between it and the `verify: skip` pair it checks. The
   page marks it with a blue edge and a fixed sentence telling the reader it is there to be checked
   and they are unlikely to need it. So the description says what it establishes, and doesn't repeat
   why it exists. The build refuses a proof whose target is not exempt, and a proof that is exempt

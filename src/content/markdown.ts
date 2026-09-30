@@ -8,7 +8,7 @@ import rehypeStringify from "rehype-stringify";
 import { type Highlighter, type BundledLanguage, bundledLanguages, createHighlighter } from "shiki";
 import { extractShikiStyles } from "./shikiStyles.js";
 import { isProofDirective } from "./proseBlocks.js";
-import { raw } from "../html.js";
+import { html } from "../html.js";
 import { proofNote } from "../templates/partials/proofNote.js";
 
 export interface TocEntry {
@@ -136,12 +136,19 @@ function remarkShiki() {
  *  `verify: proof` comment sits above are wrapped in one block, with the sentence saying why the
  *  example is there placed before them.
  *
- *  Runs on the mdast, before `remarkShiki` turns the fences into HTML, and recognises the pair by
- *  the same directive test `src/content/proseBlocks.ts` uses. The loader has already refused a
- *  proof that does not follow an exempt block, so "the command above" is the one the sentence
- *  describes. The wrapper is two raw HTML nodes around the fences rather than a parent node,
- *  because the fences have to stay where `remarkShiki` looks for them. */
+ *  Runs on the mdast, before `remarkShiki` turns the fences into HTML. It recognises the pair by
+ *  the rule `src/content/proseBlocks.ts` pairs on: the directive test, and each of the three on
+ *  the line directly after the one before. Sibling nodes alone would also match across a blank
+ *  line, where the parser sees an unchecked block, and the note would call it checked. The
+ *  loader has already refused a proof that does not follow a `verify: skip` pair, so "the command
+ *  above" is the one the sentence describes. The wrapper is two raw HTML nodes around the fences
+ *  rather than a parent node, because the fences have to stay where `remarkShiki` looks for them. */
 function remarkProof() {
+  const adjacent = (above: any, below: any): boolean =>
+    above.position !== undefined &&
+    below.position !== undefined &&
+    below.position.start.line === above.position.end.line + 1;
+
   return (tree: any): void => {
     walk(tree, (node: any) => {
       if (!Array.isArray(node.children)) return;
@@ -150,7 +157,8 @@ function remarkProof() {
         const [directive, command, output] = [children[i], children[i + 1], children[i + 2]];
         if (directive.type !== "html" || !isProofDirective(directive.value)) continue;
         if (command.type !== "code" || command.lang !== "bash" || output.type !== "code" || output.lang) continue;
-        const open = { type: "html", value: `<div class="proof">\n${proofNote(raw("The command above")).toString()}` };
+        if (!adjacent(directive, command) || !adjacent(command, output)) continue;
+        const open = { type: "html", value: `<div class="proof">\n${proofNote(html`The command above`).toString()}` };
         const close = { type: "html", value: "</div>" };
         children.splice(i, 3, open, command, output, close);
         i += 3;

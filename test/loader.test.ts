@@ -383,7 +383,25 @@ describe("loadContent: proof examples", () => {
   it("rejects a prose proof straight after a checked block", async () => {
     const dir = brokenContent((d) => editFile(join(d, "scripting", "lesson-one.md"), (s) => s + PROSE_PROOF));
     await expect(loadContent(dir, harness())).rejects.toThrow(
-      /a `verify: proof` pair has to follow an exempt block/,
+      /a `verify: proof` pair has to follow a pair marked `verify: skip`/,
+    );
+  });
+
+  it("rejects a prose proof after an output with no command, which the note would call one", async () => {
+    const unpaired = "\nSomething prints:\n\n<!-- verify: skip printed elsewhere -->\n```\nhost\n```\n";
+    const dir = brokenContent((d) =>
+      editFile(join(d, "scripting", "lesson-two.md"), (s) => s + unpaired + PROSE_PROOF),
+    );
+    await expect(loadContent(dir, harness())).rejects.toThrow(
+      /a `verify: proof` pair has to follow a pair marked `verify: skip`/,
+    );
+  });
+
+  it("rejects a `verify: proof` comment that no pair carries", async () => {
+    const loose = "\n<!-- verify: proof -->\n```bash\necho checked\n```\n\n```\nchecked\n```\n";
+    const dir = brokenContent((d) => editFile(join(d, "scripting", "lesson-two.md"), (s) => s + loose));
+    await expect(loadContent(dir, harness())).rejects.toThrow(
+      /`verify: proof` has to sit on the line directly above/,
     );
   });
 });
@@ -407,6 +425,17 @@ describe("loadContent: a setup script with nothing to check", () => {
   it("is refused", async () => {
     await expect(loadContent(noOutput(), harnessWith("lesson-two"))).rejects.toThrow(
       /lesson-two\.sh exists but the page has no output for it to check/,
+    );
+  });
+
+  it("is refused when the page has sample files but no output, since fixtures alone teach nothing", async () => {
+    const filesOnly = brokenContent((d) =>
+      editFile(join(d, "commands", "greet", "examples.yaml"), (s) =>
+        s.replace(/ +output: \|2\n( {10}.*\n)+/g, ""),
+      ),
+    );
+    await expect(loadContent(filesOnly, harnessWith("greet"))).rejects.toThrow(
+      /greet\.sh exists but the page has no output for it to check/,
     );
   });
 

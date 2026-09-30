@@ -97,6 +97,10 @@ describe("exampleCard: a proof example", () => {
     expect(html.indexOf("proof-note")).toBeLessThan(html.indexOf("example-desc"));
   });
 
+  it("refuses to render without the anchor, rather than dropping the note", async () => {
+    await expect(card("sec", 2, proof)).rejects.toThrow(/no anchor was passed/);
+  });
+
   it("leaves an ordinary example unmarked", async () => {
     const html = await card("sec", 1, example({}));
     expect(html).not.toContain("proof");

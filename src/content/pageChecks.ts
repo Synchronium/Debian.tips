@@ -131,22 +131,33 @@ export function commandProofProblems(doc: ExamplesFile, slug: string, fixtureDir
 }
 
 /** The same rules for a prose page, where a proof is a pair marked `verify: proof` and the
- *  exempt block it backs up is the output block immediately before it. "Immediately before" is
- *  what lets the rendered sentence call it "the command above". */
+ *  exempt example it backs up is the output block immediately before it. The rendered sentence
+ *  calls that one "the command above", so it has to be a pair marked `verify: skip`: an exempt
+ *  output fence with no command has no command to be.
+ *
+ *  A `verify: proof` comment that no pair carries is refused as well, because the Markdown
+ *  pipeline would still mark whatever follows it, and the note would then call an unchecked
+ *  block checked. */
 export function proseProofProblems(source: string): string[] {
-  const { pairs, unpaired } = parseProsePage(source);
+  const { pairs, unpaired, strayProofs } = parseProsePage(source);
+  const problems = strayProofs.map(
+    (line) =>
+      `line ${line}: \`verify: proof\` has to sit on the line directly above a \`bash\` fence, ` +
+      `with the output fence opening on the line after that one closes`,
+  );
+
   const blocks = [
-    ...pairs.map((pair) => ({ line: pair.line, exempt: pair.comparison === COMPARISON.skip, proof: pair.proof })),
-    ...unpaired.map((block) => ({ line: block.line, exempt: true, proof: false })),
+    ...pairs.map((pair) => ({ line: pair.line, skipped: pair.comparison === COMPARISON.skip, proof: pair.proof })),
+    ...unpaired.map((block) => ({ line: block.line, skipped: false, proof: false })),
   ].sort((a, b) => a.line - b.line);
 
-  const problems: string[] = [];
   for (const [index, block] of blocks.entries()) {
     if (!block.proof) continue;
     const before = blocks[index - 1];
-    if (before === undefined || !before.exempt) {
+    if (before === undefined || !before.skipped) {
       problems.push(
-        `line ${block.line}: a \`verify: proof\` pair has to follow an exempt block, the one whose claim it checks`,
+        `line ${block.line}: a \`verify: proof\` pair has to follow a pair marked \`verify: skip\`, ` +
+          `the command whose claim it checks`,
       );
     }
   }

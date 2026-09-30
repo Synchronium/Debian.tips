@@ -178,6 +178,12 @@ describe("renderMarkdown: a proof pair", () => {
     expect(html.indexOf("</div>", open)).toBeGreaterThan(html.indexOf(">checked<"));
   });
 
+  it("does not wrap across a blank line, where the parser sees no proof pair", async () => {
+    const loose = "<!-- verify: proof -->\n```bash\necho checked\n```\n\n```\nchecked\n```\n";
+    const { html } = await renderMarkdown(loose);
+    expect(html).not.toContain('class="proof"');
+  });
+
   it("leaves a page with no proof unwrapped", async () => {
     const { html } = await renderMarkdown("```bash\necho hi\n```\n```\nhi\n```\n");
     expect(html).not.toContain('class="proof"');

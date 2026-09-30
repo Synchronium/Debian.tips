@@ -360,6 +360,12 @@ export async function loadContent(
   // A setup script with nothing to check is refused too. The footer would offer a replay command
   // that checks nothing, and the likeliest way to get there is a page whose output fences have
   // stopped pairing with their commands, which leaves the blocks on the page and out of the replay.
+  // Sample-file `fixtures:` do not count: a page that shows files and no command output has nothing
+  // to teach with them, so it is refused rather than given a sentence of its own.
+  //
+  // Counted from what the page carries, not from what the replay last reported: the build has no
+  // sandbox. They agree because both sides read the same partition: see `src/content/pageChecks.ts`.
+  const checksFor = new Map<RawEntry, PageChecks>();
   for (const entry of raw) {
     const isCommand = entry.category === COMMANDS_CATEGORY;
     const problems = isCommand
@@ -368,6 +374,7 @@ export async function loadContent(
     if (problems.length > 0) throw new ContentError(`${entry.file}: ${problems.join("; ")}`);
 
     const checks = isCommand ? commandChecks(entry.examples, entry.slug, fixtureDir) : proseChecks(entry.body);
+    checksFor.set(entry, checks);
     const setup = fixtureScript(entry.slug, fixtureDir);
     if (existsSync(setup) && checks.checked + checks.exempt === 0) {
       throw new ContentError(
@@ -414,6 +421,8 @@ export async function loadContent(
   );
 
   const built = rendered.map(({ entry, html, toc }) => {
+    const checks = checksFor.get(entry);
+    if (checks === undefined) throw new Error(`${entry.file}: rendered without its checks being counted`);
     const base = {
       slug: entry.slug,
       url: urlFor(entry.category, entry.slug),
@@ -428,13 +437,7 @@ export async function loadContent(
       html,
       toc,
       sources: pageSources(entry.category, entry.slug, contentDir, fixtureDir),
-      // Counted from what the page carries, not from what the replay last reported: the build
-      // has no sandbox. They agree because both sides read the same partition: see
-      // `src/content/pageChecks.ts`.
-      checks:
-        entry.category === COMMANDS_CATEGORY
-          ? commandChecks(entry.examples, entry.slug, fixtureDir)
-          : proseChecks(entry.body),
+      checks,
     };
 
     const page = ((): Page => {

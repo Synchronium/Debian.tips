@@ -19,8 +19,8 @@ export function exampleId(sectionSlug: string, index: number): string {
   return `${sectionSlug}-${index}`;
 }
 
-/** `proven` is the anchor of the example this one `proves:`, when it names one. Resolved by the
- *  page, because an example cannot see its siblings. */
+/** `proven` is the anchor of the example this one `proves:`, and is required when it names one.
+ *  Resolved by the page, because an example cannot see its siblings. */
 export async function exampleCard(
   sectionSlug: string,
   index: number,
@@ -47,11 +47,17 @@ export async function exampleCard(
     ? await renderInline(example.volatile, `example "${example.title}" volatile note`)
     : "";
 
-  const proofHtml =
-    example.proves !== undefined && proven !== undefined
-      ? proofNote(html`The command in <a href="#${proven}">“${example.proves}”</a>`)
-      : EMPTY_HTML;
-  const classes = ["example", example.danger ? "example-danger" : "", proven ? "example-proof" : ""]
+  // The loader has refused a `proves:` naming no example, so a missing anchor is a caller that
+  // forgot to pass it. Rendering the card unmarked would hide the note from the reader and fail
+  // nothing.
+  const isProof = example.proves !== undefined;
+  if (isProof && proven === undefined) {
+    throw new Error(`example "${example.title}" proves "${example.proves}", but no anchor was passed for it`);
+  }
+  const proofHtml = isProof
+    ? proofNote(html`The command in <a href="#${proven}">“${example.proves}”</a>`)
+    : EMPTY_HTML;
+  const classes = ["example", example.danger ? "example-danger" : "", isProof ? "example-proof" : ""]
     .filter((name) => name !== "")
     .join(" ");
 

@@ -333,9 +333,10 @@ asking for the mechanism. Try each of the others the cheap way first.
   mailed to a machine with no MTA, and a 127 nobody reads, plus the three failures that produce
   the same symptom with `PATH` in perfect order.
 - **`why-is-this-process-using-so-much-cpu`** and
-  **`why-is-this-process-using-so-much-memory`**. **Needs**: `top` and `free`, written under ADR-0029. **Demo**: a process spinning against one
-  that is blocked; resident against virtual size; cache and buffers counted as used, which is the
-  misreading `free` invites. These two give the `performance` tag its first pages.
+  **`why-is-this-process-using-so-much-memory`**. **Needs**: `top` and `free`, written under
+  ADR-0029. **Demo**: a process spinning against one that is blocked; resident against virtual
+  size; cache and buffers counted as used, which is the misreading `free` invites. These two give
+  the `performance` tag its first pages.
 
   **Unblocked by ADR-0029.** `free` and `top` report the host's memory rather than the
   container's, so their ordinary output is exempt and names the host figures. What these pages
