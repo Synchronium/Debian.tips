@@ -63,7 +63,8 @@ not in `docs/adr/`.
 1. **Scenario-aware verification** (§4.1). A page declares which of several named states an example
    needs, and the page's existing setup script dispatches on the name.
 2. **A four-state verification status** (§4.2), replacing a figure that currently cannot
-   distinguish a fully verified page from one that verifies nothing.
+   distinguish a fully verified page from one that verifies nothing. Proposed as ADR-0029, which
+   also settles the memory question in §5.3.
 3. **Naming the release a page was verified against** (§4.3), which changes what every page claims.
 
 ## §2. Where the site is now
@@ -214,25 +215,17 @@ to fail should be able to ask for longer.
 
 ### §4.2. A verification status a reader can act on
 
-**Needs**: nothing. **Blocks**: any prose page under §3.3's gate 2.
+**Needs**: nothing. **Blocks**: any prose page under §3.3's gate 2, and everything that shows a
+figure about the host.
 
-A prose page with a setup script and no command-output pairs reports 0/0 and passes. It counts in
-neither the replayed nor the unreplayed figure, so it looks identical to a fully verified page in
-everything the site publishes about itself. No page is in that state, and allowing prose pages
-guarantees that some will be.
+Most of this has been built since it was written. Every page footer already says how many outputs it
+checks, how many of those by shape or in any order, and how many are exempt, and a page whose
+outputs are all exempt says so in a sentence of its own. What is left is a page with no output to
+check, whose footer either says nothing or says its examples were checked by hand.
 
-Four states, replacing the current pass:
-
-- **Verified**: every documented output was replayed.
-- **Partially verified**: some outputs were replayed, and some claims on the page sit outside the
-  harness. Most pages will land here once the distinction exists.
-- **Exempt**: the page documents something the harness cannot re-run, and names how it was checked
-  instead.
-- **No executable examples**: a prose page with nothing to replay.
-
-This is also the honest form of a badge saying a problem was reproduced. The replay checks that a
-documented output still matches what the command printed. It has no notion of a problem, so a page
-claiming one would be asserting something its own verification does not check.
+`docs/adr/0029-a-figure-about-the-host-is-never-a-checked-output.md` proposes closing that, together
+with the question of what a page may claim about memory, load, uptime and other figures that belong
+to the host. Until it is accepted, this entry and the blocked entries in §5.3 and §6.1 stay open.
 
 ### §4.3. Name the release a page was verified against
 
@@ -340,8 +333,8 @@ asking for the mechanism. Try each of the others the cheap way first.
   mailed to a machine with no MTA, and a 127 nobody reads, plus the three failures that produce
   the same symptom with `PATH` in perfect order.
 - **`why-is-this-process-using-so-much-cpu`** and
-  **`why-is-this-process-using-so-much-memory`**. **Needs**: a decision about what a container may
-  honestly report about memory, and then `top` and `free`. **Demo**: a process spinning against one
+  **`why-is-this-process-using-so-much-memory`**. **Needs**: ADR-0029 accepted (it is proposed), and
+  then `top` and `free`. **Demo**: a process spinning against one
   that is blocked; resident against virtual size; cache and buffers counted as used, which is the
   misreading `free` invites. These two give the `performance` tag its first pages.
 
@@ -381,7 +374,7 @@ has what sharing it cost.
   `/sys/fs/cgroup/memory.max` is `max`, so there is no limit to report instead. `compare: shape`
   masks every digit, which leaves a page verifying its column headers. The figures are also ones
   the reader could never see, which §4b says to remove rather than declare volatile. Writing these
-  needs the decision in the immediate backlog about what verification owes a page it cannot check,
+  needs ADR-0029, proposed, which settles what verification owes a page it cannot check,
   and that decision also gates the two hubs in §5.3, which are built on `free`'s cache-counted-as-
   used misreading. Do not start them before it is made.
 - **`dmesg`** (`light`). **Needs**: nothing. **Demo**: what a container can and cannot see, said

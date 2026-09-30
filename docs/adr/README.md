@@ -55,6 +55,7 @@ command shown. These records keep that claim honest.
 | [0005](0005-volatile-output-and-exemptions.md) | Output that cannot reproduce exactly is declared, never quietly excused |
 | [0020](0020-one-container-per-page.md) | Every page is replayed in a container of its own |
 | [0021](0021-every-output-block-is-accounted-for.md) | Every block shown as output is either checked or explained |
+| [0029](0029-a-figure-about-the-host-is-never-a-checked-output.md) (proposed) | A figure about the host is never a checked output, and a page with no output to check says so |
 
 ### The content model
 
