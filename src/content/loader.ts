@@ -30,7 +30,13 @@ import {
 } from "../paths.js";
 import { type TocEntry, renderMarkdown } from "./markdown.js";
 import { type PageSources, pageSources } from "./sourcePaths.js";
-import { type PageChecks, commandChecks, proseChecks } from "./pageChecks.js";
+import {
+  type PageChecks,
+  commandChecks,
+  commandProofProblems,
+  proseChecks,
+  proseProofProblems,
+} from "./pageChecks.js";
 
 export class ContentError extends Error {}
 
@@ -345,6 +351,29 @@ export async function loadContent(
           }
         }
       }
+    }
+  }
+
+  // ADR-0029. A proof example tells the reader why it is on the page, and the sentence it shows is
+  // only true while the page is arranged the way that sentence describes.
+  //
+  // A setup script with nothing to check is refused too. The footer would offer a replay command
+  // that checks nothing, and the likeliest way to get there is a page whose output fences have
+  // stopped pairing with their commands, which leaves the blocks on the page and out of the replay.
+  for (const entry of raw) {
+    const isCommand = entry.category === COMMANDS_CATEGORY;
+    const problems = isCommand
+      ? commandProofProblems(entry.examples, entry.slug, fixtureDir)
+      : proseProofProblems(entry.body);
+    if (problems.length > 0) throw new ContentError(`${entry.file}: ${problems.join("; ")}`);
+
+    const checks = isCommand ? commandChecks(entry.examples, entry.slug, fixtureDir) : proseChecks(entry.body);
+    const setup = fixtureScript(entry.slug, fixtureDir);
+    if (existsSync(setup) && checks.checked + checks.exempt === 0) {
+      throw new ContentError(
+        `${entry.file}: ${repoPath(setup)} exists but the page has no output for it to check. ` +
+          `Delete the script, or check that each output fence opens on the line after its command fence closes`,
+      );
     }
   }
 

@@ -22,7 +22,25 @@ import { COMPARISON, type Comparison } from "./schema.js";
  *
  * The vocabulary itself is `COMPARISON` in src/content/schema.ts, shared with the `compare:`
  * field on a command page's examples. Two field names for one idea, which is only safe while
- * they stay in step. */
+ * they stay in step.
+ *
+ *    <!-- verify: proof -->
+ *
+ * marks a pair as a proof example (ADR-0029): compared exactly like any other, but on the page
+ * only to check a claim about the exempt block immediately before it, whose output describes the
+ * host. It is the prose spelling of `proves:` on a command page, and it takes no note, because
+ * the page renders one fixed sentence above it saying why it is there. */
+
+/** The keyword after `verify:` that marks a proof pair. Not a mode of `COMPARISON`, because a
+ *  proof is compared exactly: it says why an example exists, rather than how it is checked. */
+export const PROOF_DIRECTIVE = "proof";
+const PROOF = new RegExp(`^\\s*<!--\\s*verify:\\s*${PROOF_DIRECTIVE}\\s*-->\\s*$`);
+
+/** Whether a line is the proof directive. Exported for the Markdown pipeline, which marks the
+ *  pair on the rendered page and has to agree with this parser about which pair that is. */
+export function isProofDirective(line: string): boolean {
+  return PROOF.test(line);
+}
 
 export interface ProsePair {
   /** Shell to run, verbatim from the ```bash fence. */
@@ -34,6 +52,8 @@ export interface ProsePair {
   comparison: Comparison;
   /** Text after the directive keyword: why it is skipped, or what differs by machine. */
   note: string;
+  /** Marked `verify: proof`: on the page to check a claim about the exempt block before it. */
+  proof: boolean;
 }
 
 /** An output fence with no command fence immediately above it: a claim about what something
@@ -134,6 +154,7 @@ export function parseProsePage(source: string): ProsePage {
       line: fence.start,
       comparison: (directive?.[1] as Comparison | undefined) ?? COMPARISON.exact,
       note: directive?.[2] ?? "",
+      proof: isProofDirective(lines[fence.start - 2] ?? ""),
     });
   }
 

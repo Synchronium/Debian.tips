@@ -1,3 +1,5 @@
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadContent } from "../src/content/loader.js";
@@ -63,6 +65,22 @@ describe("verificationStats", () => {
     const allExempt = verificationStats(pages, FIXTURE_CONTENT, FIXTURE_ALL_EXEMPT);
     expect(allExempt.prosePages).toBe(0); // lesson-two opted in and contributes no automated outputs
     expect(allExempt.unreplayedProsePages).toBe(1); // lesson-one, which has no script here
+  });
+
+  it("does not count a page with no output as one missing a setup script", async () => {
+    // ADR-0029. Such a page makes no claim for a script to check, so it needs none, and counting it
+    // would report a page that is complete as one still waiting for work.
+    const dir = mkdtempSync(join(tmpdir(), "debian-tips-stats-"));
+    try {
+      cpSync(FIXTURE_CONTENT, dir, { recursive: true });
+      const lesson = join(dir, "scripting", "lesson-two.md");
+      const source = readFileSync(lesson, "utf-8");
+      writeFileSync(lesson, source.slice(0, source.indexOf("A pair whose only block")), "utf-8");
+      const { pages } = await loadContent(dir, NO_HARNESS);
+      expect(verificationStats(pages, dir, NO_HARNESS).unreplayedProsePages).toBe(1); // lesson-one only
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 

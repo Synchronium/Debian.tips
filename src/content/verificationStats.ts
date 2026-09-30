@@ -87,10 +87,6 @@ function countProse(
   let unreplayedProsePages = 0;
   for (const page of pages) {
     if (!(PROSE_CATEGORIES as readonly string[]).includes(page.category)) continue;
-    if (!existsSync(fixtureScript(page.slug, fixtureDir))) {
-      unreplayedProsePages++;
-      continue;
-    }
     // A page in the model always has a source file; this only guards a caller passing a content
     // directory the pages did not come from.
     const source = proseSource(page.category, page.slug, contentDir);
@@ -99,6 +95,12 @@ function countProse(
     // because the synthetic tree in `test/fixtures/` is counted without going through a build;
     // a test asserts the two agree on the real tree.
     const { checked, exempt } = proseChecks(readFileSync(source, "utf-8"));
+    if (!existsSync(fixtureScript(page.slug, fixtureDir))) {
+      // A page with no output needs no script, so it is not one of the pages still missing one.
+      // ADR-0029.
+      if (checked + exempt > 0) unreplayedProsePages++;
+      continue;
+    }
     // Counted before the `checked === 0` test below, because a page every one of whose blocks is
     // exempt still documents those blocks, and `exemptions` is the figure that says how many of
     // those exist site-wide. Leaving them out would make the total smaller than the sum of the

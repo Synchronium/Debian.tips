@@ -159,3 +159,27 @@ describe("highlightCode", () => {
     expect(shikiStyleCss()).toContain("--shiki-dark");
   });
 });
+
+/* ADR-0029, the prose spelling of `proves:`. The comment itself never reaches the reader, so the
+ * wrapper and the note are the only sign on the page that the pair is there to be checked. */
+describe("renderMarkdown: a proof pair", () => {
+  const source =
+    "Intro.\n\n<!-- verify: skip host figures -->\n```bash\nfree -m\n```\n```\nMem: 1\n```\n\n" +
+    "<!-- verify: proof -->\n```bash\necho checked\n```\n```\nchecked\n```\n";
+
+  it("wraps the proof pair, with the note before its command", async () => {
+    const { html } = await renderMarkdown(source);
+    const open = html.indexOf('<div class="proof">');
+    expect(open).toBeGreaterThan(-1);
+    expect(html.indexOf("Why this example is here:")).toBeGreaterThan(open);
+    expect(html.indexOf("The command above")).toBeLessThan(html.indexOf("echo"));
+    // Only the proof pair is inside the wrapper: the exempt block before it is left alone.
+    expect(html.indexOf("free")).toBeLessThan(open);
+    expect(html.indexOf("</div>", open)).toBeGreaterThan(html.indexOf(">checked<"));
+  });
+
+  it("leaves a page with no proof unwrapped", async () => {
+    const { html } = await renderMarkdown("```bash\necho hi\n```\n```\nhi\n```\n");
+    expect(html).not.toContain('class="proof"');
+  });
+});

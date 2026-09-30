@@ -1,10 +1,12 @@
 # ADR-0029: A figure about the host is never a checked output
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Recorded:** 2026-09-30
-- **Enforced by:** nothing yet. The decision names two checks, a test that refuses a host figure in a
-  compared output and a build error for a replayed page with nothing to replay, and neither exists
-  until this record is accepted.
+- **Enforced by:** `test/hostFigures.test.ts`, for a host figure in a compared output;
+  `commandProofProblems` and `proseProofProblems` in `src/content/pageChecks.ts`, which the loader
+  fails the build on, for a proof example the page is not arranged to support; and the loader's
+  refusal of a setup script with no output to check. Whether a proof's claim holds on every machine
+  is enforced by nothing, and is the author's to establish.
 
 ## Context
 
@@ -101,6 +103,18 @@ property of the tool, such as how `free` defines a column. A property of the mac
 usually true, like there being more available memory than free, is stated in prose with its
 condition.
 
+**A proof example is marked, and says why it is there.** A command whose only job is to be checked
+is one a reader would otherwise take for a command worth learning, and copying it teaches them
+nothing they came for. So it is set apart in two ways that do not depend on the author remembering
+to explain it. It carries a coloured edge in the way a dangerous example does, in a colour of its
+own. And above its description, the page states in one fixed sentence that the other command's
+output belongs to the machine and cannot be checked, that this one is there to check what the page
+says about it, and that the reader is unlikely to need it. The sentence links to the example it
+stands for on a command page, and says "the command above" on a prose page. A command page marks one
+with `proves:`, naming the exempt example's title, and a prose page with `<!-- verify: proof -->`
+above a pair that directly follows the exempt block. The sentence is written once, in
+`src/templates/partials/proofNote.ts`, and `/about/` explains the arrangement in its own section.
+
 **A figure about a process or object the fixture built is an ordinary output**, compared exactly
 where it reproduces and by shape where it moves. Process memory is expected to differ between
 architectures, because the same program is a different binary on each. So a page states it as a
@@ -125,17 +139,19 @@ naming one.
 **`free`, `top`, the CPU and memory hubs, `uptime` and `dmesg` become writable.** `ip` needs the
 resolver fixture as well. The `performance` tag gets its first pages from the hubs.
 
-**Two checks follow if this is accepted.** A test in the style of `test/architecture.test.ts` looks
-for host-figure signatures, such as `free`'s `Mem:` and `Swap:` rows or a `load average:` line, in
-compared outputs, and fails on them. The build error for a replayed page with nothing to check goes
-in `src/content/pageChecks.ts`, with the footer sentence in `sourceLinks.ts`. A signature list is
-pattern matching and misses forms it does not know, the limitation ADR-0027 accepts for dates. So the
-test also runs each signature against a real captured output of its command and requires a match,
-which stops a broken pattern from passing every page without matching anything.
+**The host-figure test is pattern matching.** `test/hostFigures.test.ts` looks for signatures such
+as `free`'s `Mem:` and `Swap:` rows or a `load average:` line in compared outputs, and misses forms
+it does not know, the limitation ADR-0027 accepts for dates. Each signature is also run against a
+line its command really printed in the sandbox, which stops a broken pattern from passing every page
+without matching anything. A bare number such as `nproc` prints has no signature at all, so it is
+kept out of compared output by the author alone.
 
 **The derived-claim examples read less like what a reader types.** They sit beside the ordinary
 command, and their description says what they establish. A page whose every example is a derivation
 has lost the ordinary command, and that page should be a concept page instead.
+
+**A proof example costs the page some of its reader's attention**, so a page uses one only where it
+teaches something about a host figure, and never to pad the example count.
 
 **`PLAN-CONTENT.md` §4.2 closes**, and §1.4, §5.3 and §6.1 point here.
 

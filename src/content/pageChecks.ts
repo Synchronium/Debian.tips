@@ -99,3 +99,56 @@ export function proseChecks(source: string): PageChecks {
     fixtures: 0,
   };
 }
+
+/** What is wrong with a command page's proof examples (ADR-0029), as messages for the loader to
+ *  fail on. Empty when nothing is.
+ *
+ *  Each rule is something the sentence above a proof example tells the reader. It says the named
+ *  example's output cannot be checked, so that example has to be exempt; and it says this one's
+ *  answer is re-run on every change, so this one has to document an output that is not. */
+export function commandProofProblems(doc: ExamplesFile, slug: string, fixtureDir?: string): string[] {
+  const { checked, exempt } = partitionExamples(doc, slug, fixtureDir);
+  const all = doc.sections.flatMap((section) => section.examples);
+  const problems: string[] = [];
+  for (const example of all) {
+    if (example.proves === undefined) continue;
+    const where = `example "${example.title}"`;
+    const named = all.filter((other) => other.title === example.proves);
+    if (named.length !== 1) {
+      problems.push(
+        `${where}: proves "${example.proves}", which names ${named.length === 0 ? "no example" : `${named.length} examples`} on this page`,
+      );
+      continue;
+    }
+    if (!exempt.some((other) => other.title === example.proves)) {
+      problems.push(`${where}: proves "${example.proves}", which is not listed in the page's .skip file`);
+    }
+    if (!checked.some((other) => other.title === example.title)) {
+      problems.push(`${where}: a proof has to document an output that the replay checks`);
+    }
+  }
+  return problems;
+}
+
+/** The same rules for a prose page, where a proof is a pair marked `verify: proof` and the
+ *  exempt block it backs up is the output block immediately before it. "Immediately before" is
+ *  what lets the rendered sentence call it "the command above". */
+export function proseProofProblems(source: string): string[] {
+  const { pairs, unpaired } = parseProsePage(source);
+  const blocks = [
+    ...pairs.map((pair) => ({ line: pair.line, exempt: pair.comparison === COMPARISON.skip, proof: pair.proof })),
+    ...unpaired.map((block) => ({ line: block.line, exempt: true, proof: false })),
+  ].sort((a, b) => a.line - b.line);
+
+  const problems: string[] = [];
+  for (const [index, block] of blocks.entries()) {
+    if (!block.proof) continue;
+    const before = blocks[index - 1];
+    if (before === undefined || !before.exempt) {
+      problems.push(
+        `line ${block.line}: a \`verify: proof\` pair has to follow an exempt block, the one whose claim it checks`,
+      );
+    }
+  }
+  return problems;
+}

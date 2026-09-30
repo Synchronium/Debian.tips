@@ -7,6 +7,9 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeStringify from "rehype-stringify";
 import { type Highlighter, type BundledLanguage, bundledLanguages, createHighlighter } from "shiki";
 import { extractShikiStyles } from "./shikiStyles.js";
+import { isProofDirective } from "./proseBlocks.js";
+import { raw } from "../html.js";
+import { proofNote } from "../templates/partials/proofNote.js";
 
 export interface TocEntry {
   level: 2 | 3;
@@ -126,6 +129,33 @@ function remarkShiki() {
       delete node.lang;
       delete node.meta;
     }
+  };
+}
+
+/** Marks a proof pair on a prose page (ADR-0029): the `bash` fence and the output fence that a
+ *  `verify: proof` comment sits above are wrapped in one block, with the sentence saying why the
+ *  example is there placed before them.
+ *
+ *  Runs on the mdast, before `remarkShiki` turns the fences into HTML, and recognises the pair by
+ *  the same directive test `src/content/proseBlocks.ts` uses. The loader has already refused a
+ *  proof that does not follow an exempt block, so "the command above" is the one the sentence
+ *  describes. The wrapper is two raw HTML nodes around the fences rather than a parent node,
+ *  because the fences have to stay where `remarkShiki` looks for them. */
+function remarkProof() {
+  return (tree: any): void => {
+    walk(tree, (node: any) => {
+      if (!Array.isArray(node.children)) return;
+      const children: any[] = node.children;
+      for (let i = 0; i + 2 < children.length; i++) {
+        const [directive, command, output] = [children[i], children[i + 1], children[i + 2]];
+        if (directive.type !== "html" || !isProofDirective(directive.value)) continue;
+        if (command.type !== "code" || command.lang !== "bash" || output.type !== "code" || output.lang) continue;
+        const open = { type: "html", value: `<div class="proof">\n${proofNote(raw("The command above")).toString()}` };
+        const close = { type: "html", value: "</div>" };
+        children.splice(i, 3, open, command, output, close);
+        i += 3;
+      }
+    });
   };
 }
 
@@ -278,6 +308,7 @@ export async function renderInline(source: string, context: string): Promise<str
 const pageProcessor = unified()
   .use(remarkParse)
   .use(remarkGfm)
+  .use(remarkProof)
   .use(remarkShiki)
   .use(remarkRehype, { allowDangerousHtml: true })
   .use(rehypeSlug)

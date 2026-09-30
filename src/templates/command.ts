@@ -6,7 +6,7 @@ import { breadcrumbs } from "./partials/breadcrumbs.js";
 import { tagChips } from "./partials/tagChips.js";
 import { related } from "./partials/related.js";
 import { toc } from "./partials/toc.js";
-import { exampleCard } from "./partials/exampleCard.js";
+import { exampleCard, exampleId } from "./partials/exampleCard.js";
 import { sourceLinks } from "./partials/sourceLinks.js";
 import { highlightCode, renderInline, type TocEntry } from "../content/markdown.js";
 import type { CommandPage } from "../content/loader.js";
@@ -73,6 +73,16 @@ export async function commandPage(page: CommandPage, cssHref: string): Promise<R
   // between the two is invalid HTML and makes the section unreachable by anchor: the
   // TOC renders two entries pointing at the same target.
   const seenSectionSlugs = new Set<string>(page.toc.map((entry) => entry.id));
+
+  // Every example's anchor by title, so a proof example can link to the one it `proves:`. The
+  // loader has already refused a `proves:` naming no example, or more than one.
+  const anchors = new Map<string, string>();
+  for (const section of examplesFile.sections) {
+    section.examples.forEach((example, i) =>
+      anchors.set(example.title, exampleId(slugify(section.title), i + 1)),
+    );
+  }
+
   const sectionsHtml = await Promise.all(
     examplesFile.sections.map(async (section) => {
       const sectionSlug = slugify(section.title);
@@ -82,7 +92,11 @@ export async function commandPage(page: CommandPage, cssHref: string): Promise<R
         );
       }
       seenSectionSlugs.add(sectionSlug);
-      const cards = await Promise.all(section.examples.map((ex, i) => exampleCard(sectionSlug, i + 1, ex)));
+      const cards = await Promise.all(
+        section.examples.map((ex, i) =>
+          exampleCard(sectionSlug, i + 1, ex, ex.proves === undefined ? undefined : anchors.get(ex.proves)),
+        ),
+      );
       const intro = section.intro
         ? await renderInline(section.intro, `section "${section.title}" intro`)
         : "";

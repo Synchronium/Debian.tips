@@ -50,6 +50,10 @@
   --ok: light-dark(#1a7f43, #6fd08c);
   --warn: light-dark(#8a6100, #f2c14e);
   --danger: light-dark(#b42318, #ff8080);
+  /* A proof example (ADR-0029): on the page to be checked rather than to be learned. Blue, to be
+     told apart at a glance from `--danger` on the same kind of edge, and from `--accent`, which
+     is what a link or a hovered title turns. */
+  --proof: light-dark(#1d5fa8, #7ab4f5);
 }
 
 /* The toggle's two states. Pinning `color-scheme` re-resolves every `light-dark()` above at
@@ -1516,6 +1520,29 @@ pre[data-prompt] .line::before {
 .example-danger {
   border-inline-start: 2px solid var(--danger);
   padding-inline-start: var(--space-5);
+}
+
+/* A proof example, and its prose counterpart: the same edge `.example-danger` uses, in the proof
+   colour, so the two read as the same kind of marking. The note above the description says why
+   the example is there, and takes the colour for its label only, so the body stays as legible as
+   the description beside it. */
+.example-proof,
+.proof {
+  border-inline-start: 2px solid var(--proof);
+  padding-inline-start: var(--space-5);
+}
+.proof {
+  margin-top: var(--space-5);
+}
+.proof-note {
+  margin: var(--space-3) 0;
+  max-width: var(--measure);
+  font-size: var(--fs-s);
+  color: var(--text-muted);
+}
+.proof-note strong {
+  color: var(--proof);
+  font-weight: 600;
 }
 .section-intro {
   color: var(--text-muted);

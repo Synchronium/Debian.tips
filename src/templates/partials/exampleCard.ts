@@ -1,4 +1,5 @@
-import { html, raw, type Raw } from "../../html.js";
+import { EMPTY_HTML, html, raw, type Raw } from "../../html.js";
+import { proofNote } from "./proofNote.js";
 import { highlightCode, renderInline } from "../../content/markdown.js";
 import type { Example } from "../../content/schema.js";
 
@@ -13,8 +14,20 @@ function isPromptable(code: string): boolean {
   return !code.includes("\n") && !code.includes("|");
 }
 
-export async function exampleCard(sectionSlug: string, index: number, example: Example): Promise<Raw> {
-  const id = `${sectionSlug}-${index}`;
+/** An example's anchor on its page, which is also what `proves:` links to. */
+export function exampleId(sectionSlug: string, index: number): string {
+  return `${sectionSlug}-${index}`;
+}
+
+/** `proven` is the anchor of the example this one `proves:`, when it names one. Resolved by the
+ *  page, because an example cannot see its siblings. */
+export async function exampleCard(
+  sectionSlug: string,
+  index: number,
+  example: Example,
+  proven?: string,
+): Promise<Raw> {
+  const id = exampleId(sectionSlug, index);
 
   let codeHtml = injectAttr(await highlightCode(example.code, "bash"), 'aria-label="command"');
   if (isPromptable(example.code)) codeHtml = injectAttr(codeHtml, 'data-prompt="1"');
@@ -34,12 +47,21 @@ export async function exampleCard(sectionSlug: string, index: number, example: E
     ? await renderInline(example.volatile, `example "${example.title}" volatile note`)
     : "";
 
-  return html`<article class="example${example.danger ? " example-danger" : ""}" id="${id}">
+  const proofHtml =
+    example.proves !== undefined && proven !== undefined
+      ? proofNote(html`The command in <a href="#${proven}">“${example.proves}”</a>`)
+      : EMPTY_HTML;
+  const classes = ["example", example.danger ? "example-danger" : "", proven ? "example-proof" : ""]
+    .filter((name) => name !== "")
+    .join(" ");
+
+  return html`<article class="${classes}" id="${id}">
 <h3 class="example-title"><a href="#${id}">${example.title}</a></h3>
 <div class="example-code">
 ${raw(codeHtml)}
 <button class="copy" type="button" aria-label="Copy command" data-copy="${example.code}">Copy</button>
 </div>
+${proofHtml}
 <p class="example-desc">${raw(descHtml)}</p>
 ${
   outputHtml

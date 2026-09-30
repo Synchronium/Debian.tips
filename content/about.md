@@ -89,6 +89,22 @@ cannot, since the plain listing is most of what it has to show you. Its listings
 too, and the comparison ignores the sequence. Everything else about the rows is compared as
 usual.
 
+## Figures that belong to the machine
+
+A few commands report on the machine rather than on anything a page sets up: how much memory it
+has and how much is free, its load average, how long it has been up. Inside the container that
+runs the checks, those figures belong to whatever computer the container happens to be running
+on. They differ between two runs of the same page, and none of them would match yours.
+
+An example like that is shown as it really printed, and it is one of the exempt examples above,
+with the reason recorded beside it. What the page tells you about that output is still checked,
+by a second example that works the claim out and prints the answer. Its answer is the same on
+every machine, so it can be re-run on every change like everything else.
+
+That second example is marked with a blue edge and a note saying why it is there. You are
+unlikely to need it yourself. It is on the page as evidence that the explanation around it is
+true.
+
 ## Read it yourself
 
 The generator, the content, the container definition, the replay harness and its tests are

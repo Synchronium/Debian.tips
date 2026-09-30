@@ -74,3 +74,31 @@ it("says nothing about differing output on an ordinary example", async () => {
   });
   expect(html).not.toContain("Your output will differ");
 });
+
+/* ADR-0029. The note is the reader's only way to tell a command they would type from one that is on
+ * the page to be checked, so both the marking and the link back to the example it stands for are
+ * asserted rather than left to a screenshot. */
+describe("exampleCard: a proof example", () => {
+  const proof = example({ title: "Check it", proves: "Read the totals", output: "yes" });
+
+  it("is marked, and says why it is there", async () => {
+    const html = await card("sec", 2, proof, "sec-1");
+    expect(html).toContain('class="example example-proof"');
+    expect(html).toContain("Why this example is here:");
+  });
+
+  it("links to the example it stands for", async () => {
+    const html = await card("sec", 2, proof, "sec-1");
+    expect(html).toContain('<a href="#sec-1">“Read the totals”</a>');
+  });
+
+  it("puts the note before the description", async () => {
+    const html = await card("sec", 2, proof, "sec-1");
+    expect(html.indexOf("proof-note")).toBeLessThan(html.indexOf("example-desc"));
+  });
+
+  it("leaves an ordinary example unmarked", async () => {
+    const html = await card("sec", 1, example({}));
+    expect(html).not.toContain("proof");
+  });
+});
