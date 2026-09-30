@@ -360,8 +360,8 @@ export async function loadContent(
   // A setup script with nothing to check is refused too. The footer would offer a replay command
   // that checks nothing, and the likeliest way to get there is a page whose output fences have
   // stopped pairing with their commands, which leaves the blocks on the page and out of the replay.
-  // Sample-file `fixtures:` do not count: a page that shows files and no command output has nothing
-  // to teach with them, so it is refused rather than given a sentence of its own.
+  // Sample-file `fixtures:` do not count. The replay re-reads them, but a command page showing files
+  // and no command output has nothing to teach with them, so it is refused as a broken page.
   //
   // Counted from what the page carries, not from what the replay last reported: the build has no
   // sandbox. They agree because both sides read the same partition: see `src/content/pageChecks.ts`.

@@ -28,8 +28,8 @@ import { COMPARISON, type Comparison } from "./schema.js";
  *
  * marks a pair as a proof example (ADR-0029): compared exactly like any other, but on the page
  * only to check a claim about the `verify: skip` pair immediately before it, whose output
- * describes the host. It is the prose spelling of `proves:` on a command page, and it takes no note, because
- * the page renders one fixed sentence above it saying why it is there. */
+ * describes the host. It is the prose spelling of `proves:` on a command page, and it takes no
+ * note, because the page renders one fixed sentence above it saying why it is there. */
 
 /** The keyword after `verify:` that marks a proof pair. Not a mode of `COMPARISON`, because a
  *  proof is compared exactly: it says why an example exists, rather than how it is checked. */

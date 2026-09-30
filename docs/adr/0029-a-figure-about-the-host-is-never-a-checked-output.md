@@ -129,9 +129,10 @@ out on its first CI run whether the form it chose holds on amd64.
 whether or not it has a setup script. A page that has a setup script and nothing for it to check,
 neither checked nor exempt, fails the build. Such a script is either left over from output the page
 no longer shows, or a sign that the page's output fences have stopped pairing with their commands,
-and in both cases the footer would offer a replay command that checks nothing. Sample-file
-`fixtures:` on a command page do not count as something to check: a page that shows files and no
-command output has nothing to teach with them, so it is refused like any other. A page with no
+and in both cases the footer would offer a replay command that checks nothing. A command page
+with sample-file `fixtures:` and no output is refused as well. The replay does re-read those files,
+so the script is not idle, but a command page showing files and no command output has nothing to
+teach with them, which makes it a broken page rather than a finished one. A page with no
 output also leaves `unreplayedProsePages`, which counts pages missing a script they need.
 
 ## Consequences
