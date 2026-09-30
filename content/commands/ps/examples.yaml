@@ -128,7 +128,7 @@ sections:
         level: advanced
       - title: "Show resident memory for one process"
         code: ps -o comm=,rss= -C tips-supervisor
-        description: "`rss` is resident set size in kilobytes, meaning the memory actually in RAM. It double-counts pages shared between processes, so summing it across a system overstates the total."
+        description: "`rss` is resident set size in kilobytes, meaning the memory actually in RAM. It double-counts pages shared between processes, so summing it across a system overstates the total. The `pss` column divides shared pages between the processes sharing them, and [why is this process using so much memory?](/troubleshooting/why-is-this-process-using-so-much-memory/) shows the difference."
         volatile: "the memory figure depends on your machine"
         compare: shape
         output: |

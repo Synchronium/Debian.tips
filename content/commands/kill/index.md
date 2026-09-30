@@ -5,7 +5,7 @@ description: "Tested kill, pkill and killall examples: choosing a signal, why -9
 category: commands
 tags: [processes, sysadmin]
 updated: 2026-08-29
-related: [ps, processes-and-signals, lsof, fuser, kill-whatever-is-using-a-port, systemctl]
+related: [ps, processes-and-signals, lsof, fuser, kill-whatever-is-using-a-port, systemctl, why-is-this-process-using-so-much-cpu]
 tier: standard
 ---
 

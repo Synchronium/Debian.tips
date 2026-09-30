@@ -1,0 +1,211 @@
+command: free
+
+sections:
+  - title: "Reading the table"
+    intro: "The figures on this page are from one machine at one moment, and yours will differ in every column. What stays the same is how the columns relate to each other, which is what the checked examples here show."
+    examples:
+      - title: "See how much memory is in use"
+        code: free -m
+        description: "`-m` gives mebibytes, which reads more easily than the default kibibytes. `free` is memory holding nothing at all, `buff/cache` is memory holding file contents the kernel can drop, and `available` is roughly the two together: how much a new program could have without anything being swapped out. A `free` far below `available` is the normal state of a busy machine."
+        output: |2
+                         total        used        free      shared  buff/cache   available
+          Mem:            3916        2184         827          12        1099        1731
+          Swap:           1023         621         402
+        level: basic
+        tags: [beginner]
+      - title: "Confirm that cache is not counted as used"
+        code: |-
+          free | awk '/^Mem:/ {print ($2 - $7 == $3) ? "used is total minus available" : "used is not total minus available"}'
+        description: "Reads one table and tests `used` against `total` minus `available`. That is how this version of `free` defines the column, so the memory held as cache, which `available` includes, is never part of `used`. Older versions of `free` worked `used` out differently, which is why advice written for them disagrees."
+        proves: "See how much memory is in use"
+        output: |2
+          used is total minus available
+        level: intermediate
+      - title: "Name the columns"
+        code: free | head -1
+        description: "The header on its own. `shared` is memory used by `tmpfs` filesystems and shared memory segments, and it is already counted within `buff/cache`, so it is not a separate share of the total."
+        output: |2
+                         total        used        free      shared  buff/cache   available
+        level: basic
+      - title: "Split buffers from the page cache"
+        code: free -w -m
+        description: "`-w` prints `buffers` and `cache` as two columns instead of one. `buffers` is raw disk blocks the kernel is holding, mostly filesystem metadata, and is usually small. `cache` is file contents, plus the kernel's own reclaimable caches, which is why it is larger than the `Cached` line in `/proc/meminfo`."
+        output: |2
+                         total        used        free      shared     buffers       cache   available
+          Mem:            3916        2180         831          12           7        1092        1736
+          Swap:           1023         621         402
+        level: intermediate
+      - title: "See the columns the wide form prints"
+        code: free -w | head -1
+        description: "Seven columns rather than six, which matters to a script that picks a field by its position: `available` is field 7 in the normal form and field 8 in the wide one."
+        output: |2
+                         total        used        free      shared     buffers       cache   available
+        level: intermediate
+        tags: [scripting]
+
+  - title: "Units"
+    intro: "The default is kibibytes, 1024 bytes each. Every unit flag scales the same figures, and none of them changes what is measured."
+    examples:
+      - title: "Pick a unit that fits the number"
+        code: free -h
+        description: "`-h` chooses a unit per figure and marks it, so a gigabyte total and a megabyte of shared memory both stay short. The `i` means powers of 1024. Rounded to two or three significant figures, it is for reading rather than for arithmetic."
+        output: |2
+                         total        used        free      shared  buff/cache   available
+          Mem:           3.8Gi       2.1Gi       831Mi        12Mi       1.1Gi       1.7Gi
+          Swap:          1.0Gi       621Mi       402Mi
+        level: basic
+        tags: [beginner]
+      - title: "Show exact byte counts"
+        code: free -b
+        description: "The figures before any rounding. Compare them against a program's own report in bytes, or use them in arithmetic that the rounded forms would throw off."
+        output: |2
+                         total        used        free      shared  buff/cache   available
+          Mem:      4106604544  2284474368   874090496    13152256  1152966656  1822130176
+          Swap:     1073737728   652095488   421642240
+        level: intermediate
+      - title: "Confirm the default unit is 1024 bytes"
+        code: |-
+          echo $(( $(free -b | awk '/^Mem:/ {print $2}') / $(free -k | awk '/^Mem:/ {print $2}') ))
+        description: "Divides the total in bytes by the total in the default unit. The total does not move between the two runs, so the answer is the size of the unit."
+        proves: "Show exact byte counts"
+        output: |2
+          1024
+        level: advanced
+      - title: "Count in powers of 1000"
+        code: free --kilo
+        description: "`--kilo`, `--mega` and `--giga` divide by 1000 rather than 1024, which is what a disk manufacturer means by a kilobyte. `--si` does the same for `-h`. The figures come out larger than `-k` gives, for the same memory."
+        output: |2
+                         total        used        free      shared  buff/cache   available
+          Mem:         4106604     2284797      873766       13152     1152966     1821806
+          Swap:        1073737      652095      421642
+        level: intermediate
+      - title: "Confirm --kilo divides by 1000"
+        code: |-
+          [ $(( $(free -b | awk '/^Mem:/ {print $2}') / 1000 )) = "$(free --kilo | awk '/^Mem:/ {print $2}')" ] && echo "--kilo is bytes divided by 1000"
+        description: "Divides the byte total by 1000 in the shell and compares it with what `--kilo` printed. Both drop the remainder, so they agree to the last digit."
+        proves: "Count in powers of 1000"
+        output: |2
+          --kilo is bytes divided by 1000
+        level: advanced
+
+  - title: "Swap, totals and commitments"
+    intro: "Swap is disk standing in for memory. Some swap in use is normal, since the kernel moves out pages nothing has touched for a long time. Swap filling quickly while `available` is low is the sign of a machine that is short of memory."
+    examples:
+      - title: "Add memory and swap together"
+        code: free -t -m
+        description: "`-t` adds a `Total` row with memory and swap summed in the first three columns. It answers how much the machine can hold before it runs out of both."
+        output: |2
+                         total        used        free      shared  buff/cache   available
+          Mem:            3916        2180         831          12        1099        1735
+          Swap:           1023         621         402
+          Total:          4940        2802        1233
+        level: intermediate
+      - title: "Confirm the Total row is memory plus swap"
+        code: |-
+          free -t | awk '/^Mem:/ {t=$2; u=$3; f=$4} /^Swap:/ {t+=$2; u+=$3; f+=$4} /^Total:/ {print ($2 == t && $3 == u && $4 == f) ? "Total is Mem plus Swap" : "Total is not Mem plus Swap"}'
+        description: "Sums the first three columns of the two rows from one run and tests them against the `Total` row. The rounded `-m` figures can be one out from the sum, which is why this reads the unrounded default."
+        proves: "Add memory and swap together"
+        output: |2
+          Total is Mem plus Swap
+        level: advanced
+      - title: "Confirm that swap used is swap total minus swap free"
+        code: |-
+          free | awk '/^Swap:/ {print ($2 - $4 == $3) ? "swap used is total minus free" : "swap used is not total minus free"}'
+        description: "Swap has no cache to discount, so its `used` is the plain difference. The memory row does not work this way, and the difference between the two rows is where most misreadings of `free` start."
+        proves: "Add memory and swap together"
+        output: |2
+          swap used is total minus free
+        level: advanced
+      - title: "See how much memory has been promised"
+        code: free -v -m
+        description: "`-v` adds a `Comm` row. Its first figure is the commit limit, its second is how much memory running programs have been promised, and its third is the difference, negative here. Linux promises more than it has by default, because most programs never touch everything they ask for, so a negative figure is ordinary unless the kernel has been set to refuse overcommitment."
+        output: |2
+                         total        used        free      shared  buff/cache   available
+          Mem:            3916        2180         831          12        1099        1735
+          Swap:           1023         621         402
+          Comm:           2982        5224       -2241
+        level: advanced
+      - title: "Confirm the Comm row's last figure is the limit minus the commitments"
+        code: |-
+          free -v | awk '/^Comm:/ {print ($2 - $3 == $4) ? "free is the limit minus what is committed" : "free is not the limit minus what is committed"}'
+        description: "Tests the third figure against the first two from one run. A negative answer means more has been promised than the limit allows, which only matters when the kernel is enforcing the limit."
+        proves: "See how much memory has been promised"
+        output: |2
+          free is the limit minus what is committed
+        level: advanced
+      - title: "See that a 64-bit machine has no high memory"
+        code: free -l | grep "^High:"
+        description: "`-l` splits memory into low and high, a distinction from 32-bit kernels, which could not address all of a large memory directly. A 64-bit kernel can, so the `High` row is all zeros on every 64-bit machine, and the `Low` row above it is simply all of memory."
+        output: |2
+          High:              0           0           0
+        level: advanced
+
+  - title: "Watching and scripting"
+    examples:
+      - title: "Print a fresh sample every second"
+        code: free -m -s 1 -c 3
+        description: "`-s` repeats every so many seconds and `-c` stops after that many samples. Without `-c` it runs until interrupted, which is a cheap way to watch memory while a job runs. Fractions of a second work too."
+        output: |2
+                         total        used        free      shared  buff/cache   available
+          Mem:            3916        2180         831          12        1099        1735
+          Swap:           1023         621         402
+
+                         total        used        free      shared  buff/cache   available
+          Mem:            3916        2178         833          12        1099        1737
+          Swap:           1023         621         402
+
+                         total        used        free      shared  buff/cache   available
+          Mem:            3916        2178         833          12        1099        1737
+          Swap:           1023         621         402
+        level: intermediate
+        tags: [monitoring]
+      - title: "Confirm -c sets the number of samples"
+        code: free -m -s 1 -c 3 | grep -c "^Mem:"
+        description: "Counts the memory rows the same command prints. One per sample, and it exits on its own after the third."
+        proves: "Print a fresh sample every second"
+        output: |2
+          3
+        level: intermediate
+      - title: "Put the figures on one line for a log"
+        code: free -L
+        description: "`-L` prints swap in use, cache, memory in use and free memory on one line, each after a label, which suits a log file written from [cron](/commands/crontab/) where one sample per line keeps the file easy to [grep](/commands/grep/)."
+        output: |2
+          SwapUse      636812 CachUse     1125944  MemUse     2230756 MemFree      853780
+        level: intermediate
+        tags: [scripting]
+      - title: "Get one figure for a script"
+        code: free -m | awk '/^Mem:/ {print $7}'
+        description: "The `available` figure in mebibytes, and nothing else, which is the one a script should test before starting something large. Matching the row by its label rather than its line number keeps it working if the output gains a row."
+        output: |2
+          1737
+        level: intermediate
+        tags: [scripting]
+
+  - title: "Where the figures come from"
+    examples:
+      - title: "Read the kernel's own figures"
+        code: grep -E '^(MemTotal|MemFree|MemAvailable|Buffers|Cached|SwapTotal|SwapFree):' /proc/meminfo
+        description: "`free` formats `/proc/meminfo`, a file of around fifty lines of which it uses a handful. `MemAvailable` is the kernel's own estimate, and `free` prints it unchanged as `available`."
+        output: |2
+          MemTotal:        4010356 kB
+          MemFree:          853036 kB
+          MemAvailable:    1778932 kB
+          Buffers:            7564 kB
+          Cached:           960576 kB
+          SwapTotal:       1048572 kB
+          SwapFree:         411760 kB
+        level: advanced
+      - title: "Confirm free's total is the kernel's MemTotal"
+        code: |-
+          [ "$(free -k | awk '/^Mem:/ {print $2}')" = "$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)" ] && echo "free reads MemTotal from /proc/meminfo"
+        description: "Compares the two totals as numbers. Both are in kibibytes, and the total does not move while the machine runs, so they match exactly."
+        proves: "Read the kernel's own figures"
+        output: |2
+          free reads MemTotal from /proc/meminfo
+        level: advanced
+      - title: "See whether this container has a memory limit"
+        code: cat /sys/fs/cgroup/memory.max
+        description: "Inside a container, `free` reads the host's `/proc/meminfo` and so reports the host's memory, whatever limit the container was started with. The limit, if there is one, is here, in bytes. `max` means none was set. On a Debian machine that is not a container, the file does not exist at the top of the hierarchy."
+        output: |2
+          max
+        level: advanced

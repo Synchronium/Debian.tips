@@ -235,7 +235,8 @@ export const COMMAND_GROUPS: { title: string; commands: string[] }[] = [
     title: "Processes & system",
     commands: [
       "ps",
-      "top-htop",
+      "top",
+      "free",
       "kill",
       "lsof",
       "fuser",

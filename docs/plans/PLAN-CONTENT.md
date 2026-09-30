@@ -332,18 +332,17 @@ asking for the mechanism. Try each of the others the cheap way first.
   why it is paid once. Branches: the `PATH`, the working directory, dash instead of bash, output
   mailed to a machine with no MTA, and a 127 nobody reads, plus the three failures that produce
   the same symptom with `PATH` in perfect order.
-- **`why-is-this-process-using-so-much-cpu`** and
-  **`why-is-this-process-using-so-much-memory`**. **Needs**: `top` and `free`, written under
-  ADR-0029. **Demo**: a process spinning against one that is blocked; resident against virtual
-  size; cache and buffers counted as used, which is the misreading `free` invites. These two give
-  the `performance` tag its first pages.
-
-  **Unblocked by ADR-0029.** `free` and `top` report the host's memory rather than the
-  container's, so their ordinary output is exempt and names the host figures. What these pages
-  teach about it is checked by `proves:` examples, and what they teach about a process they start
-  (resident against virtual size, a spinner against a sleeper) is an ordinary output. Show process
-  memory as a before-and-after difference, since the ADR's measurements were all on arm64 and a
-  bare RSS may not hold on amd64.
+- **`why-is-this-process-using-so-much-cpu`** and **`why-is-this-process-using-so-much-memory`**.
+  Written 2026-09-30, 10/10 and 9/9, the first pages under ADR-0029 and the first in the
+  `performance` tag. Each exempts only its one host block (`uptime; nproc`, `free -h`), and the
+  memory page backs its `free` block with a `verify: proof` pair. Everything else reads processes
+  the fixture starts under names of its own. The CPU page covers the load against the CPU count, the
+  busiest process on a second update, `ps` averaging over a lifetime where `top` measures now,
+  a process past 100%, user against system time from `/proc/PID/stat`, `pstree -a -s` for where a
+  process came from, nice under contention on one pinned CPU, and `SIGSTOP`. The memory page covers
+  `available`, the largest `RSS`, `VSZ` mapped and never touched, `PSS` against `RSS` for forked
+  workers, growth between two samples, and `ulimit -v`. The OOM killer is prose: the container
+  cannot read the kernel log.
 
 `cannot-remove-file-in-use` left this list on 2026-09-13, and §13.7 says why: Linux refuses none
 of the removals it was named after. `text-file-busy` was written in its place, covering the one
@@ -363,15 +362,14 @@ does not" is not an argument.
 Written first, because §5 cannot proceed without them. `lsof` and `fuser` are done, on one shared
 fixture, and `mount` went with the §6.7 batch that shares the loop-device one. §13.2 has what both
 cost. `id` and `getent` are done, on the account fixture `managing-users` already had, and §13.1
-has what sharing it cost.
+has what sharing it cost. `free` and `top` are done, under ADR-0029.
 
-- **`free`** (`light`) and **`top`** (`standard`). **Needs**: nothing, under ADR-0029. Inside the
-  sandbox both report the *host's* memory, so the ordinary `free` and `top` blocks go in the page's
-  `.skip` naming the host figures, and each claim the page makes about them gets a `proves:`
-  example. `used` being `total` minus `available` is the first one for `free`, and was checked while
-  writing the ADR. `top` can compare a spinning process against a sleeping one it starts itself,
-  which reproduces. Written first in this group, because the two hubs in §5.3 are built on
-  `free`'s cache-counted-as-used misreading.
+- **`free`** (`light`) and **`top`** (`standard`). Written 2026-09-30. `free` is 12/12 with 11
+  exempt: every table it prints is a host figure, so its checked half is the column headers, the
+  `High` row of a 64-bit kernel, `memory.max`, and a proof for each identity the page states, all
+  computed within one run. `top` is 19/19 with 2 exempt: its summary lines are the host's, but the
+  task count and the process list belong to the container, so its examples read three processes the
+  fixture starts.
 - **`dmesg`** (`light`). **Needs**: nothing. **Demo**: what a container can and cannot see, said
   honestly. An unprivileged sandbox is refused the kernel buffer outright (`Operation not
   permitted`, checked 2026-09-30), so check what a `--privileged` one shows before committing to
@@ -739,6 +737,20 @@ Distilled from the shipped ledger this plan replaces. Each of these cost a batch
 - **Account and group state survives the restore.** Rebuild every account on each restore with ids
   pinned, include names that only an example creates, and note that `usermod -l` leaves the group
   under the old name.
+- **A fixture's long-running processes are started once, if absent, and never killed.** A killed
+  process stays behind as a zombie, for the reason `--systemd` exists, and `pgrep -x` then finds the
+  dead one alongside its replacement. So the setup script tests for each by name and starts only
+  what is missing.
+- **A nice value raised in the sandbox cannot be lowered again.** Lowering one needs
+  `CAP_SYS_NICE`, which the container is not given. An example that renices a fixture's process
+  changes it for every example after it, so an example that demonstrates `nice` or `renice` starts
+  and reaps a process of its own.
+- **`top -b` gives `COMMAND` eight characters at 80 columns**, and cuts a longer name to seven and a
+  `+`. Name a fixture's processes in eight characters or fewer, or pass `-w`.
+- **`ps -o stat` adds `s` for a session leader**, which every process started with `setsid -f` is.
+  `ps -o s` is the bare state letter.
+- **`zstd` reads `/dev/zero` only on standard input.** Named as a file it refuses it as not a
+  regular one, exits at once, and leaves a zombie where the busy process was meant to be.
 
 ### §13.3. What a page may not print
 

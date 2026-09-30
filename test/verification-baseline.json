@@ -175,6 +175,14 @@
     "fixtures": 1,
     "unpaired": 0
   },
+  "commands/free": {
+    "checked": 12,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 11,
+    "fixtures": 0,
+    "unpaired": 0
+  },
   "commands/fsck": {
     "checked": 23,
     "byShape": 0,
@@ -437,6 +445,14 @@
     "unordered": 0,
     "exempt": 0,
     "fixtures": 2,
+    "unpaired": 0
+  },
+  "commands/top": {
+    "checked": 19,
+    "byShape": 8,
+    "unordered": 0,
+    "exempt": 2,
+    "fixtures": 1,
     "unpaired": 0
   },
   "commands/touch": {
@@ -990,5 +1006,21 @@
     "exempt": 1,
     "fixtures": 0,
     "unpaired": 1
+  },
+  "troubleshooting/why-is-this-process-using-so-much-cpu": {
+    "checked": 10,
+    "byShape": 4,
+    "unordered": 0,
+    "exempt": 1,
+    "fixtures": 0,
+    "unpaired": 0
+  },
+  "troubleshooting/why-is-this-process-using-so-much-memory": {
+    "checked": 9,
+    "byShape": 4,
+    "unordered": 0,
+    "exempt": 1,
+    "fixtures": 0,
+    "unpaired": 0
   }
 }

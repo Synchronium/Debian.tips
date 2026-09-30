@@ -1,0 +1,11 @@
+# Examples this page cannot replay, because their output is summary lines whose figures belong to
+# the host (ADR-0029). Inside a container, top's uptime, load average, CPU states and memory and swap
+# figures describe the machine the container runs on, so no two runs print the same lines. Each was
+# captured in the sandbox, and what the page says about the summary is checked by the proof examples
+# that name it.
+
+# Uptime, load average, CPU states, memory and swap.
+Take one snapshot of the whole machine
+
+# The memory and swap lines in another unit.
+Show the memory lines in gibibytes

@@ -1,0 +1,207 @@
+command: top
+
+fixtures:
+  - name: "the processes the examples read"
+    from: "ps -o user=,s=,nlwp=,comm= -C spinner,sleeper,memhog"
+    note: "Started by the setup script and left running. `spinner` is a copy of `gawk` running an empty loop, so it is always ready to run and all its time is user time. `sleeper` is a copy of `sleep`, run as `user`, and is the only process that account owns. `memhog` is a copy of `python3` that has written 200 MiB and started two idle threads. Copies, because `top` shows the name of the file a process was started from. The columns are the owner, the state, the number of threads and the name."
+    content: |2
+      root     R    1 spinner
+      user     S    1 sleeper
+      root     S    3 memhog
+
+sections:
+  - title: "The summary lines"
+    intro: "Five lines about the machine as a whole, above the process list. Apart from the task count, every figure in them belongs to the machine and moves from one second to the next, so the examples here show the lines as they were captured, and check what can be said about them on any machine."
+    examples:
+      - title: "Take one snapshot of the whole machine"
+        code: top -b -n1 | head -5
+        description: "`-b` prints plain text rather than drawing on the terminal, and `-n1` stops after one update. The first line is the clock, the uptime, the logged-in users and the load average over one, five and fifteen minutes. The second counts processes by state. The third splits CPU time into user (`us`), system (`sy`), niced (`ni`), idle (`id`), waiting for disk (`wa`), and three kinds a virtual machine or interrupts take. The last two are the figures [`free`](/commands/free/) prints."
+        output: |2
+          top - 15:22:00 up 4 days, 22:51,  0 users,  load average: 1.21, 0.71, 0.76
+          Tasks:   7 total,   2 running,   5 sleeping,   0 stopped,   0 zombie
+          %Cpu(s): 12.6 us,  1.1 sy,  0.0 ni, 86.2 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+          MiB Mem :   3916.4 total,    590.2 free,   2377.5 used,   1144.1 buff/cache
+          MiB Swap:   1024.0 total,    404.2 free,    619.8 used.   1538.9 avail Mem
+        level: basic
+        tags: [beginner]
+      - title: "Confirm the CPU states add up to 100%"
+        code: |-
+          top -b -n2 -d 0.5 | awk '/^%Cpu\(s\)/ {line = $0} END {gsub(/,/, " ", line); n = split(line, f, " "); for (i = 1; i <= n; i++) if (f[i] ~ /^[0-9.]+$/) s += f[i]; print (s > 99.5 && s < 100.5) ? "the CPU states add up to 100%" : "the CPU states do not add up to 100%"}'
+        description: "Sums every figure on the CPU line of the second update, which covers the half-second `-d 0.5` asks for. The eight states are shares of one total, so they make 100 once rounding is allowed for. The commas are turned into spaces first, because a state at `100.0` is printed with no space before it."
+        proves: "Take one snapshot of the whole machine"
+        output: |2
+          the CPU states add up to 100%
+        level: advanced
+      - title: "Confirm top's memory total is the kernel's"
+        code: |-
+          [ "$(top -b -n1 | awk '/^MiB Mem/ {print $4}')" = "$(awk '/^MemTotal:/ {printf "%.1f", $2 / 1024}' /proc/meminfo)" ] && echo "top's total is MemTotal in MiB"
+        description: "Converts `MemTotal` from `/proc/meminfo` to mebibytes with one decimal place and compares it with the total `top` printed. `top` and `free` read the same file, so the two agree on everything but the moment they read it."
+        proves: "Take one snapshot of the whole machine"
+        output: |2
+          top's total is MemTotal in MiB
+        level: advanced
+      - title: "Check the task count covers every process listed"
+        code: |-
+          top -b -n1 | awk '/^Tasks:/ {t = $2} /^ *PID/ {listed = 1; next} listed && NF {n++} END {print (t == n) ? "the task count is the number of rows listed" : "the task count is not the number of rows listed"}'
+        description: "Counts the rows under the column headers and compares them with the `Tasks` total. Unlike the rest of the summary, the task count belongs to whatever ran `top`: inside a container it is the container's processes, the same ones the list shows."
+        output: |2
+          the task count is the number of rows listed
+        level: advanced
+      - title: "Show the memory lines in gibibytes"
+        code: top -b -n1 -E g | sed -n 4,5p
+        description: "`-E` sets the unit for the two memory lines: `k`, `m`, `g`, `t`, `p` or `e`. The default is mebibytes, which puts a large machine's total in the tens of thousands. Pressing `E` in the running display steps through the same units."
+        output: |2
+          GiB Mem :      3.8 total,      0.6 free,      2.3 used,      1.1 buff/cache
+          GiB Swap:      1.0 total,      0.4 free,      0.6 used.      1.5 avail Mem
+        level: intermediate
+
+  - title: "The process list"
+    intro: "One row per process, busiest first. `-p` picks processes by ID and `-u` by owner, which is how the examples below keep to the three processes the setup script started, rather than listing whatever else was running."
+    examples:
+      - title: "Name the columns"
+        code: top -b -n1 | sed -n 7p
+        description: "`PR` and `NI` are the scheduling priority and the nice value. `VIRT` is the address space the process has mapped, `RES` how much of it is in memory, and `SHR` how much of `RES` is shared with other processes, all in kibibytes. `S` is the state, `%CPU` its share of one CPU since the last update, `%MEM` its `RES` as a share of the machine's memory, and `TIME+` the CPU time it has used since it started."
+        output: |2
+              PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+        level: basic
+        tags: [beginner]
+      - title: "Watch one process"
+        code: top -b -n1 -p "$(pgrep -x memhog)" | tail -n +7
+        description: "`-p` takes a process ID, or several separated by commas, and lists only those. [`pgrep -x`](/commands/ps/) finds the ID from an exact name. `tail -n +7` drops the five summary lines and the blank line after them."
+        volatile: "the PID, the memory figures, `%MEM` and `TIME+` differ from run to run, and `%MEM` also depends on how much memory the machine has"
+        compare: shape
+        output: |2
+              PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+               26 root      20   0  366348 213492   5516 S   0.0   5.3   0:00.16 memhog
+        level: basic
+      - title: "Measure a process's CPU over half a second"
+        code: top -b -n2 -d 0.5 -p "$(pgrep -x spinner)" | tail -1
+        description: "`-n2` takes two updates and `-d 0.5` puts half a second between them, so the row `tail -1` keeps is the second update's, and its `%CPU` covers that half-second. The first update has only a very short interval to measure over. `%CPU` is a share of one CPU, so a process busy on four cores shows 400."
+        volatile: "the PID, `%CPU`, the memory figures and `TIME+` differ from run to run"
+        compare: shape
+        output: |2
+               20 root      20   0    5944   2880   2572 R 100.0   0.1   0:01.14 spinner
+        level: intermediate
+      - title: "Tell running from sleeping"
+        code: |-
+          top -b -n1 -p "$(pgrep -x spinner),$(pgrep -x sleeper)" | awk 'NR > 7 {print $12, $8}'
+        description: "The name and the `S` column. `R` is running or ready to run, `S` is asleep waiting for something, and `D` is waiting for disk and cannot be interrupted, which is the state that pushes the load average up without using any CPU. A process that stays `R` is the one using the CPU."
+        output: |2
+          spinner R
+          sleeper S
+        level: basic
+      - title: "Only show one user's processes"
+        code: top -b -n1 -u user | tail -n +7
+        description: "`-u` matches the effective user, the one a process runs with. `-U` matches the real, effective, saved or filesystem user, so it also lists a setuid program that someone else started. The name or the numeric uid both work."
+        volatile: "the PID, the memory figures, `%MEM` and `TIME+` differ from run to run"
+        compare: shape
+        output: |2
+              PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+               23 user      20   0    2312   1240   1152 S   0.0   0.0   0:00.00 sleeper
+        level: basic
+      - title: "Show each process's full command line"
+        code: top -b -n1 -c -w 100 -u user | tail -n +7
+        description: "`-c` shows the arguments as well as the name, which is what tells apart ten processes all called `python3`. Batch mode lays out 80 columns, which cuts a long command line off, so `-w` sets a wider page."
+        volatile: "the PID, the memory figures, `%MEM` and `TIME+` differ from run to run"
+        compare: shape
+        output: |2
+              PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+               23 user      20   0    2312   1240   1152 S   0.0   0.0   0:00.00 sleeper infinity
+        level: intermediate
+      - title: "Show a process's threads"
+        code: top -b -n1 -H -p "$(pgrep -x memhog)" | tail -n +7
+        description: "`-H` lists threads instead of processes. Each thread has an ID of its own, from the same range as process IDs, and the first one's is the process ID. A program pinned at 100% can be one busy thread among many idle ones, and this is how to see which."
+        volatile: "the IDs, the memory figures, `%MEM` and `TIME+` differ from run to run"
+        compare: shape
+        output: |2
+              PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+               26 root      20   0  366348 213492   5516 S   0.0   5.3   0:00.16 memhog
+               38 root      20   0  366348 213492   5516 S   0.0   5.3   0:00.00 memhog
+               39 root      20   0  366348 213492   5516 S   0.0   5.3   0:00.00 memhog
+        level: intermediate
+      - title: "Hide processes that are doing nothing"
+        code: top -b -n1 -i -u user | tail -n +7
+        description: "`-i` leaves out processes that have used no CPU since the last update. `user` owns only a process that is asleep, so what is left is the header. On a busy machine this cuts a list of hundreds down to the few doing the work."
+        output: |2
+              PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+        level: intermediate
+
+  - title: "Sorting"
+    intro: "The list is sorted by `%CPU` unless told otherwise. `-o` takes any field name `top -O` lists, and a `-` in front of the name reverses it."
+    examples:
+      - title: "Sort by memory"
+        code: top -b -n1 -o %MEM | sed -n 8p
+        description: "The first row under the header, with the list sorted by memory. Pressing `M` in the running display does the same."
+        volatile: "the PID, the memory figures, `%MEM` and `TIME+` differ from run to run"
+        compare: shape
+        output: |2
+               26 root      20   0  366348 213492   5516 S   0.0   5.3   0:00.16 memhog
+        level: basic
+        tags: [beginner]
+      - title: "Sort by the CPU time used so far"
+        code: top -b -n1 -o TIME+ | sed -n 8p
+        description: "`%CPU` is what a process is doing now, and `TIME+` is everything it has done since it started. A process that is quiet at the moment but has used hours of CPU sorts to the top here, and never would by `%CPU`."
+        volatile: "the PID, `%CPU`, the memory figures and `TIME+` differ from run to run"
+        compare: shape
+        output: |2
+               20 root      20   0    5944   2896   2588 R 100.0   0.1   0:02.87 spinner
+        level: intermediate
+      - title: "List the fields top can show and sort by"
+        code: top -O | head -5
+        description: "Every field name, one per line. More than seventy of them, most of which are not shown until they are turned on with `f` in the running display."
+        output: |2
+          PID
+          PPID
+          UID
+          USER
+          RUID
+        level: advanced
+
+  - title: "Reading a process's memory"
+    intro: "Figures about the processes the setup script started, rather than about the machine, so they can be checked here as they are."
+    examples:
+      - title: "Show a process's memory in mebibytes"
+        code: top -b -n1 -e m -p "$(pgrep -x memhog)" | tail -n +7
+        description: "`-e` sets the unit for the memory columns in the list, as `-E` does for the summary. `memhog` wrote 200 MiB, and `RES` is a little over that: the Python interpreter holding it takes some memory of its own."
+        volatile: "the PID, the memory figures, `%MEM` and `TIME+` differ from run to run"
+        compare: shape
+        output: |2
+              PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+               26 root      20   0  357.8m 208.5m   5.4m S   0.0   5.3   0:00.16 memhog
+        level: intermediate
+      - title: "Check that RES is the memory a process has used"
+        code: |-
+          top -b -n1 -p "$(pgrep -x memhog)" | awk 'NR == 8 {print ($6 >= 204800) ? "memhog holds at least 200 MiB" : "memhog holds less than 200 MiB"}'
+        description: "`RES` counts the pages that are in memory, which for `memhog` includes the 200 MiB it wrote. 204800 is 200 MiB in kibibytes, the unit the column uses."
+        output: |2
+          memhog holds at least 200 MiB
+        level: advanced
+      - title: "Check that VIRT is at least RES"
+        code: |-
+          top -b -n1 -p "$(pgrep -x memhog)" | awk 'NR == 8 {print ($5 >= $6) ? "VIRT is at least RES" : "VIRT is less than RES"}'
+        description: "`VIRT` counts everything the process has mapped, whether it has touched it or not, so it is never smaller than `RES`. A large `VIRT` on its own means little: a program can map far more than it will ever use."
+        output: |2
+          VIRT is at least RES
+        level: advanced
+      - title: "Check that threads share their process's memory"
+        code: |-
+          top -b -n1 -H -p "$(pgrep -x memhog)" | awk 'NR > 7 {print $6}' | sort -u | wc -l
+        description: "Every thread of `memhog` shows the same `RES`, so there is one distinct value. Threads share the process's memory, and adding up the thread rows of `top -H` counts the same memory once per thread."
+        output: |2
+          1
+        level: advanced
+
+  - title: "Scripts and logs"
+    examples:
+      - title: "Take several snapshots in a row"
+        code: top -b -n 3 -d 0.2 | grep -c "^top -"
+        description: "Counts the first line of each update. `-n` sets how many updates, and `-d` the seconds between them, fractions allowed. Left to itself, batch mode runs until it is killed."
+        output: |2
+          3
+        level: intermediate
+        tags: [scripting]
+      - title: "Save a snapshot to read later"
+        code: top -b -n1 > snapshot.txt
+        description: "The whole display as text, which is worth doing from [cron](/commands/crontab/) every few minutes on a machine that slows down at night. By the time anyone looks, whatever was busy has usually finished."
+        level: intermediate
+        tags: [scripting, monitoring]
