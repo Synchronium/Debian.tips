@@ -423,8 +423,6 @@ the reason §13 gives.
 
 ### §6.5. Users and privilege
 
-- **`passwd`** (`standard`). **Demo**: expiry, locking, and what a locked account can still do.
-- **`chage`** (`light`). **Demo**: the fields, and how they interact with `passwd -l`.
 - **`update-alternatives`** (`standard`). **Demo**: the editor and the `sh` alternatives, and
   Debian's reason for the mechanism.
 - **`dpkg-reconfigure`** (`light`). **Demo**: against a package whose debconf answers change
@@ -751,6 +749,13 @@ Distilled from the shipped ledger this plan replaces. Each of these cost a batch
   `ps -o s` is the bare state letter.
 - **`zstd` reads `/dev/zero` only on standard input.** Named as a file it refuses it as not a
   regular one, exits at once, and leaves a zombie where the busy process was meant to be.
+- **A login can be tested against a real SSH server on the loopback address.** `passwd` starts
+  `sshd` on `127.0.0.1:2222` and writes root's `known_hosts` and an `~/.ssh/config` entry, so an
+  example reads `ssh tips-server` and prints nothing about adding a host key. That is what showed a
+  locked password letting a key in under Debian's `UsePAM yes`, and an expired account refused.
+- **A date that `chage` or `passwd -S` prints is today's unless the setup script pins it.**
+  `chage -d` sets the last change, and every date worked out from it is then fixed, so these pages
+  compare exactly rather than by shape.
 
 ### §13.3. What a page may not print
 

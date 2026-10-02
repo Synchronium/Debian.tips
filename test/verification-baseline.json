@@ -55,6 +55,14 @@
     "fixtures": 2,
     "unpaired": 0
   },
+  "commands/chage": {
+    "checked": 15,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 1,
+    "unpaired": 0
+  },
   "commands/chmod": {
     "checked": 43,
     "byShape": 0,
@@ -341,6 +349,14 @@
     "unordered": 0,
     "exempt": 0,
     "fixtures": 2,
+    "unpaired": 0
+  },
+  "commands/passwd": {
+    "checked": 15,
+    "byShape": 0,
+    "unordered": 0,
+    "exempt": 0,
+    "fixtures": 1,
     "unpaired": 0
   },
   "commands/ps": {
