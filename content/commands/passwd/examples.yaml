@@ -3,7 +3,7 @@ command: passwd
 fixtures:
   - name: "the accounts, and an SSH server to log in to"
     from: "getent passwd tips-dev tips-ops; passwd -S tips-dev; passwd -S tips-ops; cat ~/.ssh/config"
-    note: "The same two accounts as [managing-users](/commands/managing-users/), [id](/commands/id/) and [chage](/commands/chage/), rebuilt before every example. Both start with a locked password and no other changes, and each one's last password change is pinned to 1 September 2026, so the dates printed here are the same on every run. An SSH server listens on `127.0.0.1` port 2222, and root's SSH config gives it the name `tips-server` and logs in as `tips-dev` with a key in that account's `authorized_keys`."
+    note: "The same two accounts as [managing-users](/commands/managing-users/), [id](/commands/id/) and [chage](/commands/chage/), rebuilt before every example. Both start with a locked password without any other changes, and each one's last password change is pinned to 1 September 2026, so the dates printed here are the same on every run. An SSH server listens on `127.0.0.1` port 2222. Root's SSH config gives it the name `tips-server` and logs in as `tips-dev` with a key in that account's `authorized_keys`."
     content: |2
       tips-dev:x:1001:1001:Deployment account:/home/tips-dev:/bin/bash
       tips-ops:x:1002:1002:Operations account:/home/tips-ops:/bin/bash
@@ -29,7 +29,7 @@ sections:
         tags: [scripting]
       - title: "Set passwords in bulk"
         code: "echo 'tips-dev:Correct-Horse-1' | chpasswd; passwd -S tips-dev | cut -d' ' -f1,2"
-        description: "`chpasswd` takes `name:password` lines on standard input, as many as you like, and prints nothing on success. It is the tool for provisioning scripts. `P` in the status means a usable password is set."
+        description: "`chpasswd` takes `name:password` lines on standard input, as many as you like, and prints nothing on success. It is the tool for provisioning scripts. `passwd -S` prints a one-line status for the account, explained in the next section, and `P` in its second field means a usable password is set."
         output: |2
           tips-dev P
         level: intermediate
@@ -44,7 +44,7 @@ sections:
       - title: "Check that one password is never stored the same way twice"
         code: |-
           echo 'tips-dev:Correct-Horse-1' | chpasswd; a=$(getent shadow tips-dev | cut -d: -f2); echo 'tips-dev:Correct-Horse-1' | chpasswd; b=$(getent shadow tips-dev | cut -d: -f2); [ "$a" != "$b" ] && echo "the same password stored twice gives two different hashes"
-        description: "Each hash is made with a random salt, stored alongside it. Two accounts with the same password have different hashes, so a copy of `/etc/shadow` does not show who shares a password, and a precomputed table of hashes is no use against it."
+        description: "Each hash is made with a random salt, stored alongside it. Two accounts with the same password have different hashes, so a copy of `/etc/shadow` does not show who shares a password. It also defeats a precomputed table of the hashes of common passwords: a table like that would have to be built again for every possible salt, so an attacker has to try each guess against each account's hash separately."
         output: |2
           the same password stored twice gives two different hashes
         level: advanced
@@ -67,10 +67,26 @@ sections:
         tags: [beginner]
       - title: "Read the status of every account"
         code: passwd -S -a | grep '^tips-'
-        description: "`-a` goes with `-S` only, and lists every account in `/etc/shadow`, system accounts included, which is why this narrows it to two. Worth running on an unfamiliar machine to see which accounts have a usable password at all."
+        description: "`-a` goes with `-S` only, and lists every account in `/etc/shadow`, system accounts included, which is why `grep` keeps only the two accounts this page is about."
         output: |2
           tips-dev L 2026-09-01 0 99999 7 -1
           tips-ops L 2026-09-01 0 99999 7 -1
+        level: intermediate
+        tags: [security]
+      - title: "List the accounts that have a usable password"
+        code: "echo 'tips-dev:Correct-Horse-1' | chpasswd; passwd -S -a | awk '$2 == \"P\" {print $1}'"
+        description: "Worth running on an unfamiliar machine to see which accounts a password can log in to at all. `user` is this machine's ordinary login account, and every system account is locked."
+        output: |2
+          user
+          tips-dev
+        level: intermediate
+        tags: [security]
+      - title: "List the accounts that have no password at all"
+        code: "passwd -d tips-ops >/dev/null; passwd -S -a | awk '$2 == \"NP\" {print $1}'"
+        description: "`NP` means the password field is empty, which on Debian lets any user `su` to the account without a password, as the last section shows. On a healthy machine this prints nothing, so the `passwd -d` at the start removes `tips-ops`'s password to give it something to find. Run only the part after the `;` on a real machine."
+        danger: true
+        output: |2
+          tips-ops
         level: intermediate
         tags: [security]
 
@@ -88,7 +104,7 @@ sections:
         level: basic
       - title: "Log in with a key to an account whose password is locked"
         code: "passwd -S tips-dev | cut -d' ' -f1,2; ssh tips-server id -un"
-        description: "The password is locked and the key still gets in. Debian's SSH server checks the account through PAM, which looks at whether the account has expired rather than at the password, so a lock on the password does not reach key logins."
+        description: "The password is locked and the key still gets in. `ssh tips-server id -un` runs [`id -un`](/commands/id/) on the server, which prints the name of the account the login landed in, so `tips-dev` on the second line shows the login succeeded. Debian's SSH server checks the account through PAM, which looks at whether the account has expired rather than at the password, so a lock on the password does not reach key logins."
         output: |2
           tips-dev L
           tips-dev
@@ -96,13 +112,13 @@ sections:
         tags: [ssh, security]
       - title: "Switch to a locked account as root"
         code: runuser -u tips-dev -- id -un
-        description: "Root does not need the account's password to become it, so this works whatever the lock says. The same goes for `su` run as root, for `sudo -u`, and for a cron job or a service configured to run as the account."
+        description: "This is run as root, and root does not need the account's password to become it, so it works whatever the lock says. The same goes for `su` run as root, for `sudo -u`, and for a cron job or a service configured to run as the account. Run by an ordinary user, `runuser` refuses outright with `may not be used by non-root users`."
         output: |2
           tips-dev
         level: basic
       - title: "Expire the account to stop every login"
         code: usermod --expiredate 1 tips-dev; ssh tips-server id -un
-        description: "An expiry date of day 1, 2 January 1970, is in the past, so the account has expired. This is what stops the key, because it is the account rather than the password that PAM refuses. `usermod -e ''` or `chage -E -1` puts it back."
+        description: "An expiry date of day 1, 2 January 1970, is in the past, so the account has expired. This is what stops the key, because it is the account rather than the password that PAM refuses. `usermod -e ''` puts it back, as does [`chage -E -1`](/commands/chage/), which sets and reads the same date. [Managing users](/commands/managing-users/) covers `usermod`'s other changes."
         output: |2
           Your account has expired; please contact your system administrator.
           Connection closed by 127.0.0.1 port 2222
@@ -120,7 +136,7 @@ sections:
     examples:
       - title: "Make an account choose a new password at its next login"
         code: passwd -e tips-dev; ssh tips-server id -un
-        description: "`-e` sets the last change to the start of 1970, so the password counts as expired. A login from a terminal is asked for a new one before it gets a shell. Here there is no terminal to ask on, so the login is refused, which is also what happens to a script logging in to an account whose password has expired."
+        description: "`-e` sets the last change to the start of 1970, so the password counts as expired. This works whatever the maximum age is: these accounts' passwords never expire on their own, and a last change of day 0 is read as a change being required now. A login from a terminal is asked for a new one before it gets a shell. Here there is no terminal to ask on, so the login is refused, which is also what happens to a script logging in to an account whose password has expired."
         output: |2
           passwd: password changed.
           You are required to change your password immediately (administrator enforced).
@@ -128,8 +144,8 @@ sections:
           Password change required but no TTY available.
         level: intermediate
       - title: "Remove a password altogether"
-        code: passwd -d tips-dev; echo | runuser -u user -- su tips-dev -c 'id -un'
-        description: "`-d` empties the password field, and Debian's PAM configuration accepts an empty password, so now any user can `su` to the account without being asked for anything. SSH refuses an empty password by default, which hides the problem from anyone testing over the network. Use `-l` to stop a password working, never `-d`."
+        code: passwd -d tips-dev; runuser -u user -- su tips-dev -c 'id -un'
+        description: "`-d` empties the password field, and Debian's PAM configuration accepts an empty password, so now any user can `su` to the account without being asked for anything. This is run as root, which `su` never asks for a password, so `runuser` runs the `su` as `user`, an ordinary account, and `tips-dev` is printed without a password prompt. SSH refuses an empty password by default, which hides the problem from anyone testing over the network. Use `-l` to stop a password working, never `-d`."
         danger: true
         output: |2
           passwd: password changed.

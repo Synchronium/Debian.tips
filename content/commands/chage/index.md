@@ -15,7 +15,7 @@ log in to change it, and a date on which the whole account stops working. `chage
 settings worked out into dates, which is the easiest way to find out why a login is being refused.
 
 Every limit except the account's own expiry is counted from the last change, so setting a maximum
-age on a password that is already old can expire it at once. The account's expiry date is fixed,
+age on a password that is already old can expire it immediately. The account's expiry date is fixed,
 and it is separate from the password: an expired account cannot log in by any route, where an
 expired or [locked](/commands/passwd/) password only stops the password itself. Root can change
 any account's settings, and an ordinary user can read their own.

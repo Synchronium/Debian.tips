@@ -37,7 +37,7 @@ sections:
         tags: [scripting]
       - title: "Read where the settings are stored"
         code: "chage -M 90 -I 14 -E 2027-03-31 tips-dev; getent shadow tips-dev | cut -d: -f3-8"
-        description: "Fields 3 to 8 of the account's line in `/etc/shadow`: the last change, the minimum and maximum age, the warning, the inactivity period and the account's expiry. The two dates are days since 1 January 1970, so `20697` is 1 September 2026, and an empty field means no limit."
+        description: "Fields 3 to 8 of the account's line in `/etc/shadow`: the last change, the minimum and maximum age, the warning, the inactivity period and the account's expiry. The two dates are days since 1 January 1970, so `20697` is 1 September 2026. An empty field means no limit."
         output: |2
           20697:0:90:7:14:20908
         level: advanced
@@ -50,7 +50,7 @@ sections:
         level: basic
       - title: "Try to read another account's settings"
         code: runuser -u tips-dev -- chage -l tips-ops
-        description: "Refused, and with no detail about why. The dates are in `/etc/shadow`, which only root and the `shadow` group can read."
+        description: "Refused, with no details about why. The dates are in `/etc/shadow`, which only root and the `shadow` group can read."
         output: |2
           chage: Permission denied.
         level: basic
@@ -102,7 +102,7 @@ sections:
   - title: "Expiring the account"
     intro: "An account's expiry date is a fixed day, unrelated to when the password was changed. Once it has passed, the account cannot log in by any route, a key or a password, which is what makes it the right control for a temporary account."
     examples:
-      - title: "Expire the account on a date"
+      - title: "Expire the account on a particular date"
         code: chage -E 2027-03-31 tips-dev; chage -l tips-dev | grep 'Account expires'
         description: "The account works until the end of 30 March and stops on the 31st. [passwd](/commands/passwd/) shows an expired account being refused by SSH even with a working key."
         output: |2

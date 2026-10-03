@@ -352,7 +352,7 @@
     "unpaired": 0
   },
   "commands/passwd": {
-    "checked": 15,
+    "checked": 17,
     "byShape": 0,
     "unordered": 0,
     "exempt": 0,
