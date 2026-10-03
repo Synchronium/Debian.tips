@@ -216,7 +216,7 @@ sections:
         level: advanced
 
   - title: "Passwords, locking and expiry"
-    intro: "The password itself lives in `/etc/shadow`, which only root can read. `passwd` and `chage` are the two commands that edit it, and `usermod` duplicates part of both."
+    intro: "The password itself lives in `/etc/shadow`, which only root can read. [`passwd`](/commands/passwd/) and [`chage`](/commands/chage/) are the two commands that edit it, and `usermod` duplicates part of both."
     examples:
       - title: "Lock an account's password"
         code: passwd -l tips-dev; passwd -S tips-dev | cut -d' ' -f1,2

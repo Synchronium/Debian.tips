@@ -1,0 +1,132 @@
+command: chage
+
+fixtures:
+  - name: "the accounts"
+    from: "getent passwd tips-dev tips-ops; passwd -S tips-dev; passwd -S tips-ops"
+    note: "The same two accounts as [managing-users](/commands/managing-users/), [id](/commands/id/) and [passwd](/commands/passwd/), rebuilt before every example. Both have a locked password and the package's default ageing, and each one's last password change is pinned to 1 September 2026, so every date `chage` works out is the same on every run."
+    content: |2
+      tips-dev:x:1001:1001:Deployment account:/home/tips-dev:/bin/bash
+      tips-ops:x:1002:1002:Operations account:/home/tips-ops:/bin/bash
+      tips-dev L 2026-09-01 0 99999 7 -1
+      tips-ops L 2026-09-01 0 99999 7 -1
+
+sections:
+  - title: "Reading the settings"
+    examples:
+      - title: "Read an account's ageing settings"
+        code: chage -l tips-dev
+        description: "The first four lines are dates, worked out from the numbers in the last three. A maximum of `99999` days, about 273 years, is the package default and means the password never expires."
+        output: |2
+          Last password change					: Sep 01, 2026
+          Password expires					: never
+          Password inactive					: never
+          Account expires						: never
+          Minimum number of days between password change		: 0
+          Maximum number of days between password change		: 99999
+          Number of days of warning before password expires	: 7
+        level: basic
+        tags: [beginner]
+      - title: "Print the dates in ISO form"
+        code: chage -l -i tips-dev | head -3
+        description: "`-i` prints `YYYY-MM-DD`, which sorts correctly and reads the same in every locale, so it is the form to use when a script is going to compare it."
+        output: |2
+          Last password change					: 2026-09-01
+          Password expires					: never
+          Password inactive					: never
+        level: intermediate
+        tags: [scripting]
+      - title: "Read where the settings are stored"
+        code: "chage -M 90 -I 14 -E 2027-03-31 tips-dev; getent shadow tips-dev | cut -d: -f3-8"
+        description: "Fields 3 to 8 of the account's line in `/etc/shadow`: the last change, the minimum and maximum age, the warning, the inactivity period and the account's expiry. The two dates are days since 1 January 1970, so `20697` is 1 September 2026. An empty field means no limit."
+        output: |2
+          20697:0:90:7:14:20908
+        level: advanced
+      - title: "Read your own settings as an ordinary user"
+        code: runuser -u tips-dev -- chage -l tips-dev | head -2
+        description: "`chage -l` works for the account running it, so anyone can find out when their own password expires. Changing the settings needs root."
+        output: |2
+          Last password change					: Sep 01, 2026
+          Password expires					: never
+        level: basic
+      - title: "Try to read another account's settings"
+        code: runuser -u tips-dev -- chage -l tips-ops
+        description: "Refused, with no details about why. The dates are in `/etc/shadow`, which only root and the `shadow` group can read."
+        output: |2
+          chage: Permission denied.
+        level: basic
+
+  - title: "Expiring passwords"
+    intro: "Each setting below is counted in days from the last password change, which here is 1 September 2026."
+    examples:
+      - title: "Make passwords expire after 90 days"
+        code: chage -M 90 tips-dev; chage -l tips-dev | head -2
+        description: "`-M` is the maximum age. Ninety days from 1 September is 30 November, and after that the next login has to choose a new password before it gets a shell."
+        output: |2
+          Last password change					: Sep 01, 2026
+          Password expires					: Nov 30, 2026
+        level: basic
+      - title: "Warn people before their password expires"
+        code: chage -M 90 -W 14 tips-dev; chage -l tips-dev | tail -1
+        description: "`-W` is how many days before expiry a login starts printing a warning. Seven is the default."
+        output: |2
+          Number of days of warning before password expires	: 14
+        level: intermediate
+      - title: "Disable an account left unchanged after expiry"
+        code: chage -M 90 -I 14 tips-dev; chage -l tips-dev | sed -n 2,3p
+        description: "`-I` is the inactivity period. Up to 14 days after the password expires, a login can still change it. After that the account is disabled, and only root can get it working again."
+        output: |2
+          Password expires					: Nov 30, 2026
+          Password inactive					: Dec 14, 2026
+        level: intermediate
+      - title: "Stop a password being changed straight back"
+        code: chage -m 7 tips-dev; chage -l tips-dev | grep Minimum
+        description: "`-m` is the minimum age: once a password has been changed, its owner cannot change it again for that many days. With a password history policy, it stops someone changing their password several times in a minute to get back to the old one. Root is not held to it."
+        output: |2
+          Minimum number of days between password change		: 7
+        level: advanced
+      - title: "Force a new password at the next login"
+        code: chage -d 0 tips-dev; chage -l tips-dev | head -3
+        description: "`-d` sets the date of the last change, and `0` is 1 January 1970, so the password counts as expired. It is the same as `passwd -e`, and the usual step after setting a temporary password for someone."
+        output: |2
+          Last password change					: password must be changed
+          Password expires					: password must be changed
+          Password inactive					: password must be changed
+        level: intermediate
+      - title: "Record a password change made somewhere else"
+        code: chage -d 2026-09-15 tips-dev; chage -l tips-dev | head -1
+        description: "`-d` with a date sets the last change to that day, without touching the password itself. Useful when accounts are copied between machines and their ageing would otherwise restart from the day of the copy."
+        output: |2
+          Last password change					: Sep 15, 2026
+        level: advanced
+
+  - title: "Expiring the account"
+    intro: "An account's expiry date is a fixed day, unrelated to when the password was changed. Once it has passed, the account cannot log in by any route, a key or a password, which is what makes it the right control for a temporary account."
+    examples:
+      - title: "Expire the account on a particular date"
+        code: chage -E 2027-03-31 tips-dev; chage -l tips-dev | grep 'Account expires'
+        description: "The account works until the end of 30 March and stops on the 31st. [passwd](/commands/passwd/) shows an expired account being refused by SSH even with a working key."
+        output: |2
+          Account expires						: Mar 31, 2027
+        level: basic
+      - title: "Give the date as a number of days"
+        code: chage -E 20818 tips-dev; chage -l tips-dev | grep 'Account expires'
+        description: "`-E` and `-d` both take a number of days since 1 January 1970 as well as a date, which is the form `/etc/shadow` stores and the form a script working out a date with arithmetic will have."
+        output: |2
+          Account expires						: Dec 31, 2026
+        level: advanced
+      - title: "Remove an account's expiry date"
+        code: chage -E 2027-03-31 tips-dev; chage -E -1 tips-dev; chage -l tips-dev | grep 'Account expires'
+        description: "`-1` clears the field, so the account never expires. `-I -1` clears the inactivity period the same way."
+        output: |2
+          Account expires						: never
+        level: intermediate
+
+  - title: "Beside passwd -l"
+    examples:
+      - title: "Lock a password without changing its ageing"
+        code: chage -M 90 tips-dev; passwd -l tips-dev; chage -l tips-dev | sed -n 2p
+        description: "A lock and an expiry are separate. `passwd -l` only puts a `!` in front of the stored password, and leaves every date where it was, so unlocking the password later finds the same expiry still waiting."
+        output: |2
+          passwd: password changed.
+          Password expires					: Nov 30, 2026
+        level: intermediate

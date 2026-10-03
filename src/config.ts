@@ -250,7 +250,10 @@ export const COMMAND_GROUPS: { title: string; commands: string[] }[] = [
     title: "Networking & transfer",
     commands: ["curl", "wget", "ssh", "rsync", "dig", "ip", "ss", "ping-traceroute", "nc"],
   },
-  { title: "Users & permissions", commands: ["chmod", "chown", "sudo", "managing-users", "id", "getent"] },
+  {
+    title: "Users & permissions",
+    commands: ["chmod", "chown", "sudo", "managing-users", "id", "getent", "passwd", "chage"],
+  },
   {
     title: "Shell & automation",
     commands: ["which", "xargs", "watch", "crontab", "date", "env", "history", "alias"],
