@@ -92,12 +92,10 @@ sections:
         level: intermediate
         tags: [scripting]
       - title: "Read every field as one line"
-        code: stat -t site/index.html
-        description: "`-t` (`--terse`) prints the fields in a fixed order with single spaces between them, for something else to split. Name, size, blocks, mode in hex, uid, gid, then the device in hex, the inode and the link count, then the timestamps as epoch seconds."
-        volatile: "the inode number, the device number and the last two timestamps belong to this machine and this run"
-        compare: shape
-        output: |
-          site/index.html 36 8 81a4 1000 1000 35 460496 1 0 0 1780304400 1780304400 1788778171 1788778171 4096
+        code: "stat -t site/index.html | cut -d' ' -f1-6,9-13,16"
+        description: "`-t` (`--terse`) prints the fields in a fixed order with single spaces between them, for something else to split: name, size, blocks, mode in hex, uid, gid, the device in hex, the inode, the link count, the major and minor numbers of a device file, the four timestamps as epoch seconds, and the I/O block size. The `cut` drops the device, the inode and the last two timestamps, which belong to the machine and to the moment the file was made, and keeps what describes the file itself."
+        output: |2
+          site/index.html 36 8 81a4 1000 1000 1 0 0 1780304400 1780304400 4096
         level: advanced
         tags: [scripting]
   - title: "Mode and ownership"

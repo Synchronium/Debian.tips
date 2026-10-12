@@ -417,7 +417,7 @@
   },
   "commands/stat": {
     "checked": 51,
-    "byShape": 4,
+    "byShape": 3,
     "unordered": 0,
     "exempt": 0,
     "fixtures": 2,
