@@ -28,6 +28,15 @@ cat > /usr/local/bin/backup-sync <<'EOF'
 echo "starting backup of /srv/data"
 echo "connecting to backup.example.com"
 echo "cannot reach backup.example.com: connection refused" >&2
+# What the program prints reaches journald over a stream that is read asynchronously, while
+# systemd reports the exit on a socket of its own, so exiting at once lets "Main process exited"
+# land before the line above. Every example reading the unit depends on the program's lines
+# coming first, so it waits for its last line to be in the journal before it exits.
+for _ in $(seq 1 100); do
+  journalctl _SYSTEMD_INVOCATION_ID="$INVOCATION_ID" --no-pager -o cat 2>/dev/null |
+    grep -q "^cannot reach" && break
+  sleep 0.05
+done
 exit 1
 EOF
 chmod 755 /usr/local/bin/backup-sync
