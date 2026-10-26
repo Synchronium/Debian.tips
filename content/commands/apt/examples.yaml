@@ -57,14 +57,12 @@ sections:
           Listing...
           cowsay/stable,now 3.03+dfsg2-8 all [installed]
       - title: List installed packages matching a pattern
-        code: apt list --installed 'ca-cert*'
-        description: Quote the pattern, or the shell tries to expand it as a filename first and apt never sees it.
+        code: apt list --installed 'cowsay*'
+        description: "Quote the pattern, or the shell tries to expand it as a filename first and apt never sees it. `cowsay-off` matches it too, and is left out because it is not installed."
         level: basic
-        volatile: "the ca-certificates version changes with each Debian point release"
-        compare: shape
         output: |2
           Listing...
-          ca-certificates/stable,now 20250419 all [installed]
+          cowsay/stable,now 3.03+dfsg2-8 all [installed]
       - title: See which version apt would install
         code: apt policy cowsay | head -3
         description: '`Installed:` is what you have and `Candidate:` is what a plain `apt install` would give you. The rest of the output lists each available version and the repository offering it.'

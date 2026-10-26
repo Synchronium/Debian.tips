@@ -1,7 +1,7 @@
 {
   "commands/apt": {
     "checked": 18,
-    "byShape": 5,
+    "byShape": 4,
     "unordered": 0,
     "exempt": 0,
     "fixtures": 0,

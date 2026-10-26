@@ -194,11 +194,11 @@ sections:
         output: |2
           3.03+dfsg2-8
       - title: Print several fields in your own format
-        code: dpkg-query -W -f='${Package} ${Version} ${Status}\n' cowsay ca-certificates
-        description: Any field from the database, in any layout. `${Status}` is the three words behind the two-letter code `dpkg -l` abbreviates.
+        code: dpkg-query -W -f='${Package} ${Version} ${Status}\n' cowsay bash-completion
+        description: "Any field from the database, in any layout. `${Status}` is the three words behind the two-letter code `dpkg -l` abbreviates: `cowsay` is installed, and `bash-completion` has been removed with its configuration left on disk, the `rc` state."
         level: advanced
         output: |2
-          ca-certificates 20250419 install ok installed
+          bash-completion 1:2.16.0-7 deinstall ok config-files
           cowsay 3.03+dfsg2-8 install ok installed
       - title: Test whether a package is installed, properly
         code: dpkg-query -W -f='${Status}' cowsay 2>/dev/null | grep -q "^install ok installed" && echo yes || echo no
