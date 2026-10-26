@@ -19,8 +19,8 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      # Three copies of puppeteer live in this tree, and each one's postinstall fetches a browser
-      # archive from Google's CDN before anything is built. A truncated fetch fails `npm ci` with
+      # puppeteer's postinstall fetches a browser archive from Google's CDN before anything is
+      # built. A truncated fetch fails `npm ci` with
       # "end of central directory record signature not found", so the run goes red over the
       # network rather than over the change, having checked nothing. Fetching the browsers in a
       # step of their own keeps that failure out of the install, and lets it be retried without
@@ -28,16 +28,18 @@ jobs:
       - run: npm ci
         env:
           PUPPETEER_SKIP_DOWNLOAD: "true"
-      # Which build each copy of puppeteer wants is fixed by the lockfile, so keying on it means a
-      # download happens once per dependency change and the step below finds the browsers already
-      # there on every run in between.
+      # Which build puppeteer wants is fixed by the lockfile, so keying on it means a download
+      # happens once per dependency change and the step below finds the browser already there on
+      # every run in between.
       - name: Cache the pinned browsers
         uses: actions/cache@v6
         with:
           path: ~/.cache/puppeteer
           key: puppeteer-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       # `npm rebuild puppeteer` runs the postinstall of every copy in the tree, and each one
-      # returns without fetching anything for a build the step above restored.
+      # returns without fetching anything for a build the step above restored. pa11y and pa11y-ci
+      # take puppeteer as a dependency, so when their range admits the version this repo pins,
+      # npm installs one copy for all three and there is one build to fetch.
       - name: Fetch the browsers the gates below drive
         run: |
           for attempt in 1 2 3; do

@@ -45,8 +45,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      # Nothing here opens a browser, and three copies of puppeteer would each fetch one during
-      # the install. A truncated fetch would fail this run before the replay it exists to run,
+      # Nothing here opens a browser, and puppeteer would fetch one during the install. A truncated fetch would fail this run before the replay it exists to run,
       # and an install failure opens no drift issue, so the week would pass silently unchecked.
       - run: npm ci
         env:
